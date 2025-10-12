@@ -43,22 +43,26 @@ export const EnhancedHero = memo(function EnhancedHero({ data }: { data: HeroDat
     : data.imageUrl;
 
   return (
-    <motion.section
-      ref={ref}
-      style={{
-        position: 'relative',
-        height: '60vh',
-        minHeight: '450px',
-        maxHeight: '600px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-        isolation: 'isolate',
-        margin: '0 16px',
-        borderRadius: tokens.radius.xl,
-      }}
-    >
+    <div style={{ 
+      maxWidth: 1200, 
+      margin: '80px auto 0', // 80px top margin for spacing from header
+      padding: '0 16px' 
+    }}>
+      <motion.section
+        ref={ref}
+        style={{
+          position: 'relative',
+          height: '60vh',
+          minHeight: '400px',
+          maxHeight: '700px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          isolation: 'isolate',
+          borderRadius: 'clamp(12px, 2vw, 24px)',
+        }}
+      >
       {/* Parallax Background */}
       {data.videoUrl ? (
         <motion.video
@@ -139,7 +143,7 @@ export const EnhancedHero = memo(function EnhancedHero({ data }: { data: HeroDat
         style={{
           textAlign: 'center',
           maxWidth: '900px',
-          padding: '0 24px',
+          padding: '0 clamp(16px, 4vw, 32px)',
           opacity,
           willChange: 'opacity',
         }}
@@ -192,9 +196,9 @@ export const EnhancedHero = memo(function EnhancedHero({ data }: { data: HeroDat
               gap: 12,
               background: `linear-gradient(135deg, ${tokens.color.primary} 0%, ${tokens.color.accent} 100%)`,
               color: '#111',
-              padding: '14px 36px',
+              padding: 'clamp(12px, 2vw, 14px) clamp(24px, 5vw, 36px)',
               borderRadius: tokens.radius.pill,
-              fontSize: 16,
+              fontSize: 'clamp(14px, 2vw, 16px)',
               fontWeight: 700,
               textDecoration: 'none',
               boxShadow: `0 8px 32px ${tokens.color.primary}40`,
@@ -233,6 +237,7 @@ export const EnhancedHero = memo(function EnhancedHero({ data }: { data: HeroDat
         />
       </motion.div>
     </motion.section>
+    </div>
   );
 });
 

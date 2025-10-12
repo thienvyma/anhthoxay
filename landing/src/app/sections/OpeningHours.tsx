@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { tokens } from '@app/shared';
 
@@ -12,21 +13,21 @@ interface OpeningHoursData {
   note?: string;
 }
 
-export function OpeningHours({ data }: { data: OpeningHoursData }) {
+export const OpeningHours = memo(function OpeningHours({ data }: { data: OpeningHoursData }) {
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
-      style={{
-        margin: '80px 0',
-        padding: '60px 24px',
-        maxWidth: 800,
-        marginLeft: 'auto',
-        marginRight: 'auto',
-      }}
-    >
+    <div style={{ maxWidth: 1200, margin: '80px auto', padding: '0 16px' }}>
+      <motion.section
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        style={{
+          padding: '60px 24px',
+          maxWidth: 800,
+          marginLeft: 'auto',
+          marginRight: 'auto',
+        }}
+      >
       {/* Header */}
       {(data.title || data.subtitle) && (
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
@@ -77,10 +78,7 @@ export function OpeningHours({ data }: { data: OpeningHoursData }) {
               justifyContent: 'space-between',
               alignItems: 'center',
               padding: '20px 28px',
-              background: item.special 
-                ? 'linear-gradient(135deg, rgba(245,211,147,0.15), rgba(239,182,121,0.10))'
-                : 'rgba(255,255,255,0.03)',
-              backdropFilter: 'blur(10px)',
+              background: item.special ? 'rgba(255,167,0,0.08)' : 'rgba(255,255,255,0.03)',
               border: `1px solid ${item.special ? tokens.color.primary + '40' : tokens.color.border}`,
               borderRadius: tokens.radius.lg,
               transition: 'all 0.3s ease',
@@ -131,7 +129,8 @@ export function OpeningHours({ data }: { data: OpeningHoursData }) {
           💡 {data.note}
         </motion.div>
       )}
-    </motion.section>
+      </motion.section>
+    </div>
   );
-}
+});
 

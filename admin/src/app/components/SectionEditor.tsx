@@ -48,7 +48,16 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
           subtitle: 'Experience fine dining at its best',
           imageUrl: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=80',
           ctaText: 'Book Now',
-          ctaLink: '#/contact',
+          ctaLink: '/contact',
+        };
+      case 'HERO_SIMPLE':
+        return {
+          title: 'Liên Hệ',
+          subtitle: 'Chúng tôi luôn sẵn sàng phục vụ',
+          description: 'Hãy liên hệ với chúng tôi để đặt bàn hoặc biết thêm thông tin',
+          backgroundImage: '',
+          backgroundOverlay: 60,
+          textAlign: 'center',
         };
       case 'GALLERY':
         return {
@@ -66,6 +75,8 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
           limit: 6,
           showOnlyPopular: true,
           autoPlayInterval: 4000,
+          ctaText: 'Đặt bàn ngay',
+          ctaLink: '#reservation',
         };
       case 'TESTIMONIALS':
         return {
@@ -94,11 +105,18 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
           ],
         };
       case 'CTA':
+      case 'CALL_TO_ACTION':
         return {
-          title: 'Ready to Dine With Us?',
-          description: 'Book your table now and enjoy exclusive offers',
-          buttonText: 'Reserve Now',
-          buttonLink: '#/contact',
+          title: 'Ready to Experience Our Cuisine?',
+          subtitle: 'Book a table now and taste the difference',
+          primaryButton: { 
+            text: 'Make a Reservation', 
+            link: '/reservations' 
+          },
+          secondaryButton: { 
+            text: 'View Menu', 
+            link: '/menu' 
+          },
         };
       case 'CONTACT_INFO':
         return {
@@ -209,14 +227,25 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
             content: 'Trở thành điểm đến hàng đầu cho những ai yêu thích ẩm thực tinh tế, không gian sang trọng và dịch vụ chuyên nghiệp.'
           }
         };
+      case 'CORE_VALUES':
+        return {
+          title: 'Giá Trị Cốt Lõi',
+          subtitle: 'Những giá trị định hình thương hiệu của chúng tôi',
+          values: [
+            { _id: generateUniqueId(), icon: 'ri-checkbox-circle-line', title: 'Chất Lượng', description: 'Cam kết nguyên liệu tươi ngon, chế biến chuẩn vị' },
+            { _id: generateUniqueId(), icon: 'ri-heart-3-line', title: 'Tận Tâm', description: 'Phục vụ bằng cả trái tim, mang đến trải nghiệm tốt nhất' },
+            { _id: generateUniqueId(), icon: 'ri-lightbulb-flash-line', title: 'Sáng Tạo', description: 'Không ngừng đổi mới, kết hợp truyền thống và hiện đại' },
+            { _id: generateUniqueId(), icon: 'ri-user-smile-line', title: 'Khách Hàng', description: 'Luôn đặt sự hài lòng của khách hàng lên hàng đầu' },
+          ]
+        };
       case 'FAB_ACTIONS':
         return {
           mainIcon: 'ri-customer-service-2-fill',
           mainColor: '#F5D393',
           actions: [
             { _id: generateUniqueId(), icon: 'ri-phone-fill', label: 'Gọi ngay', href: 'tel:+84123456789', color: '#10b981' },
-            { _id: generateUniqueId(), icon: 'ri-calendar-fill', label: 'Đặt bàn', href: '#/contact', color: '#f59e0b' },
-            { _id: generateUniqueId(), icon: 'ri-map-pin-fill', label: 'Địa chỉ', href: '#/contact', color: '#3b82f6' },
+            { _id: generateUniqueId(), icon: 'ri-calendar-fill', label: 'Đặt bàn', href: '/contact', color: '#f59e0b' },
+            { _id: generateUniqueId(), icon: 'ri-map-pin-fill', label: 'Địa chỉ', href: '/contact', color: '#3b82f6' },
             { _id: generateUniqueId(), icon: 'ri-messenger-fill', label: 'Chat', href: 'https://m.me/your-page', color: '#8b5cf6' }
           ]
         };
@@ -231,6 +260,17 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
             { _id: generateUniqueId(), name: 'twitter', url: 'https://twitter.com' }
           ],
           layout: 'circular'
+        };
+      case 'QUICK_CONTACT':
+        return {
+          title: 'Hãy Liên Hệ Với Chúng Tôi',
+          subtitle: 'Chúng tôi luôn sẵn sàng lắng nghe và phục vụ bạn',
+          methods: [
+            { _id: generateUniqueId(), icon: 'ri-phone-fill', title: 'ĐIỆN THOẠI', value: '+84 123 456 789', href: 'tel:+84123456789', color: '#10b981' },
+            { _id: generateUniqueId(), icon: 'ri-mail-fill', title: 'EMAIL', value: 'info@restaurant.com', href: 'mailto:info@restaurant.com', color: '#3b82f6' },
+            { _id: generateUniqueId(), icon: 'ri-map-pin-fill', title: 'ĐỊA CHỈ', value: '123 Đường ABC, Quận XYZ, TP.HCM', href: 'https://maps.google.com', color: '#f59e0b' },
+            { _id: generateUniqueId(), icon: 'ri-time-fill', title: 'GIỜ MỞ CỬA', value: 'Thứ 2 - CN: 10:00 - 22:00', color: '#f5d393' }
+          ]
         };
       default:
         return {};
@@ -621,11 +661,13 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
 function getSectionDescription(kind: SectionKind): string {
   const descriptions: Record<SectionKind, string> = {
     HERO: 'Main banner with image, title, and call-to-action button',
+    HERO_SIMPLE: 'Lightweight hero section for secondary pages',
     GALLERY: 'Beautiful image gallery with lightbox viewer',
     FEATURED_MENU: 'Highlight signature dishes with images and prices',
     TESTIMONIALS: 'Display customer reviews and feedback',
     STATS: 'Show impressive numbers and achievements',
     CTA: 'Call-to-action section to drive conversions',
+    CALL_TO_ACTION: 'Call-to-action section with primary and secondary buttons',
     CONTACT_INFO: 'Show contact details and location',
     RESERVATION_FORM: 'Booking form for table reservations',
     SPECIAL_OFFERS: 'Promotional offers and limited-time deals',
@@ -639,18 +681,22 @@ function getSectionDescription(kind: SectionKind): string {
     MISSION_VISION: 'Company mission and vision statements',
     FAB_ACTIONS: 'Floating action buttons in bottom-right corner',
     FOOTER_SOCIAL: 'Social media links in footer section',
+    QUICK_CONTACT: 'Quick contact cards with phone, email, address, hours',
+    CORE_VALUES: 'Display core values and principles with icons',
   };
   return descriptions[kind] || '';
 }
 
 function getSectionIcon(kind: SectionKind): string {
-  const icons: Record<SectionKind, string> = {
+const icons: Record<SectionKind, string> = {
     HERO: 'ri-image-2-fill',
+    HERO_SIMPLE: 'ri-layout-top-fill',
     GALLERY: 'ri-gallery-fill',
     FEATURED_MENU: 'ri-restaurant-2-fill',
     TESTIMONIALS: 'ri-chat-quote-fill',
     STATS: 'ri-bar-chart-box-fill',
     CTA: 'ri-megaphone-fill',
+    CALL_TO_ACTION: 'ri-megaphone-fill',
     CONTACT_INFO: 'ri-phone-fill',
     RESERVATION_FORM: 'ri-calendar-check-fill',
     SPECIAL_OFFERS: 'ri-price-tag-3-fill',
@@ -664,6 +710,8 @@ function getSectionIcon(kind: SectionKind): string {
     MISSION_VISION: 'ri-flag-fill',
     FAB_ACTIONS: 'ri-customer-service-fill',
     FOOTER_SOCIAL: 'ri-share-forward-fill',
+    QUICK_CONTACT: 'ri-contacts-fill',
+    CORE_VALUES: 'ri-heart-3-fill',
   };
   return icons[kind] || 'ri-layout-fill';
 }
@@ -690,16 +738,125 @@ function renderPreview(kind: SectionKind, data: Record<string, any>) {
         </div>
       );
 
-    case 'CTA':
+    case 'HERO_SIMPLE':
       return (
-        <div style={{ textAlign: 'center', padding: 40, background: 'linear-gradient(135deg, #f5d393, #c9a961)', borderRadius: 8 }}>
-          {data.title && <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 12, color: '#111' }}>{data.title}</h2>}
-          {data.description && <p style={{ fontSize: 16, marginBottom: 20, color: '#333' }}>{data.description}</p>}
-          {data.buttonText && (
-            <button style={{ padding: '12px 32px', background: '#111', color: '#fff', border: 'none', borderRadius: 8, fontSize: 16, fontWeight: 600 }}>
-              {data.buttonText}
-            </button>
-          )}
+        <div style={{ 
+          position: 'relative', 
+          minHeight: 250, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: data.textAlign === 'center' ? 'center' : data.textAlign === 'right' ? 'flex-end' : 'flex-start',
+          overflow: 'hidden', 
+          borderRadius: 8,
+          background: data.backgroundImage 
+            ? `linear-gradient(rgba(0,0,0,${(data.backgroundOverlay || 60) / 100}), rgba(0,0,0,${(data.backgroundOverlay || 60) / 100})), url(${data.backgroundImage})` 
+            : 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}>
+          <div style={{ position: 'relative', textAlign: data.textAlign || 'center', padding: 40, maxWidth: 800 }}>
+            {data.subtitle && (
+              <div style={{ 
+                display: 'inline-block',
+                padding: '6px 16px', 
+                background: 'rgba(245,211,147,0.15)', 
+                border: '1px solid rgba(245,211,147,0.3)',
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#f5d393',
+                marginBottom: 16,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+              }}>
+                {data.subtitle}
+              </div>
+            )}
+            {data.title && <h1 style={{ fontSize: 36, fontWeight: 700, marginBottom: 12, color: '#f5d393' }}>{data.title}</h1>}
+            {data.description && <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>{data.description}</p>}
+          </div>
+        </div>
+      );
+
+    case 'CTA':
+    case 'CALL_TO_ACTION':
+      return (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: 60, 
+          background: 'linear-gradient(135deg, rgba(245, 211, 147, 0.15) 0%, rgba(239, 182, 121, 0.1) 100%)',
+          borderRadius: 16,
+          border: '1px solid rgba(245, 211, 147, 0.2)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          {/* Background pattern */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(245, 211, 147, 0.1) 1px, transparent 0)',
+            backgroundSize: '32px 32px',
+            opacity: 0.5,
+          }} />
+          
+          <div style={{ position: 'relative' }}>
+            {data.title && (
+              <h2 style={{ 
+                fontSize: 36, 
+                fontWeight: 700, 
+                marginBottom: 16, 
+                color: '#F5D393',
+                fontFamily: 'Playfair Display, serif',
+                lineHeight: 1.2,
+              }}>
+                {data.title}
+              </h2>
+            )}
+            {data.subtitle && (
+              <p style={{ 
+                fontSize: 18, 
+                marginBottom: 32, 
+                color: 'rgba(255,255,255,0.7)',
+                maxWidth: 600,
+                margin: '0 auto 32px',
+                lineHeight: 1.6,
+              }}>
+                {data.subtitle}
+              </p>
+            )}
+            
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {data.primaryButton?.text && (
+                <button style={{ 
+                  padding: '16px 40px', 
+                  background: 'linear-gradient(135deg, #F5D393, #EFB679)',
+                  color: '#111', 
+                  border: 'none', 
+                  borderRadius: 12, 
+                  fontSize: 16, 
+                  fontWeight: 700,
+                  boxShadow: '0 8px 24px rgba(245, 211, 147, 0.3)',
+                  cursor: 'pointer',
+                }}>
+                  {data.primaryButton.text}
+                </button>
+              )}
+              {data.secondaryButton?.text && (
+                <button style={{ 
+                  padding: '16px 40px', 
+                  background: 'transparent',
+                  color: '#F5D393', 
+                  border: '2px solid #F5D393', 
+                  borderRadius: 12, 
+                  fontSize: 16, 
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}>
+                  {data.secondaryButton.text}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       );
 
@@ -1323,6 +1480,23 @@ function renderPreview(kind: SectionKind, data: Record<string, any>) {
         </div>
       );
 
+    case 'CORE_VALUES':
+      return (
+        <div style={{ background: '#f5f5f5', borderRadius: 8, padding: 24 }}>
+          {data.title && <h2 style={{ fontSize: 24, fontWeight: 700, color: '#111', marginBottom: 8, textAlign: 'center' }}>{data.title}</h2>}
+          {data.subtitle && <p style={{ fontSize: 14, color: '#666', marginBottom: 20, textAlign: 'center' }}>{data.subtitle}</p>}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+            {(data.values || []).map((value: any) => (
+              <div key={value._id || value.title} style={{ padding: 16, background: '#fff', borderRadius: 8, textAlign: 'center', border: '1px solid #ddd' }}>
+                <i className={value.icon} style={{ fontSize: 32, color: '#f5d393', marginBottom: 12, display: 'block' }} />
+                <h4 style={{ fontSize: 16, fontWeight: 600, color: '#111', marginBottom: 6 }}>{value.title}</h4>
+                <p style={{ fontSize: 13, color: '#666', lineHeight: 1.5 }}>{value.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
     case 'FAB_ACTIONS':
       return (
         <div style={{ background: '#f5f5f5', borderRadius: 8, padding: 40, position: 'relative', minHeight: 300 }}>
@@ -1392,6 +1566,44 @@ function renderPreview(kind: SectionKind, data: Record<string, any>) {
                 title={platform.name}
               >
                 <i className={`ri-${platform.name}-fill`} />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'QUICK_CONTACT':
+      return (
+        <div style={{ background: '#0B0B0C', borderRadius: 8, padding: 32 }}>
+          {data.title && <h2 style={{ fontSize: 32, fontWeight: 700, color: '#f5d393', marginBottom: 12, textAlign: 'center' }}>{data.title}</h2>}
+          {data.subtitle && <p style={{ fontSize: 14, color: '#999', marginBottom: 32, textAlign: 'center' }}>{data.subtitle}</p>}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
+            {data.methods?.map((method: any) => (
+              <div
+                key={method._id}
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 12,
+                  padding: 24,
+                  textAlign: 'center'
+                }}
+              >
+                <div style={{
+                  width: 56,
+                  height: 56,
+                  margin: '0 auto 16px',
+                  borderRadius: '50%',
+                  background: `${method.color}20`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <i className={method.icon} style={{ fontSize: 24, color: method.color }} />
+                </div>
+                <h4 style={{ fontSize: 12, color: '#999', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>{method.title}</h4>
+                <div style={{ fontSize: 14, color: '#fff', fontWeight: 600 }}>{method.value}</div>
               </div>
             ))}
           </div>
@@ -2079,7 +2291,7 @@ function renderFormFields(
                 label="Button Link" 
                 value={data.ctaLink || ''} 
                 onChange={(v) => updateField('ctaLink', v)} 
-                placeholder="#/reservations" 
+                placeholder="/reservations" 
                 fullWidth 
               />
             </div>
@@ -2087,13 +2299,222 @@ function renderFormFields(
         </div>
       );
 
-    case 'CTA':
+    case 'HERO_SIMPLE':
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Input label="Title" value={data.title || ''} onChange={(v) => updateField('title', v)} required fullWidth />
-          <TextArea label="Description" value={data.description || ''} onChange={(v) => updateField('description', v)} fullWidth />
-          <Input label="Button Text" value={data.buttonText || ''} onChange={(v) => updateField('buttonText', v)} fullWidth />
-          <Input label="Button Link" value={data.buttonLink || ''} onChange={(v) => updateField('buttonLink', v)} fullWidth />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Info Banner */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(251, 146, 60, 0.15) 0%, rgba(249, 115, 22, 0.15) 100%)',
+            border: '1px solid rgba(251, 146, 60, 0.3)',
+            borderRadius: tokens.radius.md,
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 12,
+          }}>
+            <i className="ri-layout-top-line" style={{ fontSize: 20, color: '#fb923c', marginTop: 2 }} />
+            <div>
+              <p style={{ color: tokens.color.text, fontSize: 14, margin: 0, fontWeight: 500, marginBottom: 4 }}>
+                Simple Hero Section
+              </p>
+              <p style={{ color: tokens.color.muted, fontSize: 13, margin: 0, lineHeight: 1.5 }}>
+                Lightweight hero for secondary pages. Perfect for Contact, Menu, About, Gallery, Blog pages.
+              </p>
+            </div>
+          </div>
+
+          <Input 
+            label="Title" 
+            value={data.title || ''} 
+            onChange={(v) => updateField('title', v)} 
+            required 
+            fullWidth 
+            placeholder="Liên Hệ"
+          />
+
+          <Input 
+            label="Subtitle (Badge)" 
+            value={data.subtitle || ''} 
+            onChange={(v) => updateField('subtitle', v)} 
+            fullWidth 
+            placeholder="Chúng tôi luôn sẵn sàng phục vụ"
+          />
+
+          <TextArea 
+            label="Description" 
+            value={data.description || ''} 
+            onChange={(v) => updateField('description', v)} 
+            fullWidth 
+            placeholder="Hãy liên hệ với chúng tôi để đặt bàn hoặc biết thêm thông tin"
+          />
+
+          {/* Background Image */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.02)',
+            border: `1px solid ${tokens.color.border}`,
+            borderRadius: tokens.radius.md,
+            padding: 16,
+          }}>
+            <label style={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              gap: 8,
+              color: tokens.color.text, 
+              fontSize: 14, 
+              fontWeight: 600,
+              marginBottom: 8,
+            }}>
+              <i className="ri-image-line" style={{ fontSize: 18 }} />
+              Background Image (Optional)
+            </label>
+            <ImageDropzone
+              value={data.backgroundImage}
+              onChange={(url) => updateField('backgroundImage', url)}
+              onRemove={() => updateField('backgroundImage', '')}
+              height={150}
+            />
+          </div>
+
+          {/* Background Overlay */}
+          <div>
+            <label style={{ display: 'block', marginBottom: 8, color: tokens.color.text, fontWeight: 500 }}>
+              Background Overlay (0-100)
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={data.backgroundOverlay || 60}
+              onChange={(e) => updateField('backgroundOverlay', parseInt(e.target.value))}
+              style={{
+                width: '100%',
+                height: 6,
+                borderRadius: 3,
+                background: `linear-gradient(to right, transparent, rgba(0,0,0,${(data.backgroundOverlay || 60) / 100}))`,
+                cursor: 'pointer',
+              }}
+            />
+            <p style={{ color: tokens.color.muted, fontSize: 12, marginTop: 4 }}>
+              Current: {data.backgroundOverlay || 60}% (darker = more overlay)
+            </p>
+          </div>
+
+          {/* Text Align */}
+          <div>
+            <label style={{ display: 'block', marginBottom: 8, color: tokens.color.text, fontWeight: 500 }}>
+              Text Alignment
+            </label>
+            <div style={{ display: 'flex', gap: 12 }}>
+              {['left', 'center', 'right'].map((align) => (
+                <label key={align} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="textAlign"
+                    checked={(data.textAlign || 'center') === align}
+                    onChange={() => updateField('textAlign', align)}
+                    style={{ cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: 13, color: tokens.color.text, textTransform: 'capitalize' }}>{align}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'CTA':
+    case 'CALL_TO_ACTION':
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <Input 
+            label="Title" 
+            value={data.title || ''} 
+            onChange={(v) => updateField('title', v)} 
+            placeholder="Ready to Get Started?"
+            required 
+            fullWidth 
+          />
+          <TextArea 
+            label="Subtitle" 
+            value={data.subtitle || ''} 
+            onChange={(v) => updateField('subtitle', v)} 
+            placeholder="Join thousands of satisfied customers today"
+            fullWidth 
+          />
+
+          {/* Primary Button */}
+          <div style={{
+            background: 'rgba(245, 211, 147, 0.05)',
+            border: '1px solid rgba(245, 211, 147, 0.2)',
+            borderRadius: tokens.radius.md,
+            padding: 16,
+          }}>
+            <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <i className="ri-arrow-right-circle-fill" style={{ fontSize: 18, color: tokens.color.primary }} />
+              <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>
+                Primary Button
+              </label>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <Input 
+                label="Button Text" 
+                value={data.primaryButton?.text || ''} 
+                onChange={(v) => updateField('primaryButton.text', v)} 
+                placeholder="Get Started" 
+                fullWidth 
+              />
+              <Input 
+                label="Button Link" 
+                value={data.primaryButton?.link || ''} 
+                onChange={(v) => updateField('primaryButton.link', v)} 
+                placeholder="/signup" 
+                fullWidth 
+              />
+            </div>
+          </div>
+
+          {/* Secondary Button */}
+          <div style={{
+            background: 'rgba(100, 116, 139, 0.05)',
+            border: '1px solid rgba(100, 116, 139, 0.2)',
+            borderRadius: tokens.radius.md,
+            padding: 16,
+          }}>
+            <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <i className="ri-arrow-right-line" style={{ fontSize: 18, color: tokens.color.muted }} />
+              <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>
+                Secondary Button (Optional)
+              </label>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <Input 
+                label="Button Text" 
+                value={data.secondaryButton?.text || ''} 
+                onChange={(v) => updateField('secondaryButton.text', v)} 
+                placeholder="Learn More" 
+                fullWidth 
+              />
+              <Input 
+                label="Button Link" 
+                value={data.secondaryButton?.link || ''} 
+                onChange={(v) => updateField('secondaryButton.link', v)} 
+                placeholder="/about" 
+                fullWidth 
+              />
+            </div>
+          </div>
+
+          {/* Background Image (Optional) */}
+          <div style={{ marginTop: 8 }}>
+            <ImagePicker
+              label="Background Image (Optional)"
+              value={data.backgroundImage || ''}
+              onChange={(url) => updateField('backgroundImage', url)}
+              onPick={() => onImagePick('backgroundImage')}
+              onRemove={() => updateField('backgroundImage', '')}
+              height={180}
+            />
+          </div>
         </div>
       );
 
@@ -2281,6 +2702,37 @@ function renderFormFields(
           <p style={{ color: tokens.color.muted, fontSize: 13, marginTop: -12 }}>
             Time between slide transitions (default: 4000ms = 4 seconds)
           </p>
+
+          {/* CTA Button Configuration */}
+          <div style={{
+            background: 'rgba(245, 211, 147, 0.05)',
+            border: '1px solid rgba(245, 211, 147, 0.2)',
+            borderRadius: tokens.radius.md,
+            padding: 16,
+          }}>
+            <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <i className="ri-cursor-line" style={{ fontSize: 18, color: tokens.color.primary }} />
+              <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>
+                Call-to-Action Button
+              </label>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <Input 
+                label="Button Text" 
+                value={data.ctaText || ''} 
+                onChange={(v) => updateField('ctaText', v)} 
+                placeholder="Đặt bàn ngay" 
+                fullWidth 
+              />
+              <Input 
+                label="Button Link" 
+                value={data.ctaLink || ''} 
+                onChange={(v) => updateField('ctaLink', v)} 
+                placeholder="#reservation" 
+                fullWidth 
+              />
+            </div>
+          </div>
 
           <div style={{
             padding: 16,
@@ -3534,6 +3986,124 @@ function renderFormFields(
         </div>
       );
 
+    case 'CORE_VALUES':
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(219, 39, 119, 0.15) 100%)',
+            border: '1px solid rgba(236, 72, 153, 0.3)',
+            borderRadius: tokens.radius.md,
+            padding: 16,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 12,
+          }}>
+            <i className="ri-heart-3-fill" style={{ fontSize: 24, color: '#EC4899', flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <h4 style={{ color: tokens.color.text, marginBottom: 8, fontSize: 15, fontWeight: 600 }}>
+                💎 Core Values Section
+              </h4>
+              <p style={{ color: tokens.color.muted, fontSize: 13, lineHeight: 1.6, margin: 0 }}>
+                Hiển thị các giá trị cốt lõi, nguyên tắc hoạt động của doanh nghiệp.
+              </p>
+            </div>
+          </div>
+
+          <Input label="Section Title" value={data.title || ''} onChange={(v) => updateField('title', v)} fullWidth />
+          <TextArea label="Section Subtitle" value={data.subtitle || ''} onChange={(v) => updateField('subtitle', v)} fullWidth />
+
+          {/* Values List */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <label style={{ fontSize: 14, fontWeight: 600, color: tokens.color.text }}>
+                Values
+              </label>
+              <motion.button
+                type="button"
+                onClick={() => addArrayItem('values', { _id: generateUniqueId(), icon: 'ri-star-line', title: 'New Value', description: 'Description...' })}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  padding: '8px 16px',
+                  background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+                  border: 'none',
+                  borderRadius: tokens.radius.sm,
+                  color: '#111',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <i className="ri-add-line" />
+                Add Value
+              </motion.button>
+            </div>
+
+            {(data.values || []).map((value: any, index: number) => (
+              <div
+                key={value._id || index}
+                style={{
+                  padding: 16,
+                  background: 'rgba(255,255,255,0.02)',
+                  borderRadius: tokens.radius.md,
+                  border: `1px solid ${tokens.color.border}`,
+                  marginBottom: 12,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12,
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: tokens.color.muted }}>
+                    Value #{index + 1}
+                  </span>
+                  <motion.button
+                    type="button"
+                    onClick={() => removeArrayItem('values', index)}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    style={{
+                      padding: 8,
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      border: `1px solid rgba(239, 68, 68, 0.3)`,
+                      borderRadius: tokens.radius.sm,
+                      color: '#EF4444',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <i className="ri-delete-bin-line" />
+                  </motion.button>
+                </div>
+                <Input
+                  label="Icon"
+                  value={value.icon || ''}
+                  onChange={(v) => updateField(`values.${index}.icon`, v)}
+                  placeholder="ri-star-line"
+                  fullWidth
+                />
+                <Input
+                  label="Title"
+                  value={value.title || ''}
+                  onChange={(v) => updateField(`values.${index}.title`, v)}
+                  placeholder="Value title"
+                  fullWidth
+                />
+                <TextArea
+                  label="Description"
+                  value={value.description || ''}
+                  onChange={(v) => updateField(`values.${index}.description`, v)}
+                  placeholder="Value description"
+                  fullWidth
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
     case 'FAB_ACTIONS':
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -3787,6 +4357,127 @@ function renderFormFields(
                     placeholder="https://facebook.com/yourpage"
                     fullWidth
                   />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'QUICK_CONTACT':
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            borderRadius: tokens.radius.md,
+            padding: 16,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 12,
+          }}>
+            <i className="ri-contacts-fill" style={{ fontSize: 24, color: '#10b981', flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <h4 style={{ color: tokens.color.text, marginBottom: 8, fontSize: 15, fontWeight: 600 }}>
+                📞 Quick Contact Cards
+              </h4>
+              <p style={{ color: tokens.color.muted, fontSize: 13, lineHeight: 1.6, margin: 0 }}>
+                Hiển thị thông tin liên hệ nhanh với glass morphism cards - điện thoại, email, địa chỉ, giờ mở cửa
+              </p>
+            </div>
+          </div>
+
+          <Input label="Section Title" value={data.title || ''} onChange={(v) => updateField('title', v)} placeholder="Hãy Liên Hệ Với Chúng Tôi" fullWidth />
+          <TextArea label="Subtitle" value={data.subtitle || ''} onChange={(v) => updateField('subtitle', v)} placeholder="Chúng tôi luôn sẵn sàng lắng nghe và phục vụ bạn" fullWidth />
+
+          <div style={{ 
+            padding: 16,
+            background: 'rgba(255,255,255,0.02)',
+            borderRadius: tokens.radius.md,
+            border: `1px solid ${tokens.color.border}`
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h4 style={{ color: tokens.color.primary, fontSize: 16, fontWeight: 600, margin: 0 }}>
+                📇 Contact Methods ({data.methods?.length || 0})
+              </h4>
+              <Button
+                variant="primary"
+                size="small"
+                onClick={() => addArrayItem('methods', { icon: 'ri-phone-fill', title: 'ĐIỆN THOẠI', value: '+84 123 456 789', href: 'tel:+84123456789', color: '#10b981' })}
+              >
+                <i className="ri-add-line" style={{ marginRight: 6 }} />
+                Add Method
+              </Button>
+            </div>
+            {data.methods?.map((method: any, index: number) => (
+              <div
+                key={method._id || index}
+                style={{
+                  padding: 16,
+                  background: 'rgba(255,255,255,0.03)',
+                  borderRadius: tokens.radius.md,
+                  border: `1px solid ${tokens.color.border}`,
+                  marginBottom: 12,
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <span style={{ color: tokens.color.text, fontWeight: 600 }}>{method.title || `Method ${index + 1}`}</span>
+                  <Button
+                    variant="danger"
+                    size="small"
+                    onClick={() => removeArrayItem('methods', index)}
+                  >
+                    <i className="ri-delete-bin-line" />
+                  </Button>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+                  <Input
+                    label="Icon"
+                    value={method.icon || ''}
+                    onChange={(v) => updateField(`methods.${index}.icon`, v)}
+                    placeholder="ri-phone-fill"
+                    fullWidth
+                  />
+                  <Input
+                    label="Title"
+                    value={method.title || ''}
+                    onChange={(v) => updateField(`methods.${index}.title`, v)}
+                    placeholder="ĐIỆN THOẠI"
+                    fullWidth
+                  />
+                  <Input
+                    label="Value"
+                    value={method.value || ''}
+                    onChange={(v) => updateField(`methods.${index}.value`, v)}
+                    placeholder="+84 123 456 789"
+                    fullWidth
+                  />
+                  <Input
+                    label="Link/URL (optional)"
+                    value={method.href || ''}
+                    onChange={(v) => updateField(`methods.${index}.href`, v)}
+                    placeholder="tel:+84123456789"
+                    fullWidth
+                  />
+                  <div>
+                    <label style={{ display: 'block', marginBottom: 8, color: tokens.color.text, fontWeight: 500 }}>
+                      Color
+                    </label>
+                    <input
+                      type="color"
+                      value={method.color || '#10b981'}
+                      onChange={(e) => updateField(`methods.${index}.color`, e.target.value)}
+                      style={{
+                        width: '100%',
+                        height: 42,
+                        padding: 4,
+                        background: 'rgba(255,255,255,0.05)',
+                        border: `1px solid ${tokens.color.border}`,
+                        borderRadius: tokens.radius.md,
+                        cursor: 'pointer',
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             ))}

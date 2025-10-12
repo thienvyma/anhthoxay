@@ -1,7 +1,11 @@
 import { useState, useEffect, memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { menuAPI } from '../api';
 import { OptimizedImage } from '../components/OptimizedImage';
+import { renderSection } from '../sections/render';
+import { LazySection } from '../components/LazySection';
+import type { PageData } from '../types';
 
 interface MenuCategory {
   id: string;
@@ -30,32 +34,23 @@ interface MenuItem {
 
 const ITEMS_PER_PAGE = 12; // Show 12 items per page
 
-export const MenuPage = memo(function MenuPage() {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [categories, setCategories] = useState<MenuCategory[]>([]);
-  const [loading, setLoading] = useState(true);
+export const MenuPage = memo(function MenuPage({ page }: { page?: PageData }) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Fetch menu items with React Query (CACHE REUSE with FeaturedMenu!)
+  const { data: menuItems = [], isLoading: loadingItems } = useQuery({
+    queryKey: ['menu-items'],
+    queryFn: menuAPI.getItems,
+  });
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [items, cats] = await Promise.all([
-        menuAPI.getItems(),
-        fetch('http://localhost:4202/menu-categories').then(r => r.json())
-      ]);
-      setMenuItems(items);
-      setCategories(cats);
-    } catch (error) {
-      console.error('Failed to load menu:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Fetch menu categories
+  const { data: categories = [], isLoading: loadingCategories } = useQuery({
+    queryKey: ['menu-categories'],
+    queryFn: () => fetch('http://localhost:4202/menu-categories').then(r => r.json()),
+  });
+
+  const loading = loadingItems || loadingCategories;
 
   // Group items by category (memoized)
   const groupedItems = useMemo(() => 
@@ -107,79 +102,18 @@ export const MenuPage = memo(function MenuPage() {
       background: 'transparent',
       paddingTop: 80
     }}>
-      {/* Hero Section */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        style={{
-          position: 'relative',
-          background: 'radial-gradient(1000px 400px at 50% 0%, rgba(245,211,147,0.08) 0%, transparent 70%)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          paddingTop: 'clamp(80px, 14vh, 120px)',
-          paddingBottom: 'clamp(80px, 14vh, 120px)',
-        }}
-      >
-        <div style={{
-          maxWidth: 1200,
-          margin: '0 auto',
-          padding: '0 24px',
-          textAlign: 'center'
-        }}>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            style={{
-              display: 'inline-block',
-              marginBottom: 20,
-              padding: '12px 24px',
-              background: 'rgba(245,211,147,0.1)',
-              border: '1px solid rgba(245,211,147,0.2)',
-              borderRadius: 999,
-              fontSize: 14,
-              fontWeight: 600,
-              color: '#F5D393',
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-            }}
-          >
-            <i className="ri-restaurant-line" style={{ marginRight: 8 }} />
-            Menu
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            style={{
-              fontSize: 'clamp(2.5rem, 6vw, 4rem)',
-              fontFamily: 'Playfair Display, serif',
-              color: '#F5D393',
-              marginBottom: 16,
-              fontWeight: 700,
-            }}
-          >
-            Thực Đơn Đặc Biệt
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            style={{
-              fontSize: '1.125rem',
-              color: 'rgba(255,255,255,0.6)',
-              maxWidth: 700,
-              margin: '0 auto',
-              lineHeight: 1.7,
-            }}
-          >
-            Những món ăn tinh tế được chế biến từ nguyên liệu tươi ngon nhất, 
-            mang đến trải nghiệm ẩm thực tuyệt vời
-          </motion.p>
+      {/* Render HeroSimple section from page data first */}
+      {page?.sections && (
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
+          {page.sections
+            .filter((s) => s.kind === 'HERO_SIMPLE')
+            .sort((a, b) => (a.order || 0) - (b.order || 0))
+            .map((s) => {
+              const rendered = renderSection(s);
+              return rendered ? <div key={s.id}>{rendered}</div> : null;
+            })}
         </div>
-      </motion.div>
+      )}
 
       {/* Category Filters */}
       <div style={{ 
@@ -620,6 +554,33 @@ export const MenuPage = memo(function MenuPage() {
           </div>
         )}
       </div>
+
+      {/* Render sections from page data */}
+      {page?.sections && page.sections.length > 0 && (
+        <div style={{ maxWidth: 1200, margin: '60px auto 0', padding: '0 24px' }}>
+          {page.sections
+            .filter((s) => 
+              s.kind !== 'HERO_SIMPLE' && // Already rendered above
+              s.kind !== 'FAB_ACTIONS' // FAB rendered separately in app.tsx
+            )
+            .sort((a, b) => (a.order || 0) - (b.order || 0))
+            .map((s, index) => {
+              const rendered = renderSection(s);
+              if (!rendered) return null;
+              
+              // Lazy load sections after first 2
+              const shouldLazy = index >= 2;
+              
+              return shouldLazy ? (
+                <LazySection key={s.id} rootMargin="300px">
+                  <div style={{ marginBottom: 40 }}>{rendered}</div>
+                </LazySection>
+              ) : (
+                <div key={s.id} style={{ marginBottom: 40 }}>{rendered}</div>
+              );
+            })}
+        </div>
+      )}
     </section>
   );
 });

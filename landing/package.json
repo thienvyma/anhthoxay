@@ -3,13 +3,16 @@
 	"dependencies": {
 		"@app/shared": "workspace:*",
 		"@app/ui": "workspace:*",
+		"@tanstack/react-query": "^5.90.2",
 		"@testing-library/react": "16.1.0",
+		"@types/react-window": "^2.0.0",
 		"framer-motion": "^12.23.22",
+		"marked": "^16.4.0",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
 		"react-intersection-observer": "^9.13.1",
 		"react-markdown": "^9.0.1",
-		"swiper": "^12.0.2"
+		"react-window": "^2.2.0"
 	},
 	"devDependencies": {
 		"@testing-library/react": "^16.1.0",

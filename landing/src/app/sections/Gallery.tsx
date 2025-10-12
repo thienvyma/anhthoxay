@@ -1,7 +1,9 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokens } from '@app/shared';
+import { useQuery } from '@tanstack/react-query';
 import { galleryAPI } from '../api';
+import { useReducedMotion, getAnimationConfig } from '../utils/useReducedMotion';
 
 interface GalleryImage {
   id: string;
@@ -25,49 +27,43 @@ interface GalleryData {
 }
 
 export const Gallery = memo(function Gallery({ data }: { data: GalleryData }) {
-  const [images, setImages] = useState<GalleryImage[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
   const [hoveredImage, setHoveredImage] = useState<number | null>(null);
+
+  const shouldReduce = useReducedMotion();
+  const animConfig = getAnimationConfig(shouldReduce);
 
   const columns = data.columns || 3;
   const limit = data.limit || 12;
   const showOnlyFeatured = data.showOnlyFeatured || false;
 
-  useEffect(() => {
-    loadGalleryImages();
-  }, []);
+  // Fetch gallery images with React Query
+  const { data: allImages = [], isLoading: loading } = useQuery({
+    queryKey: ['gallery'],
+    queryFn: galleryAPI.getImages,
+  });
 
-  const loadGalleryImages = async () => {
-    try {
-      setLoading(true);
-      const allImages = await galleryAPI.getImages();
-      
-      // Filter images
-      let filtered = allImages;
-      
-      if (showOnlyFeatured) {
-        filtered = filtered.filter((img: GalleryImage) => img.isFeatured);
-      }
-      
-      if (data.filterByTag) {
-        filtered = filtered.filter((img: GalleryImage) => 
-          img.tags && img.tags.split(',').map(t => t.trim().toLowerCase()).includes(data.filterByTag!.toLowerCase())
-        );
-      }
-      
-      // Sort by display order, then slice
-      const sorted = filtered.sort((a: GalleryImage, b: GalleryImage) => 
-        (a.displayOrder || 999) - (b.displayOrder || 999)
-      );
-      
-      setImages(sorted.slice(0, limit));
-    } catch (error) {
-      console.error('Failed to load gallery images:', error);
-    } finally {
-      setLoading(false);
+  // Filter and sort images
+  const images = useMemo(() => {
+    let filtered = allImages;
+    
+    if (showOnlyFeatured) {
+      filtered = filtered.filter((img: GalleryImage) => img.isFeatured);
     }
-  };
+    
+    if (data.filterByTag) {
+      filtered = filtered.filter((img: GalleryImage) => 
+        img.tags && img.tags.split(',').map(t => t.trim().toLowerCase()).includes(data.filterByTag!.toLowerCase())
+      );
+    }
+    
+    // Sort by display order, then slice
+    const sorted = filtered.sort((a: GalleryImage, b: GalleryImage) => 
+      (a.displayOrder || 999) - (b.displayOrder || 999)
+    );
+    
+    return sorted.slice(0, limit);
+  }, [allImages, showOnlyFeatured, data.filterByTag, limit]);
 
   const getImageUrl = (url: string) => {
     if (!url) return '';
@@ -78,10 +74,8 @@ export const Gallery = memo(function Gallery({ data }: { data: GalleryData }) {
   if (loading) {
     return (
       <div style={{ padding: 60, textAlign: 'center' }}>
-        <motion.i
-          className="ri-loader-4-line"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        <i
+          className="ri-loader-4-line spinner"
           style={{ fontSize: 40, color: tokens.color.primary }}
         />
       </div>
@@ -93,25 +87,26 @@ export const Gallery = memo(function Gallery({ data }: { data: GalleryData }) {
   }
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
-      style={{
-        padding: '80px 20px',
-        background: tokens.color.background,
-      }}
-    >
-      <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1200, margin: '80px auto', padding: '0 16px' }}>
+      <motion.section
+        initial={shouldReduce ? {} : { opacity: 0, y: 40 }}
+        whileInView={shouldReduce ? {} : { opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={animConfig.transition}
+        style={{
+          padding: '60px 20px',
+          background: tokens.color.background,
+        }}
+      >
         {/* Header */}
         {(data.title || data.subtitle) && (
           <div style={{ textAlign: 'center', marginBottom: 60 }}>
             {data.title && (
               <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={shouldReduce ? {} : { opacity: 0, y: 20 }}
+                whileInView={shouldReduce ? {} : { opacity: 1, y: 0 }}
                 viewport={{ once: true }}
+                transition={animConfig.transition}
                 style={{
                   fontSize: tokens.font.size.h2,
                   fontFamily: tokens.font.display,
@@ -124,10 +119,10 @@ export const Gallery = memo(function Gallery({ data }: { data: GalleryData }) {
             )}
             {data.subtitle && (
               <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={shouldReduce ? {} : { opacity: 0, y: 20 }}
+                whileInView={shouldReduce ? {} : { opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.1 }}
+                transition={shouldReduce ? animConfig.transition : { delay: 0.1, ...animConfig.transition }}
                 style={{
                   fontSize: 16,
                   color: tokens.color.muted,
@@ -146,14 +141,18 @@ export const Gallery = memo(function Gallery({ data }: { data: GalleryData }) {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "50px" }}
-          variants={{
-            hidden: {},
-            visible: {
-              transition: {
-                staggerChildren: 0.05, // Reduced from 0.08
-              },
-            },
-          }}
+          variants={
+            shouldReduce
+              ? { hidden: {}, visible: {} }
+              : {
+                  hidden: {},
+                  visible: {
+                    transition: {
+                      staggerChildren: 0.05,
+                    },
+                  },
+                }
+          }
           style={{
             display: 'grid',
             gridTemplateColumns: `repeat(auto-fill, minmax(${columns === 4 ? '280px' : columns === 2 ? '450px' : '350px'}, 1fr))`,
@@ -163,13 +162,18 @@ export const Gallery = memo(function Gallery({ data }: { data: GalleryData }) {
           {images.map((image, index) => (
             <motion.div
               key={image.id}
-              variants={{
-                hidden: { opacity: 0, y: 20 }, // Reduced from y: 30
-                visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }, // Faster duration
-              }}
+              variants={
+                shouldReduce
+                  ? { hidden: {}, visible: {} }
+                  : {
+                      hidden: { opacity: 0, y: 20 },
+                      visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+                    }
+              }
               onClick={() => setSelectedImage(index)}
               onMouseEnter={() => setHoveredImage(index)}
               onMouseLeave={() => setHoveredImage(null)}
+              className="gallery-section-card"
               style={{
                 position: 'relative',
                 aspectRatio: '1',
@@ -177,8 +181,8 @@ export const Gallery = memo(function Gallery({ data }: { data: GalleryData }) {
                 borderRadius: tokens.radius.lg,
                 cursor: 'pointer',
                 border: `2px solid ${hoveredImage === index ? tokens.color.primary : tokens.color.border}`,
-                boxShadow: hoveredImage === index ? tokens.shadow.lg : tokens.shadow.sm,
-                transition: 'all 0.3s ease',
+                transition: 'border-color 0.3s ease, transform 0.3s ease',
+                transform: hoveredImage === index ? 'translateY(-4px)' : 'translateY(0)',
               }}
             >
               <img
@@ -243,8 +247,7 @@ export const Gallery = memo(function Gallery({ data }: { data: GalleryData }) {
                   width: 40,
                   height: 40,
                   borderRadius: '50%',
-                  background: 'rgba(0,0,0,0.6)',
-                  backdropFilter: 'blur(10px)',
+                  background: 'rgba(0,0,0,0.85)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -259,9 +262,8 @@ export const Gallery = memo(function Gallery({ data }: { data: GalleryData }) {
             </motion.div>
           ))}
         </motion.div>
-      </div>
 
-      {/* Lightbox Modal */}
+        {/* Lightbox Modal */}
       <AnimatePresence>
         {selectedImage !== null && (
           <motion.div
@@ -284,16 +286,14 @@ export const Gallery = memo(function Gallery({ data }: { data: GalleryData }) {
             }}
           >
             {/* Close Button */}
-            <motion.button
-              whileHover={{ scale: 1.1, background: tokens.color.error }}
-              whileTap={{ scale: 0.9 }}
+            <button
               onClick={() => setSelectedImage(null)}
+              className="hover-scale-rotate"
               style={{
                 position: 'absolute',
                 top: 24,
                 right: 24,
                 background: 'rgba(255,255,255,0.15)',
-                backdropFilter: 'blur(10px)',
                 border: `2px solid ${tokens.color.border}`,
                 color: '#fff',
                 fontSize: 28,
@@ -304,30 +304,40 @@ export const Gallery = memo(function Gallery({ data }: { data: GalleryData }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                transition: 'all 0.3s ease',
                 zIndex: 10,
               }}
             >
               <i className="ri-close-line" />
-            </motion.button>
+            </button>
 
             {/* Image */}
-            <motion.img
+            <motion.div
               key={selectedImage}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ duration: 0.3 }}
-              src={getImageUrl(images[selectedImage].url)}
-              alt={images[selectedImage].alt || images[selectedImage].caption || 'Gallery image'}
               style={{
                 maxWidth: '90%',
                 maxHeight: '90%',
-                objectFit: 'contain',
-                borderRadius: tokens.radius.lg,
-                boxShadow: tokens.shadow.lg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
-            />
+            >
+              <OptimizedImage
+                src={getImageUrl(images[selectedImage].url)}
+                alt={images[selectedImage].alt || images[selectedImage].caption || 'Gallery image'}
+                loading="eager"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  borderRadius: tokens.radius.lg,
+                  boxShadow: tokens.shadow.lg,
+                }}
+              />
+            </motion.div>
 
             {/* Image Info */}
             {(images[selectedImage].caption || images[selectedImage].tags) && (
@@ -344,7 +354,6 @@ export const Gallery = memo(function Gallery({ data }: { data: GalleryData }) {
                   maxWidth: 600,
                   padding: 24,
                   background: 'rgba(19, 19, 22, 0.95)',
-                  backdropFilter: 'blur(20px)',
                   borderRadius: tokens.radius.lg,
                   border: `1px solid ${tokens.color.border}`,
                   textAlign: 'center',
@@ -380,20 +389,18 @@ export const Gallery = memo(function Gallery({ data }: { data: GalleryData }) {
 
             {/* Navigation Buttons */}
             {selectedImage > 0 && (
-              <motion.button
-                whileHover={{ scale: 1.1, background: tokens.color.primary }}
-                whileTap={{ scale: 0.9 }}
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedImage(selectedImage - 1);
                 }}
+                className="hover-nav-left"
                 style={{
                   position: 'absolute',
                   left: 24,
                   top: '50%',
                   transform: 'translateY(-50%)',
                   background: 'rgba(255,255,255,0.15)',
-                  backdropFilter: 'blur(10px)',
                   border: `2px solid ${tokens.color.border}`,
                   color: '#fff',
                   fontSize: 32,
@@ -404,28 +411,25 @@ export const Gallery = memo(function Gallery({ data }: { data: GalleryData }) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  transition: 'all 0.3s ease',
                 }}
               >
                 <i className="ri-arrow-left-s-line" />
-              </motion.button>
+              </button>
             )}
 
             {selectedImage < images.length - 1 && (
-              <motion.button
-                whileHover={{ scale: 1.1, background: tokens.color.primary }}
-                whileTap={{ scale: 0.9 }}
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedImage(selectedImage + 1);
                 }}
+                className="hover-nav-right"
                 style={{
                   position: 'absolute',
                   right: 24,
                   top: '50%',
                   transform: 'translateY(-50%)',
                   background: 'rgba(255,255,255,0.15)',
-                  backdropFilter: 'blur(10px)',
                   border: `2px solid ${tokens.color.border}`,
                   color: '#fff',
                   fontSize: 32,
@@ -436,11 +440,10 @@ export const Gallery = memo(function Gallery({ data }: { data: GalleryData }) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  transition: 'all 0.3s ease',
                 }}
               >
                 <i className="ri-arrow-right-s-line" />
-              </motion.button>
+              </button>
             )}
 
             {/* Image Counter */}
@@ -450,8 +453,7 @@ export const Gallery = memo(function Gallery({ data }: { data: GalleryData }) {
                 top: 24,
                 left: 24,
                 padding: '12px 20px',
-                background: 'rgba(19, 19, 22, 0.9)',
-                backdropFilter: 'blur(10px)',
+                background: 'rgba(19, 19, 22, 0.95)',
                 borderRadius: tokens.radius.pill,
                 border: `1px solid ${tokens.color.border}`,
                 color: tokens.color.text,
@@ -464,7 +466,8 @@ export const Gallery = memo(function Gallery({ data }: { data: GalleryData }) {
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.section>
+      </motion.section>
+    </div>
   );
 });
 

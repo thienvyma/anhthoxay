@@ -34,18 +34,17 @@ export const StatsSection = memo(function StatsSection({ data }: { data: StatsSe
   const stats = data.stats || defaultStats;
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
-      style={{
-        marginTop: 80,
-        marginBottom: 40,
-        padding: '60px 0',
-        position: 'relative',
-      }}
-    >
+    <div style={{ maxWidth: 1200, margin: '80px auto', padding: '0 16px' }}>
+      <motion.section
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        style={{
+          padding: '60px 0',
+          position: 'relative',
+        }}
+      >
       {/* Background Decorations */}
       <div
         style={{
@@ -127,6 +126,7 @@ export const StatsSection = memo(function StatsSection({ data }: { data: StatsSe
         ))}
       </div>
     </motion.section>
+    </div>
   );
 });
 

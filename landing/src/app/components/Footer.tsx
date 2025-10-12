@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { tokens } from '@app/shared';
 
 export interface FooterLink {
@@ -48,10 +49,10 @@ export function Footer({ config }: FooterProps) {
       awards: ['🏆', '⭐', '🎖️'],
     },
     quickLinks: [
-      { label: 'Menu', href: '#/menu' },
-      { label: 'About', href: '#/about' },
-      { label: 'Gallery', href: '#/gallery' },
-      { label: 'Contact', href: '#/contact' },
+      { label: 'Menu', href: '/menu' },
+      { label: 'About', href: '/about' },
+      { label: 'Gallery', href: '/gallery' },
+      { label: 'Contact', href: '/contact' },
     ],
     newsletter: {
       enabled: true,
@@ -86,20 +87,21 @@ export function Footer({ config }: FooterProps) {
         borderTop: '1px solid rgba(255,255,255,0.08)',
       }}
     >
-      <div style={{ ...containerStyle, padding: '60px 24px 24px' }}>
+      <div style={{ ...containerStyle, padding: 'clamp(40px, 8vw, 60px) clamp(16px, 4vw, 24px) 24px' }}>
         {/* Footer Content Grid - Optimized layout with logo in separate column */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: brand?.imageUrl 
+            gridTemplateColumns: (brand?.imageUrl && brand.imageUrl.trim())
               ? 'minmax(200px, 280px) repeat(auto-fit, minmax(200px, 1fr))' 
-              : 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 48,
-            marginBottom: 48,
+              : 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: 'clamp(24px, 6vw, 48px)',
+            marginBottom: 'clamp(24px, 6vw, 48px)',
           }}
+          className="footer-grid"
         >
           {/* Logo Column - Dedicated column when logo exists */}
-          {brand?.imageUrl && (
+          {brand?.imageUrl && brand.imageUrl.trim() && (
             <div style={{ 
               display: 'flex', 
               flexDirection: 'column',
@@ -261,24 +263,27 @@ export function Footer({ config }: FooterProps) {
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {quickLinks.map((link) => (
-                  <motion.a
+                  <Link
                     key={link.href}
-                    href={link.href}
-                    whileHover={{ x: 4 }}
-                    style={{
-                      color: tokens.color.muted,
-                      textDecoration: 'none',
-                      transition: 'color 0.2s',
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.color = tokens.color.text)
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.color = tokens.color.muted)
-                    }
+                    to={link.href}
+                    style={{ textDecoration: 'none' }}
                   >
-                    → {link.label}
-                  </motion.a>
+                    <motion.div
+                      whileHover={{ x: 4 }}
+                      style={{
+                        color: tokens.color.muted,
+                        transition: 'color 0.2s',
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.color = tokens.color.text)
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.color = tokens.color.muted)
+                      }
+                    >
+                      → {link.label}
+                    </motion.div>
+                  </Link>
                 ))}
               </div>
             </div>

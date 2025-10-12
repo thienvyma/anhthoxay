@@ -1,5 +1,7 @@
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { tokens } from '@app/shared';
+import { glassEffect } from '../styles/glassEffect';
 
 interface ContactInfoData {
   title?: string;
@@ -11,7 +13,7 @@ interface ContactInfoData {
   socialLinks?: Array<{ platform: string; url: string }>;
 }
 
-export function ContactInfo({ data }: { data: ContactInfoData }) {
+export const ContactInfo = memo(function ContactInfo({ data }: { data: ContactInfoData }) {
   // Default configuration with deep merge to preserve defaults
   const defaultData = {
     title: 'Liên Hệ & Địa Chỉ',
@@ -38,12 +40,13 @@ export function ContactInfo({ data }: { data: ContactInfoData }) {
   const hours = mergedData.hours;
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      style={{ marginTop: 60 }}
-    >
+    <div style={{ maxWidth: 1200, margin: '80px auto', padding: '0 16px' }}>
+      <motion.section
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        style={{ padding: '60px 0' }}
+      >
       <h2
         style={{
           fontSize: tokens.font.size.h2,
@@ -69,11 +72,9 @@ export function ContactInfo({ data }: { data: ContactInfoData }) {
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           style={{
-            background: `linear-gradient(135deg, ${tokens.color.surface} 0%, rgba(19,19,22,0.8) 100%)`,
+            ...glassEffect({ variant: 'strong' }),
             padding: 32,
             borderRadius: tokens.radius.lg,
-            border: `1px solid ${tokens.color.border}`,
-            boxShadow: tokens.shadow.md,
           }}
         >
           <h3
@@ -291,6 +292,7 @@ export function ContactInfo({ data }: { data: ContactInfoData }) {
         </motion.div>
       </div>
     </motion.section>
+    </div>
   );
-}
+});
 

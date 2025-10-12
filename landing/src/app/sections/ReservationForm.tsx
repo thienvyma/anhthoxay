@@ -1,7 +1,9 @@
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { tokens } from '@app/shared';
 import { useState } from 'react';
 import { reservationAPI } from '../api';
+import { glassEffect } from '../styles/glassEffect';
 
 interface FieldConfig {
   enabled: boolean;
@@ -27,7 +29,7 @@ interface ReservationFormData {
   };
 }
 
-export function ReservationForm({ data }: { data: ReservationFormData }) {
+export const ReservationForm = memo(function ReservationForm({ data }: { data: ReservationFormData }) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -105,19 +107,17 @@ export function ReservationForm({ data }: { data: ReservationFormData }) {
   };
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      style={{
-        marginTop: 60,
-        padding: 40,
-        background: `linear-gradient(135deg, ${tokens.color.surface} 0%, rgba(19,19,22,0.8) 100%)`,
-        borderRadius: tokens.radius.lg,
-        border: `1px solid ${tokens.color.border}`,
-        boxShadow: tokens.shadow.lg,
-      }}
-    >
+    <div style={{ maxWidth: 1200, margin: '80px auto', padding: '0 16px' }}>
+      <motion.section
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        style={{
+          ...glassEffect({ variant: 'strong' }),
+          padding: 40,
+          borderRadius: tokens.radius.lg,
+        }}
+      >
       <h2
         style={{
           fontSize: tokens.font.size.h2,
@@ -418,7 +418,8 @@ export function ReservationForm({ data }: { data: ReservationFormData }) {
           to { transform: rotate(360deg); }
         }
       `}</style>
-    </motion.section>
+      </motion.section>
+    </div>
   );
-}
+});
 

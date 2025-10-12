@@ -23,6 +23,7 @@ interface RestaurantSettings {
   email: string;
   website: string;
   openingHours: string;
+  backgroundImage?: string;
 }
 
 interface ThemeSettings {
@@ -153,10 +154,10 @@ export function SettingsPage() {
   const [footerConfig, setFooterConfig] = useState<FooterConfig>({
     brand: { text: 'Restaurant', icon: 'ri-restaurant-2-fill', tagline: 'Fine dining experience' },
     quickLinks: [
-      { label: 'About Us', link: '#/about' },
-      { label: 'Menu', link: '#/menu' },
-      { label: 'Reservations', link: '#/contact' },
-      { label: 'Gallery', link: '#/gallery' },
+      { label: 'About Us', link: '/about' },
+      { label: 'Menu', link: '/menu' },
+      { label: 'Reservations', link: '/contact' },
+      { label: 'Gallery', link: '/gallery' },
     ],
     newsletter: { 
       title: 'Subscribe to our newsletter', 
@@ -240,7 +241,7 @@ export function SettingsPage() {
       const landingHeaderConfig = {
         logo: configToSave.logo,
         links: configToSave.navigation?.map(nav => ({
-          href: nav.route?.startsWith('#/') ? nav.route : `#/${nav.route}`,
+          href: nav.route?.startsWith('/') ? nav.route : `/${nav.route}`,
           label: nav.label,
           icon: nav.icon,
         })) || [],
@@ -1193,7 +1194,7 @@ export function SettingsPage() {
                       label="Button Link"
                       value={headerConfig.cta?.link || ''}
                       onChange={(value) => setHeaderConfig({ ...headerConfig, cta: { ...headerConfig.cta, link: value } })}
-                      placeholder="#/contact"
+                      placeholder="/contact"
                       fullWidth
                     />
                     <div>
@@ -1445,7 +1446,7 @@ export function SettingsPage() {
                             newLinks[index] = { ...newLinks[index], link: value };
                             setFooterConfig({ ...footerConfig, quickLinks: newLinks });
                           }}
-                          placeholder="#/about"
+                          placeholder="/about"
                           fullWidth
                         />
                         <motion.button
@@ -1855,14 +1856,14 @@ export function SettingsPage() {
                             }
                           }
                           
-                          // Update config to remove logo
+                          // Update config to remove logo (set to empty string to ensure it's saved)
                           const updatedHeaderConfig = { 
                             ...headerConfig, 
-                            logo: { ...headerConfig.logo, imageUrl: undefined } 
+                            logo: { ...headerConfig.logo, imageUrl: '' } 
                           };
                           setHeaderConfig(updatedHeaderConfig);
                           
-                          // Save to database
+                          // Save to database (footer will auto-sync logo from header)
                           await handleSaveHeader(updatedHeaderConfig);
                           await handleSaveFooter();
                           
@@ -1959,6 +1960,229 @@ export function SettingsPage() {
                 }}>
                   <i className="ri-information-line" />
                   Recommended: PNG or SVG with transparent background, max 5MB. Will be automatically optimized and synced to header & footer.
+                </p>
+              </div>
+
+              {/* Background Image Upload */}
+              <div style={{ marginTop: 32 }}>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: 14, 
+                  fontWeight: 600, 
+                  color: tokens.color.text, 
+                  marginBottom: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}>
+                  <i className="ri-image-2-line" style={{ fontSize: 18, color: tokens.color.primary }} />
+                  Page Background Image
+                </label>
+                
+                <p style={{ 
+                  color: tokens.color.muted, 
+                  fontSize: 12, 
+                  marginTop: -8,
+                  marginBottom: 12,
+                }}>
+                  Upload a background image for the entire landing page. Recommended: 1920x1080px or larger, high-quality restaurant interior photo.
+                </p>
+                
+                {restaurantSettings.backgroundImage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{ 
+                      marginBottom: 16,
+                      padding: 16,
+                      background: 'rgba(245,211,147,0.05)',
+                      borderRadius: 12,
+                      border: '1px solid rgba(245,211,147,0.2)',
+                    }}
+                  >
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      marginBottom: 12,
+                    }}>
+                      <span style={{ 
+                        color: tokens.color.primary, 
+                        fontSize: 13,
+                        fontWeight: 500,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}>
+                        <i className="ri-checkbox-circle-fill" />
+                        Current Background
+                      </span>
+                    </div>
+                    <img
+                      src={`http://localhost:4202${restaurantSettings.backgroundImage}`}
+                      alt="Page Background"
+                      onError={(e) => {
+                        // File not found - show warning
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const warning = target.nextElementSibling as HTMLElement;
+                        if (warning) warning.style.display = 'block';
+                      }}
+                      style={{
+                        width: '100%',
+                        height: 200,
+                        objectFit: 'cover',
+                        borderRadius: 8,
+                        marginBottom: 12,
+                        border: '1px solid rgba(255,255,255,0.1)',
+                      }}
+                    />
+                    <div
+                      style={{
+                        display: 'none',
+                        padding: 16,
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: 8,
+                        marginBottom: 12,
+                        color: '#ef4444',
+                        fontSize: 13,
+                      }}
+                    >
+                      <i className="ri-error-warning-line" style={{ marginRight: 6 }} />
+                      ⚠️ Background file not found on server. Please remove this setting and upload a new background.
+                    </div>
+                    <Button
+                      onClick={async () => {
+                        if (confirm('Remove page background image? This will use the default restaurant interior image.')) {
+                          try {
+                            setSaving(true);
+                            
+                            // Delete from server if it's a media file
+                            if (restaurantSettings.backgroundImage?.startsWith('/media/')) {
+                              const bgId = restaurantSettings.backgroundImage.split('/').pop()?.split('.')[0];
+                              if (bgId) {
+                                const response = await fetch(`http://localhost:4202/media/backgrounds/${bgId}`, {
+                                  method: 'DELETE',
+                                  credentials: 'include',
+                                });
+                                if (response.ok) {
+                                  console.log('✅ Background deleted from server:', bgId);
+                                } else if (response.status === 404) {
+                                  console.warn('⚠️ Background not in database, removing from config only');
+                                }
+                              }
+                            }
+                            
+                            // Update restaurant settings (set to empty string to ensure it's saved)
+                            const updatedSettings = { 
+                              ...restaurantSettings, 
+                              backgroundImage: '' 
+                            };
+                            setRestaurantSettings(updatedSettings);
+                            
+                            // Save to database
+                            await fetch('http://localhost:4202/settings/restaurant', {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ value: updatedSettings }),
+                              credentials: 'include',
+                            });
+                            
+                            showSavedMessage('✅ Background removed successfully!');
+                          } catch (error) {
+                            alert('Failed to remove background. Please try again.');
+                            console.error('Background removal error:', error);
+                          } finally {
+                            setSaving(false);
+                          }
+                        }
+                      }}
+                      variant="secondary"
+                      style={{ fontSize: 14 }}
+                    >
+                      <i className="ri-delete-bin-line" style={{ marginRight: 6 }} />
+                      Remove Background
+                    </Button>
+                  </motion.div>
+                )}
+                
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    
+                    // Validate file size (max 10MB for backgrounds)
+                    if (file.size > 10 * 1024 * 1024) {
+                      alert('File too large! Please choose an image under 10MB.');
+                      return;
+                    }
+                    
+                    try {
+                      setSaving(true);
+                      const formData = new FormData();
+                      formData.append('file', file);
+                      
+                      const response = await fetch('http://localhost:4202/media/backgrounds', {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'include',
+                      });
+                      
+                      if (!response.ok) {
+                        throw new Error('Upload failed');
+                      }
+                      
+                      const result = await response.json();
+                      
+                      // Update restaurant settings with background
+                      const updatedSettings = { 
+                        ...restaurantSettings, 
+                        backgroundImage: result.url 
+                      };
+                      setRestaurantSettings(updatedSettings);
+                      
+                      // Save to database
+                      await fetch('http://localhost:4202/settings/restaurant', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ value: updatedSettings }),
+                        credentials: 'include',
+                      });
+                      
+                      showSavedMessage('✅ Background uploaded successfully!');
+                    } catch (error) {
+                      alert('Failed to upload background. Please try again.');
+                      console.error('Background upload error:', error);
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  style={{
+                    padding: '16px',
+                    borderRadius: 12,
+                    border: `2px dashed ${tokens.color.primary}`,
+                    background: 'rgba(255,255,255,0.05)',
+                    color: tokens.color.text,
+                    cursor: 'pointer',
+                    width: '100%',
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
+                />
+                <p style={{ 
+                  color: tokens.color.muted, 
+                  fontSize: 12, 
+                  marginTop: 12,
+                  marginBottom: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}>
+                  <i className="ri-information-line" />
+                  Recommended: High-quality image (1920x1080 or larger), max 10MB. Will be used as Hero section background.
                 </p>
               </div>
 

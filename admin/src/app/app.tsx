@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LoginPage } from './components/LoginPage';
 import { Layout } from './components/Layout';
@@ -17,71 +18,12 @@ import { useUser, store } from './store';
 import { authApi } from './api';
 import type { RouteType } from './types';
 
-// Parse URL hash to route
-function parseHash(): { route: RouteType; slug?: string } {
-  const hash = window.location.hash.replace('#/', '');
-  if (!hash || hash === 'dashboard') return { route: 'dashboard' };
-  
-  const [routePart, slugPart] = hash.split('/');
-  const validRoutes: RouteType[] = [
-    'dashboard', 'pages', 'sections', 'menu', 'media', 
-    'reservations', 'preview', 'offers', 'blog-categories', 
-    'blog-posts', 'settings'
-  ];
-  
-  if (validRoutes.includes(routePart as RouteType)) {
-    return { 
-      route: routePart as RouteType, 
-      slug: slugPart || (routePart === 'sections' ? 'home' : undefined)
-    };
-  }
-  
-  return { route: 'dashboard' };
-}
-
-// Update URL hash when route changes
-function updateHash(newRoute: RouteType, slug?: string) {
-  if (newRoute === 'dashboard') {
-    window.location.hash = '#/dashboard';
-  } else if (slug) {
-    window.location.hash = `#/${newRoute}/${slug}`;
-  } else {
-    window.location.hash = `#/${newRoute}`;
-  }
-}
-
-export function App() {
+// App Content Component (uses router hooks)
+function AppContent() {
   const user = useUser();
-  const initialState = parseHash();
-  const [route, setRoute] = useState<RouteType>(initialState.route);
-  const [pageSlug, setPageSlug] = useState<string>(initialState.slug || 'home');
+  const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
-
-  // Listen to hash changes (browser back/forward)
-  useEffect(() => {
-    const handleHashChange = () => {
-      const { route: newRoute, slug } = parseHash();
-      setRoute(newRoute);
-      if (slug) setPageSlug(slug);
-    };
-    
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  // Handle navigation with page context
-  function handleNavigate(newRoute: RouteType, slug?: string) {
-    setRoute(newRoute);
-    if (slug) {
-      setPageSlug(slug);
-    } else if (newRoute === 'sections' && !slug) {
-      // Default to home when navigating to sections without a specific page
-      setPageSlug('home');
-    }
-    
-    // Update URL hash
-    updateHash(newRoute, slug);
-  }
 
 	useEffect(() => {
     // Check if user is already logged in
@@ -102,15 +44,21 @@ export function App() {
     try {
       await authApi.logout();
       store.setUser(null);
+      navigate('/login');
     } catch (error) {
       console.error('Logout failed:', error);
     }
   }
 
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   if (loading) {
-	return (
+    return (
       <div
-								style={{
+        style={{
           minHeight: '100vh',
           display: 'flex',
           alignItems: 'center',
@@ -129,45 +77,68 @@ export function App() {
             borderTopColor: '#f5d393',
           }}
         />
-		</div>
-	);
-}
-
-  if (!user) {
-    return <LoginPage />;
+      </div>
+    );
   }
 
-	return (
+  if (!user) {
+    return location.pathname === '/login' ? <LoginPage /> : <Navigate to="/login" replace />;
+  }
+
+  // Get current route from pathname
+  const currentRoute = location.pathname.split('/')[1] as RouteType || 'dashboard';
+
+  return (
     <Layout 
-      currentRoute={route} 
-      currentPageSlug={pageSlug}
-      onNavigate={handleNavigate} 
+      currentRoute={currentRoute}
+      onNavigate={(route, slug) => navigate(slug ? `/${route}/${slug}` : `/${route}`)}
       onLogout={handleLogout} 
       userEmail={user.email}
     >
       <AnimatePresence mode="wait">
         <motion.div
-          key={route}
+          key={location.pathname}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.2 }}
         >
-          {route === 'dashboard' && <DashboardPage />}
-          {route === 'pages' && <PagesPage onNavigateToSections={(slug) => handleNavigate('sections', slug)} />}
-          {route === 'sections' && <SectionsPage pageSlug={pageSlug} />}
-          {route === 'menu' && <MenuPage />}
-          {route === 'media' && <MediaPage />}
-          {route === 'reservations' && <ReservationsPage />}
-          {route === 'preview' && <LivePreviewPage />}
-          {route === 'offers' && <SpecialOffersPage />}
-          {route === 'blog-categories' && <BlogCategoriesPage />}
-          {route === 'blog-posts' && <BlogPostsPage />}
-          {route === 'settings' && <SettingsPage />}
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/pages" element={<PagesPage onNavigateToSections={(slug) => navigate(`/sections/${slug}`)} />} />
+            <Route path="/sections/:slug" element={<SectionsPageWrapper />} />
+            <Route path="/sections" element={<Navigate to="/sections/home" replace />} />
+            <Route path="/menu" element={<MenuPage />} />
+            <Route path="/media" element={<MediaPage />} />
+            <Route path="/reservations" element={<ReservationsPage />} />
+            <Route path="/preview" element={<LivePreviewPage />} />
+            <Route path="/offers" element={<SpecialOffersPage />} />
+            <Route path="/blog-categories" element={<BlogCategoriesPage />} />
+            <Route path="/blog-posts" element={<BlogPostsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
         </motion.div>
       </AnimatePresence>
     </Layout>
-	);
+  );
+}
+
+// Wrapper for SectionsPage to extract slug from URL params
+function SectionsPageWrapper() {
+  const { slug } = useParams<{ slug: string }>();
+  return <SectionsPage pageSlug={slug || 'home'} />;
+}
+
+// Main App Component with Router
+export function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  );
 }
 
 export default App;

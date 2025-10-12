@@ -24,6 +24,14 @@ const sectionTypes: Array<{
     example: 'Perfect for homepage header',
   },
   {
+    type: 'HERO_SIMPLE',
+    icon: 'ri-layout-top-line',
+    label: 'Simple Hero',
+    description: 'Lightweight hero section for secondary pages',
+    color: '#fb923c',
+    example: 'Contact, Menu, About pages',
+  },
+  {
     type: 'GALLERY',
     icon: 'ri-gallery-line',
     label: 'Photo Gallery',
@@ -166,6 +174,22 @@ const sectionTypes: Array<{
     description: 'Social media links for footer section',
     color: '#64748b',
     example: 'Footer social icons',
+  },
+  {
+    type: 'QUICK_CONTACT',
+    icon: 'ri-contacts-line',
+    label: 'Quick Contact Cards',
+    description: 'Quick contact info cards with glass morphism',
+    color: '#10b981',
+    example: 'Phone, Email, Address, Hours',
+  },
+  {
+    type: 'CORE_VALUES',
+    icon: 'ri-heart-3-line',
+    label: 'Core Values',
+    description: 'Display core values and principles',
+    color: '#ec4899',
+    example: 'Quality, Innovation, Customer Focus',
   },
 ];
 

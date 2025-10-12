@@ -9,6 +9,8 @@ import bcrypt from 'bcrypt';
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
+import { rateLimit, validate } from './middleware';
+import * as schemas from './schemas';
 
 // Load .env from project root (traverse up to find it)
 function findProjectRoot(startPath: string): string {
@@ -43,7 +45,7 @@ console.log('🗄️  DATABASE_URL:', process.env.DATABASE_URL);
 
 const prisma = new PrismaClient();
 const app = new Hono<{ Variables: { user?: User } }>();
-app.use('*', cors({ origin: ['http://localhost:4200', 'http://localhost:4201', 'http://localhost:4203'], allowMethods: ['GET','POST','PUT','DELETE','OPTIONS'], credentials: true }));
+app.use('*', cors({ origin: ['http://localhost:4200', 'http://localhost:4201'], allowMethods: ['GET','POST','PUT','DELETE','OPTIONS'], credentials: true }));
 
 app.get('/health', (c) => c.json({ ok: true, service: 'api', host: hostname() }));
 // Helpful root route for manual browser check
@@ -87,11 +89,35 @@ app.use('*', async (c, next) => {
   await next();
 });
 
+// ========== RATE LIMITING ==========
+// Strict rate limit for authentication endpoints (prevent brute force)
+app.use('/auth/login', rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts per window
+}));
+
+// Medium rate limit for public write endpoints
+app.use('/reservations', rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 requests per minute
+}));
+
+app.use('/blog/posts/*/comments', rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5, // 5 comments per minute
+}));
+
+// General rate limit for all API endpoints
+app.use('*', rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // 100 requests per minute
+}));
+
 // Auth endpoints
-app.post('/auth/login', async (c) => {
+app.post('/auth/login', validate(schemas.loginSchema), async (c) => {
   try {
-    const { email, password } = await c.req.json<{ email: string; password: string }>();
-    if (!email || !password) return c.json({ error: 'Missing credentials' }, 400);
+    // Get validated data from middleware
+    const { email, password } = c.get('validatedData' as never) as schemas.LoginInput;
     
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
@@ -164,6 +190,12 @@ if (!fs.existsSync(mediaDir)) {
 const logoDir = path.join(mediaDir, 'logos');
 if (!fs.existsSync(logoDir)) {
   fs.mkdirSync(logoDir, { recursive: true });
+}
+
+// Background-specific directory
+const backgroundsDir = path.join(mediaDir, 'backgrounds');
+if (!fs.existsSync(backgroundsDir)) {
+  fs.mkdirSync(backgroundsDir, { recursive: true });
 }
 
 app.post('/media', async (c) => {
@@ -240,6 +272,77 @@ app.post('/media', async (c) => {
     }
     
     const id = crypto.randomUUID();
+    const mimeType = file.type || 'application/octet-stream';
+    
+    // Check if it's an image - if so, optimize with Sharp
+    if (mimeType.startsWith('image/')) {
+      try {
+        // Get original image metadata
+        const metadata = await sharp(buffer).metadata();
+        
+        // Generate responsive sizes: sm (400px), md (800px), lg (1200px), xl (1920px), original
+        const sizes = [
+          { name: 'sm', width: 400, quality: 80 },
+          { name: 'md', width: 800, quality: 85 },
+          { name: 'lg', width: 1200, quality: 85 },
+          { name: 'xl', width: 1920, quality: 90 },
+        ];
+        
+        // Generate and save all sizes as WebP
+        const sizeUrls: Record<string, string> = {};
+        
+        for (const size of sizes) {
+          // Skip if original is smaller than target size
+          if (metadata.width && metadata.width < size.width) continue;
+          
+          const optimizedBuffer = await sharp(buffer)
+            .resize(size.width, null, { 
+              fit: 'inside', 
+              withoutEnlargement: true 
+            })
+            .webp({ quality: size.quality })
+            .toBuffer();
+          
+          const filename = `${id}-${size.name}.webp`;
+          const filePath = path.join(mediaDir, filename);
+          fs.writeFileSync(filePath, optimizedBuffer);
+          sizeUrls[size.name] = `/media/${filename}`;
+        }
+        
+        // Also save original as WebP (high quality)
+        const originalBuffer = await sharp(buffer)
+          .webp({ quality: 95, lossless: false })
+          .toBuffer();
+        
+        const originalFilename = `${id}.webp`;
+        const originalPath = path.join(mediaDir, originalFilename);
+        fs.writeFileSync(originalPath, originalBuffer);
+        const url = `/media/${originalFilename}`;
+        
+        // Store in DB with size variants
+        const asset = await prisma.mediaAsset.create({
+          data: {
+            id,
+            url,
+            alt: null,
+            mimeType: 'image/webp',
+            width: metadata.width || null,
+            height: metadata.height || null,
+          },
+        });
+        
+        return c.json({ 
+          ...asset, 
+          sizes: sizeUrls, // Include responsive sizes in response
+        }, 201);
+        
+      } catch (sharpError) {
+        console.error('Image optimization failed, falling back to original:', sharpError);
+        // Fall through to save original if Sharp fails
+      }
+    }
+    
+    // Non-image or Sharp failed - save original
     const ext = (file.name?.split('.').pop() || file.type?.split('/')[1] || 'bin').toLowerCase();
     const filename = `${id}.${ext}`;
     const filePath = path.join(mediaDir, filename);
@@ -251,7 +354,7 @@ app.post('/media', async (c) => {
         id,
         url,
         alt: null,
-        mimeType: file.type || 'application/octet-stream',
+        mimeType,
         width: null,
         height: null,
       },
@@ -477,6 +580,148 @@ app.delete('/media/logo/:id', async (c) => {
   return c.json({ ok: true });
 });
 
+// Serve background files
+app.get('/media/backgrounds/:filename', async (c) => {
+  const filename = c.req.param('filename');
+  const filePath = path.join(backgroundsDir, filename);
+  if (!fs.existsSync(filePath)) return c.notFound();
+  const buf = fs.readFileSync(filePath);
+  const ext = (filename.split('.').pop() || '').toLowerCase();
+  const type = ext === 'png' ? 'image/png' : ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : ext === 'webp' ? 'image/webp' : 'application/octet-stream';
+  return c.body(buf, { headers: { 'Content-Type': type, 'Cache-Control': 'public, max-age=31536000' } });
+});
+
+// Upload background with automatic resize and optimization
+app.post('/media/backgrounds', async (c) => {
+  const guard = requireRole(c, ['ADMIN', 'MANAGER']);
+  if (!guard.allowed) return guard.response;
+  
+  try {
+    const body = await c.req.parseBody();
+    const file = body.file as any;
+    
+    if (!file) return c.json({ error: 'file missing' }, 400);
+    
+    // Validate it's an image
+    const mimeType = file.type || '';
+    if (!mimeType.startsWith('image/')) {
+      return c.json({ error: 'Only image files are allowed for background' }, 400);
+    }
+    
+    // Get buffer
+    let buffer: Buffer;
+    if (file.arrayBuffer && typeof file.arrayBuffer === 'function') {
+      const arrayBuffer = await file.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+    } else if (Buffer.isBuffer(file)) {
+      buffer = file;
+    } else if (file.buffer) {
+      buffer = Buffer.isBuffer(file.buffer) ? file.buffer : Buffer.from(file.buffer);
+    } else {
+      return c.json({ error: 'Could not read file buffer' }, 400);
+    }
+    
+    // Process with sharp - create optimized versions for different screen sizes
+    const id = crypto.randomUUID();
+    
+    // Desktop version (1920px wide)
+    const desktopBuffer = await sharp(buffer)
+      .resize(1920, null, { 
+        fit: 'inside', 
+        withoutEnlargement: true 
+      })
+      .webp({ quality: 85 })
+      .toBuffer();
+      
+    // Tablet version (1200px wide)
+    const tabletBuffer = await sharp(buffer)
+      .resize(1200, null, { 
+        fit: 'inside', 
+        withoutEnlargement: true 
+      })
+      .webp({ quality: 80 })
+      .toBuffer();
+    
+    // Mobile version (800px wide)
+    const mobileBuffer = await sharp(buffer)
+      .resize(800, null, { 
+        fit: 'inside', 
+        withoutEnlargement: true 
+      })
+      .webp({ quality: 75 })
+      .toBuffer();
+    
+    // Thumbnail version (400px for admin preview)
+    const thumbnailBuffer = await sharp(buffer)
+      .resize(400, 300, { 
+        fit: 'cover' 
+      })
+      .webp({ quality: 70 })
+      .toBuffer();
+    
+    // Save all versions
+    const desktopFilename = `${id}.webp`;
+    const tabletFilename = `${id}-tablet.webp`;
+    const mobileFilename = `${id}-mobile.webp`;
+    const thumbnailFilename = `${id}-thumb.webp`;
+    
+    fs.writeFileSync(path.join(backgroundsDir, desktopFilename), desktopBuffer);
+    fs.writeFileSync(path.join(backgroundsDir, tabletFilename), tabletBuffer);
+    fs.writeFileSync(path.join(backgroundsDir, mobileFilename), mobileBuffer);
+    fs.writeFileSync(path.join(backgroundsDir, thumbnailFilename), thumbnailBuffer);
+    
+    // Get image dimensions
+    const metadata = await sharp(buffer).metadata();
+    
+    const asset = await prisma.mediaAsset.create({
+      data: {
+        id,
+        url: `/media/backgrounds/${desktopFilename}`,
+        alt: 'Hero Background',
+        mimeType: 'image/webp',
+        width: metadata.width || null,
+        height: metadata.height || null,
+      },
+    });
+    
+    return c.json({
+      ...asset,
+      tabletUrl: `/media/backgrounds/${tabletFilename}`,
+      mobileUrl: `/media/backgrounds/${mobileFilename}`,
+      thumbnailUrl: `/media/backgrounds/${thumbnailFilename}`,
+    }, 201);
+    
+  } catch (error) {
+    console.error('Background upload error:', error);
+    return c.json({ 
+      error: 'Background upload failed', 
+      details: error instanceof Error ? error.message : String(error) 
+    }, 500);
+  }
+});
+
+// Delete background (removes all versions)
+app.delete('/media/backgrounds/:id', async (c) => {
+  const guard = requireRole(c, ['ADMIN', 'MANAGER']);
+  if (!guard.allowed) return guard.response;
+  const id = c.req.param('id');
+  
+  const asset = await prisma.mediaAsset.findUnique({ where: { id } });
+  if (!asset) return c.notFound();
+  
+  // Delete all background versions
+  const baseFilename = asset.url.split('/').pop()?.replace('.webp', '') || id;
+  ['.webp', '-tablet.webp', '-mobile.webp', '-thumb.webp'].forEach(suffix => {
+    const filePath = path.join(backgroundsDir, `${baseFilename}${suffix}`);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+  });
+  
+  await prisma.mediaAsset.delete({ where: { id } });
+  return c.json({ ok: true });
+});
+
 // GET /pages - List all pages
 app.get('/pages', async (c) => {
 	const pages = await prisma.page.findMany({
@@ -506,10 +751,10 @@ app.get('/pages/:slug', async (c) => {
 });
 
 // POST /pages - Create new page
-app.post('/pages', async (c) => {
+app.post('/pages', validate(schemas.createPageSchema), async (c) => {
   const guard = requireRole(c, ['ADMIN', 'MANAGER']);
   if (!guard.allowed) return guard.response;
-	const body = await c.req.json<{ slug: string; title: string }>();
+	const body = c.get('validatedData' as never) as schemas.CreatePageInput;
 	const page = await prisma.page.create({ data: { slug: body.slug, title: body.title } });
 	return c.json(page, 201);
 });
@@ -545,11 +790,11 @@ app.delete('/pages/:slug', async (c) => {
 });
 
 // POST /pages/:slug/sections { kind, data, order? }
-app.post('/pages/:slug/sections', async (c) => {
+app.post('/pages/:slug/sections', validate(schemas.createSectionSchema), async (c) => {
   const guard = requireRole(c, ['ADMIN', 'MANAGER']);
   if (!guard.allowed) return guard.response;
 	const slug = c.req.param('slug');
-	const { kind, data, order } = await c.req.json<{ kind: string; data: unknown; order?: number }>();
+	const { kind, data, order } = c.get('validatedData' as never) as schemas.CreateSectionInput;
 	const page = await prisma.page.findUnique({ where: { slug } });
 	if (!page) return c.notFound();
 	// Compute order if not provided
@@ -609,18 +854,184 @@ app.get('/dev/add-sample', async (c) => {
   return c.json({ ok: true, section: { ...section, data: JSON.parse(section.data as string) } });
 });
 
+// DEV helper: seed initial pages (disabled in production)
+app.get('/dev/seed-pages', async (c) => {
+  if (process.env.NODE_ENV === 'production') return c.notFound();
+  
+  const pagesToCreate = [
+    { slug: 'home', title: 'Home' },
+    { slug: 'about', title: 'About Us' },
+    { slug: 'menu', title: 'Our Menu' },
+    { slug: 'gallery', title: 'Gallery' },
+    { slug: 'blog', title: 'Blog' },
+    { slug: 'contact', title: 'Contact' },
+  ];
+
+  const createdPages = [];
+  for (const pageData of pagesToCreate) {
+    const page = await prisma.page.upsert({
+      where: { slug: pageData.slug },
+      update: { title: pageData.title },
+      create: pageData,
+    });
+    createdPages.push(page);
+  }
+
+  return c.json({ 
+    ok: true, 
+    message: `Created/updated ${createdPages.length} pages`,
+    pages: createdPages 
+  });
+});
+
+// DEV helper: seed sample sections for About page (disabled in production)
+app.get('/dev/seed-about-sections', async (c) => {
+  if (process.env.NODE_ENV === 'production') return c.notFound();
+  
+  // Get or create About page
+  const page = await prisma.page.upsert({
+    where: { slug: 'about' },
+    update: {},
+    create: { slug: 'about', title: 'About Us' },
+  });
+
+  // Delete existing sections
+  await prisma.section.deleteMany({ where: { pageId: page.id } });
+
+  // Create sample sections
+  const sections = [
+    {
+      kind: 'HERO_SIMPLE' as any,
+      order: 1,
+      data: JSON.stringify({
+        title: 'About Our Restaurant',
+        subtitle: 'Discover our story, passion, and commitment to authentic Vietnamese cuisine',
+        backgroundImage: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1920&q=80',
+      }) as any,
+    },
+    {
+      kind: 'RICH_TEXT' as any,
+      order: 2,
+      data: JSON.stringify({
+        html: `
+          <h2>Our Story</h2>
+          <p>Founded in 2010, our restaurant has been serving authentic Vietnamese cuisine with a modern twist. 
+          We believe in using only the freshest ingredients and traditional cooking methods to bring you the 
+          most authentic flavors of Vietnam.</p>
+          <p>Our chefs have over 20 years of combined experience in Vietnamese cuisine, and we're passionate 
+          about sharing our culture through food.</p>
+        `,
+      }) as any,
+    },
+    {
+      kind: 'STATISTICS' as any,
+      order: 3,
+      data: JSON.stringify({
+        stats: [
+          { label: 'Years of Experience', value: '15+', icon: 'ri-time-line' },
+          { label: 'Happy Customers', value: '10K+', icon: 'ri-user-smile-line' },
+          { label: 'Dishes Served', value: '50K+', icon: 'ri-restaurant-line' },
+          { label: 'Awards Won', value: '25+', icon: 'ri-award-line' },
+        ],
+      }) as any,
+    },
+    {
+      kind: 'RICH_TEXT' as any,
+      order: 4,
+      data: JSON.stringify({
+        html: `
+          <h2>Our Values</h2>
+          <ul>
+            <li><strong>Quality:</strong> We never compromise on the quality of our ingredients</li>
+            <li><strong>Authenticity:</strong> Traditional recipes passed down through generations</li>
+            <li><strong>Service:</strong> Warm hospitality that makes you feel at home</li>
+            <li><strong>Community:</strong> Supporting local farmers and suppliers</li>
+          </ul>
+        `,
+      }) as any,
+    },
+    {
+      kind: 'CALL_TO_ACTION' as any,
+      order: 5,
+      data: JSON.stringify({
+        title: 'Ready to Experience Our Cuisine?',
+        subtitle: 'Book a table now and taste the difference',
+        primaryButton: { text: 'Make a Reservation', link: '/reservations' },
+        secondaryButton: { text: 'View Menu', link: '/menu' },
+      }) as any,
+    },
+  ];
+
+  const createdSections = [];
+  for (const sectionData of sections) {
+    const section = await prisma.section.create({
+      data: { ...sectionData, pageId: page.id },
+    });
+    createdSections.push(section);
+  }
+
+  return c.json({ 
+    ok: true, 
+    message: `Created ${createdSections.length} sections for About page`,
+    sections: createdSections.map(s => ({ ...s, data: JSON.parse(s.data as string) }))
+  });
+});
+
+// DEV helper: seed sample sections for Blog page (disabled in production)
+app.get('/dev/seed-blog-sections', async (c) => {
+  if (process.env.NODE_ENV === 'production') return c.notFound();
+  
+  // Get or create Blog page
+  const page = await prisma.page.upsert({
+    where: { slug: 'blog' },
+    update: {},
+    create: { slug: 'blog', title: 'Blog' },
+  });
+
+  // Delete existing sections
+  await prisma.section.deleteMany({ where: { pageId: page.id } });
+
+  // Create sample sections
+  const sections = [
+    {
+      kind: 'HERO_SIMPLE' as any,
+      order: 1,
+      data: JSON.stringify({
+        title: 'Our Blog',
+        subtitle: 'Stories, recipes, and insights from our kitchen',
+        backgroundImage: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1920&q=80',
+      }) as any,
+    },
+    {
+      kind: 'BLOG_LIST' as any,
+      order: 2,
+      data: JSON.stringify({
+        title: 'Latest Articles',
+        subtitle: 'Explore our collection of culinary stories and recipes',
+        showFilters: true,
+      }) as any,
+    },
+  ];
+
+  const createdSections = [];
+  for (const sectionData of sections) {
+    const section = await prisma.section.create({
+      data: { ...sectionData, pageId: page.id },
+    });
+    createdSections.push(section);
+  }
+
+  return c.json({ 
+    ok: true, 
+    message: `Created ${createdSections.length} sections for Blog page`,
+    sections: createdSections.map(s => ({ ...s, data: JSON.parse(s.data as string) }))
+  });
+});
+
 // Reservation endpoints
-app.post('/reservations', async (c) => {
+app.post('/reservations', validate(schemas.createReservationSchema), async (c) => {
   try {
-    const body = await c.req.json<{
-      name: string;
-      email: string;
-      phone: string;
-      date: string;
-      time: string;
-      partySize: number;
-      specialRequest?: string;
-    }>();
+    const body = c.get('validatedData' as never) as schemas.CreateReservationInput;
 
     const reservation = await prisma.reservation.create({
       data: {
@@ -637,7 +1048,8 @@ app.post('/reservations', async (c) => {
 
     return c.json(reservation, 201);
   } catch (error) {
-    return c.json({ error: 'Invalid reservation data' }, 400);
+    console.error('Reservation creation error:', error);
+    return c.json({ error: 'Failed to create reservation' }, 500);
   }
 });
 
@@ -1177,13 +1589,9 @@ app.delete('/blog/posts/:id', async (c) => {
 });
 
 // Blog Comments (public can post, admin manages)
-app.post('/blog/posts/:postId/comments', async (c) => {
+app.post('/blog/posts/:postId/comments', validate(schemas.createBlogCommentSchema), async (c) => {
   const postId = c.req.param('postId');
-  const body = await c.req.json<{
-    name: string;
-    email: string;
-    content: string;
-  }>();
+  const body = c.get('validatedData' as never) as { name: string; email: string; content: string };
   
   const comment = await prisma.blogComment.create({
     data: {

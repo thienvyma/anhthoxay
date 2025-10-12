@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { memo, useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokens } from '@app/shared';
+import { useQuery } from '@tanstack/react-query';
 import { OptimizedImage } from '../components/OptimizedImage';
 import { galleryAPI } from '../api';
+import { useReducedMotion, getAnimationConfig } from '../utils/useReducedMotion';
 
 interface GallerySlideshowData {
   title?: string;
@@ -23,35 +25,30 @@ interface GalleryImage {
   isFeatured: boolean;
 }
 
-export function GallerySlideshow({ data }: { data: GallerySlideshowData }) {
-  const [images, setImages] = useState<GalleryImage[]>([]);
+export const GallerySlideshow = memo(function GallerySlideshow({ data }: { data: GallerySlideshowData }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
+
+  const shouldReduce = useReducedMotion();
+  const animConfig = getAnimationConfig(shouldReduce);
 
   const autoPlayInterval = data.autoPlayInterval || 5000;
   const showControls = data.showControls !== false;
   const showIndicators = data.showIndicators !== false;
   const limit = data.limit || 10;
 
-  useEffect(() => {
-    loadImages();
-  }, []);
+  // ✨ CRITICAL: Use SAME queryKey as Gallery.tsx → CACHE REUSE! 🎯
+  const { data: allImages = [], isLoading: loading } = useQuery({
+    queryKey: ['gallery'], // ← Same key = NO duplicate API call!
+    queryFn: galleryAPI.getImages,
+  });
 
-  const loadImages = async () => {
-    try {
-      setLoading(true);
-      const allImages = await galleryAPI.getImages();
-      // Filter featured or take first N images
-      const featured = allImages.filter((img: GalleryImage) => img.isFeatured);
-      const selected = featured.length > 0 ? featured : allImages;
-      setImages(selected.slice(0, limit));
-    } catch (error) {
-      console.error('Failed to load gallery images:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Filter featured or take first N images
+  const images = useMemo(() => {
+    const featured = allImages.filter((img: GalleryImage) => img.isFeatured);
+    const selected = featured.length > 0 ? featured : allImages;
+    return selected.slice(0, limit);
+  }, [allImages, limit]);
 
   // Auto-play slideshow
   useEffect(() => {
@@ -85,10 +82,8 @@ export function GallerySlideshow({ data }: { data: GallerySlideshowData }) {
   if (loading) {
     return (
       <div style={{ padding: 60, textAlign: 'center' }}>
-        <motion.i
-          className="ri-loader-4-line"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        <i
+          className="ri-loader-4-line spinner"
           style={{ fontSize: 40, color: tokens.color.primary }}
         />
       </div>
@@ -100,16 +95,13 @@ export function GallerySlideshow({ data }: { data: GallerySlideshowData }) {
   }
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
-      style={{
-        margin: '60px 0',
-        padding: '0 16px',
-      }}
-    >
+    <div style={{ maxWidth: 1200, margin: '80px auto', padding: '0 16px' }}>
+      <motion.section
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+      >
       {/* Section Header */}
       {(data.title || data.subtitle) && (
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
@@ -227,8 +219,7 @@ export function GallerySlideshow({ data }: { data: GallerySlideshowData }) {
                 width: 48,
                 height: 48,
                 borderRadius: '50%',
-                background: 'rgba(0,0,0,0.6)',
-                backdropFilter: 'blur(8px)',
+                background: 'rgba(0,0,0,0.85)',
                 border: '1px solid rgba(255,255,255,0.2)',
                 color: '#fff',
                 fontSize: 24,
@@ -261,8 +252,7 @@ export function GallerySlideshow({ data }: { data: GallerySlideshowData }) {
                 width: 48,
                 height: 48,
                 borderRadius: '50%',
-                background: 'rgba(0,0,0,0.6)',
-                backdropFilter: 'blur(8px)',
+                background: 'rgba(0,0,0,0.85)',
                 border: '1px solid rgba(255,255,255,0.2)',
                 color: '#fff',
                 fontSize: 24,
@@ -298,8 +288,7 @@ export function GallerySlideshow({ data }: { data: GallerySlideshowData }) {
               display: 'flex',
               gap: 8,
               padding: '8px 16px',
-              background: 'rgba(0,0,0,0.5)',
-              backdropFilter: 'blur(8px)',
+              background: 'rgba(0,0,0,0.85)',
               borderRadius: tokens.radius.pill,
               zIndex: 10,
             }}
@@ -325,6 +314,7 @@ export function GallerySlideshow({ data }: { data: GallerySlideshowData }) {
         )}
       </div>
     </motion.section>
+    </div>
   );
-}
+});
 

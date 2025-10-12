@@ -2,9 +2,36 @@
 
 export type RouteType = 'home' | 'menu' | 'about' | 'gallery' | 'contact' | 'blog' | 'test-hover';
 
+export type SectionKind = 
+  | 'HERO'
+  | 'HERO_SIMPLE'
+  | 'GALLERY'
+  | 'FEATURED_MENU'
+  | 'TESTIMONIALS'
+  | 'CTA'
+  | 'CALL_TO_ACTION' // Alias for CTA
+  | 'RICH_TEXT'
+  | 'BANNER'
+  | 'STATS'
+  | 'STATISTICS' // Alias for STATS
+  | 'CONTACT_INFO'
+  | 'RESERVATION_FORM'
+  | 'SPECIAL_OFFERS'
+  | 'GALLERY_SLIDESHOW'
+  | 'FEATURED_BLOG_POSTS'
+  | 'BLOG_LIST'
+  | 'OPENING_HOURS'
+  | 'SOCIAL_MEDIA'
+  | 'FEATURES'
+  | 'MISSION_VISION'
+  | 'FAB_ACTIONS'
+  | 'FOOTER_SOCIAL'
+  | 'QUICK_CONTACT'
+  | 'CORE_VALUES';
+
 export interface Section {
   id: string;
-  kind: string;
+  kind: SectionKind;
   order: number;
   data: Record<string, unknown>;
 }

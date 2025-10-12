@@ -199,6 +199,7 @@ export function SectionsList({
       case 'STATS':
       case 'FEATURES':
       case 'MISSION_VISION':
+      case 'CORE_VALUES':
         return categoryColors['Content'];
       case 'GALLERY':
       case 'GALLERY_SLIDESHOW':
@@ -213,6 +214,7 @@ export function SectionsList({
       case 'OPENING_HOURS':
       case 'SOCIAL_MEDIA':
       case 'FOOTER_SOCIAL':
+      case 'QUICK_CONTACT':
         return categoryColors['Forms & Contact'];
       case 'FEATURED_MENU':
       case 'SPECIAL_OFFERS':

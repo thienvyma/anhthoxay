@@ -4,6 +4,8 @@ import { tokens } from '@app/shared';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { staggerChildren } from '@app/ui';
 import { useEffect, useState, lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastContainer, useToast } from './components/Toast';
 import { MobileMenu } from './components/MobileMenu';
 import { ScrollProgress } from './components/ScrollProgress';
@@ -22,23 +24,33 @@ const BlogPage = lazy(() => import('./pages/BlogPage').then(m => ({ default: m.B
 const BlogDetailPage = lazy(() => import('./pages/BlogDetailPage').then(m => ({ default: m.BlogDetailPage })));
 const ImageHoverTest = lazy(() => import('./pages/ImageHoverTest').then(m => ({ default: m.ImageHoverTest })));
 
-export function App() {
+// Create QueryClient instance for API caching
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (was cacheTime in v4)
+      retry: 1,
+      refetchOnWindowFocus: false, // Don't refetch on window focus
+    },
+  },
+});
+
+// Main App Content Component (uses router hooks)
+function AppContent() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const params = useParams();
+  
   const [page, setPage] = useState<PageData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [route, setRoute] = useState<RouteType>(() => {
-    const h = window.location.hash.replace('#/', '');
-    if (h === 'menu' || h === 'about' || h === 'gallery' || h === 'contact' || h === 'blog') return h;
-    if (h.startsWith('blog/')) return 'blog';
-    if (h === 'test-hover') return 'test-hover'; // DEBUG route
-    return 'home';
-  });
-  const [blogSlug, setBlogSlug] = useState<string>('');
   const { toasts, showToast, removeToast } = useToast();
 
   // Load header and footer config from localStorage as fallback (admin settings)
   const [headerConfigFromSettings, setHeaderConfigFromSettings] = useState<HeaderConfig | null>(null);
   const [footerConfigFromSettings, setFooterConfigFromSettings] = useState<FooterConfig | null>(null);
+  const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
 
   useEffect(() => {
     // Only use localStorage if page data is not available yet (fallback)
@@ -72,6 +84,57 @@ export function App() {
     }
   }, [page]);
 
+  // Load restaurant settings for background image
+  useEffect(() => {
+    fetch('http://localhost:4202/settings/restaurant')
+      .then((res) => res.json())
+      .then((data) => {
+        const settings = data.value || data; // Handle both {key, value} and direct object
+        if (settings.backgroundImage && settings.backgroundImage.trim()) {
+          const bgUrl = `http://localhost:4202${settings.backgroundImage}`;
+          
+          // Validate image exists before setting
+          const img = new Image();
+          img.onload = () => {
+            setBackgroundImage(bgUrl);
+          };
+          img.onerror = () => {
+            console.warn('⚠️ Background image not found, using default:', settings.backgroundImage);
+            setBackgroundImage(null); // Fallback to default
+          };
+          img.src = bgUrl;
+        } else {
+          // Clear background image if it was deleted or is empty
+          setBackgroundImage(null);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load restaurant settings:', err);
+      });
+  }, []);
+
+  // Apply background image to body element
+  useEffect(() => {
+    if (backgroundImage) {
+      document.body.style.backgroundImage = `
+        linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.6) 100%),
+        url("${backgroundImage}")
+      `;
+      document.body.style.backgroundSize = 'cover';
+      document.body.style.backgroundPosition = 'center';
+      document.body.style.backgroundAttachment = 'fixed';
+    } else {
+      // Default background
+      document.body.style.backgroundImage = `
+        linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.6) 100%),
+        url("https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=30")
+      `;
+      document.body.style.backgroundSize = 'cover';
+      document.body.style.backgroundPosition = 'center';
+      document.body.style.backgroundAttachment = 'fixed';
+    }
+  }, [backgroundImage]);
+
   // Function to fetch page data
   const fetchPageData = () => {
     setLoading(true);
@@ -93,7 +156,7 @@ export function App() {
             subtitle: 'Khám phá hương vị tinh tế với không gian sang trọng và dịch vụ chuyên nghiệp',
             imageUrl: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200',
             ctaText: 'Đặt Bàn Ngay',
-            ctaLink: '#/contact'
+            ctaLink: '/contact'
           }
         },
         {
@@ -132,314 +195,224 @@ export function App() {
             title: 'Đặt Bàn Ngay Hôm Nay',
             description: 'Trải nghiệm ẩm thực đẳng cấp với ưu đãi đặc biệt cho khách hàng mới',
             buttonText: 'Liên Hệ Ngay',
-            buttonLink: '#/contact'
+            buttonLink: '/contact'
           }
         }
-      ]
+      ],
+      headerConfig: undefined,
+      footerConfig: undefined,
     };
 
-    // Thử fetch từ API, nếu không được thì dùng mock data
     fetch('http://localhost:4202/pages/home')
-      .then((r) => {
-        if (!r.ok) throw new Error('Failed to load content');
-        return r.json();
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
       })
       .then((data) => {
-        // Sort sections by order before setting state
-        if (data?.sections) {
-          data.sections.sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
-        }
         setPage(data);
         setError(null);
-        if (data?.title) document.title = `${data.title} — Restaurant`;
-        // Toast notification removed for better UX
       })
-      .catch((e) => {
-        console.log('Using mock data (API not available)');
-        setPage(mockData as any);
-        setError(null);
-        if (mockData?.title) document.title = `${mockData.title} — Restaurant`;
-        // Toast notification removed for better UX
+      .catch((err) => {
+        console.error('Failed to fetch page data:', err);
+        setError(err.message);
+        // Use mock data as fallback
+        setPage(mockData);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
-  // Initial fetch
   useEffect(() => {
     fetchPageData();
   }, []);
 
-  // Refetch when window gains focus (user returns from admin)
-  useEffect(() => {
-    const handleFocus = () => {
-      console.log('Window focused - refetching page data');
-      fetchPageData();
-    };
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, []);
+  // Fetch page data based on current route
+  const getPageSlug = (pathname: string): string => {
+    if (pathname === '/') return 'home';
+    if (pathname.startsWith('/blog/')) return 'blog'; // Blog detail uses blog page
+    return pathname.substring(1); // Remove leading slash
+  };
 
-  function getMeta(pageData: PageData | null, currentRoute: RouteType): PageMeta {
-    if (!pageData) return {};
-    const baseTitle: string = pageData?.title ? `${pageData.title} — Restaurant` : 'Restaurant';
-    const routeTitle = currentRoute === 'home' ? baseTitle : `${baseTitle} · ${currentRoute.toUpperCase()}`;
-    // Prefer HERO.subtitle, then first CTA.description, then first RICH_TEXT text content
-    const heroSub = pageData.sections?.find((s) => s.kind === 'HERO')?.data?.subtitle as string | undefined;
-    const ctaDesc = pageData.sections?.find((s) => s.kind === 'CTA')?.data?.description as string | undefined;
-    const richHtml = pageData.sections?.find((s) => s.kind === 'RICH_TEXT')?.data?.html as string | undefined;
-    let desc = heroSub || ctaDesc;
-    if (!desc && richHtml) {
-      const div = document.createElement('div');
-      div.innerHTML = richHtml;
-      desc = div.textContent || div.innerText || undefined;
-      if (desc) desc = desc.trim().slice(0, 160);
-    }
-    return { title: routeTitle, description: desc };
-  }
-
-  function setOgMeta(title?: string, description?: string) {
-    const pairs: Array<[string, string]> = [
-      ['og:title', title || 'Restaurant'],
-      ['og:description', description || ''],
-      ['twitter:title', title || 'Restaurant'],
-      ['twitter:description', description || ''],
-      ['twitter:card', 'summary_large_image'],
-    ];
-    const base = window.location.origin;
-    const path = window.location.hash.replace('#', '') || '/';
-    const canonical = base + path;
-    setOrCreate('link[rel="canonical"]', 'href', canonical, () => {
-      const l = document.createElement('link');
-      l.setAttribute('rel', 'canonical');
-      document.head.appendChild(l);
-      return l as HTMLLinkElement;
-    });
-    for (const [name, content] of pairs) {
-      setOrCreate(`meta[property='${name}'], meta[name='${name}']`, 'content', content, () => {
-        const m = document.createElement('meta');
-        if (name.startsWith('og:')) m.setAttribute('property', name); else m.setAttribute('name', name);
-        document.head.appendChild(m);
-        return m as HTMLMetaElement;
-      });
-    }
-  }
-
-  function setOrCreate(selector: string, attr: string, value: string, create: (el: Element | null) => HTMLElement) {
-    let el = document.querySelector(selector) as HTMLElement | null;
-    if (!el) el = create(el);
-    el.setAttribute(attr, value);
-  }
-
-  useEffect(() => {
-    const onHashChange = () => {
-      const h = window.location.hash.replace('#/', '');
-      if (h === 'menu' || h === 'about' || h === 'gallery' || h === 'contact' || h === 'blog') {
-        setRoute(h);
-        setBlogSlug('');
-      } else if (h === 'test-hover') {
-        setRoute('test-hover'); // DEBUG route
-        setBlogSlug('');
-      } else if (h.startsWith('blog/')) {
-        setRoute('blog');
-        setBlogSlug(h.replace('blog/', ''));
-      } else {
-        setRoute('home');
-        setBlogSlug('');
-      }
-    };
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
-  }, []);
-
-  // Update meta tags when page or route changes
-  useEffect(() => {
-    if (!page) return;
-    const { title, description } = getMeta(page, route);
-    if (title) document.title = title;
-    if (description) {
-      let tag = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
-      if (!tag) {
-        tag = document.createElement('meta');
-        tag.setAttribute('name', 'description');
-        document.head.appendChild(tag);
-      }
-      tag.setAttribute('content', description);
-    }
-    setOgMeta(title, description);
-  }, [page, route]);
-  const containerStyle: React.CSSProperties = { maxWidth: 1200, margin: '0 auto', padding: '32px 24px' };
+  const currentPageSlug = getPageSlug(location.pathname);
   
-  // Scroll progress indicator
-  const { scrollY } = useScroll();
-  const scrollProgress = useTransform(scrollY, [0, 2000], [0, 100]);
+  // Fetch page data for current route
+  const [currentPage, setCurrentPage] = useState<PageData | null>(null);
+  
+  useEffect(() => {
+    if (currentPageSlug === 'home') {
+      setCurrentPage(page); // Use already fetched home page
+      return;
+    }
+
+    // Fetch page data for other routes
+    fetch(`http://localhost:4202/pages/${currentPageSlug}`)
+      .then((res) => {
+        if (!res.ok) {
+          // Page doesn't exist in DB, use empty page with default config
+          return null;
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setCurrentPage(data);
+      })
+      .catch((err) => {
+        console.error(`Failed to fetch page data for ${currentPageSlug}:`, err);
+        setCurrentPage(null);
+      });
+  }, [location.pathname, page, currentPageSlug]);
+
+  // Navigation helper
+  const handleNavigate = (path: string) => {
+    navigate(path);
+  };
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  const { scrollYProgress } = useScroll();
+  const backgroundColor = useTransform(
+    scrollYProgress,
+    [0, 0.2],
+    ['rgba(11, 12, 15, 0)', 'rgba(11, 12, 15, 0.95)']
+  );
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: tokens.color.background,
+        }}
+      >
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          style={{
+            width: 60,
+            height: 60,
+            borderRadius: '50%',
+            border: `4px solid ${tokens.color.border}`,
+            borderTopColor: tokens.color.primary,
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (error && !page) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: tokens.color.background,
+          color: tokens.color.text,
+          padding: '2rem',
+          textAlign: 'center',
+        }}
+      >
+        <div>
+          <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>⚠️ Error Loading Page</h1>
+          <p style={{ color: tokens.color.textMuted }}>{error}</p>
+          <button
+            onClick={fetchPageData}
+            style={{
+              marginTop: '1rem',
+              padding: '0.75rem 1.5rem',
+              background: tokens.color.primary,
+              color: tokens.color.background,
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '1rem',
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ background: 'transparent', minHeight: '100vh' }}>
-      {/* Scroll Progress Bar */}
-      <motion.div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 3,
-          background: `linear-gradient(90deg, ${tokens.color.primary}, ${tokens.color.accent})`,
-          transformOrigin: 'left',
-          scaleX: useTransform(scrollProgress, [0, 100], [0, 1]),
-          zIndex: 10001,
-        }}
-      />
-
+    <div style={{ minHeight: '100vh' }}>
       {/* Scroll Progress Indicator */}
       <ScrollProgress />
 
       {/* Header - render from DATABASE FIRST (page config), then localStorage fallback */}
       <Header
-        config={
-          page?.headerConfig
+        config={(() => {
+          // Get header config from DATABASE first, then settings
+          const headerConfig = page?.headerConfig
             ? (typeof page.headerConfig === 'string'
                 ? JSON.parse(page.headerConfig)
                 : page.headerConfig)
             : (headerConfigFromSettings ?? {
                 logo: {
                   text: page?.title ?? 'Restaurant',
-                  icon: 'ri-restaurant-2-line',
-                  animateIcon: true,
+                  icon: 'ri-restaurant-2-fill',
                 },
-              })
-        }
-        currentRoute={route}
-        onNavigate={(r) => setRoute(r as RouteType)}
-        mobileMenuComponent={
-          <MobileMenu
-            currentRoute={route}
-            onNavigate={(r) => setRoute(r as RouteType)}
-          />
-        }
+                navigation: [
+                  { label: 'Home', path: '/' },
+                  { label: 'Menu', path: '/menu' },
+                  { label: 'Gallery', path: '/gallery' },
+                  { label: 'About', path: '/about' },
+                  { label: 'Blog', path: '/blog' },
+                  { label: 'Contact', path: '/contact' },
+                ],
+              });
+          return headerConfig;
+        })()}
+        mobileMenuComponent={<MobileMenu currentRoute={location.pathname} onNavigate={handleNavigate} />}
       />
 
-      <main id="main" style={{ ...containerStyle, marginTop: 20 }}>
-        {loading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(11,12,15,0.98)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'column',
-              gap: 20,
-              zIndex: 9998,
-            }}
-          >
-            {/* Simple Spinner */}
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-              style={{
-                width: 60,
-                height: 60,
-                borderRadius: '50%',
-                border: `4px solid ${tokens.color.border}`,
-                borderTopColor: tokens.color.primary,
-              }}
-            />
-
-            {/* Loading Text - Simple */}
+      {/* Main Content */}
+      <main>
+        <Suspense
+          fallback={
             <div
               style={{
-                color: tokens.color.text,
-                fontSize: 16,
-                fontFamily: tokens.font.display,
+                minHeight: '50vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              Đang tải...
-            </div>
-          </motion.div>
-        )}
-        {!loading && error && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="card"
-            style={{
-              padding: 60,
-              textAlign: 'center',
-              margin: '60px 0',
-            }}
-          >
-            <i className="ri-error-warning-line" style={{ fontSize: 64, color: tokens.color.error, marginBottom: 20, display: 'block' }} />
-            <h2 style={{ color: tokens.color.error, marginBottom: 12 }}>Không thể tải nội dung</h2>
-            <p style={{ color: tokens.color.muted, marginBottom: 24 }}>{error}</p>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => window.location.reload()}
-              style={{
-                padding: '12px 32px',
-                background: `linear-gradient(135deg, ${tokens.color.primary} 0%, ${tokens.color.accent} 100%)`,
-                color: '#111',
-                border: 'none',
-                borderRadius: tokens.radius.pill,
-                fontSize: 16,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              <i className="ri-refresh-line" style={{ marginRight: 8 }} />
-              Thử lại
-            </motion.button>
-          </motion.div>
-        )}
-        {!loading && !error && page && (
-          <Suspense fallback={
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '60vh',
-              flexDirection: 'column',
-              gap: 20,
-            }}>
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                 style={{
-                  width: 48,
-                  height: 48,
+                  width: 40,
+                  height: 40,
                   borderRadius: '50%',
                   border: `3px solid ${tokens.color.border}`,
                   borderTopColor: tokens.color.primary,
                 }}
               />
-              <div style={{
-                color: tokens.color.muted,
-                fontSize: 14,
-              }}>
-                Đang tải...
-              </div>
             </div>
-          }>
-            <motion.div variants={staggerChildren(0.15)} initial="initial" animate="animate">
-              {route === 'home' && <HomePage page={page} />}
-              {route === 'menu' && <MenuPage />}
-              {route === 'gallery' && <GalleryPage />}
-              {route === 'about' && <AboutPage page={page} />}
-              {route === 'contact' && <ContactPage page={page} />}
-            </motion.div>
-          </Suspense>
-        )}
-        <Suspense fallback={null}>
-          {route === 'test-hover' && <ImageHoverTest />}
-          {route === 'blog' && !blogSlug && <BlogPage />}
-          {route === 'blog' && blogSlug && (
-            <BlogDetailPage slug={blogSlug} onBack={() => window.location.hash = '#/blog'} />
-          )}
+          }
+        >
+          <Routes>
+            <Route path="/" element={page ? <HomePage page={page} /> : null} />
+            <Route path="/menu" element={<MenuPage page={currentPage || undefined} />} />
+            <Route path="/gallery" element={<GalleryPage page={currentPage || undefined} />} />
+            <Route path="/about" element={currentPage ? <AboutPage page={currentPage} /> : null} />
+            <Route path="/contact" element={currentPage ? <ContactPage page={currentPage} /> : null} />
+            <Route path="/blog" element={<BlogPage page={currentPage || undefined} />} />
+            <Route path="/blog/:slug" element={<BlogDetailPage />} />
+            <Route path="/test-hover" element={<ImageHoverTest />} />
+            {/* 404 fallback */}
+            <Route path="*" element={page ? <HomePage page={page} /> : null} />
+          </Routes>
         </Suspense>
       </main>
 
@@ -466,7 +439,11 @@ export function App() {
             ? (typeof page.headerConfig === 'string' ? JSON.parse(page.headerConfig) : page.headerConfig)
             : null;
           
-          if (footerConfig && !footerConfig.brand?.imageUrl && headerConfigFromDB?.logo?.imageUrl) {
+          // Only sync if footer has no imageUrl AND header has a valid one (not empty/undefined)
+          const footerHasLogo = footerConfig?.brand?.imageUrl && footerConfig.brand.imageUrl.trim();
+          const headerHasLogo = headerConfigFromDB?.logo?.imageUrl && headerConfigFromDB.logo.imageUrl.trim();
+          
+          if (footerConfig && !footerHasLogo && headerHasLogo) {
             footerConfig = {
               ...footerConfig,
               brand: {
@@ -495,6 +472,17 @@ export function App() {
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
+  );
+}
+
+// Main App Component with Router
+export function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 

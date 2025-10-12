@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { tokens } from '@app/shared';
 import { useState, useEffect } from 'react';
 
@@ -28,11 +29,11 @@ export function MobileMenu({ currentRoute, onNavigate }: MobileMenuProps) {
   }, [isOpen]);
 
   const menuItems = [
-    { route: 'home', label: 'Trang chủ', icon: 'ri-home-fill' },
-    { route: 'menu', label: 'Thực đơn', icon: 'ri-restaurant-fill' },
-    { route: 'about', label: 'Về chúng tôi', icon: 'ri-information-fill' },
-    { route: 'gallery', label: 'Thư viện', icon: 'ri-gallery-fill' },
-    { route: 'contact', label: 'Liên hệ', icon: 'ri-phone-fill' },
+    { route: '/', label: 'Trang chủ', icon: 'ri-home-fill' },
+    { route: '/menu', label: 'Thực đơn', icon: 'ri-restaurant-fill' },
+    { route: '/about', label: 'Về chúng tôi', icon: 'ri-information-fill' },
+    { route: '/gallery', label: 'Thư viện', icon: 'ri-gallery-fill' },
+    { route: '/contact', label: 'Liên hệ', icon: 'ri-phone-fill' },
   ];
 
   return (
@@ -122,43 +123,49 @@ export function MobileMenu({ currentRoute, onNavigate }: MobileMenuProps) {
 
               {/* Navigation Items */}
               <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {menuItems.map((item, index) => (
-                  <motion.a
-                    key={item.route}
-                    href={item.route === 'home' ? '#/' : `#/${item.route}`}
-                    onClick={() => setIsOpen(false)}
-                    initial={{ opacity: 0, x: 50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 + index * 0.05 }}
-                    whileHover={{ x: 8 }}
-                    whileTap={{ scale: 0.98 }}
-                    style={{
-                      padding: '20px 24px',
-                      borderRadius: tokens.radius.lg,
-                      textDecoration: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 16,
-                      fontSize: 18,
-                      fontWeight: 500,
-                      color: currentRoute === item.route ? tokens.color.primary : tokens.color.text,
-                      background: currentRoute === item.route ? 'rgba(245,211,147,0.1)' : 'transparent',
-                      border: currentRoute === item.route ? `1px solid ${tokens.color.primary}40` : '1px solid transparent',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    <i className={item.icon} style={{ fontSize: 24 }} />
-                    {item.label}
-                    {currentRoute === item.route && (
-                      <motion.i
-                        className="ri-arrow-right-line"
-                        initial={{ x: -10, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        style={{ marginLeft: 'auto' }}
-                      />
-                    )}
-                  </motion.a>
-                ))}
+                {menuItems.map((item, index) => {
+                  const isActive = currentRoute === item.route;
+                  return (
+                    <Link
+                      key={item.route}
+                      to={item.route}
+                      onClick={() => setIsOpen(false)}
+                      style={{ textDecoration: 'none' }}
+                    >
+                      <motion.div
+                        initial={{ opacity: 0, x: 50 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 + index * 0.05 }}
+                        whileHover={{ x: 8 }}
+                        whileTap={{ scale: 0.98 }}
+                        style={{
+                          padding: '20px 24px',
+                          borderRadius: tokens.radius.lg,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 16,
+                          fontSize: 18,
+                          fontWeight: 500,
+                          color: isActive ? tokens.color.primary : tokens.color.text,
+                          background: isActive ? 'rgba(245,211,147,0.1)' : 'transparent',
+                          border: isActive ? `1px solid ${tokens.color.primary}40` : '1px solid transparent',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        <i className={item.icon} style={{ fontSize: 24 }} />
+                        {item.label}
+                        {isActive && (
+                          <motion.i
+                            className="ri-arrow-right-line"
+                            initial={{ x: -10, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            style={{ marginLeft: 'auto' }}
+                          />
+                        )}
+                      </motion.div>
+                    </Link>
+                  );
+                })}
               </nav>
 
               {/* Quick Actions */}

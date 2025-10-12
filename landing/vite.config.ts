@@ -9,17 +9,21 @@ export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../node_modules/.vite/landing',
   server: {
-    port: 4203,
+    port: 4200,
     host: 'localhost',
     strictPort: true,
     fs: {
       // Fix Vite 403 fs-allow by explicitly allowing project dir
       allow: [__dirname, path.resolve(__dirname, '..'), path.resolve(__dirname, '..', '..')],
     },
+    // Enable historyApiFallback for BrowserRouter (SPA routing)
+    proxy: {},
   },
   preview: {
-    port: 4203,
+    port: 4200,
     host: 'localhost',
+    // Enable historyApiFallback for BrowserRouter in preview mode
+    proxy: {},
   },
   plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
   // Uncomment this if you are using workers.

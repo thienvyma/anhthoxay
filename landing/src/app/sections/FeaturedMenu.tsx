@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef, memo } from 'react';
+import { useState, useEffect, useRef, memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokens } from '@app/shared';
+import { useQuery } from '@tanstack/react-query';
 import { menuAPI } from '../api';
+import { useReducedMotion, getAnimationConfig } from '../utils/useReducedMotion';
 
 interface MenuItem {
   id: string;
@@ -24,43 +26,39 @@ interface FeaturedMenuData {
   limit?: number; // Max items to show, default 6
   showOnlyPopular?: boolean; // Only show popular items
   autoPlayInterval?: number; // milliseconds, default 4000
+  ctaText?: string; // CTA button text
+  ctaLink?: string; // CTA button link
 }
 
 export const FeaturedMenu = memo(function FeaturedMenu({ data }: { data: FeaturedMenuData }) {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const slideRef = useRef<HTMLDivElement>(null);
+
+  const shouldReduce = useReducedMotion();
+  const animConfig = getAnimationConfig(shouldReduce);
 
   const limit = data.limit || 6;
   const showOnlyPopular = data.showOnlyPopular !== false;
   const autoPlayInterval = data.autoPlayInterval || 6000; // Increased from 4s to 6s
 
-  useEffect(() => {
-    loadMenuItems();
-  }, []);
+  // Fetch menu items with React Query
+  const { data: allItems = [], isLoading: loading } = useQuery({
+    queryKey: ['menu-items'],
+    queryFn: menuAPI.getItems,
+  });
 
-  const loadMenuItems = async () => {
-    try {
-      setLoading(true);
-      const allItems = await menuAPI.getItems();
-      
-      // Filter: available items, optionally only popular
-      let filtered = allItems.filter((item: MenuItem) => item.available);
-      if (showOnlyPopular) {
-        filtered = filtered.filter((item: MenuItem) => item.popular);
-      }
-      
-      // Limit number of items
-      const selected = filtered.slice(0, limit);
-      setMenuItems(selected);
-    } catch (error) {
-      console.error('Failed to load menu items:', error);
-    } finally {
-      setLoading(false);
+  // Filter and limit items
+  const menuItems = useMemo(() => {
+    // Filter: available items, optionally only popular
+    let filtered = allItems.filter((item: MenuItem) => item.available);
+    if (showOnlyPopular) {
+      filtered = filtered.filter((item: MenuItem) => item.popular);
     }
-  };
+    
+    // Limit number of items
+    return filtered.slice(0, limit);
+  }, [allItems, showOnlyPopular, limit]);
 
   // Auto-play slideshow
   useEffect(() => {
@@ -94,10 +92,8 @@ export const FeaturedMenu = memo(function FeaturedMenu({ data }: { data: Feature
   if (loading) {
     return (
       <div style={{ padding: 60, textAlign: 'center' }}>
-        <motion.i
-          className="ri-loader-4-line"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        <i
+          className="ri-loader-4-line spinner"
           style={{ fontSize: 40, color: tokens.color.primary }}
         />
       </div>
@@ -111,16 +107,13 @@ export const FeaturedMenu = memo(function FeaturedMenu({ data }: { data: Feature
   const currentItem = menuItems[currentIndex];
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
-      style={{
-        margin: '80px 0',
-        padding: '0 16px',
-      }}
-    >
+    <div style={{ maxWidth: 1200, margin: '80px auto', padding: '0 16px' }}>
+      <motion.section
+        initial={shouldReduce ? {} : { opacity: 0, y: 40 }}
+        whileInView={shouldReduce ? {} : { opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={animConfig.transition}
+      >
       {/* Section Header */}
       {(data.title || data.subtitle) && (
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
@@ -380,32 +373,34 @@ export const FeaturedMenu = memo(function FeaturedMenu({ data }: { data: Feature
               )}
 
               {/* CTA Button */}
-              <motion.a
-                href="#reservation"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  padding: '16px 32px',
-                  background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
-                  color: '#111',
-                  borderRadius: tokens.radius.pill,
-                  fontSize: 16,
-                  fontWeight: 700,
-                  textDecoration: 'none',
-                  alignSelf: 'flex-start',
-                  boxShadow: tokens.shadow.md,
-                }}
-              >
-                Đặt bàn ngay
-                <i className="ri-restaurant-2-line" />
-              </motion.a>
+              {(data.ctaText || data.ctaLink) && (
+                <motion.a
+                  href={data.ctaLink || '#reservation'}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    padding: '16px 32px',
+                    background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+                    color: '#111',
+                    borderRadius: tokens.radius.pill,
+                    fontSize: 16,
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    alignSelf: 'flex-start',
+                    boxShadow: tokens.shadow.md,
+                  }}
+                >
+                  {data.ctaText || 'Đặt bàn ngay'}
+                  <i className="ri-restaurant-2-line" />
+                </motion.a>
+              )}
             </div>
           </motion.div>
         </AnimatePresence>
@@ -581,6 +576,7 @@ export const FeaturedMenu = memo(function FeaturedMenu({ data }: { data: Feature
         </div>
       )}
     </motion.section>
+    </div>
   );
 });
 

@@ -1,7 +1,9 @@
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { tokens } from '@app/shared';
 import { useState, useEffect } from 'react';
 import { offersAPI } from '../api';
+import { glassEffect } from '../styles/glassEffect';
 
 interface Offer {
   id: string;
@@ -21,7 +23,7 @@ interface SpecialOffersData {
   offers?: Offer[];
 }
 
-export function SpecialOffers({ data }: { data: SpecialOffersData }) {
+export const SpecialOffers = memo(function SpecialOffers({ data }: { data: SpecialOffersData }) {
   const [offers, setOffers] = useState<Offer[]>(data.offers || []);
   const [loading, setLoading] = useState(!data.offers);
 
@@ -64,16 +66,15 @@ export function SpecialOffers({ data }: { data: SpecialOffersData }) {
   if (offers.length === 0) return null;
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      style={{ 
-        marginTop: 60, 
-        paddingLeft: 20, 
-        paddingRight: 20,
-      }}
-    >
+    <div style={{ maxWidth: 1200, margin: '80px auto', padding: '0 16px' }}>
+      <motion.section
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        style={{ 
+          padding: '60px 0',
+        }}
+      >
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
         <motion.div
           initial={{ scale: 0 }}
@@ -142,14 +143,13 @@ export function SpecialOffers({ data }: { data: SpecialOffersData }) {
               transition={{ delay: idx * 0.1 }}
               whileHover={{ y: -8, boxShadow: tokens.shadow.lg }}
               style={{
+                ...glassEffect({ variant: 'card' }),
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
-                background: `linear-gradient(135deg, ${tokens.color.surface} 0%, rgba(19,19,22,0.8) 100%)`,
                 borderRadius: tokens.radius.lg,
                 overflow: 'hidden',
                 border: `2px solid ${tokens.color.primary}`,
-                boxShadow: tokens.shadow.md,
                 transition: 'all 0.3s ease',
               }}
             >
@@ -299,6 +299,7 @@ export function SpecialOffers({ data }: { data: SpecialOffersData }) {
         })}
       </div>
     </motion.section>
+    </div>
   );
-}
+});
 

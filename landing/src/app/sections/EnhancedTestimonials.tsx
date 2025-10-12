@@ -1,12 +1,9 @@
 import { motion } from 'framer-motion';
 import { tokens } from '@app/shared';
 import { memo } from 'react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Autoplay, Pagination, Navigation } from 'swiper/modules';
+import { ScrollSnapCarousel } from '../components/ScrollSnapCarousel';
 import { useReducedMotion } from '../utils/useReducedMotion';
-import 'swiper/css';
-import 'swiper/css/pagination';
-import 'swiper/css/navigation';
+import { glassEffect } from '../styles/glassEffect';
 
 interface TestimonialItem {
   name: string;
@@ -59,14 +56,12 @@ export const EnhancedTestimonials = memo(function EnhancedTestimonials({ data }:
       key={index}
       {...animationProps}
       style={{
-        background: `linear-gradient(135deg, ${tokens.color.surface} 0%, rgba(19,19,22,0.6) 100%)`,
+        ...glassEffect({ variant: 'card' }),
         padding: 28,
         borderRadius: tokens.radius.lg,
-        border: `1px solid ${tokens.color.border}`,
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: tokens.shadow.md,
       }}
     >
       {/* Stars */}
@@ -144,7 +139,8 @@ export const EnhancedTestimonials = memo(function EnhancedTestimonials({ data }:
   };
 
   return (
-    <section style={{ marginTop: 60 }}>
+    <div style={{ maxWidth: 1200, margin: '80px auto', padding: '0 16px' }}>
+      <section style={{ padding: '60px 0' }}>
       <motion.h2
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -161,25 +157,16 @@ export const EnhancedTestimonials = memo(function EnhancedTestimonials({ data }:
       </motion.h2>
 
       {layout === 'carousel' ? (
-        <Swiper
-          modules={[Autoplay, Pagination, Navigation]}
-          autoplay={data.autoplay ? { delay: 5000, disableOnInteraction: false } : false}
-          pagination={{ clickable: true, dynamicBullets: true }}
-          navigation={data.items.length > 3}
-          loop={data.items.length > 3}
-          spaceBetween={20}
-          slidesPerView={1}
-          breakpoints={{
-            640: { slidesPerView: 1 },
-            768: { slidesPerView: 2 },
-            1024: { slidesPerView: 3 },
-          }}
-          style={{ paddingBottom: 50 }}
+        <ScrollSnapCarousel
+          autoplay={data.autoplay}
+          autoplayDelay={5000}
+          showNavigation={data.items.length > 3}
+          showPagination={true}
+          slidesPerView={{ mobile: 1, tablet: 2, desktop: 3 }}
+          gap={20}
         >
-          {data.items.map((item, idx) => (
-            <SwiperSlide key={idx}>{renderTestimonialCard(item, idx)}</SwiperSlide>
-          ))}
-        </Swiper>
+          {data.items.map((item, idx) => renderTestimonialCard(item, idx))}
+        </ScrollSnapCarousel>
       ) : (
         <div
           style={{
@@ -253,6 +240,7 @@ export const EnhancedTestimonials = memo(function EnhancedTestimonials({ data }:
         </div>
       </motion.div>
     </section>
+    </div>
   );
 });
 

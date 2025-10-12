@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { OptimizedImage } from '../components/OptimizedImage';
@@ -52,11 +53,6 @@ This is a test paragraph after the image. The hover effect should work on the im
 
 Another paragraph here to test scrolling and layout.
 `;
-
-interface BlogDetailPageProps {
-  slug: string;
-  onBack: () => void;
-}
 
 // Blog Image Thumbnail - Banner style with lightbox
 function BlogImageThumbnail({ src, alt, onClick }: { src?: string; alt?: string; onClick?: () => void }) {
@@ -199,7 +195,9 @@ function BlogImageThumbnail({ src, alt, onClick }: { src?: string; alt?: string;
   );
 }
 
-export function BlogDetailPage({ slug, onBack }: BlogDetailPageProps) {
+export function BlogDetailPage() {
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [commentForm, setCommentForm] = useState({
@@ -227,6 +225,7 @@ export function BlogDetailPage({ slug, onBack }: BlogDetailPageProps) {
   }, [lightboxImage]);
 
   const loadPost = async () => {
+    if (!slug) return;
     try {
       setLoading(true);
       const data = await blogAPI.getPost(slug);
@@ -378,7 +377,7 @@ export function BlogDetailPage({ slug, onBack }: BlogDetailPageProps) {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={onBack}
+            onClick={() => navigate('/blog')}
             style={{
               padding: '12px 24px',
               borderRadius: '12px',
@@ -433,7 +432,7 @@ export function BlogDetailPage({ slug, onBack }: BlogDetailPageProps) {
       }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '12px 16px' }}>
           <motion.button
-            onClick={onBack}
+            onClick={() => navigate('/blog')}
             whileHover={{ x: -4 }}
             whileTap={{ scale: 0.95 }}
             style={{
@@ -939,7 +938,7 @@ export function BlogDetailPage({ slug, onBack }: BlogDetailPageProps) {
             currentPostId={post.id}
             categoryId={post.category.id}
             limit={3}
-            onPostClick={onBack}
+            onPostClick={() => navigate('/blog')}
           />
 
           {/* Newsletter Signup */}

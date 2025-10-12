@@ -1,9 +1,13 @@
 import { useState, useEffect, memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { galleryAPI } from '../api';
 import { OptimizedImage } from '../components/OptimizedImage';
 import { AnimatedButton } from '../components/AnimatedButton';
 import { useReducedMotion } from '../utils/useReducedMotion';
+import { renderSection } from '../sections/render';
+import { LazySection } from '../components/LazySection';
+import type { PageData } from '../types';
 
 interface GalleryImage {
   id: string;
@@ -19,36 +23,25 @@ interface GalleryImage {
 
 const ITEMS_PER_PAGE = 12; // Show 12 images per page
 
-export const GalleryPage = memo(function GalleryPage() {
+export const GalleryPage = memo(function GalleryPage({ page }: { page?: PageData }) {
   const shouldReduce = useReducedMotion();
-  const [images, setImages] = useState<GalleryImage[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedTag, setSelectedTag] = useState<string>('all');
   const [lightboxImage, setLightboxImage] = useState<GalleryImage | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [animatedCards, setAnimatedCards] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const data = await galleryAPI.getImages();
-      setImages(data);
-    } catch (error) {
-      console.error('Failed to load gallery images:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Fetch gallery images with React Query (CACHE REUSE with Gallery section!)
+  const { data: images = [], isLoading: loading } = useQuery({
+    queryKey: ['gallery'],
+    queryFn: galleryAPI.getImages,
+  });
 
   // Parse tags (memoized to avoid recalculation)
   const allTags = useMemo(() => Array.from(
     new Set(
       images.flatMap(img => 
-        img.tags ? img.tags.split(',').map(t => t.trim()).filter(Boolean) : []
+        img.tags ? img.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : []
       )
     )
   ), [images]);
@@ -58,7 +51,7 @@ export const GalleryPage = memo(function GalleryPage() {
     selectedTag === 'all'
       ? images
       : images.filter(img => 
-          img.tags?.split(',').map(t => t.trim()).includes(selectedTag)
+          img.tags?.split(',').map((t: string) => t.trim()).includes(selectedTag)
         ),
     [images, selectedTag]
   );
@@ -73,6 +66,11 @@ export const GalleryPage = memo(function GalleryPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedTag]);
+
+  // Mark card as animated after animation completes (600ms)
+  const handleCardAnimationEnd = (imageId: string) => {
+    setAnimatedCards((prev) => new Set(prev).add(imageId));
+  };
 
   // Fix image URL
   const getImageUrl = (url: string) => {
@@ -122,78 +120,18 @@ export const GalleryPage = memo(function GalleryPage() {
       background: 'transparent',
       paddingTop: 80
     }}>
-      {/* Hero Section */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        style={{
-          position: 'relative',
-          background: 'radial-gradient(1000px 400px at 50% 0%, rgba(245,211,147,0.08) 0%, transparent 70%)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          paddingTop: 'clamp(80px, 14vh, 120px)',
-          paddingBottom: 'clamp(80px, 14vh, 120px)',
-        }}
-      >
-        <div style={{
-          maxWidth: 1200,
-          margin: '0 auto',
-          padding: '0 24px',
-          textAlign: 'center'
-        }}>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            style={{
-              display: 'inline-block',
-              marginBottom: 20,
-              padding: '12px 24px',
-              background: 'rgba(245,211,147,0.1)',
-              border: '1px solid rgba(245,211,147,0.2)',
-              borderRadius: 999,
-              fontSize: 14,
-              fontWeight: 600,
-              color: '#F5D393',
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-            }}
-          >
-            <i className="ri-gallery-line" style={{ marginRight: 8 }} />
-            Gallery
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            style={{
-              fontSize: 'clamp(2.5rem, 6vw, 4rem)',
-              fontFamily: 'Playfair Display, serif',
-              color: '#F5D393',
-              marginBottom: 16,
-              fontWeight: 700,
-            }}
-          >
-            Thư Viện Hình Ảnh
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            style={{
-              fontSize: '1.125rem',
-              color: 'rgba(255,255,255,0.6)',
-              maxWidth: 700,
-              margin: '0 auto',
-              lineHeight: 1.7,
-            }}
-          >
-            Khám phá không gian và món ăn đặc sắc của chúng tôi
-          </motion.p>
+      {/* Render HeroSimple section from page data first */}
+      {page?.sections && (
+        <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 24px' }}>
+          {page.sections
+            .filter((s) => s.kind === 'HERO_SIMPLE')
+            .sort((a, b) => (a.order || 0) - (b.order || 0))
+            .map((s) => {
+              const rendered = renderSection(s);
+              return rendered ? <div key={s.id}>{rendered}</div> : null;
+            })}
         </div>
-      </motion.div>
+      )}
 
       {/* Tag Filters */}
       <div style={{ 
@@ -292,64 +230,39 @@ export const GalleryPage = memo(function GalleryPage() {
             paddingBottom: 48,
           }}>
             {paginatedImages.map((image, idx) => {
-              const CardWrapper = shouldReduce ? 'div' : motion.div;
-              const animationProps = shouldReduce ? {} : {
-                initial: { opacity: 0, y: 15 },
-                animate: { opacity: 1, y: 0 },
-                transition: { 
-                  duration: 0.35,
-                  delay: Math.min(idx * 0.04, 0.4), // Cap delay at 0.4s
-                },
-              };
-              
+              const hasAnimated = animatedCards.has(image.id);
               return (
-              <CardWrapper
+              <div
                 key={image.id}
-                {...animationProps}
                 onClick={() => openLightbox(image, startIndex + idx)}
-                className="gallery-card"
+                className={hasAnimated ? "gallery-card" : "gallery-card fade-in-up"}
+                onAnimationEnd={() => handleCardAnimationEnd(image.id)}
                 style={{
                   cursor: 'pointer',
                   borderRadius: 16,
                   overflow: 'hidden',
                   background: 'rgba(12,12,16,0.7)',
                   border: '1px solid rgba(255,255,255,0.08)',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-                  transition: 'transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease',
                   position: 'relative',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-8px)';
-                  e.currentTarget.style.borderColor = 'rgba(245,211,147,0.3)';
-                  e.currentTarget.style.boxShadow = '0 12px 40px rgba(245,211,147,0.2)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
-                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+                  animationDelay: hasAnimated ? '0s' : `${Math.min(idx * 0.04, 0.4)}s`,
                 }}
                 >
                   {/* Image */}
-                  <div style={{
-                    aspectRatio: '4/3',
-                    overflow: 'hidden',
-                    position: 'relative',
-                  }}>
+                  <div 
+                    className="gallery-card-image-wrapper"
+                    style={{
+                      aspectRatio: '4/3',
+                      overflow: 'hidden',
+                      position: 'relative',
+                    }}>
                     <OptimizedImage
                       src={getImageUrl(image.url)}
                       alt={image.alt || 'Gallery image'}
                       loading="lazy"
+                      className="gallery-card-image"
                       style={{
                         width: '100%',
                         height: '100%',
-                      }}
-                      onMouseEnter={(e) => {
-                        const img = e.currentTarget.querySelector('img');
-                        if (img) img.style.transform = 'scale(1.1)';
-                      }}
-                      onMouseLeave={(e) => {
-                        const img = e.currentTarget.querySelector('img');
-                        if (img) img.style.transform = 'scale(1)';
                       }}
                     />
 
@@ -419,7 +332,7 @@ export const GalleryPage = memo(function GalleryPage() {
                       )}
                     </div>
                   )}
-              </CardWrapper>
+              </div>
               );
             })}
           </div>
@@ -581,7 +494,6 @@ export const GalleryPage = memo(function GalleryPage() {
                 position: 'fixed',
                 inset: 0,
                 background: 'rgba(0,0,0,0.95)',
-                backdropFilter: 'blur(10px)',
                 zIndex: 9998,
               }}
             />
@@ -602,10 +514,9 @@ export const GalleryPage = memo(function GalleryPage() {
               }}
             >
               {/* Close Button */}
-              <motion.button
-                whileHover={{ scale: 1.1, rotate: 90 }}
-                whileTap={{ scale: 0.9 }}
+              <button
                 onClick={closeLightbox}
+                className="hover-scale-rotate"
                 style={{
                   position: 'absolute',
                   top: 20,
@@ -613,8 +524,7 @@ export const GalleryPage = memo(function GalleryPage() {
                   width: 48,
                   height: 48,
                   borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.1)',
-                  backdropFilter: 'blur(10px)',
+                  background: 'rgba(255,255,255,0.15)',
                   border: '1px solid rgba(255,255,255,0.2)',
                   color: '#fff',
                   fontSize: 24,
@@ -626,26 +536,24 @@ export const GalleryPage = memo(function GalleryPage() {
                 }}
               >
                 <i className="ri-close-line" />
-              </motion.button>
+              </button>
 
               {/* Navigation Buttons */}
               {filteredImages.length > 1 && (
                 <>
-                  <motion.button
-                    whileHover={{ scale: 1.1, x: -4 }}
-                    whileTap={{ scale: 0.9 }}
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
                       prevImage();
                     }}
+                    className="hover-nav-left"
                     style={{
                       position: 'absolute',
                       left: 20,
                       width: 56,
                       height: 56,
                       borderRadius: '50%',
-                      background: 'rgba(255,255,255,0.1)',
-                      backdropFilter: 'blur(10px)',
+                      background: 'rgba(255,255,255,0.15)',
                       border: '1px solid rgba(255,255,255,0.2)',
                       color: '#fff',
                       fontSize: 28,
@@ -656,23 +564,21 @@ export const GalleryPage = memo(function GalleryPage() {
                     }}
                   >
                     <i className="ri-arrow-left-s-line" />
-                  </motion.button>
+                  </button>
 
-                  <motion.button
-                    whileHover={{ scale: 1.1, x: 4 }}
-                    whileTap={{ scale: 0.9 }}
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
                       nextImage();
                     }}
+                    className="hover-nav-right"
                     style={{
                       position: 'absolute',
                       right: 20,
                       width: 56,
                       height: 56,
                       borderRadius: '50%',
-                      background: 'rgba(255,255,255,0.1)',
-                      backdropFilter: 'blur(10px)',
+                      background: 'rgba(255,255,255,0.15)',
                       border: '1px solid rgba(255,255,255,0.2)',
                       color: '#fff',
                       fontSize: 28,
@@ -683,7 +589,7 @@ export const GalleryPage = memo(function GalleryPage() {
                     }}
                   >
                     <i className="ri-arrow-right-s-line" />
-                  </motion.button>
+                  </button>
                 </>
               )}
 
@@ -729,8 +635,7 @@ export const GalleryPage = memo(function GalleryPage() {
                       textAlign: 'center',
                       maxWidth: 600,
                       padding: 20,
-                      background: 'rgba(12,12,16,0.8)',
-                      backdropFilter: 'blur(20px)',
+                      background: 'rgba(12,12,16,0.95)',
                       borderRadius: 16,
                       border: '1px solid rgba(255,255,255,0.1)',
                     }}
@@ -770,6 +675,33 @@ export const GalleryPage = memo(function GalleryPage() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Render sections from page data */}
+      {page?.sections && page.sections.length > 0 && (
+        <div style={{ maxWidth: 1400, margin: '60px auto 0', padding: '0 24px' }}>
+          {page.sections
+            .filter((s) => 
+              s.kind !== 'HERO_SIMPLE' && // Already rendered above
+              s.kind !== 'FAB_ACTIONS' && 
+              s.kind !== 'GALLERY' // Already showing gallery above
+            )
+            .sort((a, b) => (a.order || 0) - (b.order || 0))
+            .map((s, index) => {
+              const rendered = renderSection(s);
+              if (!rendered) return null;
+              
+              const shouldLazy = index >= 2;
+              
+              return shouldLazy ? (
+                <LazySection key={s.id} rootMargin="300px">
+                  <div style={{ marginBottom: 40 }}>{rendered}</div>
+                </LazySection>
+              ) : (
+                <div key={s.id} style={{ marginBottom: 40 }}>{rendered}</div>
+              );
+            })}
+        </div>
+      )}
 
       {/* CSS for hover effect */}
       <style>{`

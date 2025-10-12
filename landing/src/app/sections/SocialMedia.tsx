@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { tokens } from '@app/shared';
 
@@ -12,24 +13,24 @@ interface SocialMediaData {
   layout?: 'horizontal' | 'vertical' | 'grid';
 }
 
-export function SocialMedia({ data }: { data: SocialMediaData }) {
+export const SocialMedia = memo(function SocialMedia({ data }: { data: SocialMediaData }) {
   const layout = data.layout || 'horizontal';
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
-      style={{
-        margin: '80px 0',
-        padding: '60px 24px',
-        background: `linear-gradient(135deg, ${tokens.color.surface} 0%, rgba(19,19,22,0.8) 100%)`,
-        borderRadius: tokens.radius.xl,
-        border: `1px solid ${tokens.color.border}`,
-        textAlign: 'center',
-      }}
-    >
+    <div style={{ maxWidth: 1200, margin: '80px auto', padding: '0 16px' }}>
+      <motion.section
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        style={{
+          padding: '60px 24px',
+          background: `linear-gradient(135deg, ${tokens.color.surface} 0%, rgba(19,19,22,0.8) 100%)`,
+          borderRadius: tokens.radius.xl,
+          border: `1px solid ${tokens.color.border}`,
+          textAlign: 'center',
+        }}
+      >
       {/* Header */}
       {(data.title || data.subtitle) && (
         <div style={{ marginBottom: 40 }}>
@@ -116,12 +117,13 @@ export function SocialMedia({ data }: { data: SocialMediaData }) {
               }}
               onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
               onMouseLeave={(e) => (e.currentTarget.style.opacity = '0')}
-            />
-            <i className={link.icon} style={{ position: 'relative', zIndex: 1 }} />
-          </motion.a>
-        ))}
-      </div>
-    </motion.section>
+          />
+          <i className={link.icon} style={{ position: 'relative', zIndex: 1 }} />
+        </motion.a>
+      ))}
+    </div>
+      </motion.section>
+    </div>
   );
-}
+});
 

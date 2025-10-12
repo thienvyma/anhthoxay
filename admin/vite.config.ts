@@ -9,7 +9,7 @@ export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../node_modules/.vite/admin',
   server: {
-    port: 4200,
+    port: 4201,
     host: 'localhost',
     strictPort: true,
     fs: {
@@ -17,7 +17,7 @@ export default defineConfig(() => ({
     },
   },
   preview: {
-    port: 4200,
+    port: 4201,
     host: 'localhost',
   },
   plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],

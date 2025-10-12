@@ -26,7 +26,23 @@ async function apiFetch<T>(endpoint: string, options: FetchOptions = {}): Promis
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || `HTTP ${response.status}`);
+    
+    // Format validation errors if present
+    let errorMessage = error.error || error.message || `HTTP ${response.status}: ${response.statusText}`;
+    if (error.details && Array.isArray(error.details)) {
+      const validationErrors = error.details
+        .map((detail: any) => `${detail.field}: ${detail.message}`)
+        .join('\n');
+      errorMessage = `${errorMessage}\n\nValidation Errors:\n${validationErrors}`;
+    }
+    
+    console.error(`API Error [${options.method || 'GET'} ${endpoint}]:`, {
+      status: response.status,
+      statusText: response.statusText,
+      error: error,
+      url: url,
+    });
+    throw new Error(errorMessage);
   }
 
   return response.json();

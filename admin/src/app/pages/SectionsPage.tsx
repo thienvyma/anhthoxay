@@ -73,6 +73,11 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
       setCreatingSection(null);
     } catch (error) {
       console.error('Failed to save section:', error);
+      // Show error to user
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save section';
+      alert(`Error: ${errorMessage}\n\nPlease check the console for more details.`);
+      // Re-throw to prevent modal from closing
+      throw error;
     }
   }
 

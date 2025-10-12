@@ -1,4 +1,5 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
+import { Link, useLocation } from 'react-router-dom';
 import { tokens } from '@app/shared';
 
 export interface HeaderLink {
@@ -32,6 +33,7 @@ interface HeaderProps {
 
 export function Header({ config, mobileMenuComponent }: HeaderProps) {
   const { scrollY } = useScroll();
+  const location = useLocation();
   
   // Scroll-based animations
   const headerBg = useTransform(
@@ -54,11 +56,11 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
       animateIcon: true,
     },
     links: [
-      { href: '#/menu', label: 'Menu', icon: 'ri-restaurant-line' },
-      { href: '#/about', label: 'About', icon: 'ri-information-line' },
-      { href: '#/gallery', label: 'Gallery', icon: 'ri-image-line' },
-      { href: '#/blog', label: 'Blog', icon: 'ri-article-line' },
-      { href: '#/contact', label: 'Contact', icon: 'ri-map-pin-line' },
+      { href: '/menu', label: 'Menu', icon: 'ri-restaurant-line' },
+      { href: '/about', label: 'About', icon: 'ri-information-line' },
+      { href: '/gallery', label: 'Gallery', icon: 'ri-image-line' },
+      { href: '/blog', label: 'Blog', icon: 'ri-article-line' },
+      { href: '/contact', label: 'Contact', icon: 'ri-map-pin-line' },
     ],
     ctaButton: {
       text: 'Đặt bàn ngay',
@@ -100,13 +102,13 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
         }}
       >
         {/* Logo */}
-        <motion.a
-          href="#/"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          style={{ color: tokens.color.primary, textDecoration: 'none' }}
-        >
-          {logo?.imageUrl ? (
+        <Link to="/" style={{ textDecoration: 'none' }}>
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{ color: tokens.color.primary }}
+          >
+          {logo?.imageUrl && logo.imageUrl.trim() ? (
             /* Image Logo */
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <img
@@ -149,40 +151,62 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
               {logo?.text}
             </div>
           )}
-        </motion.a>
+          </motion.div>
+        </Link>
 
         {/* Navigation */}
         <nav style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
           {/* Desktop Links */}
-          {links?.map((item) => (
-            <motion.a
-              key={item.href}
-              href={item.href}
-              whileHover={{ y: -2 }}
-              style={{
-                color: tokens.color.text,
-                textDecoration: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                fontSize: 15,
-                fontWeight: 500,
-                transition: 'color 0.2s',
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.color = tokens.color.primary)
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.color = tokens.color.text)
-              }
-              className="desktop-only"
-            >
-              {item.icon && (
-                <i className={item.icon} style={{ fontSize: 18 }} />
-              )}
-              {item.label}
-            </motion.a>
-          ))}
+          {links?.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                style={{ textDecoration: 'none' }}
+                className="desktop-only"
+              >
+                <motion.div
+                  whileHover={{ y: -2 }}
+                  style={{
+                    color: isActive ? tokens.color.primary : tokens.color.text,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 15,
+                    fontWeight: isActive ? 600 : 500,
+                    transition: 'color 0.2s',
+                    position: 'relative',
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.color = tokens.color.primary)
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.color = isActive ? tokens.color.primary : tokens.color.text)
+                  }
+                >
+                  {item.icon && (
+                    <i className={item.icon} style={{ fontSize: 18 }} />
+                  )}
+                  {item.label}
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTab"
+                      style={{
+                        position: 'absolute',
+                        bottom: -8,
+                        left: 0,
+                        right: 0,
+                        height: 2,
+                        background: tokens.color.primary,
+                        borderRadius: 2,
+                      }}
+                    />
+                  )}
+                </motion.div>
+              </Link>
+            );
+          })}
 
           {/* CTA Button */}
           {ctaButton && (

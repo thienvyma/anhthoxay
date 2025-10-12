@@ -17,86 +17,113 @@ interface MissionVisionData {
 }
 
 export function MissionVision({ data }: { data: MissionVisionData }) {
+  const items = [];
+  
+  if (data.mission) {
+    items.push({
+      ...data.mission,
+      icon: data.mission.icon || 'ri-target-line',
+    });
+  }
+  
+  if (data.vision) {
+    items.push({
+      ...data.vision,
+      icon: data.vision.icon || 'ri-eye-line',
+    });
+  }
+
+  if (items.length === 0) return null;
+
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
-      style={{
-        margin: '80px 0',
-        padding: '60px 24px',
-      }}
-    >
-      {/* Header */}
+    <div style={{ 
+      maxWidth: 1200, 
+      margin: '80px auto', 
+      padding: '0 24px',
+    }}>
+      {/* Section Header */}
       {(data.title || data.subtitle) && (
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          style={{
+            textAlign: 'center',
+            marginBottom: 60,
+          }}
+        >
           {data.title && (
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+            <h2
               style={{
-                fontSize: tokens.font.size.h2,
-                fontFamily: tokens.font.display,
+                fontSize: 'clamp(2rem, 5vw, 3rem)',
+                fontFamily: 'Playfair Display, serif',
                 color: tokens.color.primary,
-                marginBottom: 12,
+                marginBottom: 16,
+                fontWeight: 700,
               }}
             >
               {data.title}
-            </motion.h2>
+            </h2>
           )}
           {data.subtitle && (
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
+            <p
               style={{
+                fontSize: 18,
                 color: tokens.color.muted,
-                fontSize: 16,
+                maxWidth: 700,
+                margin: '0 auto',
+                lineHeight: 1.7,
               }}
             >
               {data.subtitle}
-            </motion.p>
+            </p>
           )}
-        </div>
+        </motion.div>
       )}
 
-      {/* Mission & Vision Cards */}
-      <div
+      {/* Cards Grid */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
           gap: 32,
-          maxWidth: 1200,
-          margin: '0 auto',
         }}
       >
-        {/* Mission */}
-        {data.mission && (
+        {items.map((item, index) => (
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            key={index}
             whileHover={{ y: -8, scale: 1.02 }}
+            transition={{ duration: 0.3 }}
             style={{
-              background: 'rgba(12,12,16,0.85)',
+              background: 'rgba(255,255,255,0.02)',
               backdropFilter: 'blur(12px)',
               padding: 48,
               borderRadius: 20,
-              border: '1px solid rgba(255,255,255,0.06)',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
-              transition: 'all 0.3s ease',
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: tokens.shadow.lg,
+              position: 'relative',
+              overflow: 'hidden',
             }}
           >
+            {/* Background Glow */}
+            <div
+              style={{
+                position: 'absolute',
+                top: -50,
+                right: -50,
+                width: 200,
+                height: 200,
+                background: `radial-gradient(circle, ${tokens.color.primary}15, transparent 70%)`,
+                borderRadius: '50%',
+                pointerEvents: 'none',
+              }}
+            />
+
             {/* Icon */}
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              whileInView={{ scale: 1, rotate: 0 }}
-              viewport={{ once: true }}
-              transition={{ type: 'spring', delay: 0.2 }}
+            <div
               style={{
                 width: 72,
                 height: 72,
@@ -106,11 +133,12 @@ export function MissionVision({ data }: { data: MissionVisionData }) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: 24,
-                boxShadow: '0 8px 24px rgba(245,211,147,0.3)',
+                boxShadow: `0 8px 24px ${tokens.color.primary}40`,
+                position: 'relative',
               }}
             >
-              <i className={data.mission.icon} style={{ fontSize: 36, color: '#111' }} />
-            </motion.div>
+              <i className={item.icon} style={{ fontSize: 36, color: '#111' }} />
+            </div>
 
             {/* Title */}
             <h3
@@ -119,93 +147,27 @@ export function MissionVision({ data }: { data: MissionVisionData }) {
                 color: tokens.color.primary,
                 marginBottom: 16,
                 fontWeight: 700,
-                fontFamily: tokens.font.display,
+                fontFamily: 'Playfair Display, serif',
+                position: 'relative',
               }}
             >
-              {data.mission.title}
+              {item.title}
             </h3>
 
             {/* Content */}
             <p
               style={{
-                color: 'rgba(255,255,255,0.8)',
+                color: 'rgba(255,255,255,0.7)',
                 lineHeight: 1.8,
                 fontSize: 16,
-                margin: 0,
+                position: 'relative',
               }}
             >
-              {data.mission.content}
+              {item.content}
             </p>
           </motion.div>
-        )}
-
-        {/* Vision */}
-        {data.vision && (
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            whileHover={{ y: -8, scale: 1.02 }}
-            style={{
-              background: 'rgba(12,12,16,0.85)',
-              backdropFilter: 'blur(12px)',
-              padding: 48,
-              borderRadius: 20,
-              border: '1px solid rgba(255,255,255,0.06)',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
-              transition: 'all 0.3s ease',
-            }}
-          >
-            {/* Icon */}
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              whileInView={{ scale: 1, rotate: 0 }}
-              viewport={{ once: true }}
-              transition={{ type: 'spring', delay: 0.2 }}
-              style={{
-                width: 72,
-                height: 72,
-                borderRadius: 16,
-                background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 24,
-                boxShadow: '0 8px 24px rgba(245,211,147,0.3)',
-              }}
-            >
-              <i className={data.vision.icon} style={{ fontSize: 36, color: '#111' }} />
-            </motion.div>
-
-            {/* Title */}
-            <h3
-              style={{
-                fontSize: 28,
-                color: tokens.color.primary,
-                marginBottom: 16,
-                fontWeight: 700,
-                fontFamily: tokens.font.display,
-              }}
-            >
-              {data.vision.title}
-            </h3>
-
-            {/* Content */}
-            <p
-              style={{
-                color: 'rgba(255,255,255,0.8)',
-                lineHeight: 1.8,
-                fontSize: 16,
-                margin: 0,
-              }}
-            >
-              {data.vision.content}
-            </p>
-          </motion.div>
-        )}
-      </div>
-    </motion.section>
+        ))}
+      </motion.div>
+    </div>
   );
 }
-

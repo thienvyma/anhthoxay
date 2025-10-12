@@ -1,5 +1,7 @@
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { tokens } from '@app/shared';
+import { glassEffect } from '../styles/glassEffect';
 
 interface FeaturesData {
   title?: string;
@@ -12,23 +14,23 @@ interface FeaturesData {
   layout?: 'grid' | 'list';
 }
 
-export function Features({ data }: { data: FeaturesData }) {
+export const Features = memo(function Features({ data }: { data: FeaturesData }) {
   const layout = data.layout || 'grid';
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
-      style={{
-        margin: '80px 0',
-        padding: '60px 24px',
-        background: 'radial-gradient(800px 400px at 50% 50%, rgba(245,211,147,0.05) 0%, transparent 70%)',
-        borderRadius: tokens.radius.xl,
-        border: `1px solid ${tokens.color.border}`,
-      }}
-    >
+    <div style={{ maxWidth: 1200, margin: '80px auto', padding: '0 16px' }}>
+      <motion.section
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        style={{
+          padding: '60px 24px',
+          background: 'radial-gradient(800px 400px at 50% 50%, rgba(245,211,147,0.05) 0%, transparent 70%)',
+          borderRadius: tokens.radius.xl,
+          border: `1px solid ${tokens.color.border}`,
+        }}
+      >
       {/* Header */}
       {(data.title || data.subtitle) && (
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
@@ -91,11 +93,9 @@ export function Features({ data }: { data: FeaturesData }) {
             transition={{ delay: index * 0.1 }}
             whileHover={{ y: -8, scale: 1.02 }}
             style={{
+              ...glassEffect({ variant: 'card' }),
               padding: layout === 'grid' ? 28 : 24,
-              background: 'rgba(255,255,255,0.02)',
-              backdropFilter: 'blur(10px)',
               borderRadius: tokens.radius.lg,
-              border: `1px solid ${tokens.color.border}`,
               textAlign: layout === 'grid' ? 'center' : 'left',
               transition: 'all 0.3s ease',
               cursor: 'default',
@@ -158,6 +158,7 @@ export function Features({ data }: { data: FeaturesData }) {
         ))}
       </div>
     </motion.section>
+    </div>
   );
-}
+});
 

@@ -24,9 +24,7 @@ body {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
   /* Fixed background that doesn't scroll */
   background: #0b0c0f;
-  background-image:
-    linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.6) 100%),
-    url("https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=30");
+  /* Background image will be set by JavaScript from restaurant settings */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -41,6 +39,18 @@ body {
 }
 
 a { color: var(--text); }
+
+/* Consistent container for all sections */
+.section-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* Section spacing */
+.section-spacing {
+  margin: 80px 0;
+}
 
 .glass {
   /* Replace expensive backdrop-filter with solid background */
@@ -190,6 +200,163 @@ img {
   transition: all 0.15s ease;
 }
 
+/* ===== BLOG CARD ANIMATIONS (GPU-ACCELERATED) ===== */
+
+/* Fade in up animation for blog cards - ONLY ONCE, not on every scroll! */
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out both;
+}
+
+/* Disable animation after first run to prevent scroll lag */
+.fade-in-up-done {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  animation: none !important;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Blog card hover effects - GPU accelerated with pseudo-element */
+.blog-card {
+  transition: transform 0.3s ease, border-color 0.3s ease;
+  will-change: transform;
+}
+
+.blog-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 12px 40px rgba(245, 211, 147, 0.2);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.blog-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(245, 211, 147, 0.3) !important;
+}
+
+.blog-card:hover::after {
+  opacity: 1;
+}
+
+/* Blog card image zoom effect */
+.blog-card-image-wrapper {
+  overflow: hidden;
+}
+
+.blog-card-image-wrapper img {
+  transition: transform 0.4s ease;
+  will-change: transform;
+}
+
+.blog-card:hover .blog-card-image-wrapper img {
+  transform: scale(1.05);
+}
+
+/* CTA button hover - GPU accelerated */
+.cta-button {
+  transition: transform 0.2s ease;
+  will-change: transform;
+}
+
+.cta-button:hover {
+  transform: scale(1.05);
+}
+
+.cta-button:active {
+  transform: scale(0.98);
+}
+
+/* ===== GALLERY CARD ANIMATIONS (GPU-ACCELERATED) ===== */
+
+/* Gallery card hover effects - GPU accelerated with pseudo-element */
+.gallery-card {
+  transition: transform 0.3s ease, border-color 0.3s ease;
+  will-change: transform;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.gallery-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 12px 40px rgba(245, 211, 147, 0.2);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.gallery-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(245, 211, 147, 0.3) !important;
+}
+
+.gallery-card:hover::after {
+  opacity: 1;
+}
+
+/* Gallery card image zoom effect */
+.gallery-card-image-wrapper {
+  overflow: hidden;
+}
+
+.gallery-card-image-wrapper img {
+  transition: transform 0.4s ease;
+  will-change: transform;
+}
+
+.gallery-card:hover .gallery-card-image-wrapper img {
+  transform: scale(1.1);
+}
+
+/* Gallery overlay fade in on hover */
+.gallery-overlay {
+  transition: opacity 0.3s ease;
+}
+
+.gallery-card:hover .gallery-overlay {
+  opacity: 1 !important;
+}
+
+/* ===== GALLERY SECTION CARD (Homepage Gallery section) ===== */
+
+/* Gallery section card hover - GPU accelerated */
+.gallery-section-card {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  will-change: transform;
+}
+
+.gallery-section-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 12px 32px rgba(245, 211, 147, 0.25);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.gallery-section-card:hover::after {
+  opacity: 1;
+}
+
 /* ============================================
    RESPONSIVE DESIGN - Mobile & Tablet
    ============================================ */
@@ -222,6 +389,12 @@ img {
     grid-template-columns: 1fr !important;
   }
 
+  /* Footer grid responsive */
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+  }
+
   /* Smaller padding on mobile */
   .panel, .card {
     padding: 16px !important;
@@ -240,10 +413,38 @@ img {
   }
 }
 
+/* Tablet styles */
+@media (max-width: 1024px) and (min-width: 769px) {
+  html {
+    font-size: 15px;
+  }
+
+  /* Adjust container padding */
+  [style*="maxWidth: 1400"] {
+    padding-left: 32px !important;
+    padding-right: 32px !important;
+  }
+}
+
 /* Small mobile */
 @media (max-width: 480px) {
   html {
     font-size: 13px;
+  }
+
+  /* Force single column on very small screens */
+  [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Reduce gaps on small screens */
+  [style*="gap: 32px"], [style*="gap: 24px"] {
+    gap: 16px !important;
+  }
+
+  /* Smaller padding for cards */
+  .card, .panel {
+    padding: 12px !important;
   }
 }
 
@@ -273,6 +474,61 @@ img {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Spinner utility class for loaders */
+.spinner {
+  animation: spin 0.8s linear infinite;
+}
+
+/* Hover scale animations - replacing Framer Motion whileHover */
+.hover-scale {
+  transition: transform 0.2s ease;
+}
+
+.hover-scale:hover {
+  transform: scale(1.1);
+}
+
+.hover-scale:active {
+  transform: scale(0.9);
+}
+
+.hover-scale-rotate {
+  transition: all 0.2s ease;
+}
+
+.hover-scale-rotate:hover {
+  transform: scale(1.1) rotate(90deg);
+}
+
+.hover-scale-rotate:active {
+  transform: scale(0.9) rotate(90deg);
+}
+
+/* Navigation button hover effects */
+.hover-nav-left {
+  transition: all 0.2s ease;
+}
+
+.hover-nav-left:hover {
+  transform: scale(1.1) translateX(-4px);
+}
+
+.hover-nav-left:active {
+  transform: scale(0.9) translateX(-4px);
+}
+
+.hover-nav-right {
+  transition: all 0.2s ease;
+}
+
+.hover-nav-right:hover {
+  transform: scale(1.1) translateX(4px);
+}
+
+.hover-nav-right:active {
+  transform: scale(0.9) translateX(4px);
 }
 
 @keyframes pulse {
@@ -315,6 +571,70 @@ img {
   }
 }
 
+/* ========== GLASS MORPHISM EFFECTS (iOS 18 / macOS Sequoia Style) ========== */
+.glass-effect {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.05) 0%, 
+    rgba(255, 255, 255, 0.01) 50%,
+    rgba(0, 0, 0, 0.05) 100%),
+    rgba(12, 12, 16, 0.7);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 
+              inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.glass-effect-strong {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.06) 0%, 
+    rgba(255, 255, 255, 0.02) 50%,
+    rgba(0, 0, 0, 0.06) 100%),
+    rgba(12, 12, 16, 0.85);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.glass-effect-subtle {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.03) 0%, 
+    rgba(255, 255, 255, 0.01) 50%,
+    rgba(0, 0, 0, 0.03) 100%),
+    rgba(12, 12, 16, 0.5);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 
+              inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.glass-effect-card {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.04) 0%, 
+    rgba(255, 255, 255, 0.01) 50%,
+    rgba(0, 0, 0, 0.04) 100%),
+    rgba(12, 12, 16, 0.6);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), 
+              inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+
+.glass-effect-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.glass-effect-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  border-color: rgba(245, 211, 147, 0.3);
+}
+
 /* Reduced motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -327,5 +647,12 @@ img {
 
   html {
     scroll-behavior: auto !important;
+  }
+
+  .glass-effect-hover {
+    transition: none;
+  }
+  .glass-effect-hover:hover {
+    transform: none;
   }
 }

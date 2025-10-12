@@ -1,5 +1,36 @@
 import { useState, useEffect, useRef, CSSProperties } from 'react';
 
+/**
+ * Generate srcset string from image URL
+ * Assumes API generates: {id}-sm.webp (400w), {id}-md.webp (800w), {id}-lg.webp (1200w), {id}-xl.webp (1920w)
+ */
+function generateSrcSet(src: string): string {
+  if (!src || !src.includes('/media/')) return '';
+  
+  // Extract base URL and filename
+  const parts = src.split('/');
+  const filename = parts[parts.length - 1];
+  const baseUrl = parts.slice(0, -1).join('/');
+  
+  // Remove extension and size suffix if present
+  const filenameWithoutExt = filename.replace(/\.(webp|jpg|jpeg|png|gif)$/i, '');
+  const baseId = filenameWithoutExt.replace(/-(sm|md|lg|xl)$/, '');
+  
+  // Generate srcset with all available sizes
+  const sizes = [
+    { suffix: 'sm', width: 400 },
+    { suffix: 'md', width: 800 },
+    { suffix: 'lg', width: 1200 },
+    { suffix: 'xl', width: 1920 },
+  ];
+  
+  const srcsetEntries = sizes.map(
+    ({ suffix, width }) => `${baseUrl}/${baseId}-${suffix}.webp ${width}w`
+  );
+  
+  return srcsetEntries.join(', ');
+}
+
 interface OptimizedImageProps {
   src: string;
   alt: string;
@@ -11,6 +42,7 @@ interface OptimizedImageProps {
   onMouseLeave?: (e: React.MouseEvent<HTMLImageElement>) => void;
   loading?: 'lazy' | 'eager';
   blurDataURL?: string; // Optional blur placeholder
+  sizes?: string; // Optional sizes attribute for responsive images
 }
 
 /**
@@ -20,6 +52,7 @@ interface OptimizedImageProps {
  * - Blur placeholder while loading
  * - Progressive loading
  * - Error handling with fallback
+ * - Responsive images with srcset (WebP)
  */
 export function OptimizedImage({
   src,
@@ -32,6 +65,7 @@ export function OptimizedImage({
   onMouseLeave,
   loading = 'lazy',
   blurDataURL,
+  sizes = '(max-width: 640px) 400px, (max-width: 1024px) 800px, (max-width: 1536px) 1200px, 1920px',
 }: OptimizedImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(loading === 'eager');
@@ -44,18 +78,18 @@ export function OptimizedImage({
 
     const observer = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            // Use setTimeout to batch multiple image loads
-            setTimeout(() => {
+        // Use RAF to batch DOM updates for better performance
+        requestAnimationFrame(() => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
               setIsInView(true);
-            }, 0);
-            observer.disconnect();
-          }
+              observer.disconnect();
+            }
+          });
         });
       },
       {
-        rootMargin: '400px', // Load 400px before entering viewport for smoother experience
+        rootMargin: '100px', // Reduced from 400px - load closer to viewport
         threshold: 0.01,
       }
     );
@@ -75,11 +109,13 @@ export function OptimizedImage({
     onError?.();
   };
 
-  // Generate blur placeholder from dominant color
-  const defaultBlurDataURL =
-    'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Cfilter id="b"%3E%3CfeGaussianBlur stdDeviation="20"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" fill="%230c0c10" filter="url(%23b)"/%3E%3C/svg%3E';
+  // Generate simple solid color placeholder (no blur for performance)
+  const defaultBlurDataURL = '#0c0c10'; // Simple solid color, no SVG blur
 
-  const placeholderSrc = blurDataURL || defaultBlurDataURL;
+  const placeholderColor = blurDataURL || defaultBlurDataURL;
+  
+  // Generate srcset for responsive images
+  const srcset = generateSrcSet(src);
 
   return (
     <div
@@ -92,39 +128,23 @@ export function OptimizedImage({
       }}
       className={className}
     >
-      {/* Blur Placeholder */}
+      {/* Simple placeholder - no blur or shimmer for better performance */}
       {!isLoaded && !hasError && (
         <div
           style={{
             position: 'absolute',
             inset: 0,
-            backgroundImage: `url("${placeholderSrc}")`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            filter: 'blur(20px)',
-            transform: 'scale(1.1)',
-            transition: 'opacity 0.3s ease',
+            backgroundColor: placeholderColor,
           }}
         />
       )}
 
-      {/* Loading Shimmer */}
-      {!isLoaded && !hasError && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background:
-              'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%)',
-            animation: 'shimmer 2s infinite',
-          }}
-        />
-      )}
-
-      {/* Actual Image */}
+      {/* Actual Image with srcset */}
       {isInView && !hasError && (
         <img
           src={src}
+          srcSet={srcset || undefined}
+          sizes={sizes}
           alt={alt}
           onLoad={handleLoad}
           onError={handleError}
@@ -165,18 +185,6 @@ export function OptimizedImage({
           <span style={{ fontSize: 12 }}>Failed to load</span>
         </div>
       )}
-
-      {/* CSS Animation */}
-      <style>{`
-        @keyframes shimmer {
-          0% {
-            transform: translateX(-100%);
-          }
-          100% {
-            transform: translateX(100%);
-          }
-        }
-      `}</style>
     </div>
   );
 }

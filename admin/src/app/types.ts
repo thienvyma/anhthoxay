@@ -18,10 +18,12 @@ export interface Section {
 
 export type SectionKind = 
   | 'HERO'
+  | 'HERO_SIMPLE'
   | 'GALLERY'
   | 'FEATURED_MENU'
   | 'TESTIMONIALS'
   | 'CTA'
+  | 'CALL_TO_ACTION'
   | 'RICH_TEXT'
   | 'BANNER'
   | 'STATS'
@@ -35,7 +37,9 @@ export type SectionKind =
   | 'FEATURES'
   | 'MISSION_VISION'
   | 'FAB_ACTIONS'
-  | 'FOOTER_SOCIAL';
+  | 'FOOTER_SOCIAL'
+  | 'QUICK_CONTACT'
+  | 'CORE_VALUES';
 
 export interface Page {
   id: string;

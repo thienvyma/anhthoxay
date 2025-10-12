@@ -23,11 +23,11 @@ export function HeaderFooterEditor({ type, config, onSave, onCancel }: HeaderFoo
           animateIcon: true,
         },
         links: [
-          { href: '#/menu', label: 'Menu', icon: 'ri-restaurant-line' },
-          { href: '#/about', label: 'About', icon: 'ri-information-line' },
-          { href: '#/gallery', label: 'Gallery', icon: 'ri-image-line' },
-          { href: '#/blog', label: 'Blog', icon: 'ri-article-line' },
-          { href: '#/contact', label: 'Contact', icon: 'ri-map-pin-line' },
+          { href: '/menu', label: 'Menu', icon: 'ri-restaurant-line' },
+          { href: '/about', label: 'About', icon: 'ri-information-line' },
+          { href: '/gallery', label: 'Gallery', icon: 'ri-image-line' },
+          { href: '/blog', label: 'Blog', icon: 'ri-article-line' },
+          { href: '/contact', label: 'Contact', icon: 'ri-map-pin-line' },
         ],
         ctaButton: {
           text: 'Đặt bàn ngay',
@@ -45,10 +45,10 @@ export function HeaderFooterEditor({ type, config, onSave, onCancel }: HeaderFoo
           awards: ['🏆', '⭐', '🎖️'],
         },
         quickLinks: [
-          { label: 'Menu', href: '#/menu' },
-          { label: 'About', href: '#/about' },
-          { label: 'Gallery', href: '#/gallery' },
-          { label: 'Contact', href: '#/contact' },
+          { label: 'Menu', href: '/menu' },
+          { label: 'About', href: '/about' },
+          { label: 'Gallery', href: '/gallery' },
+          { label: 'Contact', href: '/contact' },
         ],
         newsletter: {
           enabled: true,
@@ -279,7 +279,7 @@ function HeaderForm({ data, updateField, updateArrayItem, addArrayItem, removeAr
           </h3>
           <Button
             variant="secondary"
-            onClick={() => addArrayItem('links', { href: '#/', label: 'New Link', icon: 'ri-link' })}
+            onClick={() => addArrayItem('links', { href: '/', label: 'New Link', icon: 'ri-link' })}
           >
             <i className="ri-add-line" /> Add Link
           </Button>
@@ -296,7 +296,7 @@ function HeaderForm({ data, updateField, updateArrayItem, addArrayItem, removeAr
               label="Href"
               value={link.href || ''}
               onChange={(e) => updateArrayItem('links', i, 'href', e.target.value)}
-              placeholder="#/menu"
+              placeholder="/menu"
             />
             <Input
               label="Icon"
@@ -385,7 +385,7 @@ function FooterForm({ data, updateField, updateArrayItem, addArrayItem, removeAr
           </h3>
           <Button
             variant="secondary"
-            onClick={() => addArrayItem('quickLinks', { label: 'New Link', href: '#/' })}
+            onClick={() => addArrayItem('quickLinks', { label: 'New Link', href: '/' })}
           >
             <i className="ri-add-line" /> Add Link
           </Button>
@@ -402,7 +402,7 @@ function FooterForm({ data, updateField, updateArrayItem, addArrayItem, removeAr
               label="Href"
               value={link.href || ''}
               onChange={(e) => updateArrayItem('quickLinks', i, 'href', e.target.value)}
-              placeholder="#/menu"
+              placeholder="/menu"
             />
             <Button variant="danger" onClick={() => removeArrayItem('quickLinks', i)} style={{ marginTop: 26 }}>
               <i className="ri-delete-bin-line" />

@@ -127,3 +127,22 @@ export const pagesAPI = {
   },
 };
 
+/**
+ * Settings API - WORKING ✅
+ * Backend: GET /settings/restaurant
+ */
+export const settingsAPI = {
+  getRestaurantSettings: () => {
+    return apiFetch<{
+      name: string;
+      description: string;
+      address: string;
+      phone: string;
+      email: string;
+      website: string;
+      openingHours: string;
+      backgroundImage?: string;
+    }>(`/settings/restaurant`);
+  },
+};
+
