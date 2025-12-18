@@ -14,7 +14,9 @@ export function QuotePage() {
       try {
         const res = await fetch(`${API_URL}/pages/bao-gia`);
         if (res.ok) {
-          const data = await res.json();
+          const json = await res.json();
+          // Unwrap standardized response format { success: true, data: T }
+          const data = json.data || json;
           setPage(data);
         }
       } catch {

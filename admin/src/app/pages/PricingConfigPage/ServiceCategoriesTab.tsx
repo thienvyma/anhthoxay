@@ -7,8 +7,8 @@ import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { IconPicker } from '../../components/IconPicker';
 import { useToast } from '../../components/Toast';
+import { serviceCategoriesApi } from '../../api';
 import type { ServiceCategoriesTabProps, ServiceCategory } from './types';
-import { API_URL } from './types';
 
 export function ServiceCategoriesTab({ categories, formulas, materialCategories, onRefresh }: ServiceCategoriesTabProps) {
   const toast = useToast();
@@ -52,20 +52,16 @@ export function ServiceCategoriesTab({ categories, formulas, materialCategories,
       return;
     }
     try {
-      const url = editingCategory ? `${API_URL}/service-categories/${editingCategory.id}` : `${API_URL}/service-categories`;
-      const res = await fetch(url, {
-        method: editingCategory ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ ...form, formulaId: form.formulaId || null, icon: form.icon || null }),
-      });
-      if (res.ok) {
-        toast.success(editingCategory ? 'Cập nhật thành công!' : 'Tạo mới thành công!');
-        onRefresh();
-        resetForm();
+      const payload = { ...form, formulaId: form.formulaId || null, icon: form.icon || null };
+      if (editingCategory) {
+        await serviceCategoriesApi.update(editingCategory.id, payload);
+        toast.success('Cập nhật thành công!');
       } else {
-        toast.error('Có lỗi xảy ra');
+        await serviceCategoriesApi.create(payload);
+        toast.success('Tạo mới thành công!');
       }
+      onRefresh();
+      resetForm();
     } catch (error) {
       toast.error('Lỗi: ' + (error as Error).message);
     }
@@ -74,11 +70,9 @@ export function ServiceCategoriesTab({ categories, formulas, materialCategories,
   const handleDelete = async (id: string) => {
     if (!confirm('Bạn có chắc muốn xóa hạng mục này?')) return;
     try {
-      const res = await fetch(`${API_URL}/service-categories/${id}`, { method: 'DELETE', credentials: 'include' });
-      if (res.ok) {
-        toast.success('Đã xóa');
-        onRefresh();
-      }
+      await serviceCategoriesApi.delete(id);
+      toast.success('Đã xóa');
+      onRefresh();
     } catch (error) {
       toast.error('Lỗi: ' + (error as Error).message);
     }

@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { tokens, API_URL, resolveMediaUrl } from '@app/shared';
+import { tokens, resolveMediaUrl } from '@app/shared';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { OptimizedImageUpload } from '../../components/OptimizedImageUpload';
 import { MarkdownEditor } from '../../components/MarkdownEditor';
-import { blogPostsApi, blogCategoriesApi } from '../../api';
+import { blogPostsApi, blogCategoriesApi, mediaApi } from '../../api';
 import { BlogPost, BlogCategory } from '../../types';
 import { useToast } from '../../components/Toast';
 
@@ -556,16 +556,8 @@ function PostEditorModal({ editingPost, formData, categories, onTitleChange, onF
                 placeholder="Viết nội dung bài viết..."
                 minHeight={300}
                 onImageUpload={async (file) => {
-                  const fd = new FormData();
-                  fd.append('file', file);
-                  const response = await fetch(`${API_URL}/media`, {
-                    method: 'POST',
-                    body: fd,
-                    credentials: 'include',
-                  });
-                  if (!response.ok) throw new Error('Upload failed');
-                  const data = await response.json();
-                  return data.url;
+                  const result = await mediaApi.upload(file);
+                  return result.url;
                 }}
               />
             </div>

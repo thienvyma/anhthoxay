@@ -5,8 +5,8 @@ import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { useToast } from '../../components/Toast';
+import { formulasApi } from '../../api';
 import type { FormulasTabProps, Formula } from './types';
-import { API_URL } from './types';
 
 export function FormulasTab({ formulas, unitPrices, onRefresh }: FormulasTabProps) {
   const toast = useToast();
@@ -32,20 +32,15 @@ export function FormulasTab({ formulas, unitPrices, onRefresh }: FormulasTabProp
       return;
     }
     try {
-      const url = editingItem ? `${API_URL}/formulas/${editingItem.id}` : `${API_URL}/formulas`;
-      const res = await fetch(url, {
-        method: editingItem ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(form),
-      });
-      if (res.ok) {
-        toast.success(editingItem ? 'Cập nhật thành công!' : 'Tạo mới thành công!');
-        onRefresh();
-        resetForm();
+      if (editingItem) {
+        await formulasApi.update(editingItem.id, form);
+        toast.success('Cập nhật thành công!');
       } else {
-        toast.error('Có lỗi xảy ra');
+        await formulasApi.create(form);
+        toast.success('Tạo mới thành công!');
       }
+      onRefresh();
+      resetForm();
     } catch (error) {
       toast.error('Lỗi: ' + (error as Error).message);
     }
@@ -54,11 +49,9 @@ export function FormulasTab({ formulas, unitPrices, onRefresh }: FormulasTabProp
   const handleDelete = async (id: string) => {
     if (!confirm('Bạn có chắc muốn xóa công thức này?')) return;
     try {
-      const res = await fetch(`${API_URL}/formulas/${id}`, { method: 'DELETE', credentials: 'include' });
-      if (res.ok) {
-        toast.success('Đã xóa');
-        onRefresh();
-      }
+      await formulasApi.delete(id);
+      toast.success('Đã xóa');
+      onRefresh();
     } catch (error) {
       toast.error('Lỗi: ' + (error as Error).message);
     }

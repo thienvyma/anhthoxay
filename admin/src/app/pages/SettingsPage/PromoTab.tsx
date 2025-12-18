@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens, API_URL } from '@app/shared';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
+import { settingsApi, mediaApi } from '../../api';
 import type { PromoSettings } from './types';
-import { API_URL, glass } from './types';
+import { glass } from './types';
 
 interface PromoTabProps {
   settings: PromoSettings;
@@ -21,14 +22,7 @@ export function PromoTab({ settings, onChange, onShowMessage, onError }: PromoTa
   const handleSave = useCallback(async () => {
     try {
       setSaving(true);
-      const response = await fetch(`${API_URL}/settings/promo`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ value: settings }),
-      });
-
-      if (!response.ok) throw new Error('Failed to save');
+      await settingsApi.update('promo', { value: settings });
       onShowMessage('✅ Cài đặt quảng cáo đã được lưu!');
     } catch (error) {
       console.error('Error saving promo settings:', error);
@@ -41,17 +35,7 @@ export function PromoTab({ settings, onChange, onShowMessage, onError }: PromoTa
   const handleImageUpload = useCallback(async (file: File) => {
     try {
       setUploadingImage(true);
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch(`${API_URL}/media`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error('Upload failed');
-      const result = await response.json();
+      const result = await mediaApi.upload(file);
 
       onChange({
         ...settings,

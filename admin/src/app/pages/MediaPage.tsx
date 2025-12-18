@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { tokens, API_URL, resolveMediaUrl } from '@app/shared';
+import { tokens, resolveMediaUrl } from '@app/shared';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { mediaApi } from '../api';
@@ -53,12 +53,9 @@ export function MediaPage() {
 
   const loadMediaUsage = async () => {
     try {
-      const res = await fetch(`${API_URL}/media/usage`, { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setMediaUsage(data.usage || {});
-        setUsageSummary(data.summary || { total: 0, materials: 0, blog: 0, sections: 0, unused: 0 });
-      }
+      const data = await mediaApi.getUsage();
+      setMediaUsage(data.usage || {});
+      setUsageSummary(data.summary || { total: 0, materials: 0, blog: 0, sections: 0, unused: 0 });
     } catch (error) {
       console.error('Failed to load media usage:', error);
     }
@@ -67,20 +64,11 @@ export function MediaPage() {
   const handleSyncMedia = async () => {
     setSyncing(true);
     try {
-      const res = await fetch(`${API_URL}/media/sync`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      if (res.ok) {
-        const data = await res.json();
-        toast.success(data.message || 'Đồng bộ thành công!');
-        // Reload media and usage
-        await loadMedia();
-        await loadMediaUsage();
-      } else {
-        const err = await res.json();
-        toast.error(err.error || 'Đồng bộ thất bại');
-      }
+      const data = await mediaApi.sync();
+      toast.success(data.message || 'Đồng bộ thành công!');
+      // Reload media and usage
+      await loadMedia();
+      await loadMediaUsage();
     } catch (error) {
       toast.error('Lỗi: ' + (error as Error).message);
     } finally {
@@ -132,16 +120,7 @@ export function MediaPage() {
   const handleSaveEdit = useCallback(async () => {
     if (!selectedFile) return;
     try {
-      const response = await fetch(`${API_URL}/media/${selectedFile.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(editFormData),
-      });
-      
-      if (!response.ok) throw new Error('Failed to update');
-      
-      const updated = await response.json();
+      const updated = await mediaApi.updateMetadata(selectedFile.id, editFormData);
       
       setMediaFiles((prev) =>
         prev.map((f) =>

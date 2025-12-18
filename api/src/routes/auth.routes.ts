@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { PrismaClient } from '@prisma/client';
 import { AuthService, AuthError, type Role } from '../services/auth.service';
 import { createAuthMiddleware, getUser } from '../middleware/auth.middleware';
-import { loginRateLimiter, resetLimit } from '../middleware/rate-limiter';
+import { loginRateLimiter, resetLimit, clearAllLimits } from '../middleware/rate-limiter';
 import { successResponse, errorResponse } from '../utils/response';
 
 // ============================================
@@ -274,6 +274,18 @@ export function createAuthRoutes(prisma: PrismaClient) {
     } catch (error) {
       return handleError(c, error);
     }
+  });
+
+  // ============================================
+  // DEV ONLY: Clear rate limits
+  // TODO: [TESTING] Xóa endpoint này sau khi test xong
+  // ============================================
+  app.post('/clear-rate-limits', async (c) => {
+    if (process.env.NODE_ENV === 'production') {
+      return errorResponse(c, 'FORBIDDEN', 'Not available in production', 403);
+    }
+    clearAllLimits();
+    return successResponse(c, { message: 'All rate limits cleared' });
   });
 
   return app;

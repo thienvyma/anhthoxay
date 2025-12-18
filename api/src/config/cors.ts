@@ -185,7 +185,7 @@ export function createCorsMiddleware() {
     origin: config.origins,
     credentials: true,
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID'],
+    allowHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID', 'x-session-id'],
   });
 }
 

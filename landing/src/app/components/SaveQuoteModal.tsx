@@ -61,7 +61,13 @@ export const SaveQuoteModal = memo(function SaveQuoteModal({
         }),
       });
 
-      if (!res.ok) throw new Error('Failed to save quote');
+      if (!res.ok) {
+        // Extract error message from standardized response format
+        const errorData = await res.json();
+        const errorMessage = errorData.error?.message || 'Có lỗi xảy ra. Vui lòng thử lại!';
+        toast.error(errorMessage);
+        return;
+      }
 
       toast.success('Đã lưu báo giá! Chúng tôi sẽ liên hệ bạn sớm.');
       setForm({ name: '', phone: '', email: '' });

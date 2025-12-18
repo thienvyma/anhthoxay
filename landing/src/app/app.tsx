@@ -87,7 +87,9 @@ function AppContent() {
   useEffect(() => {
     fetch(`${API_URL}/settings/company`)
       .then((res) => res.json())
-      .then((data) => {
+      .then((json) => {
+        // Unwrap standardized response format { success: true, data: T }
+        const data = json.data || json;
         const settings = data.value || data; // Handle both {key, value} and direct object
         if (settings.backgroundImage && settings.backgroundImage.trim()) {
           const bgUrl = resolveMediaUrl(settings.backgroundImage);
@@ -194,7 +196,9 @@ function AppContent() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
-      .then((data) => {
+      .then((json) => {
+        // Unwrap standardized response format { success: true, data: T }
+        const data = json.data || json;
         setPage(data);
         setError(null);
       })
@@ -240,7 +244,9 @@ function AppContent() {
         }
         return res.json();
       })
-      .then((data) => {
+      .then((json) => {
+        // Unwrap standardized response format { success: true, data: T }
+        const data = json ? (json.data || json) : null;
         setCurrentPage(data);
       })
       .catch((err) => {

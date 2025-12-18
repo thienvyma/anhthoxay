@@ -24,7 +24,9 @@ export function PromoPopup() {
         const res = await fetch(`${API_URL}/settings/promo`);
         if (!res.ok) return;
         
-        const data = await res.json();
+        const json = await res.json();
+        // Unwrap standardized response format { success: true, data: T }
+        const data = json.data || json;
         const popupData = data?.value?.popup || data?.popup;
         if (popupData && popupData.enabled) {
           setSettings(popupData);

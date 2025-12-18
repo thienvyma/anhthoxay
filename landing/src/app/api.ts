@@ -63,6 +63,7 @@ interface CompanySettings {
 
 /**
  * Generic fetch wrapper with error handling
+ * Handles standardized response format: { success: true, data: T }
  */
 async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
@@ -75,10 +76,20 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> 
   });
 
   if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    const error = await response.json().catch(() => ({ error: 'Request failed' }));
+    const errorMessage = error.error?.message || error.error || `API Error: ${response.status} ${response.statusText}`;
+    throw new Error(errorMessage);
   }
 
-  return response.json();
+  const json = await response.json();
+  
+  // Unwrap standardized response format: { success: true, data: T }
+  if (json && typeof json === 'object' && 'success' in json && 'data' in json) {
+    return json.data as T;
+  }
+  
+  // Fallback for non-standard responses
+  return json as T;
 }
 
 /**
@@ -104,7 +115,7 @@ export const blogAPI = {
     return apiFetch<BlogCategory[]>('/blog/categories');
   },
 
-  addComment: (postId: string, data: { author: string; email: string; content: string }) => {
+  addComment: (postId: string, data: { name: string; email: string; content: string }) => {
     return apiFetch<BlogComment>(`/blog/posts/${postId}/comments`, {
       method: 'POST',
       body: JSON.stringify(data),

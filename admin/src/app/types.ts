@@ -111,8 +111,10 @@ export interface ServiceCategory {
   name: string;
   slug: string;
   description: string | null;
+  icon: string | null;
   coefficient: number;
   allowMaterials: boolean;
+  materialCategoryIds: string[];
   formulaId: string | null;
   order: number;
   isActive: boolean;
@@ -133,12 +135,29 @@ export interface UnitPrice {
   updatedAt: string;
 }
 
+export interface MaterialCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  icon: string | null;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    materials: number;
+  };
+}
+
 export interface Material {
   id: string;
   name: string;
-  category: string;
+  categoryId: string;
+  category: MaterialCategory;
   imageUrl: string | null;
   price: number;
+  unit: string | null;
   description: string | null;
   isActive: boolean;
   createdAt: string;

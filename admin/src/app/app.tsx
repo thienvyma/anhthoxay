@@ -28,7 +28,16 @@ function AppContent() {
 	useEffect(() => {
     // Check if user is already logged in (has valid token)
     const accessToken = tokenStorage.getAccessToken();
+    const refreshToken = tokenStorage.getRefreshToken();
+    
+    console.log('🔐 Auth check on mount:', {
+      hasAccessToken: !!accessToken,
+      hasRefreshToken: !!refreshToken,
+      accessTokenPreview: accessToken ? accessToken.substring(0, 20) + '...' : null,
+    });
+    
     if (!accessToken) {
+      console.log('🔐 No access token found, redirecting to login');
       setLoading(false);
       return;
     }
@@ -36,15 +45,18 @@ function AppContent() {
     authApi
       .me()
       .then((userData) => {
+        console.log('🔐 Auth check successful:', userData);
         store.setUser(userData as Parameters<typeof store.setUser>[0]);
       })
-      .catch(() => {
-        // Token invalid or expired, clear tokens
+      .catch((error) => {
+        // Token invalid or expired, clear tokens and user state
+        console.error('🔐 Auth check failed:', error);
         tokenStorage.clearTokens();
+        store.setUser(null);
       })
       .finally(() => {
         setLoading(false);
-		});
+      });
 	}, []);
 
   async function handleLogout() {

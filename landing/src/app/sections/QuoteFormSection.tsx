@@ -110,7 +110,11 @@ export const QuoteFormSection = memo(function QuoteFormSection({ data, noPadding
       });
 
       if (!res.ok) {
-        throw new Error('Failed to submit');
+        // Extract error message from standardized response format
+        const errorData = await res.json();
+        const errorMessage = errorData.error?.message || 'Có lỗi xảy ra. Vui lòng thử lại!';
+        toast.error(errorMessage);
+        return;
       }
 
       toast.success(successMessage);

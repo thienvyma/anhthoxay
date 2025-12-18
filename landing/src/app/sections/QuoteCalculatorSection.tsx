@@ -365,14 +365,18 @@ export const QuoteCalculatorSection = memo(function QuoteCalculatorSection({ dat
           fetch(`${API_URL}/sections/by-kind/QUOTE_FORM`),
         ]);
         if (!catRes.ok || !matRes.ok || !priceRes.ok) throw new Error('Failed to fetch data');
-        const [catData, matData, priceData] = await Promise.all([catRes.json(), matRes.json(), priceRes.json()]);
-        setCategories(catData.data || catData);
-        setMaterials(matData.data || matData);
-        setUnitPrices(priceData.data || priceData);
+        const [catJson, matJson, priceJson] = await Promise.all([catRes.json(), matRes.json(), priceRes.json()]);
+        
+        // Unwrap standardized response format { success: true, data: T }
+        setCategories(catJson.data || catJson);
+        setMaterials(matJson.data || matJson);
+        setUnitPrices(priceJson.data || priceJson);
         
         // Load QUOTE_FORM section data if available
         if (quoteFormRes.ok) {
-          const quoteFormSection = await quoteFormRes.json();
+          const quoteFormJson = await quoteFormRes.json();
+          // Unwrap standardized response format { success: true, data: T }
+          const quoteFormSection = quoteFormJson.data || quoteFormJson;
           setQuoteFormData(quoteFormSection.data as QuoteFormSectionData);
         }
       } catch (err) {

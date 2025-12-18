@@ -6,8 +6,9 @@ import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { useToast } from '../../components/Toast';
+import { unitPricesApi } from '../../api';
 import type { UnitPricesTabProps, UnitPrice } from './types';
-import { API_URL, UNIT_PRICE_CATEGORIES } from './types';
+import { UNIT_PRICE_CATEGORIES } from './types';
 
 export function UnitPricesTab({ unitPrices, onRefresh }: UnitPricesTabProps) {
   const toast = useToast();
@@ -50,20 +51,15 @@ export function UnitPricesTab({ unitPrices, onRefresh }: UnitPricesTabProps) {
       return;
     }
     try {
-      const url = editingItem ? `${API_URL}/unit-prices/${editingItem.id}` : `${API_URL}/unit-prices`;
-      const res = await fetch(url, {
-        method: editingItem ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(form),
-      });
-      if (res.ok) {
-        toast.success(editingItem ? 'Cập nhật thành công!' : 'Tạo mới thành công!');
-        onRefresh();
-        resetForm();
+      if (editingItem) {
+        await unitPricesApi.update(editingItem.id, form);
+        toast.success('Cập nhật thành công!');
       } else {
-        toast.error('Có lỗi xảy ra');
+        await unitPricesApi.create(form);
+        toast.success('Tạo mới thành công!');
       }
+      onRefresh();
+      resetForm();
     } catch (error) {
       toast.error('Lỗi: ' + (error as Error).message);
     }
@@ -72,11 +68,9 @@ export function UnitPricesTab({ unitPrices, onRefresh }: UnitPricesTabProps) {
   const handleDelete = async (id: string) => {
     if (!confirm('Bạn có chắc muốn xóa đơn giá này?')) return;
     try {
-      const res = await fetch(`${API_URL}/unit-prices/${id}`, { method: 'DELETE', credentials: 'include' });
-      if (res.ok) {
-        toast.success('Đã xóa');
-        onRefresh();
-      }
+      await unitPricesApi.delete(id);
+      toast.success('Đã xóa');
+      onRefresh();
     } catch (error) {
       toast.error('Lỗi: ' + (error as Error).message);
     }

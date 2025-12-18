@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { tokens } from '@app/shared';
 import { accountApi, type SessionInfo } from '../../api';
@@ -30,18 +30,21 @@ export function AccountTab({ onShowMessage, onError }: AccountTabProps) {
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [revokingSession, setRevokingSession] = useState<string | null>(null);
 
-  // Load sessions
+  // Load sessions - using ref to avoid infinite loop with onError callback
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+
   const loadSessions = useCallback(async () => {
     try {
       setLoadingSessions(true);
       const data = await accountApi.getSessions();
       setSessions(data.sessions);
     } catch {
-      onError('Không thể tải danh sách phiên đăng nhập');
+      onErrorRef.current('Không thể tải danh sách phiên đăng nhập');
     } finally {
       setLoadingSessions(false);
     }
-  }, [onError]);
+  }, []);
 
   useEffect(() => {
     loadSessions();

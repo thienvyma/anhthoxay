@@ -1,6 +1,6 @@
 // API Client for Admin Dashboard - ANH THỢ XÂY
 import { API_URL } from '@app/shared';
-import { tokenStorage, store } from './store';
+import { tokenStorage } from './store';
 import type { 
   Page, 
   Section, 
@@ -11,6 +11,7 @@ import type {
   ServiceCategory,
   UnitPrice,
   Material,
+  MaterialCategory,
   Formula,
 } from './types';
 
@@ -32,7 +33,12 @@ let refreshPromise: Promise<boolean> | null = null;
 
 async function refreshAccessToken(): Promise<boolean> {
   const refreshToken = tokenStorage.getRefreshToken();
-  if (!refreshToken) return false;
+  console.log('🔄 Attempting token refresh:', { hasRefreshToken: !!refreshToken });
+  
+  if (!refreshToken) {
+    console.log('🔄 No refresh token available');
+    return false;
+  }
 
   try {
     const response = await fetch(`${API_BASE}/api/auth/refresh`, {
@@ -41,19 +47,30 @@ async function refreshAccessToken(): Promise<boolean> {
       body: JSON.stringify({ refreshToken }),
     });
 
+    console.log('🔄 Refresh response status:', response.status);
+
     if (!response.ok) {
-      tokenStorage.clearTokens();
-      store.setUser(null);
+      // Don't clear tokens here - let the caller handle it
+      // This prevents race conditions when multiple requests fail simultaneously
+      const errorData = await response.json().catch(() => ({}));
+      console.error('🔄 Refresh failed:', errorData);
       return false;
     }
 
-    const data = await response.json();
+    const json = await response.json();
+    // Unwrap standardized response format
+    const data = json.data || json;
+    console.log('🔄 Refresh successful, new tokens received');
     tokenStorage.setAccessToken(data.accessToken);
     tokenStorage.setRefreshToken(data.refreshToken);
+    // Also save the new sessionId from token rotation
+    if (data.sessionId) {
+      tokenStorage.setSessionId(data.sessionId);
+    }
     return true;
-  } catch {
-    tokenStorage.clearTokens();
-    store.setUser(null);
+  } catch (error) {
+    // Don't clear tokens here - let the caller handle it
+    console.error('🔄 Refresh error:', error);
     return false;
   }
 }
@@ -112,6 +129,9 @@ async function apiFetch<T>(endpoint: string, options: FetchOptions = {}): Promis
         (headers as Record<string, string>)['Authorization'] = `Bearer ${newToken}`;
       }
       response = await fetch(url, { ...config, headers });
+    } else {
+      // Refresh failed - clear tokens to force re-login
+      tokenStorage.clearTokens();
     }
   }
 
@@ -136,7 +156,28 @@ async function apiFetch<T>(endpoint: string, options: FetchOptions = {}): Promis
     throw new Error(errorMessage);
   }
 
-  return response.json();
+  const json = await response.json();
+  
+  // Unwrap standardized response format: { success: true, data: T }
+  if (json && typeof json === 'object' && 'success' in json && 'data' in json) {
+    // Handle paginated response: { success: true, data: [], meta: { total, page, limit, totalPages } }
+    // Flatten meta into response for backward compatibility with existing components
+    if ('meta' in json && json.meta && typeof json.meta === 'object') {
+      const meta = json.meta as { total?: number; page?: number; limit?: number; totalPages?: number };
+      return {
+        data: json.data,
+        total: meta.total ?? 0,
+        page: meta.page ?? 1,
+        limit: meta.limit ?? 10,
+        totalPages: meta.totalPages ?? 1,
+      } as T;
+    }
+    // Non-paginated response: just return data
+    return json.data as T;
+  }
+  
+  // Fallback for non-standard responses
+  return json as T;
 }
 
 // Auth API - Using JWT
@@ -218,6 +259,24 @@ export const sectionsApi = {
 };
 
 // Media API
+interface MediaUsageResponse {
+  usage: Record<string, { usedIn: string[]; count: number }>;
+  summary: {
+    total: number;
+    materials: number;
+    blog: number;
+    sections: number;
+    unused: number;
+  };
+}
+
+interface MediaSyncResponse {
+  message: string;
+  totalFound: number;
+  alreadyExists: number;
+  created: number;
+}
+
 export const mediaApi = {
   list: () =>
     apiFetch<MediaAsset[]>('/media'),
@@ -251,6 +310,18 @@ export const mediaApi = {
 
   delete: (id: string) =>
     apiFetch<{ ok: boolean }>(`/media/${id}`, { method: 'DELETE' }),
+
+  // Get media usage across the system
+  getUsage: () =>
+    apiFetch<MediaUsageResponse>('/media/usage'),
+
+  // Sync media - scan all images in DB and create MediaAsset if not exists
+  sync: () =>
+    apiFetch<MediaSyncResponse>('/media/sync', { method: 'POST' }),
+
+  // Update media metadata (alt, caption, tags)
+  updateMetadata: (id: string, data: { alt?: string; caption?: string; tags?: string }) =>
+    apiFetch<MediaAsset>(`/media/${id}`, { method: 'PUT', body: data }),
 };
 
 // ========== ATH: CUSTOMER LEADS ==========
@@ -391,10 +462,12 @@ export const unitPricesApi = {
 // ========== ATH: MATERIALS ==========
 interface MaterialInput {
   name: string;
-  category: string;
+  categoryId: string;
   price: number;
-  imageUrl?: string;
+  imageUrl?: string | null;
+  unit?: string | null;
   description?: string;
+  order?: number;
   isActive?: boolean;
 }
 
@@ -410,6 +483,32 @@ export const materialsApi = {
 
   delete: (id: string) =>
     apiFetch<{ ok: boolean }>(`/materials/${id}`, { method: 'DELETE' }),
+};
+
+// ========== ATH: MATERIAL CATEGORIES ==========
+interface MaterialCategoryInput {
+  name: string;
+  description?: string;
+  icon?: string;
+  order?: number;
+  isActive?: boolean;
+}
+
+export const materialCategoriesApi = {
+  list: () =>
+    apiFetch<MaterialCategory[]>('/material-categories'),
+
+  get: (id: string) =>
+    apiFetch<MaterialCategory>(`/material-categories/${id}`),
+
+  create: (data: MaterialCategoryInput) =>
+    apiFetch<MaterialCategory>('/material-categories', { method: 'POST', body: data }),
+
+  update: (id: string, data: Partial<MaterialCategoryInput>) =>
+    apiFetch<MaterialCategory>(`/material-categories/${id}`, { method: 'PUT', body: data }),
+
+  delete: (id: string) =>
+    apiFetch<{ ok: boolean }>(`/material-categories/${id}`, { method: 'DELETE' }),
 };
 
 // ========== ATH: FORMULAS ==========
@@ -429,6 +528,9 @@ export const formulasApi = {
 
   update: (id: string, data: Partial<FormulaInput>) =>
     apiFetch<Formula>(`/formulas/${id}`, { method: 'PUT', body: data }),
+
+  delete: (id: string) =>
+    apiFetch<{ ok: boolean }>(`/formulas/${id}`, { method: 'DELETE' }),
 };
 
 // ========== SETTINGS ==========
@@ -508,15 +610,38 @@ interface BlogComment {
   content: string;
   status: string;
   createdAt: string;
+  post?: {
+    id: string;
+    title: string;
+    slug: string;
+  };
+}
+
+interface BlogCommentsListParams {
+  status?: string;
+  postId?: string;
 }
 
 export const blogCommentsApi = {
+  // List all comments with optional filtering (Admin/Manager only)
+  list: (params?: BlogCommentsListParams) => {
+    const query = params ? new URLSearchParams(
+      Object.entries(params)
+        .filter(([, v]) => v !== undefined && v !== '')
+        .map(([k, v]) => [k, String(v)])
+    ).toString() : '';
+    return apiFetch<BlogComment[]>(`/blog/comments${query ? '?' + query : ''}`);
+  },
+
+  // Create a comment on a post (public)
   create: (postId: string, data: { name: string; email: string; content: string }) =>
     apiFetch<BlogComment>(`/blog/posts/${postId}/comments`, { method: 'POST', body: data }),
 
-  update: (id: string, data: { status: string }) =>
-    apiFetch<BlogComment>(`/blog/comments/${id}`, { method: 'PUT', body: data }),
+  // Update comment status (approve/reject) - Admin/Manager only
+  updateStatus: (id: string, status: 'APPROVED' | 'REJECTED' | 'PENDING' | 'SPAM') =>
+    apiFetch<BlogComment>(`/blog/comments/${id}/status`, { method: 'PUT', body: { status } }),
 
+  // Delete a comment - Admin/Manager only
   delete: (id: string) =>
     apiFetch<{ ok: boolean }>(`/blog/comments/${id}`, { method: 'DELETE' }),
 };

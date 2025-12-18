@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokens } from '@app/shared';
 import { useToast } from '../../components/Toast';
+import { settingsApi } from '../../api';
 import { LayoutTab } from './LayoutTab';
 import { CompanyTab } from './CompanyTab';
 import { PromoTab } from './PromoTab';
@@ -17,7 +18,6 @@ import {
   defaultPromoSettings,
   defaultHeaderConfig,
   defaultFooterConfig,
-  API_URL,
   glass,
 } from './types';
 
@@ -39,23 +39,21 @@ export function SettingsPage() {
   const [headerConfig, setHeaderConfig] = useState<HeaderConfig>(defaultHeaderConfig);
   const [footerConfig, setFooterConfig] = useState<FooterConfig>(defaultFooterConfig);
 
-  // Fetch settings on mount
+  // Fetch settings on mount - using settingsApi
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const [companyRes, promoRes] = await Promise.all([
-          fetch(`${API_URL}/settings/company`, { credentials: 'include' }),
-          fetch(`${API_URL}/settings/promo`, { credentials: 'include' }),
+        const [companyData, promoData] = await Promise.all([
+          settingsApi.get('company').catch(() => null),
+          settingsApi.get('promo').catch(() => null),
         ]);
 
-        if (companyRes.ok) {
-          const data = await companyRes.json();
-          if (data.value) setCompanySettings((prev) => ({ ...prev, ...data.value }));
+        if (companyData) {
+          setCompanySettings((prev) => ({ ...prev, ...companyData }));
         }
 
-        if (promoRes.ok) {
-          const data = await promoRes.json();
-          if (data.value) setPromoSettings((prev) => ({ ...prev, ...data.value }));
+        if (promoData) {
+          setPromoSettings((prev) => ({ ...prev, ...promoData }));
         }
       } catch (error) {
         console.error('Failed to fetch settings:', error);

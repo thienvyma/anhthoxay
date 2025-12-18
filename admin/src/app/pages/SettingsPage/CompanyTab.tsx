@@ -4,8 +4,9 @@ import { tokens } from '@app/shared';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
+import { settingsApi, mediaApi } from '../../api';
 import type { CompanySettings } from './types';
-import { API_URL, glass } from './types';
+import { glass } from './types';
 
 interface CompanyTabProps {
   settings: CompanySettings;
@@ -21,14 +22,7 @@ export function CompanyTab({ settings, onChange, onShowMessage, onError }: Compa
   const handleSave = useCallback(async () => {
     try {
       setSaving(true);
-      const response = await fetch(`${API_URL}/settings/company`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ value: settings }),
-      });
-
-      if (!response.ok) throw new Error('Failed to save');
+      await settingsApi.update('company', { value: settings });
       localStorage.setItem('companySettings', JSON.stringify(settings));
       onShowMessage('✅ Thông tin công ty đã được lưu!');
     } catch (error) {
@@ -42,28 +36,13 @@ export function CompanyTab({ settings, onChange, onShowMessage, onError }: Compa
   const handleBackgroundUpload = useCallback(async (file: File) => {
     try {
       setUploadingBg(true);
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch(`${API_URL}/media`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error('Upload failed');
-      const result = await response.json();
+      const result = await mediaApi.upload(file);
 
       const updatedSettings = { ...settings, backgroundImage: result.url };
       onChange(updatedSettings);
 
       // Save immediately
-      await fetch(`${API_URL}/settings/company`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ value: updatedSettings }),
-      });
+      await settingsApi.update('company', { value: updatedSettings });
 
       onShowMessage('✅ Hình nền đã được cập nhật!');
     } catch (error) {
@@ -82,12 +61,7 @@ export function CompanyTab({ settings, onChange, onShowMessage, onError }: Compa
       const updatedSettings = { ...settings, backgroundImage: '' };
       onChange(updatedSettings);
 
-      await fetch(`${API_URL}/settings/company`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ value: updatedSettings }),
-      });
+      await settingsApi.update('company', { value: updatedSettings });
 
       onShowMessage('✅ Đã xóa hình nền!');
     } catch (error) {

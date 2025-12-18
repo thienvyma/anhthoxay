@@ -841,6 +841,30 @@ Mang đến dịch vụ cải tạo nhà chuyên nghiệp, minh bạch về giá
           warrantyMonths: 12,
         }),
       },
+      {
+        key: 'promo',
+        value: JSON.stringify({
+          enabled: false,
+          title: 'Khuyến mãi đặc biệt',
+          description: 'Giảm 10% cho đơn hàng đầu tiên',
+          buttonText: 'Nhận ưu đãi',
+          buttonLink: '/bao-gia',
+          expiresAt: null,
+        }),
+      },
+      {
+        key: 'mobileMenu',
+        value: JSON.stringify({
+          links: [
+            { label: 'Trang chủ', href: '/', icon: 'ri-home-4-line' },
+            { label: 'Báo giá', href: '/bao-gia', icon: 'ri-calculator-line' },
+            { label: 'Giới thiệu', href: '/about', icon: 'ri-information-line' },
+            { label: 'Blog', href: '/blog', icon: 'ri-article-line' },
+            { label: 'Liên hệ', href: '/contact', icon: 'ri-map-pin-line' },
+          ],
+          ctaButton: { text: 'Báo giá ngay', href: '/bao-gia', icon: 'ri-phone-line' },
+        }),
+      },
     ],
   });
 

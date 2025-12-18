@@ -116,10 +116,15 @@ function getClientIp(c: Context): string {
 /**
  * Rate limiter middleware factory
  * Default: 5 attempts per 15 minutes
+ * 
+ * TODO: [TESTING] Tạm thời tăng default lên 1000. Sau khi test xong cần:
+ * 1. Đổi maxAttempts default về 5
+ * 2. Xóa comment TODO này
  */
 export function rateLimiter(options: RateLimiterOptions = {}) {
   const {
-    maxAttempts = 5,
+    // TODO: [TESTING] Tạm thời 1000, production cần đổi về 5
+    maxAttempts = 1000,
     windowMs = 15 * 60 * 1000, // 15 minutes
     keyGenerator = (c) => getClientIp(c),
   } = options;
@@ -156,10 +161,18 @@ export function rateLimiter(options: RateLimiterOptions = {}) {
 /**
  * Login-specific rate limiter
  * Uses IP + email as key for more granular control
+ * Development mode: 100 attempts per 15 minutes
+ * Production mode: 5 attempts per 15 minutes
+ * 
+ * TODO: [TESTING] Tạm thời tăng lên 1000 để test. Sau khi test xong cần:
+ * 1. Đổi maxAttempts về: isDev ? 100 : 5
+ * 2. Xóa comment TODO này
  */
 export function loginRateLimiter() {
+  const isDev = process.env.NODE_ENV !== 'production';
   return rateLimiter({
-    maxAttempts: 5,
+    // TODO: [TESTING] Tạm thời 1000, production cần đổi về: isDev ? 100 : 5
+    maxAttempts: 1000,
     windowMs: 15 * 60 * 1000,
     keyGenerator: (c) => {
       const ip = getClientIp(c);
@@ -167,4 +180,11 @@ export function loginRateLimiter() {
       return `login:${ip}`;
     },
   });
+}
+
+/**
+ * Clear all rate limits (for development/testing)
+ */
+export function clearAllLimits(): void {
+  store.clear();
 }

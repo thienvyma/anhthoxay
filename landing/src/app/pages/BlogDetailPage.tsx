@@ -84,7 +84,7 @@ export function BlogDetailPage() {
     try {
       setSubmitting(true);
       await blogAPI.addComment(post.id, {
-        author: commentForm.name,
+        name: commentForm.name,
         email: commentForm.email,
         content: commentForm.content,
       });

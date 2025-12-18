@@ -7,8 +7,8 @@ import { authApi } from '../api';
 import { store } from '../store';
 
 export function LoginPage() {
-  const [email, setEmail] = useState('admin@example.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('admin@anhthoxay.vn');
+  const [password, setPassword] = useState('Admin@123');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -142,8 +142,8 @@ export function LoginPage() {
             <i className="ri-information-line" style={{ marginRight: 4 }} />
             Demo Credentials
           </div>
-          <div>Email: admin@example.com</div>
-          <div>Password: admin123</div>
+          <div>Email: admin@anhthoxay.vn</div>
+          <div>Password: Admin@123</div>
         </div>
       </motion.div>
     </div>

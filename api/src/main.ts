@@ -119,9 +119,14 @@ app.use('*', async (c, next) => {
 });
 
 // Rate limiting
-app.use('/api/auth/login', rateLimit({ windowMs: 1 * 60 * 1000, max: 20 }));
-app.use('/leads', rateLimit({ windowMs: 60 * 1000, max: 30 }));
-app.use('*', rateLimit({ windowMs: 60 * 1000, max: 200 }));
+// TODO: [TESTING] Tạm thời tăng limits để test. Production cần giảm về:
+// - /api/auth/login: max: 20
+// - /leads: max: 30
+// - global: max: 200
+const isDev = process.env.NODE_ENV !== 'production';
+app.use('/api/auth/login', rateLimit({ windowMs: 1 * 60 * 1000, max: isDev ? 1000 : 20 }));
+app.use('/leads', rateLimit({ windowMs: 60 * 1000, max: isDev ? 1000 : 30 }));
+app.use('*', rateLimit({ windowMs: 60 * 1000, max: isDev ? 1000 : 200 }));
 
 // ============================================
 // HEALTH CHECK & ROOT

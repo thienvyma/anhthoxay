@@ -6,7 +6,7 @@ import { UnitPricesTab } from './UnitPricesTab';
 import { MaterialsTab } from './MaterialsTab';
 import { FormulasTab } from './FormulasTab';
 import type { TabType, ServiceCategory, UnitPrice, Material, MaterialCategory, Formula } from './types';
-import { API_URL } from './types';
+import { serviceCategoriesApi, unitPricesApi, materialsApi, materialCategoriesApi, formulasApi } from '../../api';
 
 const TABS: Array<{ key: TabType; icon: string; label: string }> = [
   { key: 'service-categories', icon: 'ri-tools-line', label: 'Hạng mục' },
@@ -28,18 +28,18 @@ export function PricingConfigPage() {
 
   const fetchAllData = useCallback(async () => {
     try {
-      const [scRes, upRes, matRes, mcRes, fRes] = await Promise.all([
-        fetch(`${API_URL}/service-categories`, { credentials: 'include' }),
-        fetch(`${API_URL}/unit-prices`, { credentials: 'include' }),
-        fetch(`${API_URL}/materials`, { credentials: 'include' }),
-        fetch(`${API_URL}/material-categories`, { credentials: 'include' }),
-        fetch(`${API_URL}/formulas`, { credentials: 'include' }),
+      const [scData, upData, matData, mcData, fData] = await Promise.all([
+        serviceCategoriesApi.list(),
+        unitPricesApi.list(),
+        materialsApi.list(),
+        materialCategoriesApi.list(),
+        formulasApi.list(),
       ]);
-      if (scRes.ok) setServiceCategories(await scRes.json());
-      if (upRes.ok) setUnitPrices(await upRes.json());
-      if (matRes.ok) setMaterials(await matRes.json());
-      if (mcRes.ok) setMaterialCategories(await mcRes.json());
-      if (fRes.ok) setFormulas(await fRes.json());
+      setServiceCategories(scData as ServiceCategory[]);
+      setUnitPrices(upData as UnitPrice[]);
+      setMaterials(matData as Material[]);
+      setMaterialCategories(mcData as MaterialCategory[]);
+      setFormulas(fData as Formula[]);
     } catch (error) {
       console.error('Failed to fetch:', error);
     } finally {

@@ -49,7 +49,17 @@ export function NewsletterSignup({ variant = 'inline', className = '' }: Newslet
       });
       
       if (!res.ok) {
-        throw new Error('Failed to subscribe');
+        // Extract error message from standardized response format
+        const errorData = await res.json();
+        const errorMessage = errorData.error?.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
+        setStatus('error');
+        setMessage(errorMessage);
+        
+        setTimeout(() => {
+          setStatus('idle');
+          setMessage('');
+        }, 3000);
+        return;
       }
       
       setStatus('success');

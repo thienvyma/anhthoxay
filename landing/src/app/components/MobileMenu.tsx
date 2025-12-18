@@ -59,7 +59,9 @@ export function MobileMenu({ currentRoute, menuItems }: MobileMenuProps) {
         // If 404, use default config
         return null;
       })
-      .then(data => {
+      .then(json => {
+        // Unwrap standardized response format { success: true, data: T }
+        const data = json ? (json.data || json) : null;
         if (data?.value) {
           // Merge with defaults to ensure all fields exist
           setConfig(prev => ({

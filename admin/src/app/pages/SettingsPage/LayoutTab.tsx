@@ -6,7 +6,8 @@ import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { IconPicker } from '../../components/IconPicker';
 import type { HeaderConfig, FooterConfig } from './types';
-import { API_URL, glass } from './types';
+import { glass } from './types';
+import { settingsApi, pagesApi } from '../../api';
 
 interface LayoutTabProps {
   headerConfig: HeaderConfig;
@@ -67,14 +68,10 @@ export function LayoutTab({
 
   // Load mobile menu config from API on mount
   useEffect(() => {
-    fetch(`${API_URL}/settings/mobileMenu`, { credentials: 'include' })
-      .then(res => {
-        if (res.ok) return res.json();
-        return null;
-      })
+    settingsApi.get('mobileMenu')
       .then(data => {
         if (data?.value) {
-          setMobileMenuConfig(prev => ({ ...prev, ...data.value }));
+          setMobileMenuConfig(prev => ({ ...prev, ...(data.value as MobileMenuConfig) }));
         }
       })
       .catch(err => {
@@ -114,12 +111,7 @@ export function LayoutTab({
       const headerConfigStr = JSON.stringify(landingHeaderConfig);
       await Promise.all(
         ATH_PAGES.map((slug) =>
-          fetch(`${API_URL}/pages/${slug}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ headerConfig: headerConfigStr }),
-          })
+          pagesApi.update(slug, { headerConfig: headerConfigStr })
         )
       );
       onShowMessage('✅ Header đã được lưu!');
@@ -156,12 +148,7 @@ export function LayoutTab({
       const footerConfigStr = JSON.stringify(landingFooterConfig);
       await Promise.all(
         ATH_PAGES.map((slug) =>
-          fetch(`${API_URL}/pages/${slug}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ footerConfig: footerConfigStr }),
-          })
+          pagesApi.update(slug, { footerConfig: footerConfigStr })
         )
       );
       onShowMessage('✅ Footer đã được lưu!');
@@ -178,12 +165,7 @@ export function LayoutTab({
     try {
       setSavingMobile(true);
       // Save to settings API
-      await fetch(`${API_URL}/settings/mobileMenu`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ key: 'mobileMenu', value: mobileMenuConfig }),
-      });
+      await settingsApi.update('mobileMenu', { key: 'mobileMenu', value: mobileMenuConfig });
       onShowMessage('✅ Mobile Menu đã được lưu!');
     } catch (error) {
       console.error('Error saving mobile menu:', error);

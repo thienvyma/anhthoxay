@@ -1,15 +1,14 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens, API_URL } from '@app/shared';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { IconPicker } from '../../components/IconPicker';
-import { mediaApi } from '../../api';
+import { mediaApi, materialsApi, materialCategoriesApi } from '../../api';
 import { useToast } from '../../components/Toast';
 import type { MaterialsTabProps, Material, MaterialCategory } from './types';
-import { API_URL } from './types';
 
 type SubTab = 'materials' | 'categories';
 
@@ -69,23 +68,32 @@ export function MaterialsTab({ materials, categories, onRefresh }: MaterialsTabP
   const handleSave = async () => {
     if (!form.categoryId) { toast.error('Vui lòng chọn danh mục'); return; }
     try {
-      const url = editingItem ? `${API_URL}/materials/${editingItem.id}` : `${API_URL}/materials`;
-      const res = await fetch(url, {
-        method: editingItem ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ ...form, imageUrl: form.imageUrl || null, unit: form.unit || null }),
-      });
-      if (res.ok) { toast.success(editingItem ? 'Cập nhật thành công!' : 'Tạo mới thành công!'); onRefresh(); resetForm(); }
-      else toast.error('Có lỗi xảy ra');
+      const materialData = {
+        name: form.name,
+        categoryId: form.categoryId,
+        imageUrl: form.imageUrl || null,
+        price: form.price,
+        unit: form.unit || null,
+        description: form.description || undefined,
+        isActive: form.isActive,
+      };
+      if (editingItem) {
+        await materialsApi.update(editingItem.id, materialData);
+      } else {
+        await materialsApi.create(materialData);
+      }
+      toast.success(editingItem ? 'Cập nhật thành công!' : 'Tạo mới thành công!');
+      onRefresh();
+      resetForm();
     } catch (error) { toast.error('Lỗi: ' + (error as Error).message); }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Bạn có chắc muốn xóa vật dụng này?')) return;
     try {
-      const res = await fetch(`${API_URL}/materials/${id}`, { method: 'DELETE', credentials: 'include' });
-      if (res.ok) { toast.success('Đã xóa'); onRefresh(); }
+      await materialsApi.delete(id);
+      toast.success('Đã xóa');
+      onRefresh();
     } catch (error) { toast.error('Lỗi: ' + (error as Error).message); }
   };
 
@@ -105,24 +113,29 @@ export function MaterialsTab({ materials, categories, onRefresh }: MaterialsTabP
   const handleSaveCategory = async () => {
     if (!categoryForm.name.trim()) { toast.error('Vui lòng nhập tên danh mục'); return; }
     try {
-      const url = editingCategory ? `${API_URL}/material-categories/${editingCategory.id}` : `${API_URL}/material-categories`;
-      const res = await fetch(url, {
-        method: editingCategory ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(categoryForm),
-      });
-      if (res.ok) { toast.success(editingCategory ? 'Cập nhật thành công!' : 'Tạo mới thành công!'); onRefresh(); resetCategoryForm(); }
-      else { const err = await res.json(); toast.error(err.error || 'Có lỗi xảy ra'); }
+      const categoryData = {
+        name: categoryForm.name,
+        icon: categoryForm.icon || undefined,
+        description: categoryForm.description || undefined,
+        order: categoryForm.order,
+      };
+      if (editingCategory) {
+        await materialCategoriesApi.update(editingCategory.id, categoryData);
+      } else {
+        await materialCategoriesApi.create(categoryData);
+      }
+      toast.success(editingCategory ? 'Cập nhật thành công!' : 'Tạo mới thành công!');
+      onRefresh();
+      resetCategoryForm();
     } catch (error) { toast.error('Lỗi: ' + (error as Error).message); }
   };
 
   const handleDeleteCategory = async (id: string) => {
     if (!confirm('Bạn có chắc muốn xóa danh mục này?')) return;
     try {
-      const res = await fetch(`${API_URL}/material-categories/${id}`, { method: 'DELETE', credentials: 'include' });
-      if (res.ok) { toast.success('Đã xóa'); onRefresh(); }
-      else { const err = await res.json(); toast.error(err.error || 'Không thể xóa'); }
+      await materialCategoriesApi.delete(id);
+      toast.success('Đã xóa');
+      onRefresh();
     } catch (error) { toast.error('Lỗi: ' + (error as Error).message); }
   };
 

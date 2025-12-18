@@ -5,6 +5,7 @@
 		"@app/ui": "workspace:*",
 		"@tanstack/react-query": "^5.90.2",
 		"@testing-library/react": "16.1.0",
+		"fast-check": "^4.4.0",
 		"@types/react-window": "^2.0.0",
 		"framer-motion": "^12.23.22",
 		"marked": "^16.4.0",

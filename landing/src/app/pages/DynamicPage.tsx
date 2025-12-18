@@ -24,7 +24,9 @@ export function DynamicPage() {
         }
         return res.json();
       })
-      .then((data) => {
+      .then((json) => {
+        // Unwrap standardized response format { success: true, data: T }
+        const data = json.data || json;
         setPage(data);
       })
       .catch((err) => {
