@@ -16,7 +16,7 @@ model User {
   email          String          @unique
   passwordHash   String
   name           String
-  role           String          @default("MANAGER") // ADMIN, MANAGER
+  role           String          @default("MANAGER") // ADMIN, MANAGER, WORKER, USER
   sessions       Session[]
   blogPosts      BlogPost[]
   pendingChanges PendingChange[]
@@ -25,12 +25,59 @@ model User {
 }
 
 model Session {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenSelector    String    @unique // Unhashed, indexed for O(1) lookup
+  tokenVerifier    String    // Hashed with bcrypt
+  token            String?   @unique // DEPRECATED: Keep for migration, nullable
+  previousSelector String?   // Previous selector for reuse detection
+  previousToken    String?   // DEPRECATED: Previous token hash for rotation detection
+  userAgent        String?
+  ipAddress        String?
+  expiresAt        DateTime
+  rotatedAt        DateTime? // Last rotation timestamp
+  createdAt        DateTime  @default(now())
+
+  @@index([tokenSelector])
+}
+
+// ============================================
+// JWT ENHANCEMENT - TOKEN BLACKLIST
+// ============================================
+
+model TokenBlacklist {
   id        String   @id @default(cuid())
+  tokenHash String   @unique // SHA256 hash of token
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token     String   @unique
-  expiresAt DateTime
+  reason    String   // logout, password_change, admin_revoke, security
+  expiresAt DateTime // Auto-cleanup after token would expire
   createdAt DateTime @default(now())
+
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@index([userId])
+}
+
+// ============================================
+// JWT ENHANCEMENT - AUDIT LOG
+// ============================================
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  eventType String   // LOGIN_SUCCESS, LOGIN_FAILED, LOGOUT, TOKEN_REFRESH, PASSWORD_CHANGE, etc.
+  userId    String?
+  email     String?
+  ipAddress String
+  userAgent String
+  metadata  String?  // JSON string for additional context
+  severity  String   @default("INFO") // INFO, WARNING, CRITICAL
+  createdAt DateTime @default(now())
+
+  @@index([eventType])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([severity])
 }
 
 // ============================================
@@ -238,20 +285,22 @@ model Formula {
 // ============================================
 
 model CustomerLead {
-  id        String   @id @default(cuid())
-  name      String
-  phone     String
-  email     String?
-  content   String
-  source    String   @default("CONTACT_FORM")
-  status    String   @default("NEW")
-  quoteData String?
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  phone         String
+  email         String?
+  content       String
+  source        String   @default("CONTACT_FORM")
+  status        String   @default("NEW")
+  quoteData     String?
+  notes         String?
+  statusHistory String?  // JSON array of status changes: [{from, to, changedAt, changedBy?}]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([status])
   @@index([source])
+  @@index([createdAt])
 }
 
 // ============================================
@@ -289,4 +338,20 @@ model Settings {
   value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ============================================
+// INTEGRATIONS (Google Sheets, etc.)
+// ============================================
+
+model Integration {
+  id          String    @id @default(cuid())
+  type        String    @unique // google_sheets, etc.
+  config      String    // JSON: { spreadsheetId, sheetName, syncEnabled }
+  credentials String?   // Encrypted refresh token
+  lastSyncAt  DateTime?
+  errorCount  Int       @default(0)
+  lastError   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

@@ -1,11 +1,7 @@
 import { useState, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens, API_URL } from '@app/shared';
 import { useToast } from '../components/Toast';
-
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - Vite provides import.meta.env
-const API_URL = (import.meta as { env: { VITE_API_URL?: string } }).env.VITE_API_URL || 'http://localhost:4202';
 
 interface CustomField {
   _id: string;

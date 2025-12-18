@@ -3,7 +3,9 @@
  * Only includes endpoints needed for ATH project
  */
 
-const API_BASE = 'http://localhost:4202';
+import { API_URL } from '@app/shared';
+
+const API_BASE = API_URL;
 
 // Type definitions
 interface BlogPost {

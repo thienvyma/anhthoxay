@@ -18,7 +18,17 @@ inclusion: always
 ## ⚠️ QUY TẮC BẮT BUỘC
 
 ### 0. ERROR / WARNING / TYPE ENFORCEMENT (ƯU TIÊN CAO NHẤT)
-- **BẮT BUỘC** pass: `pnpm nx run-many --target=typecheck --all` → 0 errors, 0 warnings.
+
+**⚠️ QUAN TRỌNG: Phải chạy ĐỦ 3 commands để kiểm tra code:**
+```bash
+pnpm nx run-many --target=lint --all      # ESLint errors/warnings
+pnpm nx run-many --target=typecheck --all # TypeScript errors  
+pnpm nx run-many --target=test --all      # Unit tests (nếu có)
+```
+
+**LƯU Ý:** `pnpm nx run api:test` CHỈ chạy unit tests, KHÔNG kiểm tra lint/type errors!
+
+- **BẮT BUỘC** pass cả lint VÀ typecheck → 0 errors, 0 warnings.
 - Warning = bug tiềm ẩn, phải fix, không suppress bằng config/eslint-disable (trừ bất khả kháng, phải ghi lý do).
 - Khi fix warnings: **KHÔNG** phá cấu trúc/logic hiện có, ưu tiên sửa types/imports/naming.
 - Thiếu thông tin → **HỎI**, không viết code "tạm đúng".
@@ -92,6 +102,23 @@ inclusion: always
 4. Tách logic ra service/utils nếu phức tạp
 5. Follow import order
 6. Thêm error handling
+7. **🔐 KIỂM TRA SECURITY** - Xem chi tiết tại `security-checklist.md`
+
+### 8.1 🔐 SECURITY CHECKLIST (BẮT BUỘC)
+Khi tạo/sửa API endpoint:
+- [ ] Endpoint cần auth? → Thêm `authenticate()` middleware
+- [ ] Cần role cụ thể? → Thêm `requireRole('ADMIN')` hoặc `requireRole('ADMIN', 'MANAGER')`
+- [ ] Form submission? → Thêm rate limiting
+- [ ] Input validation? → Dùng Zod schema
+
+**Phân loại endpoint:**
+| Loại | Roles | Ví dụ |
+|------|-------|-------|
+| Public | Không auth | GET /api/blog/posts |
+| Manager | MANAGER, ADMIN | POST /api/blog, GET /api/leads |
+| Admin | ADMIN only | POST /api/users, Settings |
+
+**Xem đầy đủ:** `.kiro/steering/security-checklist.md`
 
 ### 9. MONOREPO NX STRUCTURE
 - **Apps**: landing/, admin/, api/ - Mỗi app độc lập
@@ -124,6 +151,9 @@ inclusion: always
 - **TỰ Ý push lên GitHub** - CHỈ push khi user yêu cầu
 - **TỰ Ý rollback/revert** - CHỈ rollback khi user yêu cầu
 - Thực hiện git operations (push, pull, reset, revert) mà không có sự đồng ý của user
+- **🔐 Tạo API endpoint admin/manager mà KHÔNG có auth middleware**
+- **🔐 Bỏ qua role check khi sửa code có sẵn**
+- **🔐 Hardcode user ID hoặc bypass auth**
 
 ## ✅ LUÔN LÀM
 - Kiểm tra code hiện tại trước
@@ -134,3 +164,43 @@ inclusion: always
 - Thêm error handling
 - Validate input với Zod
 - Fix errors/warnings ngay khi phát hiện
+- **🔐 Kiểm tra auth khi tạo/sửa API endpoint**
+- **🔐 Dùng middleware thay vì copy-paste auth logic**
+- **🔐 Cập nhật Protected Routes Registry khi thêm route mới**
+
+## 🔄 REFACTORING GUIDELINES
+Khi sửa code để dễ maintain:
+1. **Tách logic phức tạp** → service/utils riêng
+2. **Dùng middleware** → thay vì copy-paste (auth, validation, logging)
+3. **Centralize constants** → @app/shared thay vì hardcode
+4. **Single responsibility** → mỗi file/function làm 1 việc
+5. **Consistent naming** → follow conventions đã có
+
+## 📝 SPEC ↔ STEERING SYNC (BẮT BUỘC)
+
+### Khi implement từ Spec (.kiro/specs/*)
+Sau khi hoàn thành spec, **BẮT BUỘC** cập nhật steering files:
+
+| Thay đổi | Cập nhật steering |
+|----------|-------------------|
+| Thêm API routes mới | `security-checklist.md` → Protected Routes Registry |
+| Thêm role/permission mới | `ath-business-logic.md` → Role Hierarchy |
+| Thêm model/schema mới | `prisma-patterns.md` nếu có pattern mới |
+| Thêm component pattern mới | `react-patterns.md` |
+| Thêm business logic mới | `ath-business-logic.md` |
+| Thêm middleware/service mới | `api-patterns.md` |
+
+### Khi phát triển tính năng mới (không có spec)
+1. **TRƯỚC khi code**: Đọc steering files liên quan
+2. **SAU khi code**: Tự hỏi "Có gì mới cần document không?"
+3. **Nếu có**: Cập nhật steering file tương ứng
+
+### Checklist sau khi hoàn thành feature
+- [ ] API mới? → Cập nhật `security-checklist.md` (Protected Routes Registry)
+- [ ] Role/permission mới? → Cập nhật `ath-business-logic.md`
+- [ ] Pattern mới? → Cập nhật file pattern tương ứng
+- [ ] Lỗi hay gặp? → Thêm vào `common-mistakes.md`
+
+### Tự động nhắc nhở
+Khi hoàn thành task/feature, **LUÔN** hỏi user:
+> "Đã hoàn thành [feature]. Cần cập nhật steering files không? (API routes, roles, patterns...)"

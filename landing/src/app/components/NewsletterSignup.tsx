@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { API_URL } from '@app/shared';
 
 interface NewsletterSignupProps {
   variant?: 'inline' | 'compact' | 'floating';
@@ -34,18 +35,25 @@ export function NewsletterSignup({ variant = 'inline', className = '' }: Newslet
     try {
       setStatus('loading');
       
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Submit to CustomerLead API with source = NEWSLETTER
+      const res = await fetch(`${API_URL}/leads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Newsletter Subscriber',
+          phone: '',
+          email: email,
+          content: 'Đăng ký nhận bài viết mới qua email',
+          source: 'NEWSLETTER',
+        }),
+      });
       
-      // Simulate API call
-      // const res = await fetch('/api/newsletter/subscribe', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email }),
-      // });
+      if (!res.ok) {
+        throw new Error('Failed to subscribe');
+      }
       
       setStatus('success');
-      setMessage('Đăng ký thành công! Kiểm tra email của bạn.');
+      setMessage('Đăng ký thành công! Cảm ơn bạn đã quan tâm.');
       setEmail('');
       
       setTimeout(() => {

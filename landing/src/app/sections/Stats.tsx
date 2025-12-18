@@ -64,10 +64,12 @@ export function Stats({ data }: { data: StatsData }) {
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
+        className="stats-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: 24,
+          // Responsive: 2 cols on mobile/tablet, 4 on desktop
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
+          gap: 16,
         }}
       >
         {stats.map((stat, index) => (

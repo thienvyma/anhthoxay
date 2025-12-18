@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens, API_URL, resolveMediaUrl } from '@app/shared';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { mediaApi } from '../api';
@@ -53,7 +53,7 @@ export function MediaPage() {
 
   const loadMediaUsage = async () => {
     try {
-      const res = await fetch('http://localhost:4202/media/usage', { credentials: 'include' });
+      const res = await fetch(`${API_URL}/media/usage`, { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         setMediaUsage(data.usage || {});
@@ -67,7 +67,7 @@ export function MediaPage() {
   const handleSyncMedia = async () => {
     setSyncing(true);
     try {
-      const res = await fetch('http://localhost:4202/media/sync', {
+      const res = await fetch(`${API_URL}/media/sync`, {
         method: 'POST',
         credentials: 'include',
       });
@@ -132,7 +132,7 @@ export function MediaPage() {
   const handleSaveEdit = useCallback(async () => {
     if (!selectedFile) return;
     try {
-      const response = await fetch(`http://localhost:4202/media/${selectedFile.id}`, {
+      const response = await fetch(`${API_URL}/media/${selectedFile.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -158,7 +158,7 @@ export function MediaPage() {
   }, [selectedFile, editFormData, toast]);
 
   const copyToClipboard = useCallback((url: string) => {
-    const fullUrl = url.startsWith('http') ? url : `http://localhost:4202${url}`;
+    const fullUrl = resolveMediaUrl(url);
     navigator.clipboard.writeText(fullUrl);
     toast.info('URL copied to clipboard!');
   }, [toast]);
@@ -444,7 +444,7 @@ export function MediaPage() {
               }}
             >
               <OptimizedImage
-                src={file.url.startsWith('http') ? file.url : `http://localhost:4202${file.url}`}
+                src={resolveMediaUrl(file.url)}
                 alt={file.alt || 'Media'}
                 loading="lazy"
                 style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: '8px' }}
@@ -617,7 +617,7 @@ function MediaCard({ file, index, usageInfo, onEdit, onDelete, onCopy }: MediaCa
       {/* Image */}
       <div style={{ aspectRatio: '1', overflow: 'hidden', background: '#000' }}>
         <OptimizedImage
-          src={file.url.startsWith('http') ? file.url : `http://localhost:4202${file.url}`}
+          src={resolveMediaUrl(file.url)}
           alt={file.alt || 'Media'}
           loading="lazy"
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -782,7 +782,7 @@ function EditMediaModal({ file, formData, onFormChange, onSave, onClose }: EditM
           <div style={{ padding: 24 }}>
             <div style={{ marginBottom: 20 }}>
               <OptimizedImage
-                src={file.url.startsWith('http') ? file.url : `http://localhost:4202${file.url}`}
+                src={resolveMediaUrl(file.url)}
                 alt={file.alt || 'Media'}
                 loading="eager"
                 style={{ width: '100%', maxHeight: 300, objectFit: 'contain', borderRadius: tokens.radius.md, background: '#000' }}

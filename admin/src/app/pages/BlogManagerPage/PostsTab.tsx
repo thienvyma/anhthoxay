@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens, API_URL, resolveMediaUrl } from '@app/shared';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
@@ -263,7 +263,7 @@ function PostCard({ post, onEdit, onDelete }: PostCardProps) {
       <div style={{ display: 'flex', gap: 20 }}>
         {post.featuredImage && (
           <img
-            src={post.featuredImage.startsWith('http') ? post.featuredImage : `http://localhost:4202${post.featuredImage}`}
+            src={resolveMediaUrl(post.featuredImage)}
             alt={post.title}
             style={{
               width: 120,
@@ -558,7 +558,7 @@ function PostEditorModal({ editingPost, formData, categories, onTitleChange, onF
                 onImageUpload={async (file) => {
                   const fd = new FormData();
                   fd.append('file', file);
-                  const response = await fetch('http://localhost:4202/media', {
+                  const response = await fetch(`${API_URL}/media`, {
                     method: 'POST',
                     body: fd,
                     credentials: 'include',

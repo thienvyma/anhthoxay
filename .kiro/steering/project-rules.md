@@ -1,4 +1,10 @@
+---
+inclusion: manual
+---
+
 # 📋 ANH THỢ XÂY (ATH) - Project Rules
+
+> **Note**: Tổng quan dự án. Xem `cursor-rules.md` cho rules chính.
 
 ## 🎯 Mục tiêu dự án
 WebApp MVP cho doanh nghiệp cải tạo nhà/căn hộ với tính năng báo giá & dự toán tự động.

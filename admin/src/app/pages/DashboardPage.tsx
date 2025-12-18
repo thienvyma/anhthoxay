@@ -1,21 +1,34 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { tokens } from '@app/shared';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
+import { LeadsLineChart, LeadsPieChart, LeadsBarChart, ConversionRateCard } from '../components/charts';
+import { leadsApi, serviceCategoriesApi, materialsApi } from '../api';
 import type { CustomerLead } from '../types';
 
-const API_URL = 'http://localhost:4202';
+interface LeadsStats {
+  dailyLeads: Array<{ date: string; count: number }>;
+  byStatus: Record<string, number>;
+  bySource: Record<string, number>;
+  conversionRate: number;
+  totalLeads: number;
+  newLeads: number;
+}
 
 export function DashboardPage() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalLeads: 0,
     newLeads: 0,
     totalCategories: 0,
     totalMaterials: 0,
   });
+  const [leadsStats, setLeadsStats] = useState<LeadsStats | null>(null);
   const [recentLeads, setRecentLeads] = useState<CustomerLead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chartsLoading, setChartsLoading] = useState(true);
 
   useEffect(() => {
     loadDashboardData();
@@ -23,20 +36,16 @@ export function DashboardPage() {
 
   async function loadDashboardData() {
     try {
-      const [leadsRes, categoriesRes, materialsRes] = await Promise.all([
-        fetch(`${API_URL}/leads`, { credentials: 'include' }),
-        fetch(`${API_URL}/service-categories`, { credentials: 'include' }),
-        fetch(`${API_URL}/materials`, { credentials: 'include' }),
+      const [leadsResponse, categories, materials] = await Promise.all([
+        leadsApi.list({ limit: 5 }),
+        serviceCategoriesApi.list(),
+        materialsApi.list(),
       ]);
 
-      const leads = leadsRes.ok ? await leadsRes.json() : [];
-      const categories = categoriesRes.ok ? await categoriesRes.json() : [];
-      const materials = materialsRes.ok ? await materialsRes.json() : [];
-
-      setRecentLeads(leads.slice(0, 5));
+      setRecentLeads(leadsResponse.data);
       setStats({
-        totalLeads: leads.length,
-        newLeads: leads.filter((l: CustomerLead) => l.status === 'NEW').length,
+        totalLeads: leadsResponse.total,
+        newLeads: leadsResponse.data.filter((l: CustomerLead) => l.status === 'NEW').length,
         totalCategories: categories.length,
         totalMaterials: materials.length,
       });
@@ -44,6 +53,22 @@ export function DashboardPage() {
       console.error('Failed to load dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+
+    // Load charts data separately
+    try {
+      const statsData = await leadsApi.getStats();
+      setLeadsStats(statsData);
+      // Update stats with accurate totals from stats API
+      setStats(prev => ({
+        ...prev,
+        totalLeads: statsData.totalLeads,
+        newLeads: statsData.newLeads,
+      }));
+    } catch (error) {
+      console.error('Failed to load leads stats:', error);
+    } finally {
+      setChartsLoading(false);
     }
   }
 
@@ -141,6 +166,80 @@ export function DashboardPage() {
         ))}
       </div>
 
+      {/* Charts Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20, marginBottom: 32 }}>
+        <Card title="Leads theo ngày (30 ngày)" icon="ri-line-chart-line">
+          {chartsLoading ? (
+            <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <motion.i
+                className="ri-loader-4-line"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                style={{ fontSize: 32, color: tokens.color.muted }}
+              />
+            </div>
+          ) : leadsStats ? (
+            <LeadsLineChart data={leadsStats.dailyLeads} />
+          ) : (
+            <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: tokens.color.muted }}>
+              Không có dữ liệu
+            </div>
+          )}
+        </Card>
+
+        <Card title="Tỷ lệ chuyển đổi" icon="ri-percent-line">
+          {chartsLoading ? (
+            <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <motion.i
+                className="ri-loader-4-line"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                style={{ fontSize: 32, color: tokens.color.muted }}
+              />
+            </div>
+          ) : leadsStats ? (
+            <ConversionRateCard 
+              rate={leadsStats.conversionRate}
+              totalLeads={leadsStats.totalLeads}
+              convertedLeads={leadsStats.byStatus['CONVERTED'] || 0}
+            />
+          ) : null}
+        </Card>
+      </div>
+
+      {/* Second Charts Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 32 }}>
+        <Card title="Phân bố theo trạng thái" icon="ri-pie-chart-line">
+          {chartsLoading ? (
+            <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <motion.i
+                className="ri-loader-4-line"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                style={{ fontSize: 32, color: tokens.color.muted }}
+              />
+            </div>
+          ) : leadsStats ? (
+            <LeadsPieChart data={leadsStats.byStatus} />
+          ) : null}
+        </Card>
+
+        <Card title="Phân bố theo nguồn" icon="ri-bar-chart-horizontal-line">
+          {chartsLoading ? (
+            <div style={{ height: 250, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <motion.i
+                className="ri-loader-4-line"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                style={{ fontSize: 32, color: tokens.color.muted }}
+              />
+            </div>
+          ) : leadsStats ? (
+            <LeadsBarChart data={leadsStats.bySource} />
+          ) : null}
+        </Card>
+      </div>
+
       {/* Recent Leads */}
       <Card title="Khách hàng gần đây" icon="ri-contacts-book-line">
         {loading ? (
@@ -174,7 +273,9 @@ export function DashboardPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
+                    cursor: 'pointer',
                   }}
+                  onClick={() => navigate('/leads')}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                     <div
@@ -222,12 +323,12 @@ export function DashboardPage() {
       {/* Quick Actions */}
       <div style={{ marginTop: 32, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
         {[
-          { icon: 'ri-contacts-book-line', label: 'Xem khách hàng', color: tokens.color.primary },
-          { icon: 'ri-calculator-line', label: 'Quản lý công thức', color: '#8b5cf6' },
-          { icon: 'ri-tools-line', label: 'Hạng mục dịch vụ', color: '#f59e0b' },
-          { icon: 'ri-article-line', label: 'Viết bài blog', color: '#10b981' },
+          { icon: 'ri-contacts-book-line', label: 'Xem khách hàng', color: tokens.color.primary, route: '/leads' },
+          { icon: 'ri-calculator-line', label: 'Quản lý công thức', color: '#8b5cf6', route: '/pricing-config' },
+          { icon: 'ri-tools-line', label: 'Hạng mục dịch vụ', color: '#f59e0b', route: '/pricing-config' },
+          { icon: 'ri-article-line', label: 'Viết bài blog', color: '#10b981', route: '/blog-manager' },
         ].map((action) => (
-          <Button key={action.label} variant="secondary" icon={action.icon} fullWidth>
+          <Button key={action.label} variant="secondary" icon={action.icon} fullWidth onClick={() => navigate(action.route)}>
             {action.label}
           </Button>
         ))}

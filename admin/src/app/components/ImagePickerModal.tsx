@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens, resolveMediaUrl } from '@app/shared';
 import { mediaApi } from '../api';
 import type { MediaAsset } from '../types';
 import { Button } from './Button';
 import { useToast } from './Toast';
-
-const API_BASE = 'http://localhost:4202';
 
 // Smart image processing utility
 async function processImage(file: File, maxWidth = 1920, maxHeight = 1080, quality = 0.85): Promise<Blob> {
@@ -355,7 +353,7 @@ export function ImagePickerModal({ onSelect, onCancel, onClose, currentUrl }: Im
                   }}
                 >
                   <img
-                    src={item.url.startsWith('http') ? item.url : `${API_BASE}${item.url}`}
+                    src={resolveMediaUrl(item.url)}
                     alt={item.alt || 'Media asset'}
                     style={{
                       width: '100%',

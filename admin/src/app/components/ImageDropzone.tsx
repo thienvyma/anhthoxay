@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens, resolveMediaUrl } from '@app/shared';
 import { mediaApi } from '../api';
 
 interface ImageDropzoneProps {
@@ -285,7 +285,7 @@ export function ImageDropzone({ value, onChange, onRemove, label, height = 200 }
               style={{ position: 'relative', borderRadius: tokens.radius.md, overflow: 'hidden' }}
             >
               <img
-                src={value.startsWith('http') ? value : `http://localhost:4202${value}`}
+                src={resolveMediaUrl(value)}
                 alt="Uploaded"
                 style={{
                   width: '100%',

@@ -1,4 +1,10 @@
+---
+inclusion: manual
+---
+
 # 🛡️ Coding Standards - Tránh lỗi Vibe Code
+
+> **Note**: File này chứa chi tiết standards. Xem `cursor-rules.md` cho rules chính.
 
 ## 🔴 CRITICAL RULES - PHẢI TUÂN THỦ
 

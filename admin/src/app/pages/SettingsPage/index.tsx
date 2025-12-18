@@ -5,6 +5,8 @@ import { useToast } from '../../components/Toast';
 import { LayoutTab } from './LayoutTab';
 import { CompanyTab } from './CompanyTab';
 import { PromoTab } from './PromoTab';
+import { AccountTab } from './AccountTab';
+import { GoogleSheetsTab } from './GoogleSheetsTab';
 import {
   type SettingsTab,
   type CompanySettings,
@@ -20,14 +22,16 @@ import {
 } from './types';
 
 const TABS: Array<{ id: SettingsTab; label: string; icon: string }> = [
+  { id: 'account', label: 'Tài khoản', icon: 'ri-user-settings-line' },
   { id: 'layout', label: 'Layout', icon: 'ri-layout-line' },
   { id: 'company', label: 'Công ty', icon: 'ri-building-2-line' },
   { id: 'promo', label: 'Quảng cáo', icon: 'ri-megaphone-line' },
+  { id: 'integrations', label: 'Tích hợp', icon: 'ri-plug-line' },
 ];
 
 export function SettingsPage() {
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState<SettingsTab>('layout');
+  const [activeTab, setActiveTab] = useState<SettingsTab>('account');
 
   // State
   const [companySettings, setCompanySettings] = useState<CompanySettings>(defaultCompanySettings);
@@ -141,6 +145,14 @@ export function SettingsPage() {
 
       {/* Tab Content */}
       <AnimatePresence mode="wait">
+        {activeTab === 'account' && (
+          <AccountTab
+            key="account"
+            onShowMessage={showSavedMessage}
+            onError={handleError}
+          />
+        )}
+
         {activeTab === 'layout' && (
           <LayoutTab
             key="layout"
@@ -171,6 +183,10 @@ export function SettingsPage() {
             onShowMessage={showSavedMessage}
             onError={handleError}
           />
+        )}
+
+        {activeTab === 'integrations' && (
+          <GoogleSheetsTab key="integrations" />
         )}
       </AnimatePresence>
     </div>

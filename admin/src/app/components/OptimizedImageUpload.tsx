@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens, resolveMediaUrl } from '@app/shared';
 import { ImageDropzone } from './ImageDropzone';
 import { ImagePickerModal } from './ImagePickerModal';
 
@@ -93,7 +93,7 @@ export function OptimizedImageUpload({
           }}
         >
           <img
-            src={value.startsWith('http') ? value : `http://localhost:4202${value}`}
+            src={resolveMediaUrl(value)}
             alt="Preview"
             style={{
               width: '100%',

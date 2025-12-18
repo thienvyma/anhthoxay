@@ -141,7 +141,8 @@ const handleModalClick = useCallback((e: React.MouseEvent) => {
 
 ## API Calls Pattern
 ```tsx
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4202';
+// ✅ ĐÚNG - Import từ @app/shared (centralized config)
+import { API_URL } from '@app/shared';
 
 async function fetchItems(): Promise<Item[]> {
   const res = await fetch(`${API_URL}/items`);
@@ -150,6 +151,9 @@ async function fetchItems(): Promise<Item[]> {
   }
   return res.json();
 }
+
+// ❌ SAI - Không gọi import.meta.env trực tiếp
+// const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4202';
 
 // With credentials (for auth)
 async function fetchProtected(endpoint: string) {
@@ -163,6 +167,25 @@ async function fetchProtected(endpoint: string) {
   }
   return res.json();
 }
+```
+
+## Error Boundaries
+```tsx
+// Import ErrorBoundary từ @app/ui
+import { ErrorBoundary } from '@app/ui';
+
+// Wrap routes hoặc components có thể crash
+<ErrorBoundary>
+  <MyComponent />
+</ErrorBoundary>
+
+// Với custom fallback
+<ErrorBoundary fallback={<CustomErrorUI />}>
+  <MyComponent />
+</ErrorBoundary>
+
+// LƯU Ý: ErrorBoundary chỉ bắt render errors
+// Async errors (fetch, event handlers) cần try-catch riêng
 ```
 
 ## Animation (Framer Motion)

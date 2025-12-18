@@ -56,7 +56,8 @@ export interface Formula {
 
 export type TabType = 'service-categories' | 'unit-prices' | 'materials' | 'formulas';
 
-export const API_URL = 'http://localhost:4202';
+// Re-export API_URL from shared for convenience
+export { API_URL } from '@app/shared';
 
 export const UNIT_PRICE_CATEGORIES = ['Nhân công', 'Vật liệu', 'Thiết bị', 'Khác'];
 

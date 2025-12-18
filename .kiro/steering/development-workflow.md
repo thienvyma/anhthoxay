@@ -1,4 +1,10 @@
+---
+inclusion: manual
+---
+
 # 🔄 Development Workflow
+
+> **Note**: Quy trình phát triển feature mới. Xem `cursor-rules.md` cho rules chính.
 
 ## 📋 Quy trình phát triển feature mới
 
@@ -26,6 +32,8 @@ pnpm db:seed
 ### Step 3: API
 - [ ] Tạo Zod schema trong `api/src/schemas.ts`
 - [ ] Tạo route handlers trong `api/src/main.ts`
+- [ ] **🔐 Thêm auth middleware nếu cần** (xem `security-checklist.md`)
+- [ ] **🔐 Thêm rate limiting cho form submissions**
 - [ ] Test với curl/Postman
 
 ### Step 4: Frontend
@@ -36,9 +44,17 @@ pnpm db:seed
 
 ### Step 5: Testing
 - [ ] Test API endpoints
+- [ ] **🔐 Test với user không có quyền (nếu có auth)**
 - [ ] Test UI trên browser
 - [ ] Test mobile responsive
 - [ ] Test error cases
+
+### Step 6: Security Review (BẮT BUỘC cho API)
+- [ ] Endpoint có auth middleware chưa?
+- [ ] Role check đúng chưa?
+- [ ] Input validation đầy đủ chưa?
+- [ ] Rate limiting cho form submissions?
+- [ ] Đã cập nhật Protected Routes Registry?
 
 ## 🚀 Commands thường dùng
 

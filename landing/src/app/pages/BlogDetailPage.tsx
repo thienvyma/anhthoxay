@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
-import { tokens } from '@app/shared';
+import rehypeSanitize from 'rehype-sanitize';
+import { tokens, resolveMediaUrl } from '@app/shared';
 import { OptimizedImage } from '../components/OptimizedImage';
 import { ReadingProgressBar, ReadingProgressIndicator } from '../components/ReadingProgressBar';
 import { SocialShareButtons, FloatingSocialShare } from '../components/SocialShare';
@@ -11,6 +12,7 @@ import { NewsletterSignup } from '../components/NewsletterSignup';
 import { BlogImageThumbnail } from '../components/BlogImageThumbnail';
 import { useToast } from '../components/Toast';
 import { blogAPI } from '../api';
+import { sanitizeSchema } from '../utils/markdown';
 
 interface BlogPost {
   id: string;
@@ -216,6 +218,7 @@ export function BlogDetailPage() {
               {/* Content */}
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} style={{ ...glassCardStyle, padding: 'clamp(24px, 5vw, 48px)', marginBottom: '48px', fontSize: 'clamp(1rem, 2vw, 1.125rem)', lineHeight: 1.8 }}>
                 <ReactMarkdown
+                  rehypePlugins={[[rehypeSanitize, sanitizeSchema]]}
                   components={{
                     h1: (props) => <h1 style={{ fontWeight: 700, color: 'white', marginBottom: '24px', marginTop: '48px', paddingBottom: '12px', borderBottom: '1px solid rgba(128,128,128,0.5)', fontSize: 'clamp(1.75rem, 4vw, 2.25rem)' }} {...props} />,
                     h2: (props) => <h2 style={{ fontWeight: 700, color: 'white', marginBottom: '20px', marginTop: '40px', fontSize: 'clamp(1.5rem, 3.5vw, 2rem)', paddingLeft: '16px', borderLeft: `4px solid ${tokens.color.primary}` }} {...props} />,
@@ -231,9 +234,7 @@ export function BlogDetailPage() {
                     strong: (props) => <strong style={{ color: 'white', fontWeight: 600 }} {...props} />,
                     img: (props) => {
                       const imgSrc = props.src as string;
-                      const resolvedSrc = imgSrc?.startsWith('/media/') 
-                        ? `http://localhost:4202${imgSrc}` 
-                        : imgSrc;
+                      const resolvedSrc = resolveMediaUrl(imgSrc);
                       return <BlogImageThumbnail src={imgSrc} alt={props.alt as string} onClick={() => setLightboxImage(resolvedSrc)} />;
                     },
                   }}

@@ -70,11 +70,13 @@ export const Features = memo(function Features({ data }: { data: FeaturesData })
 
       {/* Features */}
       <div
+        className="features-grid"
         style={{
           display: layout === 'grid' ? 'grid' : 'flex',
           ...(layout === 'grid' && {
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: 24,
+            // Responsive: 2 cols on tablet, 3-4 on desktop
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+            gap: 20,
           }),
           ...(layout === 'list' && {
             flexDirection: 'column',

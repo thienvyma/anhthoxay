@@ -1,6 +1,23 @@
 export * from './lib/shared';
 export * from './utils/imageOptimization';
 
+// API Configuration - centralized URL management
+// Import from config module instead of hardcoding
+export { API_URL, getApiUrl, isProduction, isDevelopment } from './config';
+import { getApiUrl } from './config';
+
+/**
+ * Resolve media URL - converts relative paths to full API URLs
+ * @param url - The URL to resolve (can be relative like /media/... or absolute)
+ * @returns Full URL with API base
+ */
+export function resolveMediaUrl(url: string | undefined | null): string {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('/')) return `${getApiUrl()}${url}`;
+  return url;
+}
+
 // Design tokens for the whole platform (colors, typography, spacing, motion)
 export const tokens = {
 	color: {

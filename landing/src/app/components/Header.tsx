@@ -1,6 +1,6 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { tokens } from '@app/shared';
+import { tokens, resolveMediaUrl } from '@app/shared';
 
 export interface HeaderLink {
   href: string;
@@ -111,7 +111,7 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
             /* Image Logo */
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <img
-                src={`http://localhost:4202${logo.imageUrl}`}
+                src={resolveMediaUrl(logo.imageUrl)}
                 alt={logo.text || 'Anh Thợ Xây Logo'}
                 style={{
                   maxHeight: 50,

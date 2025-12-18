@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens, API_URL } from '@app/shared';
 
 interface PopupSettings {
   enabled: boolean;
@@ -12,8 +12,6 @@ interface PopupSettings {
   showOnce: boolean;
   delaySeconds: number;
 }
-
-const API_URL = 'http://localhost:4202';
 const POPUP_SHOWN_KEY = 'ath_popup_shown';
 
 export function PromoPopup() {

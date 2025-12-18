@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
-import { renderSection } from '../sections/render';
+import { tokens, API_URL } from '@app/shared';
+import { PageRenderer } from '../components/PageRenderer';
 import type { PageData } from '../types';
 
 export function DynamicPage() {
@@ -17,7 +17,7 @@ export function DynamicPage() {
     setLoading(true);
     setError(null);
 
-    fetch(`http://localhost:4202/pages/${slug}`)
+    fetch(`${API_URL}/pages/${slug}`)
       .then((res) => {
         if (!res.ok) {
           throw new Error(`Page not found: ${slug}`);
@@ -75,11 +75,14 @@ export function DynamicPage() {
           textAlign: 'center',
         }}
       >
-        <i className="ri-error-warning-line" style={{ fontSize: 64, color: tokens.color.primary }} />
+        <i
+          className="ri-error-warning-line"
+          style={{ fontSize: 64, color: tokens.color.primary }}
+        />
         <h1 style={{ fontSize: 24, color: tokens.color.text, margin: 0 }}>
           Trang không tồn tại
         </h1>
-        <p style={{ color: tokens.color.textMuted, margin: 0 }}>
+        <p style={{ color: tokens.color.muted, margin: 0 }}>
           Trang "{slug}" không được tìm thấy hoặc đã bị xóa.
         </p>
         <a
@@ -100,52 +103,7 @@ export function DynamicPage() {
     );
   }
 
-  return (
-    <div>
-      {/* Page Title (optional) */}
-      {page.title && (
-        <div
-          style={{
-            padding: '60px 20px 40px',
-            textAlign: 'center',
-            background: `linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 100%)`,
-          }}
-        >
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{
-              fontSize: 'clamp(28px, 5vw, 48px)',
-              fontWeight: 700,
-              color: tokens.color.text,
-              margin: 0,
-            }}
-          >
-            {page.title}
-          </motion.h1>
-        </div>
-      )}
-
-      {/* Render all sections */}
-      {page.sections && page.sections.length > 0 ? (
-        page.sections
-          .sort((a, b) => a.order - b.order)
-          .map((section) => renderSection(section))
-      ) : (
-        <div
-          style={{
-            minHeight: '30vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: tokens.color.textMuted,
-          }}
-        >
-          <p>Trang này chưa có nội dung.</p>
-        </div>
-      )}
-    </div>
-  );
+  return <PageRenderer page={page} eagerSections={2} />;
 }
 
 export default DynamicPage;

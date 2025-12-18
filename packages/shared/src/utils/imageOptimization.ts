@@ -100,10 +100,10 @@ export function getOptimizedImageUrl(
   
   // For local/uploaded images starting with /media/, prepend API base URL
   if (url.startsWith('/media/')) {
-    const API_BASE = typeof window !== 'undefined' 
-      ? (window as any).__API_BASE_URL || 'http://localhost:4202'
-      : 'http://localhost:4202';
-    return `${API_BASE}${url}`;
+    // Import getApiUrl from config to get environment-based URL
+    // Using dynamic import to avoid circular dependency
+    const { getApiUrl } = require('../config');
+    return `${getApiUrl()}${url}`;
   }
   
   // For URLs that already have protocol, return as-is

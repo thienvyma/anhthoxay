@@ -26,17 +26,39 @@ Cộng vật dụng: 4,800,000 + 500,000 = 5,300,000 VNĐ
 
 ## 👥 Phân quyền
 
+### Role Hierarchy (theo thứ tự quyền)
+```
+ADMIN > MANAGER > WORKER > USER
+```
+
 ### ADMIN
 - ✅ Toàn quyền
 - ✅ Quản lý công thức & hạng mục
+- ✅ Quản lý users
 - ✅ Duyệt thay đổi từ Quản lý
+- ✅ Cài đặt hệ thống
 
-### QUẢN LÝ
+### MANAGER (Quản lý)
 - ✅ Xem & quản lý khách hàng
 - ✅ Quản lý blog
+- ✅ Quản lý media
 - ⚠️ Đề xuất sửa đơn giá (cần duyệt)
 - ⚠️ Đề xuất sửa vật dụng (cần duyệt)
 - ❌ KHÔNG thấy công thức & hạng mục
+- ❌ KHÔNG quản lý users
+
+### WORKER (Thợ - Tương lai)
+- ✅ Xem công việc được giao
+- ✅ Cập nhật tiến độ
+- ✅ Xem thông tin khách hàng liên quan
+- ❌ KHÔNG quản lý blog/media
+- ❌ KHÔNG xem báo cáo tài chính
+
+### USER (Khách hàng - Tương lai)
+- ✅ Xem thông tin cá nhân
+- ✅ Xem lịch sử báo giá
+- ✅ Theo dõi tiến độ công trình
+- ❌ KHÔNG truy cập admin panel
 
 ## 📊 Data Models
 

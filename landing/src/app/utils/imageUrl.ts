@@ -1,3 +1,5 @@
+import { resolveMediaUrl } from '@app/shared';
+
 /**
  * Convert relative media URLs to absolute URLs
  * @param url - Image URL (can be relative /media/xxx or absolute http://...)
@@ -5,26 +7,7 @@
  */
 export function toAbsoluteUrl(url: string | undefined | null): string | undefined {
   if (!url) return undefined;
-  
-  // Already absolute URL
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url;
-  }
-  
-  // Relative media path - prepend API URL
-  if (url.startsWith('/media/')) {
-    const API_URL = 'http://localhost:4202';
-    return `${API_URL}${url}`;
-  }
-  
-  // Other relative paths (shouldn't happen, but handle it)
-  if (url.startsWith('/')) {
-    const API_URL = 'http://localhost:4202';
-    return `${API_URL}${url}`;
-  }
-  
-  // Return as-is for other cases
-  return url;
+  return resolveMediaUrl(url) || undefined;
 }
 
 /**

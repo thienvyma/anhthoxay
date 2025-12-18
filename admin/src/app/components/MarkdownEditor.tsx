@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens, resolveMediaUrl } from '@app/shared';
 
 interface MarkdownEditorProps {
   value: string;
@@ -280,10 +280,9 @@ export function MarkdownEditor({
 }
 
 // Helper to resolve image URLs
+// Use shared resolveMediaUrl from @app/shared
 function resolveImageUrl(url: string): string {
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  if (url.startsWith('/media/')) return `http://localhost:4202${url}`;
-  return url;
+  return resolveMediaUrl(url);
 }
 
 // Simple markdown to HTML converter for preview

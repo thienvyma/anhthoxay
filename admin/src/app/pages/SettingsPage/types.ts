@@ -54,7 +54,7 @@ export interface FooterConfig {
   copyright?: { text?: string };
 }
 
-export type SettingsTab = 'layout' | 'company' | 'promo';
+export type SettingsTab = 'account' | 'layout' | 'company' | 'promo' | 'integrations';
 
 // Glass Morphism Design Tokens (matching landing page)
 export const glass = {
@@ -136,5 +136,5 @@ export const defaultFooterConfig: FooterConfig = {
   copyright: { text: `© ${new Date().getFullYear()} Anh Thợ Xây. All rights reserved.` },
 };
 
-// API URL
-export const API_URL = 'http://localhost:4202';
+// Re-export API_URL from shared for convenience
+export { API_URL } from '@app/shared';

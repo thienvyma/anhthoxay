@@ -60,10 +60,11 @@ export const ContactInfo = memo(function ContactInfo({ data }: { data: ContactIn
       </h2>
 
       <div
+        className="contact-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: 32,
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+          gap: 24,
         }}
       >
         {/* Contact Details */}

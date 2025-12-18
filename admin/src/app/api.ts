@@ -1,4 +1,6 @@
 // API Client for Admin Dashboard - ANH THỢ XÂY
+import { API_URL } from '@app/shared';
+import { tokenStorage, store } from './store';
 import type { 
   Page, 
   Section, 
@@ -12,15 +14,48 @@ import type {
   Formula,
 } from './types';
 
-const API_BASE = 'http://localhost:4202';
+const API_BASE = API_URL;
 
 interface FetchOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
+  skipAuth?: boolean;
 }
 
 interface ValidationDetail {
   field: string;
   message: string;
+}
+
+// Token refresh logic
+let isRefreshing = false;
+let refreshPromise: Promise<boolean> | null = null;
+
+async function refreshAccessToken(): Promise<boolean> {
+  const refreshToken = tokenStorage.getRefreshToken();
+  if (!refreshToken) return false;
+
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      tokenStorage.clearTokens();
+      store.setUser(null);
+      return false;
+    }
+
+    const data = await response.json();
+    tokenStorage.setAccessToken(data.accessToken);
+    tokenStorage.setRefreshToken(data.refreshToken);
+    return true;
+  } catch {
+    tokenStorage.clearTokens();
+    store.setUser(null);
+    return false;
+  }
 }
 
 async function apiFetch<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
@@ -30,9 +65,20 @@ async function apiFetch<T>(endpoint: string, options: FetchOptions = {}): Promis
     ...options.headers,
   };
 
+  // Add Authorization header if we have a token
+  if (!options.skipAuth) {
+    const accessToken = tokenStorage.getAccessToken();
+    if (accessToken) {
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${accessToken}`;
+    }
+    const sessionId = tokenStorage.getSessionId();
+    if (sessionId) {
+      (headers as Record<string, string>)['x-session-id'] = sessionId;
+    }
+  }
+
   const config: RequestInit = {
     headers,
-    credentials: 'include', // Important for cookies
     method: options.method,
     cache: options.cache,
     mode: options.mode,
@@ -46,13 +92,34 @@ async function apiFetch<T>(endpoint: string, options: FetchOptions = {}): Promis
     config.body = JSON.stringify(options.body);
   }
 
-  const response = await fetch(url, config);
+  let response = await fetch(url, config);
+
+  // Handle 401 - try to refresh token
+  if (response.status === 401 && !options.skipAuth) {
+    if (!isRefreshing) {
+      isRefreshing = true;
+      refreshPromise = refreshAccessToken();
+    }
+
+    const refreshed = await refreshPromise;
+    isRefreshing = false;
+    refreshPromise = null;
+
+    if (refreshed) {
+      // Retry with new token
+      const newToken = tokenStorage.getAccessToken();
+      if (newToken) {
+        (headers as Record<string, string>)['Authorization'] = `Bearer ${newToken}`;
+      }
+      response = await fetch(url, { ...config, headers });
+    }
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Request failed' }));
     
     // Format validation errors if present
-    let errorMessage = error.error || error.message || `HTTP ${response.status}: ${response.statusText}`;
+    let errorMessage = error.error?.message || error.error || error.message || `HTTP ${response.status}: ${response.statusText}`;
     if (error.details && Array.isArray(error.details)) {
       const validationErrors = (error.details as ValidationDetail[])
         .map((detail) => `${detail.field}: ${detail.message}`)
@@ -72,19 +139,39 @@ async function apiFetch<T>(endpoint: string, options: FetchOptions = {}): Promis
   return response.json();
 }
 
-// Auth API
-export const authApi = {
-  login: (email: string, password: string) =>
-    apiFetch<{ ok: boolean; user: { id: string; email: string; role: string } }>(
-      '/auth/login',
-      { method: 'POST', body: { email, password } }
-    ),
+// Auth API - Using JWT
+interface LoginResponse {
+  user: { id: string; email: string; role: string; name: string };
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  sessionId: string;
+}
 
-  logout: () =>
-    apiFetch<{ ok: boolean }>('/auth/logout', { method: 'POST' }),
+export const authApi = {
+  login: async (email: string, password: string) => {
+    const response = await apiFetch<LoginResponse>(
+      '/api/auth/login',
+      { method: 'POST', body: { email, password }, skipAuth: true }
+    );
+    // Store tokens
+    tokenStorage.setAccessToken(response.accessToken);
+    tokenStorage.setRefreshToken(response.refreshToken);
+    tokenStorage.setSessionId(response.sessionId);
+    return { ok: true, user: response.user };
+  },
+
+  logout: async () => {
+    try {
+      await apiFetch<{ message: string }>('/api/auth/logout', { method: 'POST' });
+    } finally {
+      tokenStorage.clearTokens();
+    }
+    return { ok: true };
+  },
 
   me: () =>
-    apiFetch<{ id: string; email: string; role: string }>('/auth/me'),
+    apiFetch<{ id: string; email: string; role: string; name: string; createdAt: string }>('/api/auth/me'),
 };
 
 // Pages API
@@ -142,10 +229,16 @@ export const mediaApi = {
       return fd;
     })();
 
+    const headers: HeadersInit = {};
+    const accessToken = tokenStorage.getAccessToken();
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
     const response = await fetch(`${API_BASE}/media`, {
       method: 'POST',
       body: formData,
-      credentials: 'include',
+      headers,
     });
 
     if (!response.ok) {
@@ -161,9 +254,78 @@ export const mediaApi = {
 };
 
 // ========== ATH: CUSTOMER LEADS ==========
+
+// Leads API types
+interface LeadsListParams {
+  search?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+}
+
+interface PaginatedLeadsResponse {
+  data: CustomerLead[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+interface LeadsStatsResponse {
+  dailyLeads: Array<{ date: string; count: number }>;
+  byStatus: Record<string, number>;
+  bySource: Record<string, number>;
+  conversionRate: number;
+  totalLeads: number;
+  newLeads: number;
+}
+
 export const leadsApi = {
-  list: () =>
-    apiFetch<CustomerLead[]>('/leads'),
+  // List with search, filter, pagination
+  list: (params?: LeadsListParams) => {
+    const query = params ? new URLSearchParams(
+      Object.entries(params)
+        .filter(([, v]) => v !== undefined && v !== '')
+        .map(([k, v]) => [k, String(v)])
+    ).toString() : '';
+    return apiFetch<PaginatedLeadsResponse>(`/leads${query ? '?' + query : ''}`);
+  },
+
+  // Get dashboard stats
+  getStats: () =>
+    apiFetch<LeadsStatsResponse>('/leads/stats'),
+
+  // Export CSV - returns blob for download
+  export: async (params?: { search?: string; status?: string }) => {
+    const query = params ? new URLSearchParams(
+      Object.entries(params)
+        .filter(([, v]) => v !== undefined && v !== '')
+        .map(([k, v]) => [k, String(v)])
+    ).toString() : '';
+    
+    const url = `${API_BASE}/leads/export${query ? '?' + query : ''}`;
+    const headers: HeadersInit = {};
+    const accessToken = tokenStorage.getAccessToken();
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+    
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+    
+    // Trigger download
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = `leads-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(downloadUrl);
+  },
 
   update: (id: string, data: { status?: string; notes?: string }) =>
     apiFetch<CustomerLead>(`/leads/${id}`, { method: 'PUT', body: data }),
@@ -357,4 +519,80 @@ export const blogCommentsApi = {
 
   delete: (id: string) =>
     apiFetch<{ ok: boolean }>(`/blog/comments/${id}`, { method: 'DELETE' }),
+};
+
+// ========== ACCOUNT / AUTH MANAGEMENT ==========
+export interface SessionInfo {
+  id: string;
+  userAgent: string | null;
+  ipAddress: string | null;
+  createdAt: string;
+  expiresAt: string;
+  isCurrent: boolean;
+}
+
+interface ChangePasswordResponse {
+  message: string;
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+}
+
+export const accountApi = {
+  // Change password - revokes all other sessions
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    const response = await apiFetch<ChangePasswordResponse>('/api/auth/change-password', {
+      method: 'POST',
+      body: { currentPassword, newPassword },
+    });
+    // Update tokens after password change
+    tokenStorage.setAccessToken(response.accessToken);
+    tokenStorage.setRefreshToken(response.refreshToken);
+    return response;
+  },
+
+  // Get all sessions for current user
+  getSessions: () =>
+    apiFetch<{ sessions: SessionInfo[] }>('/api/auth/sessions'),
+
+  // Revoke a specific session
+  revokeSession: (sessionId: string) =>
+    apiFetch<{ message: string }>(`/api/auth/sessions/${sessionId}`, { method: 'DELETE' }),
+
+  // Revoke all other sessions (keep current)
+  revokeAllOtherSessions: () =>
+    apiFetch<{ message: string; count: number }>('/api/auth/sessions', { method: 'DELETE' }),
+};
+
+// ========== GOOGLE SHEETS INTEGRATION ==========
+export interface GoogleSheetsStatus {
+  connected: boolean;
+  spreadsheetId: string | null;
+  sheetName: string;
+  syncEnabled: boolean;
+  lastSyncAt: string | null;
+  errorCount: number;
+  lastError: string | null;
+}
+
+export const googleSheetsApi = {
+  // Get OAuth URL for connecting
+  getAuthUrl: () =>
+    apiFetch<{ authUrl: string }>('/integrations/google/auth-url'),
+
+  // Disconnect Google Sheets
+  disconnect: () =>
+    apiFetch<{ success: boolean; message: string }>('/integrations/google/disconnect', { method: 'POST' }),
+
+  // Get connection status
+  getStatus: () =>
+    apiFetch<GoogleSheetsStatus>('/integrations/google/status'),
+
+  // Test spreadsheet connection
+  testConnection: () =>
+    apiFetch<{ success: boolean; message: string }>('/integrations/google/test', { method: 'POST' }),
+
+  // Update settings
+  updateSettings: (data: { spreadsheetId?: string; sheetName?: string; syncEnabled?: boolean }) =>
+    apiFetch<{ success: boolean; message: string }>('/integrations/google/settings', { method: 'PUT', body: data }),
 };

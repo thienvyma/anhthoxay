@@ -369,19 +369,77 @@ img {
   }
 }
 
+/* Mobile Menu Toggle Button - Hidden by default */
+.mobile-menu-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 28px;
+  cursor: pointer;
+  padding: 8px;
+  z-index: 10001;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.mobile-menu-toggle:hover {
+  color: var(--primary);
+}
+
+.mobile-menu-toggle:active {
+  transform: scale(0.9);
+}
+
+/* Mobile Menu Panel Animation */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Mobile Menu Panel hover effects */
+.mobile-menu-panel a:hover {
+  background: rgba(255,255,255,0.08) !important;
+  transform: translateX(4px);
+}
+
+.mobile-menu-panel button:hover {
+  background: rgba(255,255,255,0.15) !important;
+  color: var(--primary) !important;
+}
+
 /* Mobile styles */
 @media (max-width: 768px) {
   html {
     font-size: 14px;
   }
 
-  /* Hide desktop navigation items on mobile */
-  nav a:not(.mobile-menu-toggle) {
+  /* Hide desktop navigation items on mobile - ONLY in header, not mobile menu panel */
+  header nav > a:not(.mobile-menu-toggle) {
     display: none !important;
   }
 
   .desktop-only {
     display: none !important;
+  }
+
+  /* Show mobile menu hamburger button */
+  .mobile-menu-toggle {
+    display: flex !important;
+  }
+  
+  /* Ensure mobile menu panel links are visible */
+  [style*="position: fixed"] nav a {
+    display: flex !important;
   }
 
   /* Stack grid columns */
@@ -413,7 +471,7 @@ img {
   }
 }
 
-/* Tablet styles */
+/* Tablet styles (769px - 1024px) */
 @media (max-width: 1024px) and (min-width: 769px) {
   html {
     font-size: 15px;
@@ -424,27 +482,699 @@ img {
     padding-left: 32px !important;
     padding-right: 32px !important;
   }
+
+  /* Show mobile menu hamburger button on tablet too */
+  .mobile-menu-toggle {
+    display: flex !important;
+  }
+
+  /* Hide desktop navigation on tablet */
+  .desktop-only {
+    display: none !important;
+  }
+  
+  /* ===== TABLET GRID LAYOUTS ===== */
+  .features-grid,
+  .stats-grid,
+  .values-grid,
+  .testimonials-stats {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 16px !important;
+  }
+  
+  .blog-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 20px !important;
+  }
+  
+  .contact-methods-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  .mission-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  /* ===== TABLET FOOTER ===== */
+  footer {
+    margin-top: 60px !important;
+  }
+  
+  footer > div {
+    padding: 32px 24px 20px !important;
+  }
+  
+  .footer-grid {
+    display: grid !important;
+    grid-template-columns: 1.2fr 1fr 1.5fr !important;
+    gap: 24px !important;
+    margin-bottom: 24px !important;
+    align-items: start !important;
+  }
+  
+  /* Brand/Logo section */
+  .footer-brand {
+    display: block !important;
+  }
+  
+  .footer-brand > div:first-child {
+    font-size: 20px !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .footer-brand p {
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+  }
+  
+  /* Logo section */
+  .footer-grid > div:first-child:has(img) > div:first-child {
+    padding: 16px !important;
+  }
+  
+  .footer-grid > div:first-child img {
+    height: 50px !important;
+  }
+  
+  /* Quick links */
+  .footer-links {
+    display: block !important;
+  }
+  
+  .footer-links h4 {
+    font-size: 14px !important;
+    margin-bottom: 12px !important;
+  }
+  
+  .footer-links .quick-links {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  
+  .footer-links .quick-links > a > div {
+    font-size: 13px !important;
+    padding: 0 !important;
+    border-right: none !important;
+  }
+  
+  /* Newsletter */
+  .footer-newsletter h4 {
+    font-size: 14px !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .footer-newsletter p {
+    font-size: 12px !important;
+    margin-bottom: 12px !important;
+  }
+  
+  .footer-newsletter input {
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+  }
+  
+  .footer-newsletter button {
+    padding: 10px 14px !important;
+  }
+  
+  /* Footer bottom */
+  .footer-bottom {
+    padding-top: 16px !important;
+    font-size: 12px !important;
+  }
+  
+  .footer-bottom > div a {
+    font-size: 18px !important;
+  }
+  
+  /* ===== TABLET CARDS ===== */
+  .features-grid > div,
+  .values-grid > div {
+    padding: 20px 16px !important;
+  }
+  
+  .features-grid i,
+  .values-grid i {
+    font-size: 32px !important;
+    margin-bottom: 12px !important;
+  }
+  
+  .features-grid h4,
+  .values-grid h4 {
+    font-size: 15px !important;
+    margin-bottom: 6px !important;
+  }
+  
+  .features-grid p,
+  .values-grid p {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+  
+  .value-card {
+    padding: 16px 12px !important;
+  }
+  
+  .value-card i {
+    font-size: 28px !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .value-card h4 {
+    font-size: 13px !important;
+  }
+  
+  .value-card p {
+    font-size: 11px !important;
+  }
 }
 
-/* Small mobile */
+/* Small Tablet / Large Phone (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+  
+  /* ===== GRID LAYOUTS - 2 COLUMNS ===== */
+  .features-grid,
+  .stats-grid,
+  .values-grid,
+  .contact-methods-grid,
+  .testimonials-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  
+  /* Blog grid - 2 cols */
+  .blog-grid,
+  .blog-list-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
+  
+  /* Blog list content overlay - tablet */
+  .blog-list-content-overlay {
+    padding: 18px !important;
+  }
+  
+  .blog-list-content-overlay h3 {
+    font-size: 1.1rem !important;
+  }
+  
+  .blog-list-content-overlay p {
+    font-size: 0.8rem !important;
+  }
+  
+  /* Blog category filters - tablet */
+  .blog-category-filters {
+    gap: 10px !important;
+    margin-bottom: 36px !important;
+  }
+  
+  .blog-category-filters button {
+    padding: 10px 20px !important;
+    font-size: 13px !important;
+  }
+  
+  /* Featured blog cards - tablet */
+  .blog-card > div:last-child {
+    padding: 20px !important;
+  }
+  
+  .blog-card h3 {
+    font-size: 18px !important;
+  }
+  
+  .blog-card p {
+    font-size: 13px !important;
+  }
+  
+  /* Mission/Vision - 1 col (cards are large) */
+  .mission-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Contact grid - stack */
+  .contact-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* ===== CARDS STYLING ===== */
+  .features-grid > div,
+  .values-grid > div {
+    padding: 16px 12px !important;
+  }
+  
+  .features-grid i,
+  .values-grid i {
+    font-size: 28px !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .features-grid h4,
+  .values-grid h4 {
+    font-size: 13px !important;
+    margin-bottom: 4px !important;
+  }
+  
+  .features-grid p,
+  .values-grid p {
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
+  
+  .value-card {
+    padding: 14px 10px !important;
+  }
+  
+  .value-card i {
+    font-size: 26px !important;
+    margin-bottom: 6px !important;
+  }
+  
+  .value-card h4 {
+    font-size: 12px !important;
+    margin-bottom: 3px !important;
+  }
+  
+  .value-card p {
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+  }
+  
+  /* ===== FOOTER - COMPACT 2 COLUMN ===== */
+  footer {
+    margin-top: 48px !important;
+  }
+  
+  footer > div {
+    padding: 24px 20px 16px !important;
+  }
+  
+  .footer-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 20px 16px !important;
+    margin-bottom: 20px !important;
+  }
+  
+  /* Brand section */
+  .footer-brand {
+    display: block !important;
+    grid-column: 1 / -1 !important;
+    padding-bottom: 16px !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  }
+  
+  .footer-brand > div:first-child {
+    font-size: 18px !important;
+    margin-bottom: 6px !important;
+  }
+  
+  .footer-brand p {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* Logo section - full width */
+  .footer-grid > div:first-child:has(img) {
+    grid-column: 1 / -1 !important;
+    padding-bottom: 16px !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  }
+  
+  .footer-grid > div:first-child:has(img) > div:first-child {
+    padding: 12px 16px !important;
+  }
+  
+  .footer-grid > div:first-child img {
+    height: 44px !important;
+  }
+  
+  /* Quick links */
+  .footer-links {
+    display: block !important;
+  }
+  
+  .footer-links h4 {
+    font-size: 13px !important;
+    margin-bottom: 10px !important;
+  }
+  
+  .footer-links .quick-links {
+    flex-direction: column !important;
+    gap: 6px !important;
+  }
+  
+  .footer-links .quick-links > a > div {
+    font-size: 12px !important;
+    padding: 0 !important;
+    border-right: none !important;
+  }
+  
+  /* Newsletter */
+  .footer-newsletter h4 {
+    font-size: 13px !important;
+    margin-bottom: 6px !important;
+  }
+  
+  .footer-newsletter p {
+    font-size: 11px !important;
+    margin-bottom: 10px !important;
+  }
+  
+  .footer-newsletter input {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+  }
+  
+  .footer-newsletter button {
+    padding: 8px 12px !important;
+  }
+  
+  /* Footer bottom */
+  .footer-bottom {
+    padding-top: 14px !important;
+    font-size: 11px !important;
+    gap: 10px !important;
+  }
+  
+  .footer-bottom > div a {
+    font-size: 16px !important;
+  }
+}
+
+/* Small mobile - 2 columns for most grids */
 @media (max-width: 480px) {
   html {
     font-size: 13px;
   }
 
-  /* Force single column on very small screens */
-  [style*="grid-template-columns"] {
+  /* Keep 2 columns on mobile for compact items */
+  .stats-grid,
+  .testimonials-stats,
+  .features-grid,
+  .values-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  
+  /* Smaller cards on mobile - reduce padding */
+  .features-grid > div,
+  .values-grid > div {
+    padding: 12px 10px !important;
+  }
+  
+  /* Smaller icons on mobile */
+  .features-grid i,
+  .values-grid i {
+    font-size: 24px !important;
+    margin-bottom: 6px !important;
+  }
+  
+  /* Smaller text on mobile cards */
+  .features-grid h4,
+  .values-grid h4 {
+    font-size: 12px !important;
+    margin-bottom: 2px !important;
+  }
+  
+  .features-grid p,
+  .values-grid p {
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+  }
+  
+  /* Blog and contact - 1 column (larger items) */
+  .blog-grid,
+  .blog-list-grid,
+  .contact-methods-grid,
+  .mission-grid,
+  .contact-grid {
     grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  
+  /* ===== BLOG LIST MOBILE OPTIMIZATION ===== */
+  .blog-list-grid {
+    padding: 0 !important;
+  }
+  
+  .blog-list-grid > div {
+    border-radius: 12px !important;
+  }
+  
+  /* Blog list content overlay - smaller padding on mobile */
+  .blog-list-content-overlay {
+    padding: 16px !important;
+  }
+  
+  .blog-list-content-overlay h3 {
+    font-size: 1rem !important;
+    margin-bottom: 6px !important;
+  }
+  
+  .blog-list-content-overlay p {
+    font-size: 0.75rem !important;
+    margin-bottom: 8px !important;
+    -webkit-line-clamp: 2 !important;
+    line-clamp: 2 !important;
+  }
+  
+  .blog-list-content-overlay .blog-meta {
+    font-size: 0.7rem !important;
+    gap: 10px !important;
+  }
+  
+  /* Blog category filters - smaller on mobile */
+  .blog-category-filters {
+    gap: 8px !important;
+    margin-bottom: 32px !important;
+  }
+  
+  .blog-category-filters button {
+    padding: 8px 16px !important;
+    font-size: 12px !important;
+  }
+  
+  /* ===== FEATURED BLOG POSTS MOBILE ===== */
+  .blog-grid {
+    gap: 16px !important;
+  }
+  
+  .blog-card > div:last-child {
+    padding: 16px !important;
+  }
+  
+  .blog-card h3 {
+    font-size: 16px !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .blog-card p {
+    font-size: 12px !important;
+    -webkit-line-clamp: 2 !important;
+    line-clamp: 2 !important;
+  }
+  
+  /* ===== FOOTER PROFESSIONAL COMPACT ON MOBILE ===== */
+  footer {
+    margin-top: 32px !important;
+  }
+  
+  footer > div {
+    padding: 16px 16px 12px !important;
+  }
+  
+  /* Footer grid - single column stacked layout */
+  .footer-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    margin-bottom: 16px !important;
+  }
+  
+  /* Brand section - vertical layout aligned */
+  .footer-brand {
+    display: block !important;
+    padding-bottom: 12px !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  }
+  
+  .footer-brand > div:first-child {
+    font-size: 16px !important;
+    margin-bottom: 6px !important;
+  }
+  
+  .footer-brand p {
+    font-size: 12px !important;
+    margin-bottom: 0 !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* Hide awards on mobile */
+  .footer-brand > div:last-child:not(:first-child):not(p) {
+    display: none !important;
+  }
+  
+  /* Logo section on mobile */
+  .footer-grid > div:first-child:has(img) {
+    padding: 0 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+    padding-bottom: 12px !important;
+  }
+  
+  .footer-grid > div:first-child:has(img) > div:first-child {
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+  }
+  
+  .footer-grid > div:first-child img {
+    height: 36px !important;
+  }
+  
+  /* Hide awards below logo on mobile */
+  .footer-grid > div:first-child:has(img) > div:last-child {
+    display: none !important;
+  }
+  
+  /* Quick links - vertical layout with title on top */
+  .footer-links {
+    display: block !important;
+  }
+  
+  .footer-links h4 {
+    font-size: 12px !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .footer-links .quick-links {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 0 !important;
+    align-items: center !important;
+  }
+  
+  .footer-links .quick-links > a {
+    padding: 0 !important;
+    min-height: auto !important;
+    min-width: auto !important;
+  }
+  
+  .footer-links .quick-links > a > div {
+    font-size: 12px !important;
+    padding: 2px 10px !important;
+    border-right: 1px solid rgba(255,255,255,0.15) !important;
+  }
+  
+  .footer-links .quick-links > a:first-child > div {
+    padding-left: 0 !important;
+  }
+  
+  .footer-links .quick-links > a:last-child > div {
+    border-right: none !important;
+    padding-right: 0 !important;
+  }
+  
+  /* Newsletter - compact horizontal */
+  .footer-newsletter {
+    padding-top: 12px !important;
+    border-top: 1px solid rgba(255,255,255,0.08) !important;
+  }
+  
+  .footer-newsletter h4 {
+    font-size: 12px !important;
+    margin-bottom: 4px !important;
+  }
+  
+  .footer-newsletter p {
+    font-size: 10px !important;
+    margin-bottom: 8px !important;
+    line-height: 1.3 !important;
+  }
+  
+  .footer-newsletter > div:last-child {
+    display: flex !important;
+    gap: 6px !important;
+  }
+  
+  .footer-newsletter input {
+    flex: 1 !important;
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+    min-width: 0 !important;
+  }
+  
+  .footer-newsletter button {
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+  }
+  
+  /* Footer bottom bar - centered compact */
+  .footer-bottom {
+    padding-top: 12px !important;
+    font-size: 10px !important;
+    gap: 8px !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+  
+  .footer-bottom > span {
+    width: 100% !important;
+    order: 2 !important;
+  }
+  
+  .footer-bottom > div {
+    gap: 16px !important;
+    order: 1 !important;
+  }
+  
+  .footer-bottom > div a {
+    font-size: 18px !important;
+    min-height: auto !important;
+    min-width: auto !important;
   }
 
   /* Reduce gaps on small screens */
   [style*="gap: 32px"], [style*="gap: 24px"] {
-    gap: 16px !important;
+    gap: 8px !important;
   }
 
   /* Smaller padding for cards */
   .card, .panel {
-    padding: 12px !important;
+    padding: 10px !important;
+  }
+  
+  /* ===== VALUES GRID - EXACTLY LIKE STATS ===== */
+  .values-grid {
+    gap: 8px !important;
+  }
+  
+  .value-card {
+    padding: 10px 8px !important;
+    border-radius: 8px !important;
+  }
+  
+  .value-card i {
+    font-size: 22px !important;
+    margin-bottom: 4px !important;
+  }
+  
+  .value-card h4 {
+    font-size: 11px !important;
+    margin-bottom: 2px !important;
+    line-height: 1.2 !important;
+  }
+  
+  .value-card p {
+    font-size: 9px !important;
+    line-height: 1.25 !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 }
 

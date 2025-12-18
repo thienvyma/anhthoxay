@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ErrorBoundary } from '@app/ui';
 import { LoginPage } from './components/LoginPage';
 import { Layout } from './components/Layout';
 import { ToastProvider } from './components/Toast';
@@ -13,9 +14,9 @@ import { BlogManagerPage } from './pages/BlogManagerPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { LeadsPage } from './pages/LeadsPage';
 import { PricingConfigPage } from './pages/PricingConfigPage';
-import { useUser, store } from './store';
+import { useUser, store, tokenStorage } from './store';
 import { authApi } from './api';
-import type { RouteType } from './types';
+import type { RouteType } from './types'
 
 // App Content Component (uses router hooks)
 function AppContent() {
@@ -25,14 +26,21 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-    // Check if user is already logged in
+    // Check if user is already logged in (has valid token)
+    const accessToken = tokenStorage.getAccessToken();
+    if (!accessToken) {
+      setLoading(false);
+      return;
+    }
+
     authApi
       .me()
       .then((userData) => {
         store.setUser(userData as Parameters<typeof store.setUser>[0]);
       })
       .catch(() => {
-        // Not logged in
+        // Token invalid or expired, clear tokens
+        tokenStorage.clearTokens();
       })
       .finally(() => {
         setLoading(false);
@@ -42,10 +50,11 @@ function AppContent() {
   async function handleLogout() {
     try {
       await authApi.logout();
-      store.setUser(null);
-      navigate('/login');
     } catch (error) {
       console.error('Logout failed:', error);
+    } finally {
+      store.setUser(null);
+      navigate('/login');
     }
   }
 
@@ -94,34 +103,36 @@ function AppContent() {
       onLogout={handleLogout} 
       userEmail={user.email}
     >
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={location.pathname}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.2 }}
-        >
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/login" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            {/* Unified Pages & Sections route */}
-            <Route path="/pages/:slug" element={<SectionsPageWrapper />} />
-            <Route path="/pages" element={<SectionsPageWrapper />} />
-            {/* Legacy routes for backward compatibility */}
-            <Route path="/sections/:slug" element={<SectionsPageWrapper />} />
-            <Route path="/sections" element={<Navigate to="/pages/home" replace />} />
-            <Route path="/leads" element={<LeadsPage />} />
-            <Route path="/pricing-config" element={<PricingConfigPage />} />
-            <Route path="/media" element={<MediaPage />} />
-            <Route path="/preview" element={<LivePreviewPage />} />
-            <Route path="/blog-manager" element={<BlogManagerPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </motion.div>
-      </AnimatePresence>
+      <ErrorBoundary>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              {/* Unified Pages & Sections route */}
+              <Route path="/pages/:slug" element={<SectionsPageWrapper />} />
+              <Route path="/pages" element={<SectionsPageWrapper />} />
+              {/* Legacy routes for backward compatibility */}
+              <Route path="/sections/:slug" element={<SectionsPageWrapper />} />
+              <Route path="/sections" element={<Navigate to="/pages/home" replace />} />
+              <Route path="/leads" element={<LeadsPage />} />
+              <Route path="/pricing-config" element={<PricingConfigPage />} />
+              <Route path="/media" element={<MediaPage />} />
+              <Route path="/preview" element={<LivePreviewPage />} />
+              <Route path="/blog-manager" element={<BlogManagerPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </motion.div>
+        </AnimatePresence>
+      </ErrorBoundary>
     </Layout>
   );
 }

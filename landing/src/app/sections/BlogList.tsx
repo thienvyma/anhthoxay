@@ -5,12 +5,10 @@ import { Link } from 'react-router-dom';
 import { CardImage } from '../components/OptimizedImage';
 import { blogAPI } from '../api';
 
+import { resolveMediaUrl } from '@app/shared';
+
 // Helper to get full image URL
-const getImageUrl = (url: string | null) => {
-  if (!url) return '';
-  if (url.startsWith('http')) return url;
-  return `http://localhost:4202${url}`;
-};
+const getImageUrl = (url: string | null) => resolveMediaUrl(url);
 
 interface BlogListData {
   title?: string;
@@ -96,6 +94,7 @@ export function BlogList({ data }: { data: BlogListData }) {
         <AnimatePresence>
           {filterCategories.length > 1 && (
             <motion.div
+              className="blog-category-filters"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               style={{ 
@@ -178,9 +177,10 @@ export function BlogList({ data }: { data: BlogListData }) {
         </div>
       ) : (
         <div
+          className="blog-list-grid"
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
             gap: 24,
             paddingBottom: 80,
           }}
@@ -280,17 +280,20 @@ export function BlogList({ data }: { data: BlogListData }) {
                   </div>
 
                   {/* Content Overlay */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    padding: 24,
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 70%, transparent 100%)',
-                  }}>
+                  <div 
+                    className="blog-list-content-overlay"
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      padding: 'clamp(16px, 4vw, 24px)',
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 70%, transparent 100%)',
+                    }}
+                  >
                     {/* Title */}
                     <h3 style={{
-                      fontSize: '1.25rem',
+                      fontSize: 'clamp(1rem, 2.5vw, 1.25rem)',
                       fontWeight: 700,
                       color: 'white',
                       marginBottom: 8,
@@ -306,7 +309,7 @@ export function BlogList({ data }: { data: BlogListData }) {
                     {/* Excerpt */}
                     {post.excerpt && (
                       <p style={{
-                        fontSize: '0.875rem',
+                        fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
                         color: 'rgba(255,255,255,0.6)',
                         marginBottom: 12,
                         lineHeight: 1.5,
@@ -320,13 +323,16 @@ export function BlogList({ data }: { data: BlogListData }) {
                     )}
 
                     {/* Meta */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 16,
-                      fontSize: '0.813rem',
-                      color: 'rgba(255,255,255,0.5)',
-                    }}>
+                    <div 
+                      className="blog-meta"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 16,
+                        fontSize: 'clamp(0.7rem, 1.8vw, 0.813rem)',
+                        color: 'rgba(255,255,255,0.5)',
+                      }}
+                    >
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <i className="ri-time-line" />
                         {calculateReadTime(post.excerpt)} min

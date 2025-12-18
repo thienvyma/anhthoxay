@@ -3,7 +3,8 @@
 export interface User {
   id: string;
   email: string;
-  role: 'ADMIN' | 'MANAGER' | 'VIEWER';
+  name: string;
+  role: 'ADMIN' | 'MANAGER' | 'WORKER' | 'USER';
 }
 
 export interface Section {
@@ -91,8 +92,18 @@ export interface CustomerLead {
   status: 'NEW' | 'CONTACTED' | 'CONVERTED' | 'CANCELLED';
   source: string;
   quoteData: string | null;
+  notes: string | null;
+  statusHistory: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+// Status history entry type
+export interface StatusHistoryEntry {
+  from: string;
+  to: string;
+  changedAt: string;
+  changedBy?: string;
 }
 
 export interface ServiceCategory {

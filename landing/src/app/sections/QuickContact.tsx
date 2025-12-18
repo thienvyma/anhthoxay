@@ -123,10 +123,11 @@ export const QuickContact = memo(function QuickContact({ data }: { data: QuickCo
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
+        className="contact-methods-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: 32,
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
+          gap: 20,
         }}
       >
         {methods.map((method, index) => (

@@ -1,15 +1,101 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { tokens } from '@app/shared';
+import { tokens, API_URL } from '@app/shared';
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+
+export interface MobileMenuItem {
+  href: string;
+  label: string;
+  icon?: string;
+}
+
+interface MobileMenuConfig {
+  items: MobileMenuItem[];
+  showLogo: boolean;
+  showCTA: boolean;
+  ctaText: string;
+  ctaLink: string;
+  socialLinks: Array<{ platform: string; url: string; icon: string }>;
+}
 
 interface MobileMenuProps {
   currentRoute: string;
   onNavigate: (route: string) => void;
+  menuItems?: MobileMenuItem[];
 }
 
-export function MobileMenu({ currentRoute }: MobileMenuProps) {
+// Default config
+const defaultConfig: MobileMenuConfig = {
+  items: [
+    { href: '/', label: 'Trang chủ', icon: 'ri-home-fill' },
+    { href: '/bao-gia', label: 'Báo giá', icon: 'ri-calculator-fill' },
+    { href: '/blog', label: 'Blog', icon: 'ri-article-fill' },
+    { href: '/chinh-sach', label: 'Chính sách', icon: 'ri-shield-check-fill' },
+  ],
+  showLogo: true,
+  showCTA: true,
+  ctaText: 'Liên hệ ngay',
+  ctaLink: 'tel:+84123456789',
+  socialLinks: [
+    { platform: 'Facebook', url: 'https://facebook.com', icon: 'ri-facebook-fill' },
+    { platform: 'Youtube', url: 'https://youtube.com', icon: 'ri-youtube-fill' },
+    { platform: 'Tiktok', url: 'https://tiktok.com', icon: 'ri-tiktok-fill' },
+  ],
+};
+
+export function MobileMenu({ currentRoute, menuItems }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [config, setConfig] = useState<MobileMenuConfig>(defaultConfig);
+
+  // Load config from API on mount
+  useEffect(() => {
+    setMounted(true);
+    
+    // Fetch mobile menu config from settings API
+    fetch(`${API_URL}/settings/mobileMenu`)
+      .then(res => {
+        if (res.ok) return res.json();
+        // If 404, use default config
+        return null;
+      })
+      .then(data => {
+        if (data?.value) {
+          // Merge with defaults to ensure all fields exist
+          setConfig(prev => ({
+            ...prev,
+            ...data.value,
+            items: data.value.items?.length > 0 ? data.value.items : prev.items,
+            socialLinks: data.value.socialLinks?.length > 0 ? data.value.socialLinks : prev.socialLinks,
+          }));
+        }
+      })
+      .catch(err => {
+        console.warn('Failed to load mobile menu config, using defaults:', err);
+      });
+  }, []);
+
+  // Use provided menu items, or config items, or defaults
+  // Priority: props > API config > defaults
+  // ALWAYS ensure we have items - never show empty menu
+  let items: MobileMenuItem[];
+  if (menuItems && menuItems.length > 0) {
+    items = menuItems;
+  } else if (config.items && config.items.length > 0) {
+    items = config.items;
+  } else {
+    items = defaultConfig.items;
+  }
+  
+  // Safety check - if still empty, use hardcoded defaults
+  if (!items || items.length === 0) {
+    items = [
+      { href: '/', label: 'Trang chủ', icon: 'ri-home-fill' },
+      { href: '/bao-gia', label: 'Báo giá', icon: 'ri-calculator-fill' },
+      { href: '/blog', label: 'Blog', icon: 'ri-article-fill' },
+      { href: '/chinh-sach', label: 'Chính sách', icon: 'ri-shield-check-fill' },
+    ];
+  }
 
   // Close menu when route changes
   useEffect(() => {
@@ -28,225 +114,202 @@ export function MobileMenu({ currentRoute }: MobileMenuProps) {
     };
   }, [isOpen]);
 
-  // ANH THỢ XÂY menu items
-  const menuItems = [
-    { route: '/', label: 'Trang chủ', icon: 'ri-home-fill' },
-    { route: '/bao-gia', label: 'Báo giá', icon: 'ri-calculator-fill' },
-    { route: '/blog', label: 'Blog', icon: 'ri-article-fill' },
-    { route: '/chinh-sach', label: 'Chính sách', icon: 'ri-shield-check-fill' },
-  ];
+  const handleToggle = () => {
+    setIsOpen(prev => !prev);
+  };
 
-  return (
-    <>
-      {/* Hamburger Button - Only visible on mobile */}
-      <motion.button
-        onClick={() => setIsOpen(!isOpen)}
-        whileTap={{ scale: 0.9 }}
+  const handleClose = () => {
+    setIsOpen(false);
+  };
+
+  // Menu overlay content
+  const menuOverlay = isOpen ? (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 99999,
+      }}
+    >
+      {/* Backdrop */}
+      <div
+        onClick={handleClose}
         style={{
-          display: 'none',
-          background: 'transparent',
-          border: 'none',
-          color: tokens.color.text,
-          fontSize: 28,
-          cursor: 'pointer',
-          padding: 8,
-          zIndex: 10001,
-          position: 'relative',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(8px)',
         }}
-        className="mobile-menu-toggle"
+      />
+
+      {/* Menu Panel */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: '85%',
+          maxWidth: 380,
+          background: '#0c0c10',
+          borderLeft: `1px solid ${tokens.color.border}`,
+          display: 'flex',
+          flexDirection: 'column',
+          animation: 'slideInRight 0.25s ease-out',
+        }}
       >
-        <motion.i
-          className={isOpen ? 'ri-close-line' : 'ri-menu-line'}
-          animate={{ rotate: isOpen ? 180 : 0 }}
-        />
-      </motion.button>
+        {/* Close Button */}
+        <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            onClick={handleClose}
+            type="button"
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              color: tokens.color.text,
+              fontSize: 22,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <i className="ri-close-line" />
+          </button>
+        </div>
 
-      {/* Mobile Menu Overlay */}
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-              style={{
-                position: 'fixed',
-                inset: 0,
-                background: 'rgba(0,0,0,0.8)',
-                zIndex: 10002,
-                backdropFilter: 'blur(10px)',
-              }}
-            />
+        {/* Logo */}
+        <div
+          style={{
+            padding: '0 24px 24px',
+            color: tokens.color.primary,
+            fontFamily: tokens.font.display,
+            fontSize: 26,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+          }}
+        >
+          <i className="ri-building-2-fill" />
+          Anh Thợ Xây
+        </div>
 
-            {/* Menu Panel */}
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              style={{
-                position: 'fixed',
-                top: 0,
-                right: 0,
-                bottom: 0,
-                width: '80%',
-                maxWidth: 400,
-                background: 'rgba(11,12,15,0.98)',
-                backdropFilter: 'blur(40px)',
-                borderLeft: `1px solid ${tokens.color.border}`,
-                zIndex: 10003,
-                display: 'flex',
-                flexDirection: 'column',
-                padding: '80px 32px 32px',
-              }}
-            >
-              {/* Logo/Brand */}
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
+        {/* Navigation Items */}
+        <nav style={{ flex: 1, padding: '0 16px', overflowY: 'auto' }}>
+          {items.map((item) => {
+            const isActive = currentRoute === item.href;
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={handleClose}
                 style={{
-                  color: tokens.color.primary,
-                  fontFamily: tokens.font.display,
-                  fontSize: 32,
-                  marginBottom: 48,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 12,
+                  gap: 14,
+                  padding: '16px 16px',
+                  marginBottom: 6,
+                  borderRadius: 12,
+                  textDecoration: 'none',
+                  fontSize: 16,
+                  fontWeight: isActive ? 600 : 500,
+                  color: isActive ? tokens.color.primary : tokens.color.text,
+                  background: isActive ? 'rgba(245,211,147,0.12)' : 'rgba(255,255,255,0.03)',
+                  border: isActive ? `1px solid ${tokens.color.primary}40` : '1px solid transparent',
                 }}
               >
-                <i className="ri-building-2-fill" />
-                Anh Thợ Xây
-              </motion.div>
+                <i className={item.icon || 'ri-arrow-right-line'} style={{ fontSize: 20 }} />
+                <span>{item.label}</span>
+                {isActive && (
+                  <i className="ri-checkbox-circle-fill" style={{ marginLeft: 'auto', fontSize: 16 }} />
+                )}
+              </Link>
+            );
+          })}
+        </nav>
 
-              {/* Navigation Items */}
-              <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {menuItems.map((item, index) => {
-                  const isActive = currentRoute === item.route;
-                  return (
-                    <Link
-                      key={item.route}
-                      to={item.route}
-                      onClick={() => setIsOpen(false)}
-                      style={{ textDecoration: 'none' }}
-                    >
-                      <motion.div
-                        initial={{ opacity: 0, x: 50 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.1 + index * 0.05 }}
-                        whileHover={{ x: 8 }}
-                        whileTap={{ scale: 0.98 }}
-                        style={{
-                          padding: '20px 24px',
-                          borderRadius: tokens.radius.lg,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 16,
-                          fontSize: 18,
-                          fontWeight: 500,
-                          color: isActive ? tokens.color.primary : tokens.color.text,
-                          background: isActive ? 'rgba(245,211,147,0.1)' : 'transparent',
-                          border: isActive ? `1px solid ${tokens.color.primary}40` : '1px solid transparent',
-                          transition: 'all 0.2s',
-                        }}
-                      >
-                        <i className={item.icon} style={{ fontSize: 24 }} />
-                        {item.label}
-                        {isActive && (
-                          <motion.i
-                            className="ri-arrow-right-line"
-                            initial={{ x: -10, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            style={{ marginLeft: 'auto' }}
-                          />
-                        )}
-                      </motion.div>
-                    </Link>
-                  );
-                })}
-              </nav>
+        {/* Bottom Actions */}
+        <div style={{ padding: '20px 16px', borderTop: `1px solid ${tokens.color.border}` }}>
+          {/* CTA Button */}
+          {config.showCTA && (
+            <a
+              href={config.ctaLink}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                padding: '14px 20px',
+                borderRadius: 12,
+                background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+                color: '#111',
+                textDecoration: 'none',
+                fontWeight: 600,
+                fontSize: 15,
+                marginBottom: 16,
+              }}
+            >
+              <i className="ri-phone-fill" />
+              {config.ctaText}
+            </a>
+          )}
 
-              {/* Quick Actions */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                style={{
-                  borderTop: `1px solid ${tokens.color.border}`,
-                  paddingTop: 24,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 12,
-                }}
-              >
+          {/* Social Links */}
+          {config.socialLinks.length > 0 && (
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+              {config.socialLinks.map((social) => (
                 <a
-                  href="tel:+84123456789"
+                  key={social.platform}
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
-                    padding: '16px 24px',
-                    borderRadius: tokens.radius.lg,
-                    background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
-                    color: '#111',
-                    textDecoration: 'none',
-                    fontWeight: 600,
-                    textAlign: 'center',
+                    width: 42,
+                    height: 42,
+                    borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.06)',
+                    border: `1px solid ${tokens.color.border}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 12,
-                    fontSize: 16,
+                    color: tokens.color.muted,
+                    fontSize: 18,
+                    textDecoration: 'none',
                   }}
                 >
-                  <i className="ri-phone-fill" />
-                  Liên hệ ngay
+                  <i className={social.icon} />
                 </a>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  ) : null;
 
-                {/* Social Links */}
-                <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 8 }}>
-                  {['facebook', 'youtube', 'tiktok'].map((social) => (
-                    <motion.a
-                      key={social}
-                      href={`https://${social}.com`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      whileHover={{ scale: 1.2, y: -2 }}
-                      whileTap={{ scale: 0.9 }}
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: '50%',
-                        background: 'rgba(255,255,255,0.05)',
-                        border: `1px solid ${tokens.color.border}`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: tokens.color.muted,
-                        fontSize: 20,
-                        textDecoration: 'none',
-                      }}
-                    >
-                      <i className={`ri-${social}-fill`} />
-                    </motion.a>
-                  ))}
-                </div>
-              </motion.div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+  return (
+    <>
+      {/* Hamburger Button */}
+      <button
+        onClick={handleToggle}
+        className="mobile-menu-toggle"
+        aria-label={isOpen ? 'Đóng menu' : 'Mở menu'}
+        type="button"
+      >
+        <i className={isOpen ? 'ri-close-line' : 'ri-menu-line'} />
+      </button>
 
-      <style>
-        {`
-          @media (max-width: 768px) {
-            .mobile-menu-toggle {
-              display: block !important;
-            }
-          }
-        `}
-      </style>
+      {/* Portal to body */}
+      {mounted && createPortal(menuOverlay, document.body)}
     </>
   );
 }
-
-

@@ -1,11 +1,12 @@
 // Uncomment this line to use CSS modules
 // import styles from './app.module.css';
-import { tokens } from '@app/shared';
+import { tokens, API_URL, resolveMediaUrl } from '@app/shared';
 import { motion, useScroll } from 'framer-motion';
 import { useEffect, useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ToastProvider, useToast } from './components/Toast';
+import { ErrorBoundary } from '@app/ui';
+import { ToastProvider } from './components/Toast';
 import { MobileMenu } from './components/MobileMenu';
 import { ScrollProgress } from './components/ScrollProgress';
 import { FloatingActions } from './sections/FloatingActions';
@@ -84,12 +85,12 @@ function AppContent() {
 
   // Load company settings for background image
   useEffect(() => {
-    fetch('http://localhost:4202/settings/company')
+    fetch(`${API_URL}/settings/company`)
       .then((res) => res.json())
       .then((data) => {
         const settings = data.value || data; // Handle both {key, value} and direct object
         if (settings.backgroundImage && settings.backgroundImage.trim()) {
-          const bgUrl = `http://localhost:4202${settings.backgroundImage}`;
+          const bgUrl = resolveMediaUrl(settings.backgroundImage);
           
           // Validate image exists before setting
           const img = new Image();
@@ -188,7 +189,7 @@ function AppContent() {
       footerConfig: undefined,
     };
 
-    fetch('http://localhost:4202/pages/home')
+    fetch(`${API_URL}/pages/home`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -231,7 +232,7 @@ function AppContent() {
     }
 
     // Fetch page data for other routes
-    fetch(`http://localhost:4202/pages/${currentPageSlug}`)
+    fetch(`${API_URL}/pages/${currentPageSlug}`)
       .then((res) => {
         if (!res.ok) {
           // Page doesn't exist in DB, use empty page with default config
@@ -353,49 +354,75 @@ function AppContent() {
               });
           return headerConfig;
         })()}
-        mobileMenuComponent={<MobileMenu currentRoute={location.pathname} onNavigate={handleNavigate} />}
+        mobileMenuComponent={(() => {
+          // Get header config to sync menu items
+          const headerConfig = page?.headerConfig
+            ? (typeof page.headerConfig === 'string'
+                ? JSON.parse(page.headerConfig)
+                : page.headerConfig)
+            : headerConfigFromSettings;
+          
+          // Convert header links/navigation to mobile menu format
+          // Support both 'links' (from saved config) and 'navigation' (from default)
+          const navItems = headerConfig?.links || headerConfig?.navigation || [];
+          const menuItems = navItems.map((link: { href?: string; path?: string; route?: string; label: string; icon?: string }) => ({
+            href: link.href || link.path || link.route || '/',
+            label: link.label,
+            icon: link.icon ? link.icon.replace('-line', '-fill') : undefined,
+          }));
+          
+          return (
+            <MobileMenu 
+              currentRoute={location.pathname} 
+              onNavigate={handleNavigate}
+              menuItems={menuItems.length > 0 ? menuItems : undefined}
+            />
+          );
+        })()}
       />
 
       {/* Main Content */}
       <main>
-        <Suspense
-          fallback={
-            <div
-              style={{
-                minHeight: '50vh',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        <ErrorBoundary>
+          <Suspense
+            fallback={
+              <div
                 style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: '50%',
-                  border: `3px solid ${tokens.color.border}`,
-                  borderTopColor: tokens.color.primary,
+                  minHeight: '50vh',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
-              />
-            </div>
-          }
-        >
-          <Routes>
-            <Route path="/" element={page ? <HomePage page={page} /> : null} />
-            <Route path="/bao-gia" element={<QuotePage />} />
-            {/* Gallery page removed */}
-            <Route path="/about" element={currentPage ? <AboutPage page={currentPage} /> : null} />
-            <Route path="/contact" element={currentPage ? <ContactPage page={currentPage} /> : null} />
-            <Route path="/blog" element={<BlogPage page={currentPage || undefined} />} />
-            <Route path="/blog/:slug" element={<BlogDetailPage />} />
-            {/* Dynamic page route - loads any page from database by slug */}
-            <Route path="/:slug" element={<DynamicPage />} />
-            {/* 404 fallback */}
-            <Route path="*" element={page ? <HomePage page={page} /> : null} />
-          </Routes>
-        </Suspense>
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    border: `3px solid ${tokens.color.border}`,
+                    borderTopColor: tokens.color.primary,
+                  }}
+                />
+              </div>
+            }
+          >
+            <Routes>
+              <Route path="/" element={page ? <HomePage page={page} /> : null} />
+              <Route path="/bao-gia" element={<QuotePage />} />
+              {/* Gallery page removed */}
+              <Route path="/about" element={currentPage ? <AboutPage page={currentPage} /> : null} />
+              <Route path="/contact" element={currentPage ? <ContactPage page={currentPage} /> : null} />
+              <Route path="/blog" element={<BlogPage page={currentPage || undefined} />} />
+              <Route path="/blog/:slug" element={<BlogDetailPage />} />
+              {/* Dynamic page route - loads any page from database by slug */}
+              <Route path="/:slug" element={<DynamicPage />} />
+              {/* 404 fallback */}
+              <Route path="*" element={page ? <HomePage page={page} /> : null} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
       </main>
 
       {/* Footer - render from DATABASE FIRST (page config), then localStorage fallback */}

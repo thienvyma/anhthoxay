@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { tokens } from '@app/shared';
+import { tokens, resolveMediaUrl } from '@app/shared';
 
 export interface FooterLink {
   label: string;
@@ -86,15 +86,15 @@ export function Footer({ config }: FooterProps) {
         borderTop: '1px solid rgba(255,255,255,0.08)',
       }}
     >
-      <div style={{ ...containerStyle, padding: 'clamp(40px, 8vw, 60px) clamp(16px, 4vw, 24px) 24px' }}>
+      <div style={{ ...containerStyle, padding: 'clamp(24px, 5vw, 60px) clamp(12px, 3vw, 24px) clamp(16px, 3vw, 24px)' }}>
         {/* Footer Content Grid - Optimized layout with logo in separate column */}
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: (brand?.imageUrl && brand.imageUrl.trim())
-              ? 'minmax(200px, 280px) repeat(auto-fit, minmax(200px, 1fr))' 
-              : 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: 'clamp(24px, 6vw, 48px)',
+              ? 'minmax(160px, 240px) repeat(auto-fit, minmax(min(100%, 160px), 1fr))' 
+              : 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
+            gap: 'clamp(20px, 4vw, 40px)',
             marginBottom: 'clamp(24px, 6vw, 48px)',
           }}
           className="footer-grid"
@@ -120,7 +120,7 @@ export function Footer({ config }: FooterProps) {
                 }}
               >
                 <img
-                  src={`http://localhost:4202${brand.imageUrl}`}
+                  src={resolveMediaUrl(brand.imageUrl)}
                   alt={brand.text || 'Anh Thợ Xây Logo'}
                   style={{
                     height: 70,
@@ -183,16 +183,16 @@ export function Footer({ config }: FooterProps) {
 
           {/* Brand Info Column (only show when NO logo image) */}
           {!brand?.imageUrl && (
-            <div>
+            <div className="footer-brand">
               <div
                 style={{
                   color: tokens.color.primary,
                   fontFamily: tokens.font.display,
-                  fontSize: 28,
-                  marginBottom: 24,
+                  fontSize: 'clamp(20px, 4vw, 28px)',
+                  marginBottom: 12,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 12,
+                  gap: 8,
                 }}
               >
                 {brand?.icon && <i className={brand.icon} />}
@@ -202,9 +202,9 @@ export function Footer({ config }: FooterProps) {
               <p
                 style={{
                   color: tokens.color.muted,
-                  lineHeight: 1.7,
-                  marginBottom: 24,
-                  fontSize: 14,
+                  lineHeight: 1.5,
+                  marginBottom: 12,
+                  fontSize: 'clamp(12px, 2vw, 14px)',
                 }}
               >
                 {brand?.description}
@@ -213,7 +213,7 @@ export function Footer({ config }: FooterProps) {
               {brand?.awards && brand.awards.length > 0 && (
                 <div style={{ 
                   display: 'flex', 
-                  gap: 12, 
+                  gap: 8, 
                   alignItems: 'center',
                   flexWrap: 'wrap',
                 }}>
@@ -223,16 +223,15 @@ export function Footer({ config }: FooterProps) {
                       whileHover={{ scale: 1.15, rotate: 5 }}
                       transition={{ duration: 0.2 }}
                       style={{
-                        width: 52,
-                        height: 52,
+                        width: 36,
+                        height: 36,
                         background: 'rgba(245,211,147,0.12)',
-                        borderRadius: tokens.radius.md,
+                        borderRadius: tokens.radius.sm,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: 26,
+                        fontSize: 18,
                         border: '1px solid rgba(245,211,147,0.25)',
-                        boxShadow: '0 2px 8px rgba(245,211,147,0.08)',
                         cursor: 'default',
                       }}
                     >
@@ -250,17 +249,17 @@ export function Footer({ config }: FooterProps) {
 
           {/* Quick Links */}
           {quickLinks && quickLinks.length > 0 && (
-            <div>
+            <div className="footer-links">
               <h4
                 style={{
                   color: tokens.color.primary,
-                  marginBottom: 20,
-                  fontSize: 18,
+                  marginBottom: 12,
+                  fontSize: 'clamp(11px, 2vw, 18px)',
                 }}
               >
                 Liên kết nhanh
               </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div className="quick-links" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {quickLinks.map((link) => (
                   <Link
                     key={link.href}
@@ -272,6 +271,7 @@ export function Footer({ config }: FooterProps) {
                       style={{
                         color: tokens.color.muted,
                         transition: 'color 0.2s',
+                        fontSize: 'clamp(10px, 2vw, 14px)',
                       }}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.color = tokens.color.text)
@@ -290,12 +290,12 @@ export function Footer({ config }: FooterProps) {
 
           {/* Newsletter */}
           {newsletter?.enabled && (
-            <div>
+            <div className="footer-newsletter">
               <h4
                 style={{
                   color: tokens.color.primary,
-                  marginBottom: 20,
-                  fontSize: 18,
+                  marginBottom: 8,
+                  fontSize: 'clamp(14px, 2vw, 18px)',
                 }}
               >
                 {newsletter.title}
@@ -303,38 +303,41 @@ export function Footer({ config }: FooterProps) {
               <p
                 style={{
                   color: tokens.color.muted,
-                  marginBottom: 16,
-                  fontSize: 14,
+                  marginBottom: 10,
+                  fontSize: 'clamp(11px, 2vw, 14px)',
+                  lineHeight: 1.4,
                 }}
               >
                 {newsletter.description}
               </p>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 6 }}>
                 <input
                   type="email"
                   placeholder={newsletter.placeholder}
                   style={{
                     flex: 1,
-                    padding: '10px 16px',
+                    padding: '8px 12px',
                     borderRadius: tokens.radius.md,
                     border: `1px solid ${tokens.color.border}`,
                     background: 'rgba(255,255,255,0.05)',
                     color: tokens.color.text,
-                    fontSize: 14,
+                    fontSize: 'clamp(12px, 2vw, 14px)',
                     outline: 'none',
+                    minWidth: 0,
                   }}
                 />
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   style={{
-                    padding: '10px 20px',
+                    padding: '8px 14px',
                     borderRadius: tokens.radius.md,
                     background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
                     color: '#111',
                     border: 'none',
                     fontWeight: 600,
                     cursor: 'pointer',
+                    flexShrink: 0,
                   }}
                 >
                   <i className="ri-send-plane-fill" />
@@ -346,22 +349,23 @@ export function Footer({ config }: FooterProps) {
 
         {/* Bottom Bar */}
         <div
+          className="footer-bottom"
           style={{
-            paddingTop: 24,
+            paddingTop: 16,
             borderTop: '1px solid rgba(255,255,255,0.08)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             color: tokens.color.muted,
-            fontSize: 14,
+            fontSize: 'clamp(11px, 2vw, 14px)',
             flexWrap: 'wrap',
-            gap: 16,
+            gap: 12,
           }}
         >
           <span>{copyright?.text}</span>
           {/* Social Links */}
           {socialLinks && socialLinks.length > 0 && (
-            <div style={{ display: 'flex', gap: 16 }}>
+            <div style={{ display: 'flex', gap: 12 }}>
               {socialLinks.map((social) => (
                 <motion.a
                   key={social.platform}
@@ -371,7 +375,7 @@ export function Footer({ config }: FooterProps) {
                   whileHover={{ scale: 1.2, y: -2 }}
                   style={{
                     color: tokens.color.muted,
-                    fontSize: 20,
+                    fontSize: 'clamp(16px, 3vw, 20px)',
                     transition: 'color 0.2s',
                   }}
                   onMouseEnter={(e) =>

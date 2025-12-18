@@ -2,7 +2,33 @@
 import { useState, useEffect } from 'react';
 import type { User, Page } from './types';
 
-// Global state
+// ============================================
+// TOKEN STORAGE (localStorage)
+// ============================================
+const TOKEN_KEY = 'ath_access_token';
+const REFRESH_TOKEN_KEY = 'ath_refresh_token';
+const SESSION_ID_KEY = 'ath_session_id';
+
+export const tokenStorage = {
+  getAccessToken: () => localStorage.getItem(TOKEN_KEY),
+  setAccessToken: (token: string) => localStorage.setItem(TOKEN_KEY, token),
+  
+  getRefreshToken: () => localStorage.getItem(REFRESH_TOKEN_KEY),
+  setRefreshToken: (token: string) => localStorage.setItem(REFRESH_TOKEN_KEY, token),
+  
+  getSessionId: () => localStorage.getItem(SESSION_ID_KEY),
+  setSessionId: (id: string) => localStorage.setItem(SESSION_ID_KEY, id),
+  
+  clearTokens: () => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    localStorage.removeItem(SESSION_ID_KEY);
+  },
+};
+
+// ============================================
+// GLOBAL STATE
+// ============================================
 let currentUser: User | null = null;
 let currentPage: Page | null = null;
 const listeners: Set<() => void> = new Set();
@@ -16,6 +42,9 @@ export const store = {
   getUser: () => currentUser,
   setUser: (user: User | null) => {
     currentUser = user;
+    if (!user) {
+      tokenStorage.clearTokens();
+    }
     notify();
   },
 

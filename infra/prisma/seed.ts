@@ -31,8 +31,9 @@ async function main() {
   // ============================================
   console.log('Creating users...');
   
-  const adminPassword = await bcrypt.hash('admin123', 10);
-  const managerPassword = await bcrypt.hash('manager123', 10);
+  // Password requirements: min 8 chars (spec requirement 7.3)
+  const adminPassword = await bcrypt.hash('Admin@123', 10);
+  const managerPassword = await bcrypt.hash('Manager@123', 10);
 
   const admin = await prisma.user.create({
     data: {

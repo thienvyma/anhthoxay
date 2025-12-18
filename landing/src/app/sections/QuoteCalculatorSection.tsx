@@ -1,11 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens, API_URL } from '@app/shared';
 import { useToast } from '../components/Toast';
-
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - Vite provides import.meta.env
-const API_URL = (import.meta as { env: { VITE_API_URL?: string } }).env.VITE_API_URL || 'http://localhost:4202';
+import { SaveQuoteModal } from '../components/SaveQuoteModal';
 
 // Types
 interface Formula {
@@ -355,6 +352,7 @@ export const QuoteCalculatorSection = memo(function QuoteCalculatorSection({ dat
   const [area, setArea] = useState<number>(0);
   const [selectedMaterials, setSelectedMaterials] = useState<SelectedMaterial[]>([]);
   const [quoteResult, setQuoteResult] = useState<QuoteResult | null>(null);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
 
   // Fetch data including QUOTE_FORM section for consultation tab
   useEffect(() => {
@@ -710,11 +708,14 @@ export const QuoteCalculatorSection = memo(function QuoteCalculatorSection({ dat
                       </div>
                     </div>
                     <p style={{ fontSize: '0.8rem', color: tokens.color.textMuted, textAlign: 'center', marginBottom: '1.5rem' }}>* Giá trên chỉ mang tính tham khảo. Liên hệ để được báo giá chính xác.</p>
-                    <div style={{ display: 'flex', gap: '0.75rem' }}>
-                      <button onClick={handleReset} style={{ flex: 1, padding: '0.875rem', borderRadius: tokens.radius.md, border: `1px solid ${tokens.color.border}`, background: 'transparent', color: tokens.color.text, fontSize: '1rem', cursor: 'pointer' }}>
+                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      <button onClick={handleReset} style={{ flex: '1 1 100px', padding: '0.875rem', borderRadius: tokens.radius.md, border: `1px solid ${tokens.color.border}`, background: 'transparent', color: tokens.color.text, fontSize: '0.9rem', cursor: 'pointer' }}>
                         <i className="ri-refresh-line" /> Tính lại
                       </button>
-                      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setActiveTab('consultation')} style={{ flex: 2, padding: '0.875rem', borderRadius: tokens.radius.md, border: 'none', background: tokens.color.primary, color: '#fff', fontSize: '1rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setSaveModalOpen(true)} style={{ flex: '1 1 150px', padding: '0.875rem', borderRadius: tokens.radius.md, border: 'none', background: tokens.color.success, color: '#fff', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                        <i className="ri-save-line" /> Lưu Báo Giá
+                      </motion.button>
+                      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setActiveTab('consultation')} style={{ flex: '1 1 150px', padding: '0.875rem', borderRadius: tokens.radius.md, border: 'none', background: tokens.color.primary, color: '#111', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                         <i className="ri-phone-line" /> Nhận Tư Vấn
                       </motion.button>
                     </div>
@@ -748,6 +749,16 @@ export const QuoteCalculatorSection = memo(function QuoteCalculatorSection({ dat
           )}
         </AnimatePresence>
       </div>
+
+      {/* Save Quote Modal */}
+      {quoteResult && (
+        <SaveQuoteModal
+          isOpen={saveModalOpen}
+          onClose={() => setSaveModalOpen(false)}
+          quoteResult={quoteResult}
+          onSuccess={handleReset}
+        />
+      )}
     </section>
   );
 });

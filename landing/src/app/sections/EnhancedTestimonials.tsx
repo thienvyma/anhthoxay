@@ -191,15 +191,16 @@ export const EnhancedTestimonials = memo(function EnhancedTestimonials({ data }:
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
+        className="testimonials-stats"
         style={{
           marginTop: 48,
-          padding: 32,
+          padding: 'clamp(20px, 4vw, 32px)',
           background: `linear-gradient(135deg, rgba(245,211,147,0.1) 0%, rgba(239,182,121,0.05) 100%)`,
           borderRadius: tokens.radius.lg,
           border: `1px solid ${tokens.color.border}`,
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: 24,
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))',
+          gap: 16,
           textAlign: 'center',
         }}
       >

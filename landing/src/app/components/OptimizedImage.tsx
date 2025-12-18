@@ -1,13 +1,5 @@
 import { useState, useEffect, useRef, CSSProperties } from 'react';
-
-/**
- * Helper to get full image URL
- */
-function getFullImageUrl(src: string): string {
-  if (!src) return '';
-  if (src.startsWith('http')) return src;
-  return `http://localhost:4202${src}`;
-}
+import { resolveMediaUrl } from '@app/shared';
 
 interface OptimizedImageProps {
   src: string;
@@ -91,7 +83,7 @@ export function OptimizedImage({
   const placeholderColor = blurDataURL || defaultBlurDataURL;
   
   // Get full image URL
-  const fullSrc = getFullImageUrl(src);
+  const fullSrc = resolveMediaUrl(src);
 
   return (
     <div

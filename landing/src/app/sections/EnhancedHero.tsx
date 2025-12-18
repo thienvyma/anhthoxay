@@ -1,5 +1,5 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens, resolveMediaUrl } from '@app/shared';
 import { useRef, useState, useEffect, memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { shouldEnableParallax } from '../utils/deviceDetection';
@@ -48,9 +48,7 @@ export const EnhancedHero = memo(function EnhancedHero({ data }: { data: HeroDat
   const ctaHref = data.cta?.href || data.ctaLink;
 
   // Fix image URL - prepend API URL if it's a relative path
-  const imageUrl = data.imageUrl?.startsWith('/media/') 
-    ? `http://localhost:4202${data.imageUrl}` 
-    : data.imageUrl;
+  const imageUrl = resolveMediaUrl(data.imageUrl);
 
   return (
     <div style={{ 

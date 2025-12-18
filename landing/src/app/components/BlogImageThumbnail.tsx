@@ -1,13 +1,5 @@
 import { useState, memo, useMemo } from 'react';
-import { tokens } from '@app/shared';
-
-// Helper to resolve image URLs
-function resolveImageUrl(url?: string): string {
-  if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  if (url.startsWith('/media/')) return `http://localhost:4202${url}`;
-  return url;
-}
+import { tokens, resolveMediaUrl } from '@app/shared';
 
 interface BlogImageThumbnailProps {
   src?: string;
@@ -27,7 +19,7 @@ export const BlogImageThumbnail = memo(function BlogImageThumbnail({
   const [isHovered, setIsHovered] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const resolvedSrc = useMemo(() => resolveImageUrl(src), [src]);
+  const resolvedSrc = useMemo(() => resolveMediaUrl(src), [src]);
 
   if (!resolvedSrc || hasError) {
     return (
