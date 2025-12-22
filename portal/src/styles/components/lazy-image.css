@@ -1,0 +1,105 @@
+/**
+ * Lazy Loading Image Styles
+ * Requirements: 15.4 - Lazy load images for performance
+ */
+
+.lazy-image-wrapper {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg-tertiary);
+}
+
+.lazy-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.lazy-image-skeleton {
+  background: linear-gradient(90deg, var(--skeleton-base) 25%, var(--skeleton-highlight) 50%, var(--skeleton-base) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Blur-up effect */
+.lazy-image.loading {
+  filter: blur(10px);
+  opacity: 0.5;
+}
+
+.lazy-image.loaded {
+  filter: blur(0);
+  opacity: 1;
+}
+
+/* Image gallery styles */
+.lazy-image-gallery {
+  display: grid;
+  gap: 12px;
+}
+
+.lazy-image-gallery > div {
+  transition: transform 0.2s ease;
+}
+
+.lazy-image-gallery > div:hover {
+  transform: scale(1.02);
+}
+
+/* Responsive image gallery */
+@media (max-width: 639px) {
+  .lazy-image-gallery {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .lazy-image-gallery {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lazy-image-gallery {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+}
+
+/* Native lazy loading support indicator */
+.lazy-image[loading="lazy"] {
+  content-visibility: auto;
+}
+
+/* Aspect ratio containers */
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+.aspect-photo {
+  aspect-ratio: 4 / 3;
+}
+
+.aspect-portrait {
+  aspect-ratio: 3 / 4;
+}
+
+/* Image error state */
+.lazy-image-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+}
+
+.lazy-image-error i {
+  font-size: 32px;
+}

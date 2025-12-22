@@ -142,3 +142,58 @@ export const settingsAPI = {
     return apiFetch<CompanySettings>(`/settings/company`);
   },
 };
+
+// ============================================
+// REVIEWS API
+// ============================================
+
+interface ReviewReport {
+  id: string;
+  reviewId: string;
+  reporterId: string;
+  reason: string;
+  description: string | null;
+  status: string;
+  createdAt: string;
+}
+
+/**
+ * Reviews API
+ * Backend: POST /reviews/:id/report, POST /reviews/:id/helpful
+ * Requirements: 18.1, 19.1, 19.2
+ */
+export const reviewsAPI = {
+  /**
+   * Report a review
+   * Requirements: 19.1, 19.2 - Report button with reason selection
+   * @param reviewId - The review ID to report
+   * @param reason - Report reason (spam, offensive, fake, irrelevant)
+   * @param description - Optional additional description
+   * @param token - JWT auth token
+   */
+  reportReview: (
+    reviewId: string,
+    reason: string,
+    description?: string,
+    token?: string
+  ) => {
+    return apiFetch<ReviewReport>(`/reviews/${reviewId}/report`, {
+      method: 'POST',
+      body: JSON.stringify({ reason, description }),
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+  },
+
+  /**
+   * Vote a review as helpful
+   * Requirements: 18.1 - Helpful button with count
+   * @param reviewId - The review ID to vote
+   * @param token - JWT auth token
+   */
+  voteHelpful: (reviewId: string, token?: string) => {
+    return apiFetch<{ helpfulCount: number }>(`/reviews/${reviewId}/helpful`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+  },
+};

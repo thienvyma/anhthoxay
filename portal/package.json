@@ -1,0 +1,21 @@
+{
+  "name": "portal",
+  "dependencies": {
+    "@app/shared": "workspace:*",
+    "@app/ui": "workspace:*",
+    "@tanstack/react-query": "^5.90.2",
+    "@testing-library/react": "16.1.0",
+    "fast-check": "^4.4.0",
+    "framer-motion": "^12.23.22",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.9.3",
+    "vitest": "^3.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.1.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3"
+  }
+}

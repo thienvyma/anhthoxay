@@ -6,7 +6,8 @@ import { LoginPage } from './components/LoginPage';
 import { Layout } from './components/Layout';
 import { ToastProvider } from './components/Toast';
 import { DashboardPage } from './pages/DashboardPage';
-
+import { ContractorsPage } from './pages/ContractorsPage';
+import { RegionsPage } from './pages/RegionsPage';
 import { SectionsPage } from './pages/SectionsPage';
 import { MediaPage } from './pages/MediaPage';
 import { LivePreviewPage } from './pages/LivePreviewPage';
@@ -14,6 +15,17 @@ import { BlogManagerPage } from './pages/BlogManagerPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { LeadsPage } from './pages/LeadsPage';
 import { PricingConfigPage } from './pages/PricingConfigPage';
+import { UsersPage } from './pages/UsersPage';
+import { ProjectsPage } from './pages/ProjectsPage';
+import { BidsPage } from './pages/BidsPage';
+import { MatchesPage } from './pages/MatchesPage';
+import { FeesPage } from './pages/FeesPage';
+import { DisputesPage } from './pages/DisputesPage';
+import { NotificationTemplatesPage } from './pages/NotificationTemplatesPage';
+import { ChatPage } from './pages/ChatPage';
+import { BiddingManagementPage } from './pages/BiddingManagementPage';
+import { BiddingSettingsPage } from './pages/BiddingSettingsPage';
+import { InteriorPage } from './pages/InteriorPage';
 import { useUser, store, tokenStorage } from './store';
 import { authApi } from './api';
 import type { RouteType } from './types'
@@ -42,21 +54,38 @@ function AppContent() {
       return;
     }
 
+    // Use AbortController to cancel request if component unmounts
+    const abortController = new AbortController();
+    
     authApi
       .me()
       .then((userData) => {
+        if (abortController.signal.aborted) return;
         console.log('🔐 Auth check successful:', userData);
         store.setUser(userData as Parameters<typeof store.setUser>[0]);
       })
       .catch((error) => {
+        if (abortController.signal.aborted) return;
         // Token invalid or expired, clear tokens and user state
-        console.error('🔐 Auth check failed:', error);
+        // Don't log network errors as they're expected when server is starting
+        const errorMessage = (error as Error).message || '';
+        if (!errorMessage.includes('Failed to fetch') && !errorMessage.includes('NetworkError')) {
+          console.error('🔐 Auth check failed:', error);
+        } else {
+          console.log('🔐 Auth check: Server not reachable, clearing tokens');
+        }
         tokenStorage.clearTokens();
         store.setUser(null);
       })
       .finally(() => {
-        setLoading(false);
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
       });
+    
+    return () => {
+      abortController.abort();
+    };
 	}, []);
 
   async function handleLogout() {
@@ -135,10 +164,23 @@ function AppContent() {
               <Route path="/sections/:slug" element={<SectionsPageWrapper />} />
               <Route path="/sections" element={<Navigate to="/pages/home" replace />} />
               <Route path="/leads" element={<LeadsPage />} />
+              <Route path="/contractors" element={<ContractorsPage />} />
+              <Route path="/regions" element={<RegionsPage />} />
+              <Route path="/projects" element={<ProjectsPage />} />
+              <Route path="/bids" element={<BidsPage />} />
+              <Route path="/matches" element={<MatchesPage />} />
+              <Route path="/fees" element={<FeesPage />} />
+              <Route path="/disputes" element={<DisputesPage />} />
+              <Route path="/notification-templates" element={<NotificationTemplatesPage />} />
+              <Route path="/chat" element={<ChatPage />} />
+              <Route path="/bidding" element={<BiddingManagementPage />} />
+              <Route path="/bidding-settings" element={<BiddingSettingsPage />} />
+              <Route path="/interior" element={<InteriorPage />} />
               <Route path="/pricing-config" element={<PricingConfigPage />} />
               <Route path="/media" element={<MediaPage />} />
               <Route path="/preview" element={<LivePreviewPage />} />
               <Route path="/blog-manager" element={<BlogManagerPage />} />
+              <Route path="/users" element={<UsersPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>

@@ -530,6 +530,223 @@ export function renderPreview(kind: SectionKind, data: DataRecord): React.JSX.El
         </div>
       );
 
+    case 'INTERIOR_QUOTE':
+      return (
+        <div style={{ background: 'transparent', borderRadius: 8, padding: 24 }}>
+          {/* Header - outside card */}
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
+              <i className={data.headerIcon || 'ri-home-smile-fill'} style={{ fontSize: 28, color: '#f5d393' }} />
+              <h2 style={{ fontSize: 24, fontWeight: 700, color: '#F4F4F5', margin: 0 }}>{data.title || 'Báo Giá Nội Thất'}</h2>
+            </div>
+            <p style={{ fontSize: 14, color: '#A1A1AA' }}>{data.subtitle || 'Chọn căn hộ và gói nội thất để nhận báo giá chi tiết ngay lập tức'}</p>
+          </div>
+          
+          {/* Content Box - Card wrapper with dark theme */}
+          <div style={{ background: '#131316', borderRadius: 20, padding: 24, border: '1px solid #27272A', maxWidth: data.maxWidth || 900, margin: '0 auto' }}>
+            {/* Wizard Steps Indicator */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20, flexWrap: 'wrap', paddingBottom: 16, borderBottom: '1px solid #27272A' }}>
+              {['CĐT', 'Dự án', 'Tòa', 'Căn', 'MB', 'Gói', 'BG'].map((step, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ 
+                    width: 28, 
+                    height: 28, 
+                    borderRadius: '50%', 
+                    background: idx === 0 ? '#f5d393' : '#27272A', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    color: idx === 0 ? '#111' : '#A1A1AA',
+                    fontSize: 11,
+                    fontWeight: 600 
+                  }}>
+                    {idx + 1}
+                  </div>
+                  <span style={{ fontSize: 10, color: idx === 0 ? '#F4F4F5' : '#A1A1AA' }}>{step}</span>
+                  {idx < 6 && <div style={{ width: 16, height: 2, background: '#27272A' }} />}
+                </div>
+              ))}
+            </div>
+            
+            {/* Step Content */}
+            <h4 style={{ fontSize: 14, fontWeight: 600, color: '#F4F4F5', marginBottom: 12 }}>Chọn chủ đầu tư</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
+              {['Vinhomes', 'Novaland', 'Capitaland'].map((item, idx) => (
+                <div key={idx} style={{ 
+                  padding: '16px', 
+                  background: idx === 0 ? 'rgba(245,211,147,0.1)' : '#1A1A1E', 
+                  border: `1px solid ${idx === 0 ? '#f5d393' : '#27272A'}`, 
+                  borderRadius: 8, 
+                  textAlign: 'center' 
+                }}>
+                  <i className="ri-building-4-line" style={{ fontSize: 24, color: '#f5d393', marginBottom: 8, display: 'block' }} />
+                  <span style={{ fontSize: 13, fontWeight: 500, color: '#F4F4F5' }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'INTERIOR_WIZARD':
+      return (
+        <div style={{ background: '#f5f5f5', borderRadius: 8, padding: 24 }}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
+              <i className={data.headerIcon || 'ri-home-smile-fill'} style={{ fontSize: 28, color: '#f5d393' }} />
+              <h2 style={{ fontSize: 24, fontWeight: 700, color: '#111', margin: 0 }}>{data.title || 'Báo Giá Nội Thất'}</h2>
+            </div>
+            <p style={{ fontSize: 14, color: '#666' }}>{data.subtitle || 'Chọn căn hộ và gói nội thất để nhận báo giá chi tiết ngay lập tức'}</p>
+          </div>
+          
+          {/* Wizard Steps Indicator */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+            {['Dự án', 'Tòa nhà', 'Căn hộ', 'Mặt bằng', 'Gói', 'Kết quả'].map((step, idx) => (
+              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ 
+                  width: 28, 
+                  height: 28, 
+                  borderRadius: '50%', 
+                  background: idx === 0 ? '#f5d393' : '#e5e7eb', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  color: idx === 0 ? '#111' : '#666',
+                  fontSize: 12,
+                  fontWeight: 600 
+                }}>
+                  {idx + 1}
+                </div>
+                <span style={{ fontSize: 11, color: idx === 0 ? '#111' : '#999' }}>{step}</span>
+                {idx < 5 && <div style={{ width: 20, height: 2, background: '#e5e7eb' }} />}
+              </div>
+            ))}
+          </div>
+          
+          {/* Content Box */}
+          <div style={{ background: '#fff', borderRadius: 12, padding: 24, border: '1px solid #e5e7eb', maxWidth: data.maxWidth || 1200, margin: '0 auto' }}>
+            <h4 style={{ fontSize: 14, fontWeight: 600, color: '#111', marginBottom: 12 }}>Chọn dự án</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
+              {['Vinhomes Grand Park', 'Masteri Thảo Điền', 'The Sun Avenue'].map((item, idx) => (
+                <div key={idx} style={{ 
+                  padding: '16px', 
+                  background: idx === 0 ? 'rgba(245,211,147,0.1)' : '#f9fafb', 
+                  border: `1px solid ${idx === 0 ? '#f5d393' : '#e5e7eb'}`, 
+                  borderRadius: 8, 
+                  textAlign: 'center' 
+                }}>
+                  <i className="ri-building-2-line" style={{ fontSize: 24, color: '#f5d393', marginBottom: 8, display: 'block' }} />
+                  <span style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'INTERIOR_PRICING_TABLE':
+      return (
+        <div style={{ background: 'transparent', borderRadius: 8, padding: 24 }}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <h2 style={{ fontSize: 24, fontWeight: 700, color: '#F4F4F5', marginBottom: 8 }}>{data.title || 'Bảng Báo Giá Nội Thất'}</h2>
+            <p style={{ fontSize: 14, color: '#A1A1AA' }}>{data.subtitle || 'Chọn gói nội thất phù hợp với nhu cầu và ngân sách của bạn'}</p>
+          </div>
+          
+          {/* Pricing Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${data.columns || 3}, 1fr)`, gap: 16 }}>
+            {[
+              { name: 'Cơ bản', tier: 'BASIC', price: '50,000,000', color: '#A1A1AA' },
+              { name: 'Tiêu chuẩn', tier: 'STANDARD', price: '80,000,000', color: '#3B82F6', isPopular: true },
+              { name: 'Cao cấp', tier: 'PREMIUM', price: '120,000,000', color: '#F59E0B' },
+            ].slice(0, data.columns || 3).map((tier, idx) => (
+              <div key={idx} style={{ 
+                background: '#131316', 
+                borderRadius: 20, 
+                border: `2px solid ${tier.isPopular ? '#f5d393' : '#27272A'}`,
+                overflow: 'hidden',
+                position: 'relative'
+              }}>
+                {tier.isPopular && (
+                  <div style={{ 
+                    position: 'absolute', 
+                    top: 12, 
+                    right: 12, 
+                    background: '#f5d393', 
+                    color: '#111', 
+                    fontSize: 10, 
+                    fontWeight: 700, 
+                    padding: '4px 8px', 
+                    borderRadius: 20 
+                  }}>
+                    <i className="ri-star-fill" style={{ marginRight: 4 }} />
+                    Phổ biến
+                  </div>
+                )}
+                {/* Thumbnail placeholder */}
+                <div style={{ height: 100, background: 'linear-gradient(135deg, rgba(245,211,147,0.15), rgba(239,182,121,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <i className="ri-home-smile-line" style={{ fontSize: 32, color: '#f5d393', opacity: 0.5 }} />
+                </div>
+                <div style={{ padding: 16 }}>
+                  {/* Tier badge */}
+                  <div style={{ 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: 4, 
+                    padding: '4px 8px', 
+                    background: `${tier.color}15`, 
+                    color: tier.color, 
+                    fontSize: 11, 
+                    fontWeight: 600, 
+                    borderRadius: 6, 
+                    marginBottom: 8 
+                  }}>
+                    <i className="ri-home-line" />
+                    {tier.tier === 'BASIC' ? 'Cơ bản' : tier.tier === 'STANDARD' ? 'Tiêu chuẩn' : 'Cao cấp'}
+                  </div>
+                  <h4 style={{ fontSize: 16, fontWeight: 700, color: '#F4F4F5', margin: '0 0 8px' }}>{tier.name}</h4>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: '#f5d393', marginBottom: 12 }}>
+                    {tier.price}<span style={{ fontSize: 12, color: '#A1A1AA', fontWeight: 400 }}>đ</span>
+                  </div>
+                  {/* Features */}
+                  {data.showFeatures !== false && (
+                    <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 12px', fontSize: 12 }}>
+                      {['Nội thất phòng khách', 'Nội thất phòng ngủ', 'Thiết bị bếp'].map((f, i) => (
+                        <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0', color: '#F4F4F5', borderBottom: i < 2 ? '1px solid #27272A' : 'none' }}>
+                          <i className="ri-check-line" style={{ color: '#34D399', fontSize: 14 }} />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {/* CTA */}
+                  {data.showCta !== false && (
+                    <button style={{ 
+                      width: '100%', 
+                      padding: '10px', 
+                      background: tier.isPopular ? 'linear-gradient(135deg, #f5d393, #efb679)' : 'transparent', 
+                      border: tier.isPopular ? 'none' : '1px solid #27272A', 
+                      borderRadius: 12, 
+                      color: tier.isPopular ? '#111' : '#F4F4F5', 
+                      fontSize: 13, 
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6
+                    }}>
+                      {data.ctaText || 'Liên hệ tư vấn'}
+                      <i className="ri-arrow-right-line" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
     default:
       return (
         <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>

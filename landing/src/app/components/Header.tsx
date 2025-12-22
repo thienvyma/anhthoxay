@@ -1,10 +1,17 @@
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { tokens, resolveMediaUrl } from '@app/shared';
+import { tokens, resolveMediaUrl, PORTAL_URL } from '@app/shared';
+import { useState, useRef, useEffect } from 'react';
 
 export interface HeaderLink {
   href: string;
   label: string;
+  icon?: string;
+}
+
+export interface CTALink {
+  text: string;
+  href: string;
   icon?: string;
 }
 
@@ -20,6 +27,8 @@ export interface HeaderConfig {
     text?: string;
     href?: string;
     icon?: string;
+    // Support multiple links for dropdown
+    links?: CTALink[];
   };
   showMobileMenu?: boolean;
 }
@@ -31,22 +40,133 @@ interface HeaderProps {
   mobileMenuComponent?: React.ReactNode;
 }
 
+// Dropdown component for CTA and Auth
+function Dropdown({ 
+  trigger, 
+  items, 
+  isOpen, 
+  onToggle, 
+  onClose,
+  align = 'right'
+}: { 
+  trigger: React.ReactNode; 
+  items: Array<{ label: string; href: string; icon?: string; external?: boolean }>;
+  isOpen: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  align?: 'left' | 'right';
+}) {
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    }
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen, onClose]);
+
+  return (
+    <div ref={dropdownRef} style={{ position: 'relative' }}>
+      <div onClick={onToggle} style={{ cursor: 'pointer' }}>
+        {trigger}
+      </div>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 8px)',
+              [align]: 0,
+              minWidth: 180,
+              background: tokens.color.surface,
+              border: `1px solid ${tokens.color.border}`,
+              borderRadius: tokens.radius.md,
+              boxShadow: tokens.shadow.lg,
+              overflow: 'hidden',
+              zIndex: 1000,
+            }}
+          >
+            {items.map((item, index) => (
+              item.external ? (
+                <a
+                  key={index}
+                  href={item.href}
+                  onClick={onClose}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '12px 16px',
+                    color: tokens.color.text,
+                    textDecoration: 'none',
+                    fontSize: 14,
+                    fontWeight: 500,
+                    transition: 'all 0.2s',
+                    borderBottom: index < items.length - 1 ? `1px solid ${tokens.color.border}` : 'none',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = tokens.color.surfaceHover;
+                    e.currentTarget.style.color = tokens.color.primary;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = tokens.color.text;
+                  }}
+                >
+                  {item.icon && <i className={item.icon} style={{ fontSize: 16 }} />}
+                  {item.label}
+                </a>
+              ) : (
+                <Link
+                  key={index}
+                  to={item.href}
+                  onClick={onClose}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '12px 16px',
+                    color: tokens.color.text,
+                    textDecoration: 'none',
+                    fontSize: 14,
+                    fontWeight: 500,
+                    transition: 'all 0.2s',
+                    borderBottom: index < items.length - 1 ? `1px solid ${tokens.color.border}` : 'none',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = tokens.color.surfaceHover;
+                    e.currentTarget.style.color = tokens.color.primary;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = tokens.color.text;
+                  }}
+                >
+                  {item.icon && <i className={item.icon} style={{ fontSize: 16 }} />}
+                  {item.label}
+                </Link>
+              )
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export function Header({ config, mobileMenuComponent }: HeaderProps) {
-  const { scrollY } = useScroll();
   const location = useLocation();
-  
-  // Scroll-based animations
-  const headerBg = useTransform(
-    scrollY,
-    [0, 100],
-    ['rgba(11,12,15,0.4)', 'rgba(11,12,15,0.98)']
-  );
-  const headerBlur = useTransform(scrollY, [0, 100], [8, 20]);
-  const headerShadow = useTransform(
-    scrollY,
-    [0, 100],
-    ['0 0 0 rgba(0,0,0,0)', '0 4px 24px rgba(0,0,0,0.4)']
-  );
+  const [ctaDropdownOpen, setCtaDropdownOpen] = useState(false);
+  const [authDropdownOpen, setAuthDropdownOpen] = useState(false);
 
   // Default config - ANH THỢ XÂY
   const defaultConfig: HeaderConfig = {
@@ -58,13 +178,18 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
     links: [
       { href: '/', label: 'Trang chủ', icon: 'ri-home-line' },
       { href: '/bao-gia', label: 'Báo giá', icon: 'ri-calculator-line' },
+      { href: '/noi-that', label: 'Nội thất', icon: 'ri-home-smile-line' },
       { href: '/blog', label: 'Blog', icon: 'ri-article-line' },
       { href: '/chinh-sach', label: 'Chính sách', icon: 'ri-shield-check-line' },
     ],
     ctaButton: {
-      text: 'Liên hệ ngay',
-      href: 'tel:+84123456789',
-      icon: 'ri-phone-line',
+      text: 'Báo giá ngay',
+      icon: 'ri-price-tag-3-line',
+      // Multiple links for dropdown
+      links: [
+        { text: 'Báo giá xây dựng', href: '/bao-gia', icon: 'ri-calculator-line' },
+        { text: 'Báo giá nội thất', href: '/noi-that', icon: 'ri-home-smile-line' },
+      ],
     },
     showMobileMenu: true,
   };
@@ -72,20 +197,33 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
   const mergedConfig = { ...defaultConfig, ...config };
   const { logo, links, ctaButton, showMobileMenu } = mergedConfig;
 
+  // Check if CTA should be dropdown (multiple links) or single link
+  const ctaLinks = ctaButton?.links;
+  const isCTADropdown = ctaLinks && ctaLinks.length > 1;
+
   const containerStyle = {
     maxWidth: 1400,
     margin: '0 auto',
   };
 
+  // Auth dropdown items
+  const authItems = [
+    { label: 'Đăng nhập', href: `${PORTAL_URL}/auth/login`, icon: 'ri-login-box-line', external: true },
+    { label: 'Đăng ký', href: `${PORTAL_URL}/auth/register`, icon: 'ri-user-add-line', external: true },
+  ];
+
   return (
     <motion.header
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.3 }}
       style={{
         position: 'sticky',
         top: 0,
         zIndex: 10000,
-        background: headerBg,
-        backdropFilter: `blur(${headerBlur}px)`,
-        boxShadow: headerShadow,
+        background: 'rgba(11,12,15,0.95)',
+        backdropFilter: 'blur(20px)',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
         borderBottom: '1px solid rgba(255,255,255,0.08)',
         willChange: 'transform',
         transform: 'translateZ(0)',
@@ -97,7 +235,7 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
           alignItems: 'center',
           justifyContent: 'space-between',
           ...containerStyle,
-          padding: '20px 24px',
+          padding: '16px 24px',
         }}
       >
         {/* Logo */}
@@ -108,28 +246,26 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
             style={{ color: tokens.color.primary }}
           >
           {logo?.imageUrl && logo.imageUrl.trim() ? (
-            /* Image Logo */
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <img
                 src={resolveMediaUrl(logo.imageUrl)}
                 alt={logo.text || 'Anh Thợ Xây Logo'}
                 style={{
-                  maxHeight: 50,
-                  maxWidth: 200,
+                  maxHeight: 45,
+                  maxWidth: 180,
                   objectFit: 'contain',
                 }}
               />
             </div>
           ) : (
-            /* Text + Icon Logo (Fallback) */
             <div
               style={{
                 color: tokens.color.primary,
                 fontFamily: tokens.font.display,
-                fontSize: tokens.font.size.h3,
+                fontSize: 'clamp(18px, 3vw, 24px)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 10,
+                gap: 8,
               }}
             >
               {logo?.icon && (
@@ -154,7 +290,7 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
         </Link>
 
         {/* Navigation */}
-        <nav style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+        <nav style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
           {/* Desktop Links */}
           {links?.map((item) => {
             const isActive = location.pathname === item.href;
@@ -171,11 +307,12 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
                     color: isActive ? tokens.color.primary : tokens.color.text,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 6,
-                    fontSize: 15,
+                    gap: 5,
+                    fontSize: 14,
                     fontWeight: isActive ? 600 : 500,
                     transition: 'color 0.2s',
                     position: 'relative',
+                    padding: '6px 0',
                   }}
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.color = tokens.color.primary)
@@ -185,7 +322,7 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
                   }
                 >
                   {item.icon && (
-                    <i className={item.icon} style={{ fontSize: 18 }} />
+                    <i className={item.icon} style={{ fontSize: 16 }} />
                   )}
                   {item.label}
                   {isActive && (
@@ -193,7 +330,7 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
                       layoutId="activeTab"
                       style={{
                         position: 'absolute',
-                        bottom: -8,
+                        bottom: -2,
                         left: 0,
                         right: 0,
                         height: 2,
@@ -207,31 +344,112 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
             );
           })}
 
-          {/* CTA Button */}
+          {/* CTA Button - Single or Dropdown */}
           {ctaButton && (
-            <motion.a
-              href={ctaButton.href}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              style={{
-                background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
-                color: '#111',
-                padding: '8px 20px',
-                borderRadius: tokens.radius.pill,
-                textDecoration: 'none',
-                fontWeight: 600,
-                fontSize: 14,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                boxShadow: '0 4px 12px rgba(245,211,147,0.3)',
-              }}
-              className="desktop-only"
-            >
-              {ctaButton.icon && <i className={ctaButton.icon} />}
-              {ctaButton.text}
-            </motion.a>
+            <div className="desktop-only">
+              {isCTADropdown ? (
+                <Dropdown
+                  isOpen={ctaDropdownOpen}
+                  onToggle={() => setCtaDropdownOpen(!ctaDropdownOpen)}
+                  onClose={() => setCtaDropdownOpen(false)}
+                  items={ctaLinks.map(link => ({
+                    label: link.text,
+                    href: link.href,
+                    icon: link.icon,
+                  }))}
+                  trigger={
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      style={{
+                        background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+                        color: '#111',
+                        padding: '8px 16px',
+                        borderRadius: tokens.radius.pill,
+                        fontWeight: 600,
+                        fontSize: 13,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        boxShadow: '0 4px 12px rgba(245,211,147,0.3)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {ctaButton.icon && <i className={ctaButton.icon} />}
+                      {ctaButton.text}
+                      <i className="ri-arrow-down-s-line" style={{ fontSize: 16 }} />
+                    </motion.div>
+                  }
+                />
+              ) : (
+                <Link to={ctaButton.href || ctaLinks?.[0]?.href || '/bao-gia'} style={{ textDecoration: 'none' }}>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    style={{
+                      background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+                      color: '#111',
+                      padding: '8px 16px',
+                      borderRadius: tokens.radius.pill,
+                      fontWeight: 600,
+                      fontSize: 13,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      boxShadow: '0 4px 12px rgba(245,211,147,0.3)',
+                    }}
+                  >
+                    {ctaButton.icon && <i className={ctaButton.icon} />}
+                    {ctaButton.text || ctaLinks?.[0]?.text || 'Báo giá ngay'}
+                  </motion.div>
+                </Link>
+              )}
+            </div>
           )}
+
+          {/* Auth Dropdown - Combined Login/Register */}
+          <div className="desktop-only">
+            <Dropdown
+              isOpen={authDropdownOpen}
+              onToggle={() => setAuthDropdownOpen(!authDropdownOpen)}
+              onClose={() => setAuthDropdownOpen(false)}
+              items={authItems}
+              trigger={
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    color: tokens.color.text,
+                    padding: '8px 14px',
+                    borderRadius: tokens.radius.pill,
+                    fontSize: 13,
+                    fontWeight: 500,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    border: `1px solid ${tokens.color.border}`,
+                    background: 'rgba(255,255,255,0.05)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = tokens.color.primary;
+                    e.currentTarget.style.color = tokens.color.primary;
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!authDropdownOpen) {
+                      e.currentTarget.style.borderColor = tokens.color.border;
+                      e.currentTarget.style.color = tokens.color.text;
+                    }
+                  }}
+                >
+                  <i className="ri-user-line" style={{ fontSize: 16 }} />
+                  Tài khoản
+                  <i className="ri-arrow-down-s-line" style={{ fontSize: 14 }} />
+                </motion.div>
+              }
+            />
+          </div>
 
           {/* Mobile Menu */}
           {showMobileMenu && mobileMenuComponent}
@@ -240,4 +458,3 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
     </motion.header>
   );
 }
-

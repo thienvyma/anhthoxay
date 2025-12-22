@@ -4,6 +4,7 @@ import { tokens } from '@app/shared';
 import { Button } from './Button';
 import { Input } from './Input';
 import { useToast } from './Toast';
+import { pagesApi } from '../api';
 import type { Page } from '../types';
 
 interface PageSelectorBarProps {
@@ -114,6 +115,27 @@ export function PageSelectorBar({
   function handleCloseModal() {
     setShowModal(false);
     setFormData({ slug: '', title: '' });
+  }
+
+  async function handleToggleActive() {
+    if (!selectedPage) return;
+    try {
+      const newStatus = selectedPage.isActive === false ? true : false;
+      
+      await pagesApi.update(selectedPage.slug, { isActive: newStatus });
+      
+      // Update selected page locally - preserve existing sections to avoid reload
+      const updatedPage: Page = {
+        ...selectedPage,
+        isActive: newStatus,
+      };
+      
+      onSelectPage(updatedPage);
+      toast.success(newStatus ? 'Trang đã được bật!' : 'Trang đã được tắt tạm thời!');
+    } catch (error) {
+      console.error('Failed to toggle page status:', error);
+      toast.error('Cập nhật trạng thái thất bại');
+    }
   }
 
   return (
@@ -256,6 +278,27 @@ export function PageSelectorBar({
                           </span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {/* ON/OFF Status Badge */}
+                          <span style={{ 
+                            fontSize: 10, 
+                            fontWeight: 600,
+                            color: page.isActive !== false ? '#10B981' : '#EF4444',
+                            background: page.isActive !== false 
+                              ? 'rgba(16, 185, 129, 0.15)' 
+                              : 'rgba(239, 68, 68, 0.15)',
+                            border: `1px solid ${page.isActive !== false ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                            padding: '2px 6px',
+                            borderRadius: tokens.radius.sm,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 3,
+                          }}>
+                            <i 
+                              className={page.isActive !== false ? 'ri-eye-line' : 'ri-eye-off-line'} 
+                              style={{ fontSize: 10 }} 
+                            />
+                            {page.isActive !== false ? 'ON' : 'OFF'}
+                          </span>
                           <span style={{ 
                             fontSize: 11, 
                             color: tokens.color.muted,
@@ -275,7 +318,35 @@ export function PageSelectorBar({
           </div>
 
           {/* Right: Actions */}
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {/* ON/OFF Toggle for selected page */}
+            {selectedPage && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleToggleActive}
+                title={selectedPage.isActive !== false ? 'Tắt trang này' : 'Bật trang này'}
+                style={{
+                  padding: '8px 14px',
+                  background: selectedPage.isActive !== false 
+                    ? 'rgba(16, 185, 129, 0.15)' 
+                    : 'rgba(239, 68, 68, 0.15)',
+                  border: `1px solid ${selectedPage.isActive !== false ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+                  borderRadius: tokens.radius.md,
+                  color: selectedPage.isActive !== false ? '#10B981' : '#EF4444',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <i className={selectedPage.isActive !== false ? 'ri-eye-line' : 'ri-eye-off-line'} style={{ fontSize: 16 }} />
+                {selectedPage.isActive !== false ? 'ON' : 'OFF'}
+              </motion.button>
+            )}
+
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

@@ -1,6 +1,6 @@
 ---
 inclusion: fileMatch
-fileMatchPattern: "{landing,admin}/**/*.tsx"
+fileMatchPattern: "{landing,admin,portal}/**/*.tsx"
 ---
 
 # ⚛️ React Development Patterns

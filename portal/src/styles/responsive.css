@@ -1,0 +1,232 @@
+/**
+ * Responsive utilities and breakpoints
+ * Mobile: < 640px, Tablet: 640px - 1024px, Desktop: > 1024px
+ */
+
+/* Responsive visibility utilities */
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+/* Mobile-first base styles (< 640px) */
+.responsive-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.responsive-flex {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.responsive-text-sm {
+  font-size: 13px;
+}
+
+.responsive-text-base {
+  font-size: 14px;
+}
+
+.responsive-text-lg {
+  font-size: 16px;
+}
+
+.responsive-text-xl {
+  font-size: 18px;
+}
+
+.responsive-text-2xl {
+  font-size: 20px;
+}
+
+/* Tablet styles (640px - 1023px) */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .portal-sidebar {
+    width: 240px;
+  }
+  
+  .portal-sidebar.open + .portal-main {
+    margin-left: 0;
+  }
+  
+  .responsive-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  .responsive-flex {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  
+  .responsive-text-sm {
+    font-size: 13px;
+  }
+  
+  .responsive-text-base {
+    font-size: 14px;
+  }
+  
+  .responsive-text-lg {
+    font-size: 17px;
+  }
+  
+  .responsive-text-xl {
+    font-size: 20px;
+  }
+  
+  .responsive-text-2xl {
+    font-size: 24px;
+  }
+  
+  .portal-content {
+    padding: 20px;
+  }
+}
+
+/* Desktop styles (>= 1024px) */
+@media (min-width: 1024px) {
+  .portal-sidebar {
+    left: 0;
+  }
+  
+  /* Note: margin-left is controlled by inline styles in Layout.tsx */
+  
+  .responsive-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  
+  .responsive-grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .responsive-flex {
+    flex-direction: row;
+    gap: 20px;
+  }
+  
+  .responsive-text-sm {
+    font-size: 14px;
+  }
+  
+  .responsive-text-base {
+    font-size: 15px;
+  }
+  
+  .responsive-text-lg {
+    font-size: 18px;
+  }
+  
+  .responsive-text-xl {
+    font-size: 22px;
+  }
+  
+  .responsive-text-2xl {
+    font-size: 28px;
+  }
+  
+  .portal-content {
+    padding: 24px;
+  }
+}
+
+/* Large desktop (>= 1280px) */
+@media (min-width: 1280px) {
+  .responsive-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+}
+
+/* Responsive visibility utilities */
+.hide-mobile {
+  display: none;
+}
+
+.hide-tablet {
+  display: block;
+}
+
+.hide-desktop {
+  display: block;
+}
+
+@media (min-width: 640px) {
+  .hide-mobile {
+    display: block;
+  }
+  
+  .hide-tablet {
+    display: none;
+  }
+  
+  .show-tablet-only {
+    display: block;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hide-tablet {
+    display: block;
+  }
+  
+  .hide-desktop {
+    display: none;
+  }
+  
+  .show-tablet-only {
+    display: none;
+  }
+}
+
+/* Responsive container widths */
+.container-responsive {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 12px;
+}
+
+@media (min-width: 640px) {
+  .container-responsive {
+    padding: 0 16px;
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-responsive {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-responsive {
+    padding: 0 24px;
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container-responsive {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .container-responsive {
+    max-width: 1400px;
+  }
+}

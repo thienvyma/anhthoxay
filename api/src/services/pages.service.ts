@@ -21,6 +21,7 @@ export interface CreatePageInput {
 
 export interface UpdatePageInput {
   title?: string;
+  isActive?: boolean;
   headerConfig?: string;
   footerConfig?: string;
 }

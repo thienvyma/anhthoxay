@@ -38,6 +38,9 @@ export function getSectionDescription(kind: SectionKind): string {
     ABOUT: 'About section with company information',
     FAQ: 'Frequently asked questions section',
     VIDEO: 'Video embed section',
+    INTERIOR_QUOTE: 'Interior quote wizard (legacy)',
+    INTERIOR_PRICING_TABLE: 'Interior pricing table with package tiers',
+    INTERIOR_WIZARD: 'Interior quote wizard with 7 steps',
   };
   return descriptions[kind] || '';
 }
@@ -75,6 +78,9 @@ export function getSectionIcon(kind: SectionKind): string {
     ABOUT: 'ri-information-fill',
     FAQ: 'ri-question-answer-fill',
     VIDEO: 'ri-video-fill',
+    INTERIOR_QUOTE: 'ri-home-smile-fill',
+    INTERIOR_PRICING_TABLE: 'ri-price-tag-3-fill',
+    INTERIOR_WIZARD: 'ri-home-smile-fill',
   };
   return icons[kind] || 'ri-layout-fill';
 }

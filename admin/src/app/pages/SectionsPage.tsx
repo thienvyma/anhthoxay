@@ -26,15 +26,6 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
     loadPages();
   }, []);
 
-  useEffect(() => {
-    if (pageSlug && pages.length > 0) {
-      const foundPage = pages.find(p => p.slug === pageSlug);
-      if (foundPage) {
-        setPage(foundPage);
-      }
-    }
-  }, [pageSlug, pages]);
-
   async function loadPages() {
     try {
       const data = await pagesApi.list();
@@ -61,7 +52,17 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
   }
 
   async function handleSelectPage(selectedPage: Page) {
-    setPage(null); // Clear current page to show loading
+    // Update pages list with the new page data (for isActive toggle)
+    setPages(prev => prev.map(p => p.id === selectedPage.id ? selectedPage : p));
+    
+    // If page has sections already loaded (e.g., from toggle or already selected), just update state
+    // Check for sections array existence (even empty array is valid)
+    if (Array.isArray(selectedPage.sections)) {
+      setPage(selectedPage);
+      return;
+    }
+    
+    // Otherwise, fetch full page data with sections from API
     await loadPage(selectedPage.slug);
   }
 
@@ -167,6 +168,10 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
     { kind: 'QUICK_CONTACT', icon: 'ri-contacts-fill', label: 'Liên Hệ Nhanh', description: 'Card liên hệ nhanh' },
     { kind: 'RICH_TEXT', icon: 'ri-text', label: 'Nội Dung Tùy Chỉnh', description: 'Markdown/HTML content' },
     { kind: 'BANNER', icon: 'ri-notification-line', label: 'Thông Báo', description: 'Banner thông báo' },
+    { kind: 'QUOTE_CALCULATOR', icon: 'ri-calculator-line', label: 'Dự Toán & Tư Vấn', description: 'Wizard dự toán chi phí xây dựng' },
+    { kind: 'QUOTE_FORM', icon: 'ri-file-list-3-line', label: 'Form Báo Giá', description: 'Form đăng ký tư vấn' },
+    { kind: 'INTERIOR_WIZARD', icon: 'ri-home-smile-line', label: 'Báo Giá Nội Thất (Wizard)', description: 'Wizard chọn căn hộ và gói nội thất' },
+    { kind: 'INTERIOR_PRICING_TABLE', icon: 'ri-price-tag-3-line', label: 'Bảng Báo Giá Nội Thất', description: 'Bảng giá các gói nội thất' },
   ];
 
   if (loading) {

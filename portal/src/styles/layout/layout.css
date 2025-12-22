@@ -1,0 +1,31 @@
+/**
+ * Portal Layout Styles
+ */
+
+.portal-layout {
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+.portal-main {
+  min-height: calc(100vh - 64px);
+  transition: margin-left 0.3s ease;
+}
+
+.portal-content {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .portal-content {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .portal-content {
+    padding: 12px;
+  }
+}

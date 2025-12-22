@@ -24,6 +24,8 @@ const ContactPage = lazy(() => import('./pages/ContactPage').then(m => ({ defaul
 const BlogPage = lazy(() => import('./pages/BlogPage').then(m => ({ default: m.BlogPage })));
 const BlogDetailPage = lazy(() => import('./pages/BlogDetailPage').then(m => ({ default: m.BlogDetailPage })));
 const DynamicPage = lazy(() => import('./pages/DynamicPage').then(m => ({ default: m.DynamicPage })));
+const UnsubscribePage = lazy(() => import('./pages/UnsubscribePage').then(m => ({ default: m.UnsubscribePage })));
+const InteriorQuotePage = lazy(() => import('./pages/InteriorQuotePage').then(m => ({ default: m.InteriorQuotePage })));
 
 // Create QueryClient instance for API caching
 const queryClient = new QueryClient({
@@ -422,6 +424,10 @@ function AppContent() {
               <Route path="/contact" element={currentPage ? <ContactPage page={currentPage} /> : null} />
               <Route path="/blog" element={<BlogPage page={currentPage || undefined} />} />
               <Route path="/blog/:slug" element={<BlogDetailPage />} />
+              {/* Unsubscribe page - email notification management */}
+              <Route path="/unsubscribe" element={<UnsubscribePage />} />
+              {/* Interior Quote page - furniture quote wizard */}
+              <Route path="/noi-that" element={<InteriorQuotePage />} />
               {/* Dynamic page route - loads any page from database by slug */}
               <Route path="/:slug" element={<DynamicPage />} />
               {/* 404 fallback */}

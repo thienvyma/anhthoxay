@@ -39,10 +39,22 @@ export interface PromoSettings {
   popup: PopupSettings;
 }
 
+export interface CTALink {
+  text: string;
+  href: string;
+  icon?: string;
+}
+
 export interface HeaderConfig {
   logo?: { text?: string; icon?: string; imageUrl?: string; animateIcon?: boolean };
   navigation?: Array<{ label: string; route: string; icon?: string }>;
-  cta?: { text?: string; link?: string; variant?: 'primary' | 'outline' };
+  cta?: { 
+    text?: string; 
+    link?: string; 
+    variant?: 'primary' | 'outline';
+    // Support multiple links for dropdown
+    links?: CTALink[];
+  };
   options?: { sticky?: boolean; transparent?: boolean; showSearch?: boolean };
 }
 
@@ -107,11 +119,19 @@ export const defaultHeaderConfig: HeaderConfig = {
   navigation: [
     { label: 'Trang chủ', route: '/', icon: 'ri-home-4-line' },
     { label: 'Báo giá', route: '/bao-gia', icon: 'ri-calculator-line' },
-    { label: 'Giới thiệu', route: '/about', icon: 'ri-information-line' },
+    { label: 'Nội thất', route: '/noi-that', icon: 'ri-home-smile-line' },
     { label: 'Blog', route: '/blog', icon: 'ri-article-line' },
-    { label: 'Liên hệ', route: '/contact', icon: 'ri-map-pin-line' },
+    { label: 'Chính sách', route: '/chinh-sach', icon: 'ri-shield-check-line' },
   ],
-  cta: { text: 'Báo giá ngay', link: '/bao-gia', variant: 'primary' },
+  cta: { 
+    text: 'Báo giá ngay', 
+    link: 'ri-price-tag-3-line', 
+    variant: 'primary',
+    links: [
+      { text: 'Báo giá xây dựng', href: '/bao-gia', icon: 'ri-calculator-line' },
+      { text: 'Báo giá nội thất', href: '/noi-that', icon: 'ri-home-smile-line' },
+    ],
+  },
   options: { sticky: true, transparent: false, showSearch: false },
 };
 

@@ -11,10 +11,12 @@ export interface AuthContext {
   sessionId?: string;
 }
 
-// Role hierarchy: ADMIN > MANAGER > WORKER > USER
+// Role hierarchy: ADMIN > MANAGER > CONTRACTOR > HOMEOWNER > WORKER > USER
 const ROLE_HIERARCHY: Record<Role, number> = {
-  ADMIN: 4,
-  MANAGER: 3,
+  ADMIN: 6,
+  MANAGER: 5,
+  CONTRACTOR: 4,
+  HOMEOWNER: 3,
   WORKER: 2,
   USER: 1,
 };

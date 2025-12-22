@@ -1,0 +1,141 @@
+/**
+ * CSS Variables - Theme colors and design tokens
+ * Requirements: 25.1 - Dark mode toggle, 26.2 - WCAG 2.1 AA color contrast
+ */
+
+/* Default to dark mode - WCAG 2.1 AA compliant colors */
+:root {
+  /* Background colors */
+  --bg-primary: #0b0c0f;
+  --bg-secondary: #131316;
+  --bg-tertiary: #1a1a1f;
+  --bg-elevated: #222228;
+  
+  /* Text colors with minimum 4.5:1 contrast ratio */
+  --text-primary: #f0f2f5;
+  --text-secondary: #b4b4bc;
+  --text-muted: #8a8a94;
+  
+  /* Border colors */
+  --border: #27272a;
+  --border-hover: #3f3f46;
+  
+  /* Primary color */
+  --primary: #f5d393;
+  --primary-hover: #e5c383;
+  --primary-muted: rgba(245, 211, 147, 0.15);
+  
+  /* Status colors - WCAG AA compliant */
+  --success: #34d399;
+  --success-muted: rgba(52, 211, 153, 0.15);
+  --warning: #fbbf24;
+  --warning-muted: rgba(251, 191, 36, 0.15);
+  --error: #f87171;
+  --error-muted: rgba(248, 113, 113, 0.15);
+  --info: #60a5fa;
+  --info-muted: rgba(96, 165, 250, 0.15);
+  
+  /* Effects */
+  --shadow: rgba(0, 0, 0, 0.5);
+  --overlay: rgba(0, 0, 0, 0.6);
+  --glass-bg: rgba(19, 19, 22, 0.8);
+  
+  /* Scrollbar */
+  --scrollbar-track: rgba(255, 255, 255, 0.03);
+  --scrollbar-thumb: rgba(245, 211, 147, 0.3);
+  --scrollbar-thumb-hover: rgba(245, 211, 147, 0.5);
+  
+  /* Skeleton loading */
+  --skeleton-base: #1a1a1f;
+  --skeleton-highlight: #27272a;
+  
+  /* Focus ring */
+  --focus-ring: #f5d393;
+  --focus-ring-offset: 2px;
+  
+  /* Responsive breakpoints */
+  --breakpoint-mobile: 640px;
+  --breakpoint-tablet: 1024px;
+  --touch-target-min: 44px;
+  --touch-target-sm: 36px;
+  --spacing-mobile: 12px;
+  --spacing-tablet: 16px;
+  --spacing-desktop: 24px;
+}
+
+/* Dark mode (default) */
+.dark {
+  --bg-primary: #0b0c0f;
+  --bg-secondary: #131316;
+  --bg-tertiary: #1a1a1f;
+  --bg-elevated: #222228;
+  --text-primary: #f0f2f5;
+  --text-secondary: #b4b4bc;
+  --text-muted: #8a8a94;
+  --border: #27272a;
+  --border-hover: #3f3f46;
+  --primary: #f5d393;
+  --primary-hover: #e5c383;
+  --primary-muted: rgba(245, 211, 147, 0.15);
+  --success: #34d399;
+  --success-muted: rgba(52, 211, 153, 0.15);
+  --warning: #fbbf24;
+  --warning-muted: rgba(251, 191, 36, 0.15);
+  --error: #f87171;
+  --error-muted: rgba(248, 113, 113, 0.15);
+  --info: #60a5fa;
+  --info-muted: rgba(96, 165, 250, 0.15);
+  --shadow: rgba(0, 0, 0, 0.5);
+  --overlay: rgba(0, 0, 0, 0.6);
+  --glass-bg: rgba(19, 19, 22, 0.8);
+  --scrollbar-track: rgba(255, 255, 255, 0.03);
+  --scrollbar-thumb: rgba(245, 211, 147, 0.3);
+  --scrollbar-thumb-hover: rgba(245, 211, 147, 0.5);
+  --skeleton-base: #1a1a1f;
+  --skeleton-highlight: #27272a;
+  --focus-ring: #f5d393;
+}
+
+/* Light mode - WCAG 2.1 AA compliant */
+.light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+  --bg-elevated: #ffffff;
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+  --border: #d1d5db;
+  --border-hover: #9ca3af;
+  --primary: #b8860b;
+  --primary-hover: #996f0a;
+  --primary-muted: rgba(184, 134, 11, 0.12);
+  --success: #059669;
+  --success-muted: rgba(5, 150, 105, 0.1);
+  --warning: #d97706;
+  --warning-muted: rgba(217, 119, 6, 0.1);
+  --error: #dc2626;
+  --error-muted: rgba(220, 38, 38, 0.1);
+  --info: #2563eb;
+  --info-muted: rgba(37, 99, 235, 0.1);
+  --shadow: rgba(0, 0, 0, 0.1);
+  --overlay: rgba(0, 0, 0, 0.3);
+  --glass-bg: rgba(255, 255, 255, 0.9);
+  --scrollbar-track: rgba(0, 0, 0, 0.03);
+  --scrollbar-thumb: rgba(184, 134, 11, 0.4);
+  --scrollbar-thumb-hover: rgba(184, 134, 11, 0.6);
+  --skeleton-base: #e5e7eb;
+  --skeleton-highlight: #f3f4f6;
+  --focus-ring: #b8860b;
+}
+
+/* Theme transition animation - Requirements: 25.4 */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: background-color 0.3s ease, 
+              border-color 0.3s ease, 
+              color 0.3s ease,
+              box-shadow 0.3s ease !important;
+}

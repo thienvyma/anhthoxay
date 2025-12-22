@@ -20,6 +20,9 @@ const CallToAction = lazy(() => import('./CallToAction').then(m => ({ default: m
 const BlogList = lazy(() => import('./BlogList').then(m => ({ default: m.BlogList })));
 const QuoteFormSection = lazy(() => import('./QuoteFormSection').then(m => ({ default: m.QuoteFormSection })));
 const QuoteCalculatorSection = lazy(() => import('./QuoteCalculatorSection').then(m => ({ default: m.QuoteCalculatorSection })));
+const InteriorQuoteSection = lazy(() => import('./InteriorQuoteSection').then(m => ({ default: m.InteriorQuoteSection })));
+const InteriorPricingTable = lazy(() => import('./InteriorPricingTable').then(m => ({ default: m.InteriorPricingTable })));
+const InteriorWizardSection = lazy(() => import('./InteriorWizardSection').then(m => ({ default: m.InteriorWizardSection })));
 
 // Loading fallback component
 const SectionLoader = () => (
@@ -187,6 +190,27 @@ export function renderSection(section: Section) {
       return (
         <Suspense key={section.id} fallback={<SectionLoader />}>
           <QuoteCalculatorSection data={data} />
+        </Suspense>
+      );
+
+    case 'INTERIOR_QUOTE':
+      return (
+        <Suspense key={section.id} fallback={<SectionLoader />}>
+          <InteriorQuoteSection data={data} />
+        </Suspense>
+      );
+
+    case 'INTERIOR_PRICING_TABLE':
+      return (
+        <Suspense key={section.id} fallback={<SectionLoader />}>
+          <InteriorPricingTable data={data} />
+        </Suspense>
+      );
+
+    case 'INTERIOR_WIZARD':
+      return (
+        <Suspense key={section.id} fallback={<SectionLoader />}>
+          <InteriorWizardSection data={data} />
         </Suspense>
       );
 

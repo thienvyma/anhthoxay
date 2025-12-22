@@ -1,0 +1,197 @@
+/**
+ * Touch-friendly Styles
+ * Requirements: 15.3 - Optimize forms for touch input
+ */
+
+@media (max-width: 768px) {
+  /* Larger touch targets */
+  .sidebar-menu-item,
+  .dropdown-item,
+  .notification-item {
+    min-height: 48px;
+  }
+  
+  /* Better spacing for touch */
+  .sidebar-menu {
+    gap: 8px;
+  }
+  
+  /* Prevent text selection on touch */
+  .mobile-nav-item,
+  .sidebar-menu-item {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+}
+
+/* Touch-optimized form inputs */
+@media (pointer: coarse) {
+  /* Coarse pointer = touch device */
+  
+  /* Minimum touch target size (44x44px per WCAG) */
+  .input,
+  .btn,
+  select,
+  button {
+    min-height: 44px;
+  }
+  
+  /* Larger padding for touch */
+  .input {
+    padding: 14px 16px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Larger checkboxes and radios */
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+  }
+  
+  /* Better button spacing */
+  .btn {
+    padding: 14px 24px;
+  }
+  
+  .btn-secondary {
+    padding: 12px 20px;
+  }
+  
+  /* Larger dropdown items */
+  .dropdown-item {
+    padding: 14px 16px;
+    min-height: 48px;
+  }
+  
+  /* Better form field spacing */
+  .form-group,
+  .touch-input-wrapper,
+  .touch-textarea-wrapper,
+  .touch-select-wrapper {
+    margin-bottom: 20px;
+  }
+  
+  /* Larger select dropdown arrow area */
+  select {
+    padding-right: 44px;
+    background-position: right 12px center;
+    background-size: 20px;
+  }
+  
+  /* Better link tap targets */
+  a {
+    padding: 4px 0;
+  }
+  
+  /* Prevent accidental taps */
+  .touch-safe-zone {
+    padding: 8px;
+    margin: -8px;
+  }
+}
+
+/* Touch interaction feedback */
+@media (hover: none) {
+  /* No hover on touch devices - use active states instead */
+  
+  .btn:active {
+    transform: scale(0.98);
+  }
+  
+  .card:active {
+    transform: scale(0.99);
+  }
+  
+  .sidebar-menu-item:active {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  
+  .dropdown-item:active {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  
+  .notification-item:active {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* Disable hover effects on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .btn:hover {
+    background: inherit;
+  }
+  
+  .card:hover {
+    transform: none;
+    border-color: inherit;
+  }
+}
+
+/* Touch scrolling optimization */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Prevent pull-to-refresh on mobile */
+.no-pull-refresh {
+  overscroll-behavior-y: contain;
+}
+
+/* Safe area insets for notched devices */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .mobile-bottom-nav {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+  
+  .portal-main {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Touch-friendly form layout */
+.touch-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.touch-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .touch-form-row {
+    flex-direction: row;
+    gap: 20px;
+  }
+  
+  .touch-form-row > * {
+    flex: 1;
+  }
+}
+
+/* Touch-friendly action buttons */
+.touch-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+@media (min-width: 640px) {
+  .touch-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+  
+  .touch-actions > * {
+    flex: 0 0 auto;
+  }
+}

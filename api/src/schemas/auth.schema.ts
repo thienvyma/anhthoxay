@@ -22,13 +22,23 @@ export const loginSchema = z.object({
 });
 
 /**
+ * Account types for registration
+ */
+export const accountTypeEnum = z.enum(['user', 'homeowner', 'contractor']);
+export type AccountType = z.infer<typeof accountTypeEnum>;
+
+/**
  * Schema for user registration
  */
 export const registerSchema = z.object({
   email: z.string().email('Invalid email format'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   name: z.string().min(1, 'Name is required'),
-  role: z.enum(['ADMIN', 'MANAGER', 'WORKER', 'USER']).optional(),
+  role: z.enum(['ADMIN', 'MANAGER', 'CONTRACTOR', 'HOMEOWNER', 'WORKER', 'USER']).optional(),
+  accountType: accountTypeEnum.optional().default('user'),
+  // Optional fields for contractor/homeowner
+  phone: z.string().optional(),
+  companyName: z.string().optional(),
 });
 
 /**
@@ -45,6 +55,16 @@ export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
   newPassword: z.string().min(8, 'New password must be at least 8 characters'),
 });
+
+// ============================================
+// ROLE ENUM
+// ============================================
+
+/**
+ * Role enum for user roles
+ */
+export const roleEnum = z.enum(['ADMIN', 'MANAGER', 'CONTRACTOR', 'HOMEOWNER', 'WORKER', 'USER']);
+export type Role = z.infer<typeof roleEnum>;
 
 // ============================================
 // TYPE EXPORTS

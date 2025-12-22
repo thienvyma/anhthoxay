@@ -23,7 +23,18 @@ api/src/
 │   ├── security-headers.ts   # Security headers
 │   └── validation.ts         # Zod validation middleware
 ├── routes/
-│   ├── auth.routes.ts        # /api/auth/*
+│   ├── auth.routes.ts        # /api/auth/* (login, register, signup, sessions)
+│   ├── users.routes.ts       # /api/users/* (ADMIN only)
+│   ├── contractor.routes.ts  # /api/contractor/*, /api/admin/contractors/*
+│   ├── region.routes.ts      # /api/regions/*, /api/admin/regions/*
+│   ├── bidding-settings.routes.ts  # /api/settings/bidding, /api/admin/settings/bidding
+│   ├── service-fee.routes.ts # /api/service-fees/*, /api/admin/service-fees/*
+│   ├── project.routes.ts     # /api/projects/*, /api/homeowner/projects/*, /api/admin/projects/*
+│   ├── bid.routes.ts         # /api/contractor/bids/*, /api/admin/bids/*
+│   ├── match.routes.ts       # /api/admin/matches/* (Admin match management)
+│   ├── escrow.routes.ts      # /api/admin/escrows/* (Admin escrow management)
+│   ├── fee.routes.ts         # /api/admin/fees/* (Admin fee management)
+│   ├── dispute.routes.ts     # /api/admin/disputes/*, /api/homeowner/*/dispute, /api/contractor/*/dispute
 │   ├── pages.routes.ts       # /pages/*, /sections/*
 │   ├── media.routes.ts       # /media/*
 │   ├── leads.routes.ts       # /leads/*
@@ -32,7 +43,20 @@ api/src/
 │   ├── settings.routes.ts    # /settings/*
 │   └── integrations.routes.ts # /integrations/*
 ├── services/
-│   ├── auth.service.ts       # Auth business logic
+│   ├── auth.service.ts       # Auth business logic (supports CONTRACTOR, HOMEOWNER roles)
+│   ├── users.service.ts      # User management logic (ADMIN only)
+│   ├── contractor.service.ts # Contractor profile & verification logic
+│   ├── region.service.ts     # Region hierarchy management
+│   ├── bidding-settings.service.ts  # Bidding configuration (singleton)
+│   ├── service-fee.service.ts # Service fee management
+│   ├── project.service.ts    # Project CRUD, status transitions, access control
+│   ├── bid.service.ts        # Bid CRUD, validation, anonymization
+│   ├── match.service.ts      # Bid selection, contact reveal, project status transitions
+│   ├── escrow.service.ts     # Escrow CRUD, amount calculation, status transitions
+│   ├── fee.service.ts        # Fee transaction CRUD, win fee calculation
+│   ├── milestone.service.ts  # Milestone management, completion tracking
+│   ├── notification.service.ts # In-app notifications for match events
+│   ├── dispute.service.ts    # Dispute raising and resolution
 │   ├── pages.service.ts      # Pages CRUD logic
 │   ├── media.service.ts      # Media upload/delete logic
 │   ├── leads.service.ts      # Leads CRUD & stats logic
@@ -42,6 +66,19 @@ api/src/
 ├── schemas/
 │   ├── index.ts              # Re-exports all schemas
 │   ├── auth.schema.ts        # Auth validation schemas
+│   ├── users.schema.ts       # User management validation schemas
+│   ├── contractor.schema.ts  # Contractor profile validation schemas
+│   ├── region.schema.ts      # Region validation schemas
+│   ├── bidding-settings.schema.ts  # Bidding settings validation schemas
+│   ├── service-fee.schema.ts # Service fee validation schemas
+│   ├── project.schema.ts     # Project validation schemas (create, update, submit, query)
+│   ├── bid.schema.ts         # Bid validation schemas (create, update, query)
+│   ├── match.schema.ts       # Match validation schemas (select bid, cancel match)
+│   ├── escrow.schema.ts      # Escrow validation schemas (create, update, query, actions)
+│   ├── fee.schema.ts         # Fee validation schemas (create, query, actions)
+│   ├── milestone.schema.ts   # Milestone validation schemas (request, confirm, dispute)
+│   ├── notification.schema.ts # Notification validation schemas (create, query)
+│   ├── dispute.schema.ts     # Dispute validation schemas (raise, resolve, query)
 │   ├── pages.schema.ts       # Pages validation schemas
 │   ├── media.schema.ts       # Media validation schemas
 │   ├── leads.schema.ts       # Leads validation schemas
@@ -51,7 +88,8 @@ api/src/
 └── utils/
     ├── logger.ts             # Structured logging
     ├── response.ts           # Response helpers
-    └── encryption.ts         # AES-256-GCM encryption for sensitive data
+    ├── encryption.ts         # AES-256-GCM encryption for sensitive data
+    └── code-generator.ts     # Auto-generate codes (PRJ-YYYY-NNN, BID-YYYY-NNN)
 ```
 
 ## Route Naming Convention

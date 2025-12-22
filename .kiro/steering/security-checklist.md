@@ -21,11 +21,14 @@ app.get('/api/admin/users', authenticate(), requireRole('ADMIN'), async (c) => {
 
 | Loại | Roles | Ví dụ |
 |------|-------|-------|
-| Public | Không cần auth | GET /api/blog/posts, GET /api/settings |
-| User | USER, WORKER, MANAGER, ADMIN | GET /api/user/profile |
+| Public | Không cần auth | GET /api/blog/posts, GET /api/settings, GET /api/regions |
+| Homeowner | HOMEOWNER, CONTRACTOR, WORKER, MANAGER, ADMIN | GET /api/user/profile |
+| Contractor | CONTRACTOR, MANAGER, ADMIN | GET /api/contractor/profile |
 | Worker | WORKER, MANAGER, ADMIN | GET /api/worker/jobs |
 | Manager | MANAGER, ADMIN | POST /api/blog/posts, GET /api/leads |
-| Admin Only | ADMIN | POST /api/users, DELETE /api/*, Settings |
+| Admin Only | ADMIN | POST /api/users, DELETE /api/*, Settings, Verify contractors |
+
+> **Role Hierarchy**: ADMIN > MANAGER > CONTRACTOR > HOMEOWNER > WORKER > USER
 
 ### 3. KHI SỬA FILE TRONG CÁC THƯ MỤC SAU
 
@@ -111,6 +114,27 @@ api/src/
 │   └── validation.ts           # Zod validation middleware
 ├── routes/
 │   ├── auth.routes.ts          # /api/auth/* endpoints
+│   ├── users.routes.ts         # /api/users/* endpoints (ADMIN only)
+│   ├── contractor.routes.ts    # /api/contractor/*, /api/admin/contractors/*
+│   ├── region.routes.ts        # /api/regions/*, /api/admin/regions/*
+│   ├── bidding-settings.routes.ts  # /api/settings/bidding, /api/admin/settings/bidding
+│   ├── service-fee.routes.ts   # /api/service-fees/*, /api/admin/service-fees/*
+│   ├── project.routes.ts       # /api/projects/*, /api/homeowner/projects/*, /api/admin/projects/*
+│   ├── bid.routes.ts           # /api/contractor/bids/*, /api/admin/bids/*
+│   ├── escrow.routes.ts        # /api/admin/escrows/*
+│   ├── fee.routes.ts           # /api/admin/fees/*
+│   ├── match.routes.ts         # /api/admin/matches/*
+│   ├── dispute.routes.ts       # /api/*/disputes/*
+│   ├── chat.routes.ts          # /api/chat/*, /api/admin/chat/*
+│   ├── notification.routes.ts  # /api/notifications/*
+│   ├── notification-template.routes.ts  # /api/admin/notification-templates/*
+│   ├── scheduled-notification.routes.ts # /api/admin/scheduled-notifications/*
+│   ├── unsubscribe.routes.ts   # /api/unsubscribe/*
+│   ├── review.routes.ts        # /api/reviews/*, /api/*/reviews/*
+│   ├── ranking.routes.ts       # /api/rankings/*, /api/admin/rankings/*
+│   ├── report.routes.ts        # /api/reviews/:id/report, /api/admin/review-reports/*
+│   ├── saved-project.routes.ts # /api/contractor/saved-projects/*
+│   ├── activity.routes.ts      # /api/user/activity/*
 │   ├── pages.routes.ts         # /pages/*, /sections/*
 │   ├── media.routes.ts         # /media/*
 │   ├── leads.routes.ts         # /leads/*
@@ -120,20 +144,72 @@ api/src/
 │   └── integrations.routes.ts  # /integrations/*
 ├── services/
 │   ├── auth.service.ts         # Auth business logic
+│   ├── contractor.service.ts   # Contractor profile & verification logic
+│   ├── region.service.ts       # Region CRUD logic
+│   ├── bidding-settings.service.ts # Bidding settings logic
+│   ├── service-fee.service.ts  # Service fee CRUD logic
+│   ├── project.service.ts      # Project CRUD & status logic
+│   ├── bid.service.ts          # Bid CRUD & status logic
+│   ├── escrow.service.ts       # Escrow management logic
+│   ├── fee.service.ts          # Fee transaction logic
+│   ├── match.service.ts        # Match management logic
+│   ├── milestone.service.ts    # Milestone management logic
+│   ├── dispute.service.ts      # Dispute resolution logic
+│   ├── notification.service.ts # Notification creation logic
+│   ├── notification-channel.service.ts # Multi-channel delivery
+│   ├── notification-template.service.ts # Template management
+│   ├── scheduled-notification.service.ts # Scheduled notifications
+│   ├── unsubscribe.service.ts  # Unsubscribe management
+│   ├── chat.service.ts         # Chat & messaging logic
+│   ├── review.service.ts       # Review CRUD logic
+│   ├── ranking.service.ts      # Ranking calculation logic
+│   ├── ranking-job.service.ts  # Daily ranking job
+│   ├── report.service.ts       # Review report logic
+│   ├── badge.service.ts        # Badge management logic
+│   ├── badge-job.service.ts    # Badge calculation job
+│   ├── review-reminder.service.ts # Review reminder logic
+│   ├── saved-project.service.ts # Saved project logic
+│   ├── activity.service.ts     # Activity history logic
 │   ├── pages.service.ts        # Pages CRUD logic
 │   ├── media.service.ts        # Media upload/delete logic
 │   ├── leads.service.ts        # Leads CRUD & stats logic
 │   ├── pricing.service.ts      # Pricing CRUD logic
-│   └── quote.service.ts        # Quote calculation logic
+│   ├── quote.service.ts        # Quote calculation logic
+│   ├── users.service.ts        # User management logic
+│   └── google-sheets.service.ts # Google Sheets integration
 ├── schemas/
 │   ├── index.ts                # Re-exports all schemas
 │   ├── auth.schema.ts          # Auth validation schemas
+│   ├── contractor.schema.ts    # Contractor profile validation schemas
+│   ├── region.schema.ts        # Region validation schemas
+│   ├── bidding-settings.schema.ts # Bidding settings schemas
+│   ├── service-fee.schema.ts   # Service fee schemas
+│   ├── project.schema.ts       # Project validation schemas
+│   ├── bid.schema.ts           # Bid validation schemas
+│   ├── escrow.schema.ts        # Escrow validation schemas
+│   ├── fee.schema.ts           # Fee validation schemas
+│   ├── match.schema.ts         # Match validation schemas
+│   ├── milestone.schema.ts     # Milestone validation schemas
+│   ├── dispute.schema.ts       # Dispute validation schemas
+│   ├── notification.schema.ts  # Notification schemas
+│   ├── notification-preference.schema.ts # Notification preference schemas
+│   ├── notification-template.schema.ts # Template schemas
+│   ├── scheduled-notification.schema.ts # Scheduled notification schemas
+│   ├── unsubscribe.schema.ts   # Unsubscribe schemas
+│   ├── chat.schema.ts          # Chat validation schemas
+│   ├── review.schema.ts        # Review validation schemas
+│   ├── ranking.schema.ts       # Ranking validation schemas
+│   ├── report.schema.ts        # Report validation schemas
+│   ├── badge.schema.ts         # Badge validation schemas
+│   ├── saved-project.schema.ts # Saved project schemas
+│   ├── activity.schema.ts      # Activity validation schemas
 │   ├── pages.schema.ts         # Pages validation schemas
 │   ├── media.schema.ts         # Media validation schemas
 │   ├── leads.schema.ts         # Leads validation schemas
 │   ├── pricing.schema.ts       # Pricing validation schemas
 │   ├── blog.schema.ts          # Blog validation schemas
-│   └── settings.schema.ts      # Settings validation schemas
+│   ├── settings.schema.ts      # Settings validation schemas
+│   └── users.schema.ts         # Users validation schemas
 └── utils/
     ├── logger.ts               # Structured logging
     └── response.ts             # Response helpers
@@ -161,6 +237,9 @@ Khi thêm route mới, cập nhật danh sách này:
 
 ### JWT Auth Routes (`/api/auth/*`) - Cho TẤT CẢ Apps (Admin, Landing, User, Worker)
 - `POST /api/auth/register` - Tạo user mới (ADMIN only)
+- `POST /api/auth/signup` - Đăng ký công khai cho homeowner/contractor (Public + Rate limiting)
+  - accountType: "homeowner" → auto-approve, role = HOMEOWNER, auto-login
+  - accountType: "contractor" → verificationStatus = PENDING, role = CONTRACTOR, cần xét duyệt
 - `POST /api/auth/login` - Đăng nhập (Public + Rate limiting) + Session limit (max 5)
 - `POST /api/auth/refresh` - Refresh token với rotation (Public)
 - `POST /api/auth/logout` - Đăng xuất + Blacklist token (Authenticated)
@@ -181,9 +260,145 @@ Khi thêm route mới, cập nhật danh sách này:
 - **Security Headers**: X-Content-Type-Options, X-Frame-Options, Cache-Control
 
 ### Admin Panel Routes (requireRole('ADMIN'))
-- `/api/admin/users/*` - Quản lý users
+- `/api/users/*` - Quản lý users (list, create, update, delete, ban)
+- `/api/users/:id/sessions` - Xem sessions của user
+- `/api/users/:id/sessions/:sessionId` - Revoke session
+- `/api/users/:id/ban` - Ban user (revoke all sessions)
 - `/api/admin/settings/*` - Cài đặt hệ thống
 - `/api/pricing/*` - Cấu hình giá (formulas, categories)
+- `/api/admin/contractors` - Danh sách nhà thầu (ADMIN only)
+- `/api/admin/contractors/:id` - Chi tiết nhà thầu (ADMIN only)
+- `/api/admin/contractors/:id/verify` - Duyệt/từ chối nhà thầu (ADMIN only)
+- `POST /api/admin/regions` - Tạo khu vực mới (ADMIN only)
+- `PUT /api/admin/regions/:id` - Cập nhật khu vực (ADMIN only)
+- `DELETE /api/admin/regions/:id` - Xóa khu vực (ADMIN only)
+- `GET /api/admin/settings/bidding` - Lấy full cấu hình đấu giá (ADMIN only)
+- `PUT /api/admin/settings/bidding` - Cập nhật cấu hình đấu giá (ADMIN only)
+- `GET /api/admin/service-fees` - Danh sách tất cả phí dịch vụ (ADMIN only)
+- `GET /api/admin/service-fees/:id` - Chi tiết phí dịch vụ (ADMIN only)
+- `POST /api/admin/service-fees` - Tạo phí dịch vụ mới (ADMIN only)
+- `PUT /api/admin/service-fees/:id` - Cập nhật phí dịch vụ (ADMIN only)
+- `DELETE /api/admin/service-fees/:id` - Xóa phí dịch vụ (ADMIN only)
+
+### Contractor Routes (requireRole('CONTRACTOR'))
+- `GET /api/contractor/profile` - Xem hồ sơ năng lực (CONTRACTOR only)
+- `PUT /api/contractor/profile` - Cập nhật hồ sơ năng lực (CONTRACTOR only)
+- `POST /api/contractor/submit-verification` - Gửi hồ sơ xét duyệt (CONTRACTOR only)
+
+### Homeowner Routes (requireRole('HOMEOWNER'))
+- `POST /api/homeowner/projects` - Tạo công trình mới
+- `GET /api/homeowner/projects` - Danh sách công trình của tôi
+- `GET /api/homeowner/projects/:id` - Chi tiết công trình của tôi
+- `PUT /api/homeowner/projects/:id` - Cập nhật công trình (chỉ DRAFT/REJECTED)
+- `POST /api/homeowner/projects/:id/submit` - Gửi duyệt công trình
+- `DELETE /api/homeowner/projects/:id` - Xóa công trình (chỉ DRAFT)
+- `GET /api/homeowner/projects/:id/bids` - Xem bids đã duyệt (ẩn thông tin nhà thầu)
+
+### Homeowner Routes - Match Management (requireRole('HOMEOWNER'))
+- `POST /api/homeowner/projects/:id/select-bid` - Chọn bid (BIDDING_CLOSED → MATCHED)
+- `GET /api/homeowner/projects/:id/match` - Xem chi tiết match (contractor info, escrow, fee)
+- `POST /api/homeowner/projects/:id/start` - Bắt đầu thi công (MATCHED → IN_PROGRESS)
+- `POST /api/homeowner/projects/:id/complete` - Hoàn thành công trình (IN_PROGRESS → COMPLETED)
+- `POST /api/homeowner/projects/:id/cancel` - Hủy match (xử lý escrow refund, fee cancellation)
+
+### Homeowner Routes - Milestone Management (requireRole('HOMEOWNER'))
+- `POST /api/homeowner/projects/:id/milestone/:milestoneId/confirm` - Xác nhận milestone hoàn thành
+- `POST /api/homeowner/projects/:id/milestone/:milestoneId/dispute` - Tranh chấp milestone
+
+### Contractor Routes - Bidding (requireRole('CONTRACTOR'))
+- `POST /api/contractor/bids` - Tạo bid mới (cần VERIFIED status)
+- `GET /api/contractor/bids` - Danh sách bids của tôi
+- `GET /api/contractor/bids/:id` - Chi tiết bid của tôi
+- `PUT /api/contractor/bids/:id` - Cập nhật bid (chỉ PENDING)
+- `DELETE /api/contractor/bids/:id` - Rút bid (PENDING/APPROVED → WITHDRAWN)
+- `GET /api/contractor/bids/:id/match` - Xem chi tiết match (homeowner info, address, escrow, fee)
+
+### Contractor Routes - Milestone Management (requireRole('CONTRACTOR'))
+- `POST /api/contractor/bids/:id/milestone/:milestoneId/request` - Yêu cầu xác nhận milestone hoàn thành
+
+### Admin Routes - Project Management (requireRole('ADMIN'))
+- `GET /api/admin/projects` - Danh sách tất cả công trình
+- `GET /api/admin/projects/:id` - Chi tiết công trình (bao gồm owner info)
+- `PUT /api/admin/projects/:id/approve` - Duyệt công trình (PENDING_APPROVAL → OPEN)
+- `PUT /api/admin/projects/:id/reject` - Từ chối công trình (PENDING_APPROVAL → REJECTED)
+
+### Admin Routes - Bid Management (requireRole('ADMIN'))
+- `GET /api/admin/bids` - Danh sách tất cả bids
+- `GET /api/admin/bids/:id` - Chi tiết bid (bao gồm contractor profile)
+- `PUT /api/admin/bids/:id/approve` - Duyệt bid (PENDING → APPROVED)
+- `PUT /api/admin/bids/:id/reject` - Từ chối bid (PENDING → REJECTED)
+
+### Admin Routes - Escrow Management (requireRole('ADMIN'))
+- `GET /api/admin/escrows` - Danh sách escrows với filtering
+- `GET /api/admin/escrows/:id` - Chi tiết escrow
+- `PUT /api/admin/escrows/:id/confirm` - Xác nhận đặt cọc (PENDING → HELD)
+- `PUT /api/admin/escrows/:id/release` - Giải phóng escrow
+- `PUT /api/admin/escrows/:id/partial` - Giải phóng một phần escrow
+- `PUT /api/admin/escrows/:id/refund` - Hoàn tiền escrow
+- `PUT /api/admin/escrows/:id/dispute` - Đánh dấu tranh chấp
+
+### Admin Routes - Fee Management (requireRole('ADMIN'))
+- `GET /api/admin/fees` - Danh sách phí giao dịch với filtering
+- `GET /api/admin/fees/:id` - Chi tiết phí giao dịch
+- `PUT /api/admin/fees/:id/paid` - Đánh dấu đã thanh toán (PENDING → PAID)
+- `PUT /api/admin/fees/:id/cancel` - Hủy phí giao dịch (PENDING → CANCELLED)
+- `GET /api/admin/fees/export` - Xuất CSV danh sách phí
+
+### Admin Routes - Match Management (requireRole('ADMIN'))
+- `GET /api/admin/matches` - Danh sách matched projects
+- `GET /api/admin/matches/:projectId` - Chi tiết match (homeowner, contractor, escrow, fee)
+- `PUT /api/admin/matches/:projectId/cancel` - Hủy match (xử lý escrow refund, fee cancellation)
+
+### Homeowner Routes - Dispute Management (requireRole('HOMEOWNER'))
+- `POST /api/homeowner/projects/:id/dispute` - Tạo tranh chấp (escrow HELD/PARTIAL_RELEASED → DISPUTED)
+
+### Contractor Routes - Dispute Management (requireRole('CONTRACTOR'))
+- `POST /api/contractor/bids/:id/dispute` - Tạo tranh chấp (escrow HELD/PARTIAL_RELEASED → DISPUTED)
+
+### Admin Routes - Dispute Management (requireRole('ADMIN'))
+- `GET /api/admin/disputes` - Danh sách tranh chấp với filtering
+- `GET /api/admin/disputes/:id` - Chi tiết tranh chấp
+- `PUT /api/admin/disputes/:id/resolve` - Giải quyết tranh chấp (REFUND_TO_HOMEOWNER hoặc RELEASE_TO_CONTRACTOR)
+
+### Chat Routes - User (Authenticated)
+- `POST /api/chat/conversations` - Tạo cuộc hội thoại (HOMEOWNER/CONTRACTOR, project MATCHED + escrow HELD)
+- `GET /api/chat/conversations` - Danh sách cuộc hội thoại của tôi
+- `GET /api/chat/conversations/:id` - Chi tiết cuộc hội thoại (participant only)
+- `POST /api/chat/conversations/:id/messages` - Gửi tin nhắn (participant only)
+- `GET /api/chat/conversations/:id/messages` - Danh sách tin nhắn với pagination
+- `PUT /api/chat/conversations/:id/read` - Đánh dấu đã đọc
+- `GET /api/chat/conversations/:id/search` - Tìm kiếm tin nhắn
+- `DELETE /api/chat/messages/:id` - Xóa tin nhắn (sender only, soft delete)
+
+### Admin Routes - Chat Management (requireRole('ADMIN'))
+- `GET /api/admin/chat/conversations` - Danh sách tất cả cuộc hội thoại với filtering
+- `GET /api/admin/chat/conversations/:id` - Chi tiết cuộc hội thoại (full access)
+- `POST /api/admin/chat/conversations/:id/messages` - Gửi tin nhắn hệ thống (type: SYSTEM)
+- `PUT /api/admin/chat/conversations/:id/close` - Đóng cuộc hội thoại
+
+### Admin Routes - Notification Templates (requireRole('ADMIN'))
+- `GET /api/admin/notification-templates` - Danh sách tất cả mẫu thông báo
+- `GET /api/admin/notification-templates/types` - Danh sách các loại mẫu
+- `GET /api/admin/notification-templates/:type` - Chi tiết mẫu theo loại
+- `POST /api/admin/notification-templates` - Tạo mẫu mới
+- `PUT /api/admin/notification-templates/:type` - Cập nhật mẫu
+- `DELETE /api/admin/notification-templates/:type` - Xóa mẫu
+- `POST /api/admin/notification-templates/render` - Preview mẫu với biến
+- `POST /api/admin/notification-templates/seed` - Tạo mẫu mặc định
+
+### Admin Routes - Scheduled Notifications (requireRole('ADMIN'))
+- `GET /api/admin/scheduled-notifications` - Danh sách scheduled notifications với filtering
+- `GET /api/admin/scheduled-notifications/:id` - Chi tiết scheduled notification
+- `PUT /api/admin/scheduled-notifications/:id/cancel` - Hủy scheduled notification
+- `POST /api/admin/scheduled-notifications/process` - Trigger xử lý notifications đến hạn
+- `POST /api/admin/scheduled-notifications/scan` - Scan và schedule reminders
+
+### Notification Routes - User (Authenticated)
+- `GET /api/notifications` - Danh sách thông báo với pagination và unread count
+- `PUT /api/notifications/:id/read` - Đánh dấu thông báo đã đọc
+- `PUT /api/notifications/read-all` - Đánh dấu tất cả thông báo đã đọc
+- `GET /api/notifications/preferences` - Lấy cài đặt thông báo
+- `PUT /api/notifications/preferences` - Cập nhật cài đặt thông báo
 
 ### Manager Routes (requireRole('ADMIN', 'MANAGER'))
 - `/api/blog/*` - Quản lý blog
@@ -209,12 +424,88 @@ Khi thêm route mới, cập nhật danh sách này:
 - `PUT /blog/comments/:id/status` - Approve/Reject comment (ADMIN, MANAGER)
 - `DELETE /blog/comments/:id` - Delete comment (ADMIN, MANAGER)
 
+### Region Routes (Public + Admin)
+- `GET /api/regions` - Danh sách khu vực (Public, tree hoặc flat)
+- `GET /api/regions/:id` - Chi tiết khu vực (Public)
+
 ### Public Routes (không cần auth)
 - `GET /api/blog/posts` - Danh sách bài viết
 - `GET /api/blog/posts/:postId/comments` - Comments đã duyệt
 - `GET /api/settings/public` - Settings công khai
+- `GET /api/settings/bidding` - Cấu hình đấu giá công khai (Public)
+- `GET /api/regions` - Danh sách khu vực
+- `GET /api/regions/:id` - Chi tiết khu vực
+- `GET /api/service-fees` - Danh sách phí dịch vụ (Public, chỉ active)
 - `POST /api/leads` - Submit form (cần rate limiting)
 - `POST /blog/posts/:postId/comments` - Submit comment (cần rate limiting)
+- `GET /api/projects` - Danh sách công trình đang mở (OPEN status, ẩn address)
+- `GET /api/projects/:id` - Chi tiết công trình công khai (ẩn address, owner info)
+
+### Unsubscribe Routes (Public - via email links)
+- `GET /api/unsubscribe?token=xxx` - Lấy thông tin trang unsubscribe
+- `PUT /api/unsubscribe` - Cập nhật cài đặt thông báo qua unsubscribe
+- `POST /api/unsubscribe/quick` - Hủy đăng ký nhanh tất cả email (trừ critical)
+
+### Ranking Routes - Public (Phase 5)
+- `GET /api/rankings` - Danh sách xếp hạng nhà thầu (Public)
+- `GET /api/rankings/featured` - Danh sách nhà thầu nổi bật (Public)
+- `GET /api/rankings/contractors/:id` - Xem xếp hạng của nhà thầu (Public)
+
+### Admin Routes - Ranking Management (requireRole('ADMIN'))
+- `POST /api/admin/rankings/recalculate` - Tính toán lại xếp hạng tất cả nhà thầu (ADMIN only)
+- `PUT /api/admin/rankings/contractors/:id/featured` - Đặt trạng thái nổi bật cho nhà thầu (ADMIN only)
+
+### Review Report Routes - Public (Authenticated)
+- `POST /api/reviews/:id/report` - Báo cáo đánh giá (Authenticated users)
+
+### Admin Routes - Review Report Management (requireRole('ADMIN'))
+- `GET /api/admin/review-reports` - Danh sách báo cáo đánh giá (ADMIN only)
+- `GET /api/admin/review-reports/stats` - Thống kê báo cáo (ADMIN only)
+- `GET /api/admin/review-reports/:id` - Chi tiết báo cáo (ADMIN only)
+- `PUT /api/admin/review-reports/:id/resolve` - Xử lý báo cáo (ADMIN only)
+
+### Homeowner Routes - Review Management (requireRole('HOMEOWNER'))
+- `POST /api/homeowner/projects/:projectId/review` - Tạo đánh giá cho công trình đã hoàn thành
+- `PUT /api/homeowner/reviews/:id` - Cập nhật đánh giá (trong 7 ngày)
+- `DELETE /api/homeowner/reviews/:id` - Xóa đánh giá (soft delete)
+- `GET /api/homeowner/reviews` - Danh sách đánh giá đã tạo
+
+### Contractor Routes - Review Management (requireRole('CONTRACTOR'))
+- `GET /api/contractor/reviews` - Danh sách đánh giá nhận được
+- `GET /api/contractor/reviews/stats` - Thống kê đánh giá
+- `GET /api/contractor/reviews/ranking` - Xếp hạng hiện tại
+- `GET /api/contractor/reviews/monthly-stats` - Thống kê theo tháng
+- `GET /api/contractor/reviews/:id` - Chi tiết đánh giá
+- `POST /api/contractor/reviews/:id/response` - Phản hồi đánh giá
+
+### Review Routes - Public
+- `GET /api/reviews/contractors/:id` - Danh sách đánh giá công khai của nhà thầu
+- `GET /api/reviews/contractors/:id/summary` - Tổng hợp đánh giá của nhà thầu
+
+### Review Routes - Authenticated
+- `POST /api/reviews/:id/helpful` - Vote đánh giá hữu ích
+- `DELETE /api/reviews/:id/helpful` - Bỏ vote hữu ích
+- `GET /api/reviews/:id/helpful/status` - Kiểm tra trạng thái vote
+
+### Admin Routes - Review Management (requireRole('ADMIN'))
+- `GET /api/admin/reviews` - Danh sách tất cả đánh giá với filters
+- `GET /api/admin/reviews/stats` - Thống kê đánh giá toàn hệ thống
+- `GET /api/admin/reviews/:id` - Chi tiết đánh giá
+- `PUT /api/admin/reviews/:id/hide` - Ẩn đánh giá
+- `PUT /api/admin/reviews/:id/unhide` - Hiện đánh giá
+- `DELETE /api/admin/reviews/:id` - Xóa vĩnh viễn đánh giá
+
+### Admin Routes - Ranking Job (requireRole('ADMIN'))
+- `GET /api/admin/rankings/job-status` - Trạng thái job tính xếp hạng
+
+### Contractor Routes - Saved Projects (requireRole('CONTRACTOR'))
+- `GET /api/contractor/saved-projects` - Danh sách công trình đã lưu
+- `POST /api/contractor/saved-projects/:projectId` - Lưu công trình
+- `DELETE /api/contractor/saved-projects/:projectId` - Bỏ lưu công trình
+- `GET /api/contractor/saved-projects/:projectId/check` - Kiểm tra đã lưu chưa
+
+### User Routes - Activity (Authenticated)
+- `GET /api/user/activity` - Lịch sử hoạt động của user
 
 ## 🚨 KHÔNG BAO GIỜ
 

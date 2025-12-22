@@ -35,6 +35,33 @@ import { createPricingRoutes } from './routes/pricing.routes';
 import { createBlogRoutes } from './routes/blog.routes';
 import { createSettingsRoutes } from './routes/settings.routes';
 import { createIntegrationsRoutes } from './routes/integrations.routes';
+import { createUsersRoutes } from './routes/users.routes';
+import { createContractorRoutes, createAdminContractorRoutes } from './routes/contractor.routes';
+import { createRegionRoutes, createAdminRegionRoutes } from './routes/region.routes';
+import { createBiddingSettingsRoutes, createAdminBiddingSettingsRoutes } from './routes/bidding-settings.routes';
+import { createServiceFeeRoutes, createAdminServiceFeeRoutes } from './routes/service-fee.routes';
+import { createPublicProjectRoutes, createHomeownerProjectRoutes, createAdminProjectRoutes } from './routes/project.routes';
+import { createContractorBidRoutes, createAdminBidRoutes } from './routes/bid.routes';
+import { createAdminEscrowRoutes } from './routes/escrow.routes';
+import { createAdminFeeRoutes } from './routes/fee.routes';
+import { createAdminMatchRoutes } from './routes/match.routes';
+import { createHomeownerDisputeRoutes, createContractorDisputeRoutes, createAdminDisputeRoutes } from './routes/dispute.routes';
+import { createChatRoutes, createAdminChatRoutes } from './routes/chat.routes';
+import { createNotificationRoutes } from './routes/notification.routes';
+import { createNotificationTemplateRoutes } from './routes/notification-template.routes';
+import { createAdminScheduledNotificationRoutes } from './routes/scheduled-notification.routes';
+import { createUnsubscribeRoutes } from './routes/unsubscribe.routes';
+import { 
+  createHomeownerReviewRoutes, 
+  createContractorReviewRoutes, 
+  createPublicReviewRoutes, 
+  createAdminReviewRoutes 
+} from './routes/review.routes';
+import { createPublicRankingRoutes, createAdminRankingRoutes } from './routes/ranking.routes';
+import { createPublicReportRoutes, createAdminReportRoutes } from './routes/report.routes';
+import { createSavedProjectRoutes } from './routes/saved-project.routes';
+import { createActivityRoutes } from './routes/activity.routes';
+import { createInteriorRoutes, createAdminInteriorRoutes } from './routes/interior.routes';
 
 // Service imports
 import { AuthService } from './services/auth.service';
@@ -173,6 +200,88 @@ app.route('/settings', createSettingsRoutes(prisma));
 
 // Integrations routes
 app.route('/integrations', createIntegrationsRoutes(prisma));
+
+// Users management routes (Admin only)
+app.route('/api/users', createUsersRoutes(prisma));
+
+// Contractor routes
+app.route('/api/contractor', createContractorRoutes(prisma));
+app.route('/api/admin/contractors', createAdminContractorRoutes(prisma));
+
+// Region routes
+app.route('/api/regions', createRegionRoutes(prisma));
+app.route('/api/admin/regions', createAdminRegionRoutes(prisma));
+
+// Bidding Settings routes
+app.route('/api/settings/bidding', createBiddingSettingsRoutes(prisma));
+app.route('/api/admin/settings/bidding', createAdminBiddingSettingsRoutes(prisma));
+
+// Service Fee routes
+app.route('/api/service-fees', createServiceFeeRoutes(prisma));
+app.route('/api/admin/service-fees', createAdminServiceFeeRoutes(prisma));
+
+// Project routes
+app.route('/api/projects', createPublicProjectRoutes(prisma));
+app.route('/api/homeowner/projects', createHomeownerProjectRoutes(prisma));
+app.route('/api/admin/projects', createAdminProjectRoutes(prisma));
+
+// Bid routes
+app.route('/api/contractor/bids', createContractorBidRoutes(prisma));
+app.route('/api/admin/bids', createAdminBidRoutes(prisma));
+
+// Escrow routes (Admin only)
+app.route('/api/admin/escrows', createAdminEscrowRoutes(prisma));
+
+// Fee routes (Admin only)
+app.route('/api/admin/fees', createAdminFeeRoutes(prisma));
+
+// Match routes (Admin only)
+app.route('/api/admin/matches', createAdminMatchRoutes(prisma));
+
+// Dispute routes
+app.route('/api/homeowner/projects', createHomeownerDisputeRoutes(prisma));
+app.route('/api/contractor/bids', createContractorDisputeRoutes(prisma));
+app.route('/api/admin/disputes', createAdminDisputeRoutes(prisma));
+
+// Chat routes (Phase 4)
+app.route('/api/chat', createChatRoutes(prisma));
+app.route('/api/admin/chat', createAdminChatRoutes(prisma));
+
+// Notification routes (Phase 4)
+app.route('/api/notifications', createNotificationRoutes(prisma));
+
+// Notification Template routes (Phase 4 - Admin only)
+app.route('/api/admin/notification-templates', createNotificationTemplateRoutes(prisma));
+
+// Scheduled Notification routes (Phase 4 - Admin only)
+app.route('/api/admin/scheduled-notifications', createAdminScheduledNotificationRoutes(prisma));
+
+// Unsubscribe routes (Phase 4 - Public, accessed via email links)
+app.route('/api/unsubscribe', createUnsubscribeRoutes(prisma));
+
+// Review routes (Phase 5)
+app.route('/api/homeowner', createHomeownerReviewRoutes(prisma));
+app.route('/api/contractor/reviews', createContractorReviewRoutes(prisma));
+app.route('/api/reviews', createPublicReviewRoutes(prisma));
+app.route('/api/admin/reviews', createAdminReviewRoutes(prisma));
+
+// Ranking routes (Phase 5)
+app.route('/api/rankings', createPublicRankingRoutes(prisma));
+app.route('/api/admin/rankings', createAdminRankingRoutes(prisma));
+
+// Report routes (Phase 5) - Requirements: 19.1-19.4
+app.route('/api/reviews', createPublicReportRoutes(prisma)); // POST /api/reviews/:id/report
+app.route('/api/admin/review-reports', createAdminReportRoutes(prisma));
+
+// Saved Project routes (Phase 6) - Requirements: 21.1-21.5
+app.route('/api/contractor/saved-projects', createSavedProjectRoutes(prisma));
+
+// Activity routes (Phase 6) - Requirements: 23.1-23.4
+app.route('/api/user/activity', createActivityRoutes(prisma));
+
+// Interior Quote routes - Requirements: 18.1, 18.2
+app.route('/api/interior', createInteriorRoutes(prisma));
+app.route('/api/admin/interior', createAdminInteriorRoutes(prisma));
 
 // ============================================
 // GLOBAL ERROR HANDLER

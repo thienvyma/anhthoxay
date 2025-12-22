@@ -1,0 +1,25 @@
+/**
+ * Theme Toggle Styles
+ * Requirements: 25.1 - Dark mode toggle
+ */
+
+.theme-toggle-wrapper {
+  position: relative;
+}
+
+.theme-dropdown {
+  min-width: 160px;
+}
+
+.theme-dropdown .dropdown-item {
+  justify-content: flex-start;
+}
+
+.theme-dropdown .dropdown-item.active {
+  background: var(--primary-muted);
+  color: var(--primary);
+}
+
+.theme-dropdown .dropdown-item i:first-child {
+  width: 20px;
+}

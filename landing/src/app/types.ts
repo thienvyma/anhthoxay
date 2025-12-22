@@ -26,6 +26,9 @@ export type SectionKind =
   | 'CORE_VALUES'
   | 'QUOTE_FORM'
   | 'QUOTE_CALCULATOR'
+  | 'INTERIOR_QUOTE'
+  | 'INTERIOR_PRICING_TABLE'
+  | 'INTERIOR_WIZARD'
   | 'ABOUT'
   | 'FAQ'
   // Legacy sections (kept for backward compatibility)
@@ -47,6 +50,7 @@ export interface PageData {
   id?: string;
   title?: string;
   slug?: string;
+  isActive?: boolean; // Toggle to temporarily disable page
   headerConfig?: string | Record<string, unknown>; // JSON string or parsed object
   footerConfig?: string | Record<string, unknown>; // JSON string or parsed object
   sections?: Section[];

@@ -41,7 +41,11 @@ export class CorsValidationError extends Error {
 // ============================================
 
 /** Default origins for development environment */
-const DEFAULT_DEV_ORIGINS = ['http://localhost:4200', 'http://localhost:4201'];
+const DEFAULT_DEV_ORIGINS = [
+  'http://localhost:4200',  // Landing
+  'http://localhost:4201',  // Admin
+  'http://localhost:4203',  // Portal
+];
 
 /** Environment variable name for CORS origins */
 const CORS_ORIGINS_ENV = 'CORS_ORIGINS';

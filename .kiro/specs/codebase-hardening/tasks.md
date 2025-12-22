@@ -1,164 +1,268 @@
-# Implementation Plan
+# Implementation Plan - Codebase Hardening
 
-## 1. Environment-based API Configuration
+## Overview
 
-- [x] 1.1 Create config module in @app/shared
-  - Create `packages/shared/src/config.ts` with `getApiUrl()` function
-  - Read from `VITE_API_URL` environment variable
-  - Fallback to `http://localhost:4202` in development
-  - Log warning in production if not set
-  - Export `isProduction()` helper
-  - Cache result to avoid repeated env access
-  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.7_
+Kế hoạch kiểm tra toàn diện code từ Bidding Phase 1-6, chia thành các giai đoạn:
+1. **Audit**: Chạy lint/typecheck/test để phát hiện lỗi
+2. **Fix**: Sửa tất cả lỗi từ gốc
+3. **Property Tests**: Verify và fix property tests
+4. **Documentation**: Cập nhật steering files
 
-- [x] 1.2 Update @app/shared index to use config module
-  - Update `packages/shared/src/index.ts` to import from config
-  - REMOVE hardcoded `export const API_URL = 'http://localhost:4202'`
-  - REPLACE with `export { API_URL, getApiUrl, isProduction } from './config'`
-  - Update `resolveMediaUrl` to use `getApiUrl()` instead of hardcoded API_URL
-  - Verify: grep for hardcoded `localhost:4202` in shared package - should be 0 results
-  - _Requirements: 1.5, 1.7_
+---
 
-- [x] 1.3 Update environment files
-  - Add `VITE_API_URL` to `.env.example` with documentation comment
-  - Add `VITE_API_URL` to `env.example`
-  - _Requirements: 1.6_
+## Phase A: Initial Audit & Fix
 
-- [x] 1.4 Write unit test for config module (optional)
-  - Test `getApiUrl()` returns correct value
-  - Test fallback behavior
-  - _Requirements: 1.1, 1.2, 1.3, 1.5_
+- [x] 1. Run Full Audit and Fix API Layer
 
-## 2. React Error Boundaries
 
-- [x] 2.1 Create ErrorBoundary component in @app/ui
-  - Create folder `packages/ui/src/components/` if not exists
-  - Create `packages/ui/src/components/ErrorBoundary.tsx`
-  - Implement class component with getDerivedStateFromError
-  - Add componentDidCatch for logging with component stack
-  - Create DefaultErrorFallback with Vietnamese text ("Đã xảy ra lỗi") and "Thử lại" button
-  - Style using tokens from `@app/shared` for consistency
-  - Add JSDoc comment explaining limitations (only catches render errors, not async)
-  - Export from `packages/ui/src/index.ts` by adding `export * from './components/ErrorBoundary'`
-  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.7_
+  - [x] 1.1 Run lint/typecheck/test audit
 
-- [x] 2.2 Add ErrorBoundary to Admin app
-  - Wrap page routes in `admin/src/app/app.tsx` with ErrorBoundary
-  - Place ErrorBoundary inside Layout to preserve header/sidebar
-  - _Requirements: 2.1, 2.6_
 
-- [x] 2.3 Add ErrorBoundary to Landing app
-  - Update `landing/src/app/app.tsx` to wrap routes with ErrorBoundary
-  - Keep existing SectionErrorBoundary for section-level errors (more granular)
-  - _Requirements: 2.2, 2.6_
+    - Execute `pnpm nx run-many --target=lint --all`
+    - Execute `pnpm nx run-many --target=typecheck --all`
+    - Execute `pnpm nx run-many --target=test --all`
+    - Document all errors found
+    - _Requirements: 1.1, 1.2, 1.3_
+  - [x] 1.2 Fix API lint and type errors
 
-## 3. Markdown Content Sanitization
 
-- [x] 3.1 Install rehype-sanitize package
-  - Add `rehype-sanitize` to `landing/package.json` dependencies
-  - Run `pnpm install` from project root
-  - _Requirements: 3.1_
+    - Fix all errors in `api/src/routes/`, `api/src/services/`, `api/src/schemas/`
+    - Fix import order, unused variables, any types
+    - Ensure schemas exported from index.ts
+    - _Requirements: 1.1, 1.2, 2.1, 2.2, 2.3, 4.1_
+  - [x] 1.3 Verify API security compliance
 
-- [x] 3.2 Create sanitization schema
-  - Create `landing/src/app/utils/markdown.ts`
-  - Define custom sanitization schema with safe tags only
-  - Whitelist: h1-h6, p, a, img, ul, ol, li, blockquote, code, pre, strong, em
-  - Remove: script, style, iframe, embed, object, form, input, button
-  - Allow img attributes: src, alt, title, width, height (no style)
-  - _Requirements: 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8_
 
-- [x] 3.3 Update BlogDetailPage to use sanitization
-  - Import sanitizeSchema from utils/markdown
-  - Add rehypeSanitize plugin to ReactMarkdown
-  - _Requirements: 3.1_
+    - Verify all `/admin/*` routes have authenticate() + requireRole('ADMIN')
+    - Verify all `/contractor/*` routes have authenticate() + requireRole('CONTRACTOR')
+    - Verify all `/homeowner/*` routes have authenticate() + requireRole('HOMEOWNER')
+    - Verify public POST routes have rate limiting
+    - _Requirements: 5.1, 5.2, 5.3, 5.4_
+  - [ ]* 1.4 Write property test for API file structure compliance
+    - **Property 1: API File Structure Compliance**
+    - **Property 2: Service File Structure Compliance**
+    - **Property 3: Schema File Structure Compliance**
+    - **Validates: Requirements 2.1, 2.2, 2.3**
+  - [ ]* 1.5 Write property test for API route authentication
+    - **Property 4: Admin Route Authentication**
+    - **Property 5: Contractor Route Authentication**
+    - **Property 6: Homeowner Route Authentication**
+    - **Validates: Requirements 5.1, 5.2, 5.3**
 
-- [x] 3.4 Write property test for markdown sanitization (optional)
-  - **Property 2: Markdown Sanitization Removes Dangerous Content**
-  - **Property 3: Markdown Sanitization Preserves Safe Content**
-  - **Validates: Requirements 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8**
+- [x] 2. Checkpoint - API Layer
 
-## 4. Checkpoint - Ensure all tests pass
 
-- [x] 4.1 Run all tests and fix issues
+
+  - Ensure all API tests pass, ask the user if questions arise.
+
+---
+
+## Phase B: Frontend Fixes
+
+- [x] 3. Fix Admin UI
+
+
+
+
+
+
+  - [x] 3.1 Fix Admin lint and type errors
+
+    - Fix all errors in `admin/src/app/pages/`, `admin/src/app/components/`
+    - Fix import order, unused variables, any types
+    - _Requirements: 1.1, 1.2, 3.1_
+
+  - [x] 3.2 Verify Admin UI completeness
+
+    - Verify ContractorsPage, RegionsPage, ProjectsPage, BidsPage working
+    - Verify MatchesPage, FeesPage, DisputesPage working
+    - Verify ChatPage, NotificationTemplatesPage, SettingsPage working
+    - _Requirements: 6.1_
+
+
+
+- [x] 4. Fix Portal UI
+
+
+
+
+  - [x] 4.1 Fix Portal lint and type errors
+
+    - Fix all errors in `portal/src/pages/`, `portal/src/components/`
+    - Fix all errors in `portal/src/hooks/`, `portal/src/contexts/`
+    - _Requirements: 1.1, 1.2, 3.2, 3.3, 3.4, 3.5_
+
+  - [x] 4.2 Verify Portal UI completeness
+
+    - Verify Auth pages (LoginPage, RegisterPage) working
+    - Verify Homeowner pages (Dashboard, Projects, CreateProject) working
+    - Verify Contractor pages (Dashboard, Marketplace, MyBids, Profile) working
+    - Verify Public pages (Marketplace, ContractorDirectory) working
+    - _Requirements: 6.2_
+
+
+- [x] 5. Fix Landing UI
+
+
+
+
+
+
+
+  - [x] 5.1 Fix Landing lint and type errors
+
+
+
+    - Fix all errors in `landing/src/app/components/`, `landing/src/app/pages/`
+    - _Requirements: 1.1, 1.2_
+  - [x] 5.2 Verify Landing UI completeness
+
+
+    - Verify ReviewForm, StarRating, RatingBreakdown working
+    - Verify UnsubscribePage working
+    - _Requirements: 6.2_
+
+- [x] 6. Checkpoint - Frontend
+
+
+
+  - Ensure all frontend builds without errors, ask the user if questions arise.
+
+---
+
+## Phase C: Property Tests Verification
+
+- [x] 7. Verify and Fix Property Tests
+
+
+
+
+
+  - [x] 7.1 Verify Phase 1-2 property tests
+
+
+    - Run and verify contractor.service, region.service, bidding-settings.service tests
+    - Run and verify project.service.property.test.ts, bid.service.property.test.ts
+    - Fix any failing tests
+    - _Requirements: 7.1, 7.3_
+
+  - [x] 7.2 Verify Phase 3 property tests
+
+    - Run and verify escrow.service.property.test.ts
+    - Run and verify fee.service.property.test.ts
+    - Run and verify match.service.property.test.ts
+    - Run and verify notification.service.property.test.ts
+    - Fix any failing tests
+    - _Requirements: 7.1, 7.3_
+
+  - [x] 7.3 Verify Phase 4-5 property tests
+
+    - Run and verify chat.service.property.test.ts
+    - Run and verify notification-channel.service.property.test.ts
+    - Run and verify review.service.property.test.ts, ranking.service.property.test.ts
+    - Fix any failing tests
+    - _Requirements: 7.1, 7.3_
+
+  - [x] 7.4 Verify Phase 6 property tests
+
+    - Run and verify Portal property tests
+    - Fix any failing tests
+    - _Requirements: 7.1, 7.3_
+
+
+
+  - [x] 7.5 Write property test for service-test file pairing
+
+
+
+
+    - **Property 7: Property Test Coverage**
+    - **Validates: Requirements 7.1**
+
+- [x] 8. Checkpoint - Property Tests
+
+
+
+
+
+  - Ensure all property tests pass, ask the user if questions arise.
+
+---
+
+## Phase D: Documentation & Final Verification
+
+- [x] 9. Update Documentation
+
+
+
+
+
+  - [x] 9.1 Update security-checklist.md
+
+
+    - Verify all routes in Protected Routes Registry
+    - Add any missing routes
+    - _Requirements: 8.1_
+  - [x] 9.2 Update ath-business-logic.md
+
+
+    - Verify all data models documented
+    - Verify all status flows documented
+    - _Requirements: 8.2_
+  - [x]* 9.3 Update DAILY_CHANGELOG.md
+
+
+
+    - Document all fixes made
+    - _Requirements: 8.3_
+
+- [x] 10. Final Verification
+
+
+
+
+
+
+  - [x] 10.1 Run final full audit
+
+    - Execute `pnpm nx run-many --target=lint --all` - verify 0 errors/warnings
+    - Execute `pnpm nx run-many --target=typecheck --all` - verify 0 errors
+    - Execute `pnpm nx run-many --target=test --all` - verify all pass
+    - _Requirements: 1.1, 1.2, 1.3_
+
+- [x] 11. Final Checkpoint
+
+
+
+
+
   - Ensure all tests pass, ask the user if questions arise.
 
-## 5. Correlation-ID Middleware
+---
 
-- [x] 5.1 Create correlation-id middleware
-  - Create `api/src/middleware/correlation-id.ts`
-  - Implement `generateCorrelationId()` utility function (abstracted for future customization)
-  - Implement `correlationId()` middleware
-  - Store in Hono context using `c.set('correlationId', id)`
-  - Add `X-Correlation-ID` header to response
-  - Export `getCorrelationId(c)` helper to retrieve from context
-  - _Requirements: 4.1, 4.2, 4.3, 4.6, 4.7_
+## Summary
 
-- [x] 5.2 Create structured logger utility
-  - Create `api/src/utils/logger.ts`
-  - Implement `createLogger(c?: Context)` function
-  - Output structured JSON logs with fields: timestamp, level, message, correlationId, path, method, userId
-  - Support debug, info, warn, error levels
-  - _Requirements: 4.4, 5.2_
+| Phase | Tasks | Priority | Estimate |
+|-------|-------|----------|----------|
+| A. API Audit & Fix | 1-2 | HIGH | 2-3h |
+| B. Frontend Fixes | 3-6 | HIGH | 3-4h |
+| C. Property Tests | 7-8 | HIGH | 1-2h |
+| D. Documentation | 9-11 | MEDIUM | 1h |
 
-- [x] 5.3 Add correlation-id middleware to API
-  - Update `api/src/main.ts` to use correlationId middleware
-  - Add `app.use('*', correlationId())` after security headers, before auth middleware
-  - Update Hono app type: `Hono<{ Variables: { user?: User; correlationId: string } }>`
-  - Verify: All requests should have X-Correlation-ID in response headers
-  - _Requirements: 4.1, 4.2, 4.3_
+**Total Estimate: 7-10 hours (1 day)**
 
-- [x] 5.4 Write property test for correlation-id (optional)
-  - **Property 4: Correlation-ID Round Trip**
-  - Test: request without header → response has valid UUID
-  - Test: request with header → response echoes same ID
-  - **Validates: Requirements 4.1, 4.2, 4.3**
+---
 
-## 6. Centralized Error Handler
+## Notes
 
-- [x] 6.1 Create error handler middleware
-  - Create `api/src/middleware/error-handler.ts`
-  - Import and use `createLogger` for structured logging
-  - Handle ZodError → 400 with `err.flatten()` details
-  - Handle AuthError → status from `error.statusCode` with code and message
-  - Handle Prisma P2025 (Record not found) → 404
-  - Handle Prisma P2002 (Unique constraint) → 409
-  - Include correlationId in all error responses
-  - Include stack trace in response only when `NODE_ENV !== 'production'`
-  - _Requirements: 5.1, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9_
+### Fix Strategy
+1. **Root Cause Fix**: Không dùng eslint-disable, không bypass
+2. **Type Safety**: Không dùng `any`, sử dụng proper types
+3. **Consistency**: Follow existing patterns trong codebase
 
-- [x] 6.2 Add error handler to API
-  - Update `api/src/main.ts` to use `app.onError(errorHandler())`
-  - Place at the end of file, after all routes are defined
-  - DO NOT remove existing try-catch blocks in routes yet (they provide specific error messages)
-  - Verify: Throw test error in a route, check response has correlationId
-  - _Requirements: 5.1, 5.2_
-
-- [x] 6.3 Write property tests for error handler (optional)
-  - **Property 5: Error Response Contains Correlation ID**
-  - **Property 6: Zod Validation Error Returns 400**
-  - **Property 7: AuthError Returns Correct Status**
-  - Test various error types and verify correct status codes
-  - **Validates: Requirements 4.5, 5.5, 5.6, 5.7**
-
-## 7. Final Checkpoint - Ensure all tests pass
-
-- [x] 7.1 Run final verification
-  - Ensure all tests pass, ask the user if questions arise.
-
-## 8. Update Steering Files
-
-- [x] 8.1 Update react-patterns.md
-  - Replace direct `import.meta.env.VITE_API_URL` with `import { API_URL } from '@app/shared'`
-  - Add note about centralized config module
-  - _Requirements: 1.7_
-
-- [x] 8.2 Update common-mistakes.md
-  - Update API_URL example to use `@app/shared`
-  - Add section about Error Boundaries
-  - _Requirements: 1.7_
-
-- [x] 8.3 Update api-patterns.md
-  - Add Correlation-ID middleware pattern
-  - Add Centralized Error Handler pattern
-  - Add Structured Logging pattern
-  - _Requirements: 4.4, 5.2_
+### Priority Order
+1. Lint errors (blocking build)
+2. Type errors (blocking build)
+3. Test failures (blocking CI)
+4. Structure issues (maintainability)
+5. Documentation (future development)

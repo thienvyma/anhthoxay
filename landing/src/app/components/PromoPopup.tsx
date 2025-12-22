@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens, API_URL } from '@app/shared';
+import { tokens, API_URL, resolveMediaUrl } from '@app/shared';
 
 interface PopupSettings {
   enabled: boolean;
@@ -156,7 +156,7 @@ export function PromoPopup() {
               {settings.imageUrl && (
                 <div style={{ width: '100%', maxHeight: 280, overflow: 'hidden' }}>
                   <img
-                    src={settings.imageUrl}
+                    src={resolveMediaUrl(settings.imageUrl)}
                     alt={settings.title}
                     style={{
                       width: '100%',

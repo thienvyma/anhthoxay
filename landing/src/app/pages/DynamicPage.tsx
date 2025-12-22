@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { tokens, API_URL } from '@app/shared';
 import { PageRenderer } from '../components/PageRenderer';
+import { MaintenancePage } from '../components/MaintenancePage';
 import type { PageData } from '../types';
 
 export function DynamicPage() {
@@ -102,6 +103,15 @@ export function DynamicPage() {
           Về trang chủ
         </a>
       </div>
+    );
+  }
+
+  // Check if page is disabled (isActive === false)
+  if (page.isActive === false) {
+    return (
+      <MaintenancePage 
+        title={`${page.title || slug} - Sắp Ra Mắt`}
+      />
     );
   }
 

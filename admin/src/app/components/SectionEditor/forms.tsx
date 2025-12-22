@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { tokens } from '@app/shared';
 import { Button } from '../Button';
 import { Input, TextArea } from '../Input';
 import { ImageDropzone } from '../ImageDropzone';
 import { RichTextEditor } from '../RichTextEditor';
+import { VisualBlockEditor } from '../VisualBlockEditor';
 import { IconPicker } from '../IconPicker';
 import type { SectionKind } from './types';
 import { generateUniqueId } from './utils';
@@ -63,10 +64,7 @@ export function renderFormFields(
 
     case 'RICH_TEXT':
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <InfoBanner icon="ri-lightbulb-flash-line" color="#a78bfa" title="Nội Dung Tùy Chỉnh" description="Sử dụng markdown để định dạng." />
-          <RichTextEditor label="Nội dung" value={data.content || data.html || ''} onChange={(v) => updateField('content', v)} rows={15} />
-        </div>
+        <RichTextSectionForm data={data} updateField={updateField} />
       );
 
     case 'BANNER':
@@ -553,6 +551,24 @@ export function renderFormFields(
               <Input label="Chiều rộng tối đa (px)" type="number" value={data.maxWidth || 900} onChange={(v) => updateField('maxWidth', parseInt(v) || 900)} fullWidth />
             </div>
           </div>
+          
+          {/* Disclaimer Text */}
+          <div style={{ background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: tokens.radius.md, padding: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <i className="ri-information-line" style={{ fontSize: 18, color: '#EF4444' }} />
+              <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>Ghi chú kết quả</label>
+            </div>
+            <TextArea 
+              label="Nội dung ghi chú" 
+              value={data.disclaimerText || '* Giá trên chỉ mang tính tham khảo. Liên hệ để được báo giá chính xác.'} 
+              onChange={(v) => updateField('disclaimerText', v)} 
+              placeholder="* Giá trên chỉ mang tính tham khảo. Liên hệ để được báo giá chính xác." 
+              fullWidth 
+            />
+            <p style={{ color: tokens.color.muted, fontSize: 12, margin: '8px 0 0', lineHeight: 1.4 }}>
+              Nội dung này hiển thị bên dưới kết quả dự toán trên landing page.
+            </p>
+          </div>
         </div>
       );
 
@@ -576,6 +592,107 @@ export function renderFormFields(
             )}
           />
         </div>
+      );
+
+    case 'INTERIOR_QUOTE':
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <InfoBanner icon="ri-home-smile-line" color="#10B981" title="Báo Giá Nội Thất (Legacy)" description="Section cũ - khuyến nghị dùng INTERIOR_WIZARD thay thế." />
+          <Input label="Tiêu đề" value={data.title || ''} onChange={(v) => updateField('title', v)} placeholder="Báo Giá Nội Thất" fullWidth />
+          <TextArea label="Mô tả" value={data.subtitle || ''} onChange={(v) => updateField('subtitle', v)} placeholder="Chọn căn hộ và gói nội thất để nhận báo giá chi tiết ngay lập tức" fullWidth />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input type="checkbox" checked={data.showHeader !== false} onChange={(e) => updateField('showHeader', e.target.checked)} />
+            <span style={{ color: tokens.color.text, fontSize: 13 }}>Hiển thị tiêu đề và mô tả</span>
+          </label>
+        </div>
+      );
+
+    case 'INTERIOR_WIZARD':
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <InfoBanner 
+            icon="ri-home-smile-line" 
+            color="#10B981" 
+            title="Báo Giá Nội Thất (Wizard)" 
+            description="Wizard 7 bước để khách hàng chọn căn hộ và gói nội thất. Dữ liệu được lấy từ module Nội Thất trong Admin." 
+          />
+          
+          {/* Header Configuration */}
+          <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: tokens.radius.md, padding: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+              <i className="ri-layout-top-line" style={{ fontSize: 18, color: '#10B981' }} />
+              <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>Tiêu đề Section</label>
+            </div>
+            
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 16 }}>
+              <input type="checkbox" checked={data.showHeader !== false} onChange={(e) => updateField('showHeader', e.target.checked)} />
+              <span style={{ color: tokens.color.text, fontSize: 13 }}>Hiển thị tiêu đề và mô tả</span>
+            </label>
+            
+            <Input label="Tiêu đề" value={data.title || ''} onChange={(v) => updateField('title', v)} placeholder="Báo Giá Nội Thất" fullWidth />
+            <div style={{ marginTop: 12 }}>
+              <TextArea label="Mô tả" value={data.subtitle || ''} onChange={(v) => updateField('subtitle', v)} placeholder="Chọn căn hộ và gói nội thất để nhận báo giá chi tiết ngay lập tức" fullWidth />
+            </div>
+            <div style={{ marginTop: 12 }}>
+              <IconPicker label="Icon tiêu đề" value={data.headerIcon || 'ri-home-smile-fill'} onChange={(v) => updateField('headerIcon', v)} />
+            </div>
+          </div>
+          
+          {/* Layout Options */}
+          <div style={{ background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: tokens.radius.md, padding: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <i className="ri-settings-3-line" style={{ fontSize: 18, color: '#3B82F6' }} />
+              <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>Tùy chọn hiển thị</label>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: 6, color: tokens.color.text, fontSize: 13, fontWeight: 500 }}>Kiểu nền</label>
+                <select
+                  value={data.backgroundStyle || 'default'}
+                  onChange={(e) => updateField('backgroundStyle', e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: tokens.radius.md,
+                    border: `1px solid ${tokens.color.border}`,
+                    background: tokens.color.surface,
+                    color: tokens.color.text,
+                    fontSize: 14,
+                  }}
+                >
+                  <option value="default">Mặc định</option>
+                  <option value="glass">Glass effect</option>
+                  <option value="gradient">Gradient</option>
+                </select>
+              </div>
+              <Input 
+                label="Chiều rộng tối đa (px)" 
+                type="number" 
+                value={data.maxWidth || 1200} 
+                onChange={(v) => updateField('maxWidth', parseInt(v) || 1200)} 
+                fullWidth 
+              />
+            </div>
+          </div>
+          
+          {/* Data Source Info */}
+          <div style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: tokens.radius.md, padding: 16, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <i className="ri-database-2-line" style={{ fontSize: 20, color: '#F59E0B', marginTop: 2 }} />
+            <div>
+              <p style={{ color: tokens.color.text, fontSize: 14, margin: 0, fontWeight: 500, marginBottom: 4 }}>Dữ liệu từ Module Nội Thất</p>
+              <p style={{ color: tokens.color.muted, fontSize: 13, margin: 0, lineHeight: 1.5 }}>
+                Wizard sẽ tự động lấy dữ liệu Chủ đầu tư, Dự án, Tòa nhà, Căn hộ, Mặt bằng và Gói nội thất từ module Nội Thất. 
+                Quản lý dữ liệu tại <strong>Admin → Nội Thất</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'INTERIOR_PRICING_TABLE':
+      return (
+        <InteriorPricingTableForm data={data} updateField={updateField} addArrayItem={addArrayItem} removeArrayItem={removeArrayItem} />
       );
 
     default:
@@ -691,6 +808,547 @@ function ArraySection({ label, items, onAdd, onRemove, renderItem }: { label: st
       {items.length === 0 && (
         <div style={{ color: tokens.color.muted, fontSize: 13, textAlign: 'center', padding: 16 }}>Chưa có mục nào. Nhấn "Thêm" để thêm mới.</div>
       )}
+    </div>
+  );
+}
+
+
+// Rich Text Section Form with Visual/Code toggle
+function RichTextSectionForm({ data, updateField }: { data: DataRecord; updateField: UpdateFieldFn }) {
+  const [editorMode, setEditorMode] = useState<'visual' | 'markdown'>('visual');
+  
+  // Determine if content is JSON blocks or markdown
+  const isBlocksFormat = (() => {
+    try {
+      const parsed = JSON.parse(data.content || data.html || '');
+      return Array.isArray(parsed);
+    } catch {
+      return false;
+    }
+  })();
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <InfoBanner 
+        icon="ri-magic-line" 
+        color="#a78bfa" 
+        title="Nội Dung Tùy Chỉnh" 
+        description="Tạo nội dung đẹp mắt với Visual Editor hoặc viết Markdown trực tiếp." 
+      />
+      
+      {/* Editor Mode Toggle */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 8,
+        padding: 12,
+        background: 'rgba(167, 139, 250, 0.1)',
+        border: '1px solid rgba(167, 139, 250, 0.3)',
+        borderRadius: tokens.radius.md,
+      }}>
+        <i className="ri-tools-line" style={{ color: '#a78bfa', fontSize: 18 }} />
+        <span style={{ color: tokens.color.text, fontSize: 14, fontWeight: 500, marginRight: 'auto' }}>
+          Chế độ soạn thảo:
+        </span>
+        <div style={{ display: 'flex', gap: 4, background: 'rgba(0,0,0,0.2)', borderRadius: tokens.radius.md, padding: 4 }}>
+          <button
+            type="button"
+            onClick={() => setEditorMode('visual')}
+            style={{
+              padding: '6px 14px',
+              fontSize: 13,
+              fontWeight: 500,
+              background: editorMode === 'visual' ? tokens.color.primary : 'transparent',
+              color: editorMode === 'visual' ? '#111' : tokens.color.muted,
+              border: 'none',
+              borderRadius: tokens.radius.sm,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <i className="ri-drag-drop-line" />
+            Visual
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditorMode('markdown')}
+            style={{
+              padding: '6px 14px',
+              fontSize: 13,
+              fontWeight: 500,
+              background: editorMode === 'markdown' ? tokens.color.primary : 'transparent',
+              color: editorMode === 'markdown' ? '#111' : tokens.color.muted,
+              border: 'none',
+              borderRadius: tokens.radius.sm,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <i className="ri-markdown-line" />
+            Markdown
+          </button>
+        </div>
+      </div>
+
+      {/* Visual Block Editor */}
+      {editorMode === 'visual' && (
+        <VisualBlockEditor
+          label="Nội dung (kéo thả để sắp xếp)"
+          value={data.content || data.html || ''}
+          onChange={(v) => updateField('content', v)}
+        />
+      )}
+
+      {/* Markdown Editor */}
+      {editorMode === 'markdown' && (
+        <>
+          {isBlocksFormat && (
+            <div style={{
+              padding: 12,
+              background: 'rgba(245, 158, 11, 0.1)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: tokens.radius.md,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}>
+              <i className="ri-alert-line" style={{ color: '#F59E0B', fontSize: 18 }} />
+              <span style={{ color: tokens.color.text, fontSize: 13 }}>
+                Nội dung đang ở định dạng Visual Blocks. Chuyển sang Markdown sẽ mất cấu trúc blocks.
+              </span>
+            </div>
+          )}
+          <RichTextEditor 
+            label="Nội dung Markdown" 
+            value={isBlocksFormat ? '' : (data.content || data.html || '')} 
+            onChange={(v) => updateField('content', v)} 
+            rows={15} 
+          />
+        </>
+      )}
+
+      {/* Style Options */}
+      <div style={{ 
+        background: 'rgba(255,255,255,0.02)', 
+        border: `1px solid ${tokens.color.border}`, 
+        borderRadius: tokens.radius.md, 
+        padding: 16 
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <i className="ri-palette-line" style={{ fontSize: 18, color: tokens.color.primary }} />
+          <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>Tùy chọn hiển thị</label>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: 6, color: tokens.color.text, fontSize: 13, fontWeight: 500 }}>
+              Chiều rộng tối đa
+            </label>
+            <select
+              value={data.maxWidth || 'default'}
+              onChange={(e) => updateField('maxWidth', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: tokens.radius.md,
+                border: `1px solid ${tokens.color.border}`,
+                background: tokens.color.surface,
+                color: tokens.color.text,
+                fontSize: 14,
+              }}
+            >
+              <option value="default">Mặc định (800px)</option>
+              <option value="narrow">Hẹp (600px)</option>
+              <option value="wide">Rộng (1000px)</option>
+              <option value="full">Toàn màn hình</option>
+            </select>
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: 6, color: tokens.color.text, fontSize: 13, fontWeight: 500 }}>
+              Padding
+            </label>
+            <select
+              value={data.padding || 'normal'}
+              onChange={(e) => updateField('padding', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: tokens.radius.md,
+                border: `1px solid ${tokens.color.border}`,
+                background: tokens.color.surface,
+                color: tokens.color.text,
+                fontSize: 14,
+              }}
+            >
+              <option value="none">Không có</option>
+              <option value="small">Nhỏ</option>
+              <option value="normal">Bình thường</option>
+              <option value="large">Lớn</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Interior Pricing Table Form
+function InteriorPricingTableForm({
+  data,
+  updateField,
+  addArrayItem,
+  removeArrayItem,
+}: {
+  data: DataRecord;
+  updateField: UpdateFieldFn;
+  addArrayItem: AddArrayItemFn;
+  removeArrayItem: RemoveArrayItemFn;
+}) {
+  const [dataSource, setDataSource] = useState<'static' | 'api'>(data.fetchFromApi ? 'api' : 'static');
+
+  const handleDataSourceChange = (source: 'static' | 'api') => {
+    setDataSource(source);
+    updateField('fetchFromApi', source === 'api');
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <InfoBanner
+        icon="ri-price-tag-3-line"
+        color="#8B5CF6"
+        title="Bảng Báo Giá Nội Thất"
+        description="Hiển thị bảng giá các gói nội thất với tiêu đề, mô tả và danh sách gói."
+      />
+
+      {/* Header */}
+      <Input
+        label="Tiêu đề"
+        value={data.title || ''}
+        onChange={(v) => updateField('title', v)}
+        placeholder="Bảng Báo Giá Nội Thất"
+        fullWidth
+      />
+      <TextArea
+        label="Mô tả ngắn"
+        value={data.subtitle || ''}
+        onChange={(v) => updateField('subtitle', v)}
+        placeholder="Chọn gói nội thất phù hợp với nhu cầu và ngân sách của bạn"
+        fullWidth
+      />
+      <TextArea
+        label="Mô tả chi tiết (tùy chọn)"
+        value={data.description || ''}
+        onChange={(v) => updateField('description', v)}
+        placeholder="Mô tả thêm về các gói nội thất..."
+        rows={3}
+        fullWidth
+      />
+
+      {/* Data Source Toggle */}
+      <div
+        style={{
+          background: 'rgba(139, 92, 246, 0.05)',
+          border: '1px solid rgba(139, 92, 246, 0.2)',
+          borderRadius: tokens.radius.md,
+          padding: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <i className="ri-database-2-line" style={{ fontSize: 18, color: '#8B5CF6' }} />
+          <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>
+            Nguồn dữ liệu
+          </label>
+        </div>
+
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              cursor: 'pointer',
+              padding: '10px 16px',
+              background: dataSource === 'static' ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
+              border: `1px solid ${dataSource === 'static' ? '#8B5CF6' : tokens.color.border}`,
+              borderRadius: tokens.radius.md,
+              flex: 1,
+            }}
+          >
+            <input
+              type="radio"
+              checked={dataSource === 'static'}
+              onChange={() => handleDataSourceChange('static')}
+            />
+            <div>
+              <span style={{ color: tokens.color.text, fontSize: 13, fontWeight: 500, display: 'block' }}>
+                Nhập thủ công
+              </span>
+              <span style={{ color: tokens.color.muted, fontSize: 11 }}>Tự định nghĩa các gói</span>
+            </div>
+          </label>
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              cursor: 'pointer',
+              padding: '10px 16px',
+              background: dataSource === 'api' ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
+              border: `1px solid ${dataSource === 'api' ? '#8B5CF6' : tokens.color.border}`,
+              borderRadius: tokens.radius.md,
+              flex: 1,
+            }}
+          >
+            <input
+              type="radio"
+              checked={dataSource === 'api'}
+              onChange={() => handleDataSourceChange('api')}
+            />
+            <div>
+              <span style={{ color: tokens.color.text, fontSize: 13, fontWeight: 500, display: 'block' }}>
+                Từ hệ thống
+              </span>
+              <span style={{ color: tokens.color.muted, fontSize: 11 }}>Lấy từ Interior Module</span>
+            </div>
+          </label>
+        </div>
+
+        {dataSource === 'api' && (
+          <Input
+            label="Layout ID (tùy chọn - để trống sẽ lấy gói nổi bật)"
+            value={data.layoutId || ''}
+            onChange={(v) => updateField('layoutId', v)}
+            placeholder="Nhập Layout ID để lọc theo layout cụ thể"
+            fullWidth
+          />
+        )}
+      </div>
+
+      {/* Static Tiers */}
+      {dataSource === 'static' && (
+        <ArraySection
+          label={`Gói báo giá (${data.tiers?.length || 0})`}
+          items={data.tiers || []}
+          onAdd={() =>
+            addArrayItem('tiers', {
+              _id: generateUniqueId(),
+              name: 'Gói mới',
+              tier: 'BASIC',
+              price: 0,
+              description: '',
+              features: [],
+              isPopular: false,
+            })
+          }
+          onRemove={(idx) => removeArrayItem('tiers', idx)}
+          renderItem={(item, idx) => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+                <Input
+                  label="Tên gói"
+                  value={item.name || ''}
+                  onChange={(v) => updateField(`tiers.${idx}.name`, v)}
+                  placeholder="Gói Cơ Bản"
+                  fullWidth
+                />
+                <div>
+                  <label
+                    style={{
+                      display: 'block',
+                      marginBottom: 6,
+                      color: tokens.color.text,
+                      fontSize: 13,
+                      fontWeight: 500,
+                    }}
+                  >
+                    Cấp độ
+                  </label>
+                  <select
+                    value={item.tier || 'BASIC'}
+                    onChange={(e) => updateField(`tiers.${idx}.tier`, e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: tokens.radius.md,
+                      border: `1px solid ${tokens.color.border}`,
+                      background: tokens.color.surface,
+                      color: tokens.color.text,
+                      fontSize: 14,
+                    }}
+                  >
+                    <option value="BASIC">Cơ bản</option>
+                    <option value="STANDARD">Tiêu chuẩn</option>
+                    <option value="PREMIUM">Cao cấp</option>
+                    <option value="LUXURY">Sang trọng</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Input
+                  label="Giá (VNĐ)"
+                  type="number"
+                  value={item.price || 0}
+                  onChange={(v) => updateField(`tiers.${idx}.price`, parseInt(v) || 0)}
+                  fullWidth
+                />
+                <Input
+                  label="Nhãn giá (tùy chọn)"
+                  value={item.priceLabel || ''}
+                  onChange={(v) => updateField(`tiers.${idx}.priceLabel`, v)}
+                  placeholder="/căn hộ"
+                  fullWidth
+                />
+              </div>
+
+              <TextArea
+                label="Mô tả"
+                value={item.description || ''}
+                onChange={(v) => updateField(`tiers.${idx}.description`, v)}
+                placeholder="Mô tả ngắn về gói..."
+                rows={2}
+                fullWidth
+              />
+
+              <Input
+                label="Tính năng (phân cách bằng dấu phẩy)"
+                value={Array.isArray(item.features) ? item.features.join(', ') : item.features || ''}
+                onChange={(v) =>
+                  updateField(
+                    `tiers.${idx}.features`,
+                    v
+                      .split(',')
+                      .map((s: string) => s.trim())
+                      .filter(Boolean)
+                  )
+                }
+                placeholder="Sofa, Bàn ăn, Giường ngủ, Tủ quần áo"
+                fullWidth
+              />
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Input
+                  label="Text nút CTA"
+                  value={item.ctaText || ''}
+                  onChange={(v) => updateField(`tiers.${idx}.ctaText`, v)}
+                  placeholder="Liên hệ tư vấn"
+                  fullWidth
+                />
+                <Input
+                  label="Link CTA"
+                  value={item.ctaLink || ''}
+                  onChange={(v) => updateField(`tiers.${idx}.ctaLink`, v)}
+                  placeholder="/noi-that"
+                  fullWidth
+                />
+              </div>
+
+              <ImageSection
+                label="Hình ảnh (tùy chọn)"
+                value={item.thumbnail || ''}
+                onChange={(url) => updateField(`tiers.${idx}.thumbnail`, url)}
+              />
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={item.isPopular || false}
+                  onChange={(e) => updateField(`tiers.${idx}.isPopular`, e.target.checked)}
+                />
+                <span style={{ color: tokens.color.text, fontSize: 13 }}>Đánh dấu là gói phổ biến</span>
+              </label>
+            </div>
+          )}
+        />
+      )}
+
+      {/* Display Options */}
+      <div
+        style={{
+          background: 'rgba(59, 130, 246, 0.05)',
+          border: '1px solid rgba(59, 130, 246, 0.2)',
+          borderRadius: tokens.radius.md,
+          padding: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <i className="ri-settings-3-line" style={{ fontSize: 18, color: '#3B82F6' }} />
+          <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>
+            Tùy chọn hiển thị
+          </label>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: 6,
+                color: tokens.color.text,
+                fontSize: 13,
+                fontWeight: 500,
+              }}
+            >
+              Số cột
+            </label>
+            <select
+              value={data.columns || 3}
+              onChange={(e) => updateField('columns', parseInt(e.target.value))}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: tokens.radius.md,
+                border: `1px solid ${tokens.color.border}`,
+                background: tokens.color.surface,
+                color: tokens.color.text,
+                fontSize: 14,
+              }}
+            >
+              <option value={2}>2 cột</option>
+              <option value={3}>3 cột</option>
+              <option value={4}>4 cột</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={data.showFeatures !== false}
+                onChange={(e) => updateField('showFeatures', e.target.checked)}
+              />
+              <span style={{ color: tokens.color.text, fontSize: 13 }}>Hiển thị tính năng</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={data.showCta !== false}
+                onChange={(e) => updateField('showCta', e.target.checked)}
+              />
+              <span style={{ color: tokens.color.text, fontSize: 13 }}>Hiển thị nút CTA</span>
+            </label>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
+          <Input
+            label="Text CTA mặc định"
+            value={data.ctaText || ''}
+            onChange={(v) => updateField('ctaText', v)}
+            placeholder="Liên hệ tư vấn"
+            fullWidth
+          />
+          <Input
+            label="Link CTA mặc định"
+            value={data.ctaLink || ''}
+            onChange={(v) => updateField('ctaLink', v)}
+            placeholder="/noi-that"
+            fullWidth
+          />
+        </div>
+      </div>
     </div>
   );
 }

@@ -173,6 +173,90 @@ export function createMediaRoutes(prisma: PrismaClient, mediaDir?: string) {
     }
   });
 
+  /**
+   * @route POST /media/user-upload
+   * @description Upload a file for authenticated users (contractors, homeowners)
+   * @access Authenticated users (CONTRACTOR, HOMEOWNER, ADMIN, MANAGER)
+   */
+  app.post('/user-upload', authenticate(), async (c) => {
+    try {
+      const body = await c.req.parseBody();
+      const file = body.file as UploadedFile | undefined;
+      
+      if (!file) {
+        return errorResponse(c, 'VALIDATION_ERROR', 'File is required', 400);
+      }
+
+      // Get buffer from file
+      let buffer: Buffer;
+      if (file.arrayBuffer) {
+        buffer = Buffer.from(await file.arrayBuffer());
+      } else if (Buffer.isBuffer(file)) {
+        buffer = file;
+      } else if (file.buffer) {
+        buffer = Buffer.from(file.buffer);
+      } else {
+        return errorResponse(c, 'VALIDATION_ERROR', 'Unsupported file format', 400);
+      }
+
+      // Limit file size to 10MB for user uploads
+      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+      if (buffer.length > MAX_FILE_SIZE) {
+        return errorResponse(c, 'VALIDATION_ERROR', 'File size exceeds 10MB limit', 400);
+      }
+
+      const id = crypto.randomUUID();
+      const mimeType = file.type || 'application/octet-stream';
+
+      // Optimize images to WebP
+      if (mimeType.startsWith('image/')) {
+        const optimized = await sharp(buffer).webp({ quality: 85 }).toBuffer();
+        const metadata = await sharp(buffer).metadata();
+        const filename = `${id}.webp`;
+        
+        fs.writeFileSync(path.join(resolvedMediaDir, filename), optimized);
+        
+        const asset = await prisma.mediaAsset.create({
+          data: {
+            id,
+            url: `/media/${filename}`,
+            mimeType: 'image/webp',
+            width: metadata.width || null,
+            height: metadata.height || null,
+            size: optimized.length,
+          },
+        });
+        
+        return successResponse(c, asset, 201);
+      }
+
+      // Non-image files (PDF, DOC, etc.)
+      const ext = (file.name?.split('.').pop() || 'bin').toLowerCase();
+      const allowedExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'];
+      if (!allowedExtensions.includes(ext)) {
+        return errorResponse(c, 'VALIDATION_ERROR', 'File type not allowed. Allowed: PDF, DOC, DOCX, XLS, XLSX, TXT', 400);
+      }
+      
+      const filename = `${id}.${ext}`;
+      
+      fs.writeFileSync(path.join(resolvedMediaDir, filename), buffer);
+      
+      const asset = await prisma.mediaAsset.create({
+        data: {
+          id,
+          url: `/media/${filename}`,
+          mimeType,
+          size: buffer.length,
+        },
+      });
+      
+      return successResponse(c, asset, 201);
+    } catch (error) {
+      console.error('User upload error:', error);
+      return errorResponse(c, 'INTERNAL_ERROR', 'Upload failed', 500);
+    }
+  });
+
   // ============================================
   // MEDIA SYNC & USAGE ROUTES
   // ============================================

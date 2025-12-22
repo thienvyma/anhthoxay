@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { tokens } from '@app/shared';
 import { Input } from './Input';
@@ -12,8 +12,12 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  async function handleLogin(e: React.FormEvent) {
+  const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent double-click
+    if (loading) return;
+    
     setError('');
     setLoading(true);
 
@@ -21,11 +25,17 @@ export function LoginPage() {
       const response = await authApi.login(email, password);
       store.setUser(response.user as Parameters<typeof store.setUser>[0]);
     } catch (err) {
-      setError((err as Error).message || 'Login failed');
+      const errorMessage = (err as Error).message || 'Login failed';
+      // Handle network errors more gracefully
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+        setError('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng và thử lại.');
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
-  }
+  }, [email, password, loading]);
 
   return (
     <div

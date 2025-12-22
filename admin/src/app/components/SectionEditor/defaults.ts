@@ -209,6 +209,32 @@ export function getDefaultData(sectionKind: SectionKind): Record<string, unknown
           { _id: generateUniqueId(), icon: 'ri-drop-line', title: 'Chống Thấm', description: 'Xử lý chống thấm, chống dột hiệu quả' },
         ],
       };
+    case 'INTERIOR_WIZARD':
+      return {
+        title: 'Báo Giá Nội Thất',
+        subtitle: 'Chọn căn hộ và gói nội thất để nhận báo giá chi tiết ngay lập tức',
+        showHeader: true,
+        maxWidth: 1200,
+        backgroundStyle: 'default',
+        headerIcon: 'ri-home-smile-fill',
+      };
+    case 'INTERIOR_QUOTE':
+      return {
+        title: 'Báo Giá Nội Thất',
+        subtitle: 'Chọn căn hộ và gói nội thất để nhận báo giá chi tiết ngay lập tức',
+        showHeader: true,
+      };
+    case 'INTERIOR_PRICING_TABLE':
+      return {
+        title: 'Bảng Báo Giá Nội Thất',
+        subtitle: 'Chọn gói nội thất phù hợp với nhu cầu và ngân sách của bạn',
+        fetchFromApi: true,
+        showFeatures: true,
+        showCta: true,
+        ctaText: 'Liên hệ tư vấn',
+        ctaLink: '/noi-that',
+        columns: 3,
+      };
     default:
       return {};
   }

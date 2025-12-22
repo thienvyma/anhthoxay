@@ -14,9 +14,13 @@
     "db:push": "prisma db push --schema=infra/prisma/schema.prisma --skip-generate",
     "db:migrate": "prisma migrate dev --name init --schema=infra/prisma/schema.prisma",
     "db:seed": "tsx infra/prisma/seed.ts",
+    "db:seed-bidding": "tsx infra/prisma/seed-bidding.ts",
+    "db:seed-complete": "tsx infra/prisma/seed-complete.ts",
+    "db:seed-all": "tsx infra/prisma/seed.ts && tsx infra/prisma/seed-complete.ts",
     "dev:api": "nx serve api",
     "dev:landing": "nx serve landing",
-    "dev:admin": "nx serve admin"
+    "dev:admin": "nx serve admin",
+    "dev:portal": "nx serve portal"
   },
   "nx": {
     "includedScripts": []

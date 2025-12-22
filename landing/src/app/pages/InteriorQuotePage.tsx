@@ -1,0 +1,67 @@
+/**
+ * Interior Quote Page - /noi-that route
+ *
+ * This page loads sections from CMS (like /bao-gia page).
+ * Admin can add INTERIOR_WIZARD section to display the wizard.
+ */
+
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { tokens, API_URL } from '@app/shared';
+import { PageRenderer } from '../components/PageRenderer';
+import type { PageData } from '../types';
+
+export function InteriorQuotePage() {
+  const [page, setPage] = useState<PageData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch page data from CMS
+  useEffect(() => {
+    const fetchPage = async () => {
+      try {
+        const res = await fetch(`${API_URL}/pages/noi-that`);
+        if (res.ok) {
+          const json = await res.json();
+          // Unwrap standardized response format { success: true, data: T }
+          const data = json.data || json;
+          setPage(data);
+        }
+      } catch {
+        // Use default if fetch fails
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPage();
+  }, []);
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: '60vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingTop: '4rem',
+        }}
+      >
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          style={{
+            width: 50,
+            height: 50,
+            borderRadius: '50%',
+            border: `3px solid ${tokens.color.border}`,
+            borderTopColor: tokens.color.primary,
+          }}
+        />
+      </div>
+    );
+  }
+
+  return <PageRenderer page={page} eagerSections={1} />;
+}
+
+export default InteriorQuotePage;

@@ -22,7 +22,7 @@ interface LayoutTabProps {
 type LayoutSubTab = 'header' | 'footer' | 'mobile';
 
 // ATH pages list
-const ATH_PAGES = ['home', 'about', 'contact', 'blog', 'bao-gia'];
+const ATH_PAGES = ['home', 'about', 'contact', 'blog', 'bao-gia', 'noi-that'];
 
 // Mobile Menu Config Type
 interface MobileMenuConfig {
@@ -38,6 +38,7 @@ const defaultMobileMenuConfig: MobileMenuConfig = {
   items: [
     { label: 'Trang chủ', href: '/', icon: 'ri-home-fill' },
     { label: 'Báo giá', href: '/bao-gia', icon: 'ri-calculator-fill' },
+    { label: 'Nội thất', href: '/noi-that', icon: 'ri-home-smile-fill' },
     { label: 'Blog', href: '/blog', icon: 'ri-article-fill' },
     { label: 'Chính sách', href: '/chinh-sach', icon: 'ri-shield-check-fill' },
   ],
@@ -65,6 +66,86 @@ export function LayoutTab({
   const [savingFooter, setSavingFooter] = useState(false);
   const [savingMobile, setSavingMobile] = useState(false);
   const [mobileMenuConfig, setMobileMenuConfig] = useState<MobileMenuConfig>(defaultMobileMenuConfig);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load header/footer config from API on mount
+  useEffect(() => {
+    const loadConfigs = async () => {
+      try {
+        setIsLoading(true);
+        // Load from 'home' page as the source of truth
+        const page = await pagesApi.get('home');
+        
+        const headerConfigStr = page?.headerConfig as string | undefined;
+        if (headerConfigStr && typeof headerConfigStr === 'string') {
+          try {
+            const parsed = JSON.parse(headerConfigStr);
+            // Convert from landing format to admin format
+            const adminHeaderConfig: HeaderConfig = {
+              logo: parsed.logo ? {
+                text: parsed.logo.text,
+                icon: parsed.logo.icon,
+                animateIcon: parsed.logo.animateIcon,
+              } : undefined,
+              navigation: parsed.links?.map((link: { href: string; label: string; icon?: string }) => ({
+                label: link.label,
+                route: link.href,
+                icon: link.icon,
+              })),
+              cta: parsed.ctaButton ? {
+                text: parsed.ctaButton.text,
+                link: parsed.ctaButton.icon || parsed.ctaButton.href,
+                // Parse links array for dropdown support
+                links: parsed.ctaButton.links?.map((link: { text: string; href: string; icon?: string }) => ({
+                  text: link.text,
+                  href: link.href,
+                  icon: link.icon,
+                })),
+              } : undefined,
+            };
+            onHeaderChange(adminHeaderConfig);
+          } catch (e) {
+            console.warn('Failed to parse headerConfig:', e);
+          }
+        }
+        
+        const footerConfigStr = page?.footerConfig as string | undefined;
+        if (footerConfigStr && typeof footerConfigStr === 'string') {
+          try {
+            const parsed = JSON.parse(footerConfigStr);
+            // Convert from landing format to admin format
+            const adminFooterConfig: FooterConfig = {
+              brand: parsed.brand ? {
+                text: parsed.brand.text,
+                icon: parsed.brand.icon,
+                tagline: parsed.brand.description,
+              } : undefined,
+              quickLinks: parsed.quickLinks?.map((link: { href: string; label: string }) => ({
+                label: link.label,
+                link: link.href,
+              })),
+              newsletter: parsed.newsletter,
+              social: parsed.socialLinks?.map((s: { platform: string; url: string; icon: string }) => ({
+                platform: s.platform,
+                url: s.url,
+                icon: s.icon,
+              })),
+              copyright: parsed.copyright ? { text: parsed.copyright } : undefined,
+            };
+            onFooterChange(adminFooterConfig);
+          } catch (e) {
+            console.warn('Failed to parse footerConfig:', e);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load layout config:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadConfigs();
+  }, [onHeaderChange, onFooterChange]);
 
   // Load mobile menu config from API on mount
   useEffect(() => {
@@ -86,6 +167,24 @@ export function LayoutTab({
     { id: 'mobile', label: 'Mobile Menu', icon: 'ri-smartphone-line' },
   ];
 
+  // Helper function to ensure page exists before updating
+  const ensurePageExists = useCallback(async (slug: string) => {
+    try {
+      await pagesApi.get(slug);
+    } catch {
+      // Page doesn't exist, create it
+      const titleMap: Record<string, string> = {
+        home: 'Trang chủ',
+        about: 'Giới thiệu',
+        contact: 'Liên hệ',
+        blog: 'Blog',
+        'bao-gia': 'Báo giá',
+        'noi-that': 'Nội thất',
+      };
+      await pagesApi.create({ slug, title: titleMap[slug] || slug });
+    }
+  }, []);
+
   // Save header config to all pages
   const handleSaveHeader = useCallback(async () => {
     try {
@@ -96,23 +195,37 @@ export function LayoutTab({
           icon: headerConfig.logo?.icon || 'ri-building-2-fill',
           animateIcon: headerConfig.logo?.animateIcon ?? true,
         },
-        links: headerConfig.navigation?.map((nav) => ({
-          href: nav.route,
-          label: nav.label,
-          icon: nav.icon,
-        })) || [],
-        ctaButton: headerConfig.cta ? {
-          text: headerConfig.cta.text,
-          href: headerConfig.cta.link,
-          icon: 'ri-phone-line',
-        } : undefined,
+        links:
+          headerConfig.navigation?.map((nav) => ({
+            href: nav.route,
+            label: nav.label,
+            icon: nav.icon,
+          })) || [],
+        ctaButton: headerConfig.cta
+          ? {
+              text: headerConfig.cta.text,
+              href: headerConfig.cta.links?.[0]?.href || headerConfig.cta.link,
+              icon: headerConfig.cta.link?.startsWith('ri-')
+                ? headerConfig.cta.link
+                : 'ri-price-tag-3-line',
+              // Include links array for dropdown support
+              links: headerConfig.cta.links?.map((link) => ({
+                text: link.text,
+                href: link.href,
+                icon: link.icon,
+              })),
+            }
+          : undefined,
         showMobileMenu: true,
       };
       const headerConfigStr = JSON.stringify(landingHeaderConfig);
+
+      // Ensure all pages exist before updating
+      await Promise.all(ATH_PAGES.map((slug) => ensurePageExists(slug)));
+
+      // Update all pages
       await Promise.all(
-        ATH_PAGES.map((slug) =>
-          pagesApi.update(slug, { headerConfig: headerConfigStr })
-        )
+        ATH_PAGES.map((slug) => pagesApi.update(slug, { headerConfig: headerConfigStr }))
       );
       onShowMessage('✅ Header đã được lưu!');
     } catch (error) {
@@ -121,7 +234,7 @@ export function LayoutTab({
     } finally {
       setSavingHeader(false);
     }
-  }, [headerConfig, onShowMessage, onError]);
+  }, [headerConfig, onShowMessage, onError, ensurePageExists]);
 
   // Save footer config to all pages
   const handleSaveFooter = useCallback(async () => {
@@ -133,23 +246,28 @@ export function LayoutTab({
           icon: footerConfig.brand?.icon || 'ri-building-2-fill',
           description: footerConfig.brand?.tagline || '',
         },
-        quickLinks: footerConfig.quickLinks?.map((link) => ({
-          href: link.link,
-          label: link.label,
-        })) || [],
+        quickLinks:
+          footerConfig.quickLinks?.map((link) => ({
+            href: link.link,
+            label: link.label,
+          })) || [],
         newsletter: footerConfig.newsletter,
-        socialLinks: footerConfig.social?.map((s) => ({
-          platform: s.platform.toLowerCase(),
-          url: s.url,
-          icon: s.icon,
-        })) || [],
+        socialLinks:
+          footerConfig.social?.map((s) => ({
+            platform: s.platform.toLowerCase(),
+            url: s.url,
+            icon: s.icon,
+          })) || [],
         copyright: footerConfig.copyright?.text || `© ${new Date().getFullYear()} Anh Thợ Xây`,
       };
       const footerConfigStr = JSON.stringify(landingFooterConfig);
+
+      // Ensure all pages exist before updating
+      await Promise.all(ATH_PAGES.map((slug) => ensurePageExists(slug)));
+
+      // Update all pages
       await Promise.all(
-        ATH_PAGES.map((slug) =>
-          pagesApi.update(slug, { footerConfig: footerConfigStr })
-        )
+        ATH_PAGES.map((slug) => pagesApi.update(slug, { footerConfig: footerConfigStr }))
       );
       onShowMessage('✅ Footer đã được lưu!');
     } catch (error) {
@@ -158,7 +276,7 @@ export function LayoutTab({
     } finally {
       setSavingFooter(false);
     }
-  }, [footerConfig, onShowMessage, onError]);
+  }, [footerConfig, onShowMessage, onError, ensurePageExists]);
 
   // Save mobile menu config
   const handleSaveMobileMenu = useCallback(async () => {
@@ -283,6 +401,26 @@ export function LayoutTab({
     onShowMessage('✅ Đã đồng bộ từ Header!');
   }, [headerConfig.navigation, onShowMessage]);
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          padding: 48,
+          color: tokens.color.muted,
+        }}
+      >
+        <i className="ri-loader-4-line" style={{ fontSize: 24, marginRight: 12, animation: 'spin 1s linear infinite' }} />
+        Đang tải cấu hình...
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -379,21 +517,90 @@ export function LayoutTab({
           {/* CTA */}
           <div style={{ marginBottom: 24 }}>
             <h4 style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, marginBottom: 12 }}>CTA Button</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+            <p style={{ color: tokens.color.muted, fontSize: 12, marginBottom: 12 }}>
+              Nếu có nhiều hơn 1 link, nút sẽ hiển thị dạng dropdown. Nếu chỉ có 1 link, sẽ truy cập trực tiếp.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 16 }}>
               <Input
-                label="Text"
+                label="Text hiển thị"
                 value={headerConfig.cta?.text || ''}
                 onChange={(v) => onHeaderChange({ ...headerConfig, cta: { ...headerConfig.cta, text: v } })}
                 placeholder="Báo giá ngay"
                 fullWidth
               />
-              <Input
-                label="Link"
-                value={headerConfig.cta?.link || ''}
+              <IconPicker
+                label="Icon"
+                value={headerConfig.cta?.link?.startsWith('ri-') ? headerConfig.cta.link : 'ri-price-tag-3-line'}
                 onChange={(v) => onHeaderChange({ ...headerConfig, cta: { ...headerConfig.cta, link: v } })}
-                placeholder="/bao-gia"
-                fullWidth
               />
+            </div>
+            
+            {/* CTA Links */}
+            <div style={{ marginTop: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <span style={{ color: tokens.color.text, fontSize: 13, fontWeight: 500 }}>Links trong CTA</span>
+                <Button variant="secondary" size="small" onClick={() => {
+                  const newLinks = [...(headerConfig.cta?.links || []), { text: 'Link mới', href: '/', icon: 'ri-link' }];
+                  onHeaderChange({ ...headerConfig, cta: { ...headerConfig.cta, links: newLinks } });
+                }}>
+                  <i className="ri-add-line" /> Thêm link
+                </Button>
+              </div>
+              {(headerConfig.cta?.links || []).map((link, i) => (
+                <div key={i} style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr 1fr auto',
+                  gap: 8,
+                  marginBottom: 8,
+                  padding: 12,
+                  background: glass.background,
+                  borderRadius: tokens.radius.md,
+                }}>
+                  <Input 
+                    value={link.text} 
+                    onChange={(v) => {
+                      const newLinks = headerConfig.cta?.links?.map((l, idx) => idx === i ? { ...l, text: v } : l) || [];
+                      onHeaderChange({ ...headerConfig, cta: { ...headerConfig.cta, links: newLinks } });
+                    }} 
+                    placeholder="Text" 
+                    fullWidth 
+                  />
+                  <Input 
+                    value={link.href} 
+                    onChange={(v) => {
+                      const newLinks = headerConfig.cta?.links?.map((l, idx) => idx === i ? { ...l, href: v } : l) || [];
+                      onHeaderChange({ ...headerConfig, cta: { ...headerConfig.cta, links: newLinks } });
+                    }} 
+                    placeholder="/link" 
+                    fullWidth 
+                  />
+                  <IconPicker 
+                    value={link.icon || ''} 
+                    onChange={(v) => {
+                      const newLinks = headerConfig.cta?.links?.map((l, idx) => idx === i ? { ...l, icon: v } : l) || [];
+                      onHeaderChange({ ...headerConfig, cta: { ...headerConfig.cta, links: newLinks } });
+                    }} 
+                  />
+                  <Button variant="danger" size="small" onClick={() => {
+                    const newLinks = headerConfig.cta?.links?.filter((_, idx) => idx !== i) || [];
+                    onHeaderChange({ ...headerConfig, cta: { ...headerConfig.cta, links: newLinks } });
+                  }}>
+                    <i className="ri-delete-bin-line" />
+                  </Button>
+                </div>
+              ))}
+              {(!headerConfig.cta?.links || headerConfig.cta.links.length === 0) && (
+                <div style={{ 
+                  padding: 16, 
+                  background: glass.background, 
+                  borderRadius: tokens.radius.md,
+                  textAlign: 'center',
+                  color: tokens.color.muted,
+                  fontSize: 13,
+                }}>
+                  Chưa có link nào. Thêm ít nhất 1 link để nút CTA hoạt động.
+                </div>
+              )}
             </div>
           </div>
 

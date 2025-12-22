@@ -1,0 +1,162 @@
+# CURSOR AI RULES - Dự án ANH THỢ XÂY
+
+## 🎯 MỤC TIÊU
+Đảm bảo code nhất quán, tránh trùng lặp, dễ maintain khi vibe-code lâu dài.
+
+## 🎨 BRANDING (BẮT BUỘC)
+- LUÔN follow BRANDING_GUIDE.md khi code UI
+- LUÔN dùng constants từ @/lib/constants/branding
+- LUÔN dùng Logo component, Button component từ @/components
+- KHÔNG hardcode màu sắc (#1F3F5F, #E87A00, etc.)
+- KHÔNG dùng gradient loè loẹt
+- CTA luôn màu cam (Orange)
+
+## ⚠️ QUY TẮC BẮT BUỘC
+
+### 0. ERROR / WARNING / TYPE ENFORCEMENT (ƯU TIÊN CAO NHẤT)
+- **BẮT BUỘC** pass: `npm run lint` và `npx tsc --noEmit` → 0 errors, 0 warnings.
+- Warning = bug tiềm ẩn, phải fix, không suppress bằng config/eslint-disable (trừ bất khả kháng, phải ghi lý do).
+- Khi fix warnings: **KHÔNG** phá cấu trúc/logic hiện có, ưu tiên sửa types/imports/naming.
+- Thiếu thông tin → **HỎI**, không viết code “tạm đúng”.
+
+### 0.1 TYPE & PRISMA (CƯỠNG CHẾ)
+- Prisma là nguồn sự thật cho enum/model. **CẤM** tạo enum/type trùng nghĩa (EntityStatus, ApprovalStatus, CategoryType, ApprovalRequestType, …).
+- Import bắt buộc: `import { Prisma, $Enums } from '@prisma/client'` hoặc enum Prisma trực tiếp.
+- JSON Prisma: dùng **Prisma.InputJsonValue** (ghi) / Prisma.JsonValue (đọc). **CẤM** `any | unknown | {} | Record<string, any>`.
+- Không ép kiểu “dập lỗi” với Prisma. Chỉ dùng `as Type` khi có comment giải thích vì sao TS không suy luận được và không liên quan Prisma enum/input.
+
+### 0.2 KIỂM TRA TRƯỚC KHI TẠO MỚI
+- LUÔN kiểm tra file/function/component/type tương tự; nếu có → dùng lại/mở rộng, KHÔNG tạo mới.
+- Hỏi user: "Đã có file tương tự, có muốn dùng lại không?"
+
+### 1. KIỂM TRA TRƯỚC KHI TẠO MỚI
+- LUÔN kiểm tra xem đã có file/function/component tương tự chưa
+- Nếu có, PHẢI dùng lại hoặc mở rộng, KHÔNG tạo mới
+- Hỏi user: "Đã có file tương tự, có muốn dùng lại không?"
+
+### 2. CẤU TRÚC THƯ MỤC
+- **Landing**: landing/src/app/sections/, landing/src/app/pages/, landing/src/app/components/
+- **Admin**: admin/src/app/pages/, admin/src/app/components/, admin/src/app/forms/
+- **API**: api/src/routes/, api/src/services/, api/src/middleware/, api/src/schemas/
+- **Shared**: packages/shared/src/, packages/ui/src/
+- Mỗi file chỉ làm 1 việc, tên file mô tả rõ chức năng
+
+### 3. NAMING CONVENTIONS
+- Files: PascalCase cho components (HangMucSelector.tsx), camelCase cho utils (formatPrice.ts)
+- Components: PascalCase (HangMucSelector)
+- Functions/Variables: camelCase, mô tả rõ (calculateDuToan, not calc)
+- Constants: UPPER_SNAKE_CASE (MAX_DIEN_TICH, LEAD_STATUS)
+- Types/Interfaces: PascalCase (HangMuc, DuToanResult)
+
+### 3.1 BRANDING & UI
+- **Dự án xây dựng**: Follow BRANDING_GUIDE.md, dùng constants từ @/lib/constants/branding
+- **Dự án nhà hàng**: Follow design tokens từ packages/shared/src/tokens.ts
+- **Chung**: Dùng shared components từ packages/ui/, KHÔNG hardcode màu/font/CTA
+
+### 4. IMPORT ORDER (BẮT BUỘC)
+```
+1. External libraries (react, axios, etc)
+2. Internal absolute imports (@/components, @/lib, etc)
+3. Relative imports (./Component)
+4. Types (import type ...)
+5. Styles (./styles.css)
+```
+
+### 5. CODE STRUCTURE
+- **Components**: State → Effects → Functions → Early returns → Render
+- **Services**: Pure functions, không có side effects không cần thiết
+- **Hono Routes** (API): 
+  - Handler: async (c: Context) => { ... }
+  - Params: c.req.param('id')
+  - Body: await c.req.json()
+  - Response: c.json(data) hoặc c.text(), c.html()
+  - Status: c.json(data, 200) hoặc c.notFound(), c.badRequest()
+- **Middleware**: Hono middleware pattern (c, next) => { ... }
+- Mỗi function chỉ làm 1 việc, tên function mô tả rõ việc đó
+
+### 6. TRÁNH CODE RÁC
+- KHÔNG comment code cũ, XÓA luôn
+- KHÔNG tạo utility trùng lặp, dùng lại từ lib/utils/
+- KHÔNG hardcode strings/numbers, dùng constants
+- KHÔNG tạo type trùng lặp, dùng lại từ types/
+
+### 7. ERROR HANDLING
+- LUÔN có try-catch cho async operations
+- LUÔN validate input trước khi xử lý
+- LUÔN có error messages rõ ràng
+
+### 8. TYPESCRIPT
+- LUÔN dùng types, tránh any
+- Types định nghĩa trong src/types/, export qua index.ts
+- Dùng interface cho objects, type cho unions/intersections
+
+### 9. KHI USER YÊU CẦU FEATURE MỚI
+1. Đọc code hiện tại liên quan
+2. Kiểm tra file/function tương tự
+3. Follow cấu trúc và pattern hiện có
+4. Tách logic ra service/utils nếu phức tạp
+5. Dùng types từ @/types/
+6. Follow import order
+7. Thêm error handling
+
+### 10. KHI KHÔNG CHẮC
+- Hỏi user thay vì đoán
+- Đề xuất giải pháp và giải thích
+- Đọc CODING_STANDARDS.md trước
+
+### 11. MONOREPO NX STRUCTURE
+- **Apps**: landing/, admin/, api/ - Mỗi app độc lập
+- **Packages**: packages/shared/, packages/ui/ - Shared code
+- **Import paths**: 
+  - Trong app: Relative imports (./Component)
+  - Cross-app: Không import trực tiếp, dùng shared packages
+  - Shared: Export qua index.ts
+- **Scripts**: 
+  - Root: npm run dev:api, dev:landing, dev:admin
+  - App-specific: cd app && npm run dev
+- **Dependencies**: 
+  - App-specific: Install trong app/package.json
+  - Shared: Install trong packages/*/package.json
+
+### 12. VITE + REACT PATTERNS
+- **File structure**: 
+  - Components: PascalCase.tsx
+  - Pages: PascalCase.tsx
+  - Utils: camelCase.ts
+- **Imports**: 
+  - Vite aliases: @/components, @/lib (nếu có)
+  - Hoặc relative imports
+- **Assets**: 
+  - Images: public/ hoặc import từ src/
+  - Styles: CSS modules hoặc inline styles
+- **Hot reload**: Tự động, không cần config thêm
+
+## 📋 CHECKLIST TRƯỚC KHI TẠO CODE
+
+- [ ] Source of truth? (Prisma enum/model hay domain type có sẵn)
+- [ ] Đã tìm file/type tương tự để tái dùng/mở rộng?
+- [ ] Có vi phạm “CẤM enum/type trùng Prisma” không?
+- [ ] JSON field dùng Prisma.InputJsonValue chưa?
+- [ ] Chắc chắn pass `npm run lint` + `npx tsc --noEmit`? Nếu không chắc → HỎI.
+- [ ] Frontend: tuân BRANDING_GUIDE, dùng constants/components chuẩn?
+- [ ] Backend: controller/middleware mọi nhánh return/next rõ ràng, không còn warning.
+
+## 🚫 KHÔNG BAO GIỜ
+
+- Tạo file mới nếu đã có file tương tự
+- Tạo function trùng lặp
+- Hardcode strings/numbers
+- Dùng any trong TypeScript
+- Comment code cũ thay vì xóa
+- Tạo utility rác trong component
+
+## ✅ LUÔN LÀM
+
+- Kiểm tra code hiện tại trước
+- Dùng lại code có sẵn
+- Follow patterns hiện có
+- Tách logic phức tạp
+- Đặt tên rõ ràng, tự giải thích
+- Thêm error handling
+- Validate input
+

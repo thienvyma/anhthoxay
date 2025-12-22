@@ -15,7 +15,10 @@ const RegisterSchema = z.object({
   email: z.string().email('Invalid email format'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   name: z.string().min(1, 'Name is required'),
-  role: z.enum(['ADMIN', 'MANAGER', 'WORKER', 'USER']).optional(),
+  role: z.enum(['ADMIN', 'MANAGER', 'CONTRACTOR', 'HOMEOWNER', 'WORKER', 'USER']).optional(),
+  accountType: z.enum(['user', 'homeowner', 'contractor']).optional().default('user'),
+  phone: z.string().optional(),
+  companyName: z.string().optional(),
 });
 
 const LoginSchema = z.object({
@@ -77,14 +80,82 @@ export function createAuthRoutes(prisma: PrismaClient) {
         password: validated.password,
         name: validated.name,
         role: validated.role as Role,
+        accountType: validated.accountType,
+        phone: validated.phone,
+        companyName: validated.companyName,
       });
 
       return successResponse(c, {
-        id: user.id,
-        email: user.email,
         name: user.name,
         role: user.role,
+        verificationStatus: user.verificationStatus,
         createdAt: user.createdAt,
+      }, 201);
+    } catch (error) {
+      return handleError(c, error);
+    }
+  });
+
+  // ============================================
+  // POST /auth/signup - Public registration for homeowner/contractor
+  // ============================================
+  app.post('/signup', loginRateLimiter(), async (c) => {
+    try {
+      const body = await c.req.json();
+      const validated = RegisterSchema.parse(body);
+
+      // Only allow homeowner and contractor registration via public signup
+      if (validated.accountType !== 'homeowner' && validated.accountType !== 'contractor') {
+        return errorResponse(c, 'VALIDATION_ERROR', 'Account type must be homeowner or contractor', 400);
+      }
+
+      const user = await authService.register({
+        email: validated.email,
+        password: validated.password,
+        name: validated.name,
+        accountType: validated.accountType,
+        phone: validated.phone,
+        companyName: validated.companyName,
+      });
+
+      // For homeowner, auto-login after registration
+      if (validated.accountType === 'homeowner') {
+        const userAgent = c.req.header('user-agent');
+        const ipAddress = getClientIp(c);
+        
+        const result = await authService.login(
+          validated.email,
+          validated.password,
+          userAgent,
+          ipAddress
+        );
+
+        return successResponse(c, {
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            verificationStatus: user.verificationStatus,
+          },
+          accessToken: result.tokens.accessToken,
+          refreshToken: result.tokens.refreshToken,
+          expiresIn: result.tokens.expiresIn,
+          sessionId: result.sessionId,
+          message: 'Đăng ký thành công! Bạn đã được đăng nhập tự động.',
+        }, 201);
+      }
+
+      // For contractor, return user info without tokens (need verification first)
+      return successResponse(c, {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          verificationStatus: user.verificationStatus,
+        },
+        message: 'Đăng ký thành công! Vui lòng hoàn thiện hồ sơ và chờ xét duyệt.',
       }, 201);
     } catch (error) {
       return handleError(c, error);

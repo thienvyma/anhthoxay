@@ -8,6 +8,8 @@ import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../node_modules/.vite/landing',
+  // Load .env from workspace root
+  envDir: path.resolve(__dirname, '..'),
   server: {
     port: 4200,
     host: 'localhost',

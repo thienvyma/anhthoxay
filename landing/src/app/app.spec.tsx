@@ -1,11 +1,68 @@
-import { render } from '@testing-library/react';
+import { render, cleanup, act } from '@testing-library/react';
+import { afterEach, beforeEach, vi } from 'vitest';
 
 import App from './app';
 
 describe('App', () => {
-  it('should render successfully', () => {
-    const { baseElement } = render(<App />);
+  // Store original fetch
+  const originalFetch = global.fetch;
+
+  // Mock window APIs and fetch to prevent jsdom errors and network requests
+  beforeEach(() => {
+    window.scrollTo = vi.fn();
+    
+    // Mock matchMedia for useReducedMotion hook
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    
+    // Mock fetch to return immediately with mock data
+    // This prevents async operations from running after test teardown
+    global.fetch = vi.fn().mockImplementation(() => 
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          success: true,
+          data: {
+            id: 'mock-page',
+            slug: 'home',
+            title: 'Test Page',
+            sections: [],
+            headerConfig: null,
+            footerConfig: null,
+          }
+        })
+      })
+    );
+  });
+
+  afterEach(() => {
+    cleanup();
+    global.fetch = originalFetch;
+    vi.restoreAllMocks();
+  });
+
+  it('should render successfully', async () => {
+    let baseElement: HTMLElement;
+    let unmount: () => void;
+    
+    await act(async () => {
+      const result = render(<App />);
+      baseElement = result.baseElement;
+      unmount = result.unmount;
+    });
+    
     expect(baseElement).toBeTruthy();
+    
+    // Explicitly unmount to prevent state updates after test ends
+    unmount?.();
   });
 
   /**

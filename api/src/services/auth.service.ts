@@ -7,7 +7,7 @@ import { randomBytes, createHash } from 'crypto';
 // TYPES & INTERFACES
 // ============================================
 
-export type Role = 'ADMIN' | 'MANAGER' | 'WORKER' | 'USER';
+export type Role = 'ADMIN' | 'MANAGER' | 'CONTRACTOR' | 'HOMEOWNER' | 'WORKER' | 'USER';
 
 export interface JWTPayload {
   sub: string;
@@ -24,11 +24,16 @@ export interface AuthTokens {
   expiresIn: number;
 }
 
+export type AccountType = 'user' | 'homeowner' | 'contractor';
+
 export interface RegisterInput {
   email: string;
   password: string;
   name: string;
   role?: Role;
+  accountType?: AccountType;
+  phone?: string;
+  companyName?: string;
 }
 
 export interface SessionInfo {
@@ -344,12 +349,31 @@ export class AuthService {
 
     const passwordHash = await this.hashPassword(input.password);
 
+    // Determine role and verification status based on accountType
+    let role: Role = input.role || 'USER';
+    let verificationStatus = 'PENDING';
+
+    if (input.accountType === 'homeowner') {
+      // Homeowner: auto-approve, role = HOMEOWNER
+      role = 'HOMEOWNER';
+      verificationStatus = 'VERIFIED';
+    } else if (input.accountType === 'contractor') {
+      // Contractor: verificationStatus = PENDING, role = CONTRACTOR
+      role = 'CONTRACTOR';
+      verificationStatus = 'PENDING';
+    }
+
     return this.prisma.user.create({
       data: {
         email: input.email.toLowerCase(),
         passwordHash,
         name: input.name,
-        role: input.role || 'USER',
+        role,
+        verificationStatus,
+        phone: input.phone,
+        companyName: input.companyName,
+        // Set verifiedAt for auto-approved homeowners
+        ...(input.accountType === 'homeowner' ? { verifiedAt: new Date() } : {}),
       },
     });
   }
@@ -359,7 +383,7 @@ export class AuthService {
     password: string,
     userAgent?: string,
     ipAddress?: string
-  ): Promise<{ user: { id: string; email: string; name: string; role: string }; tokens: AuthTokens; sessionId: string }> {
+  ): Promise<{ user: { id: string; email: string; name: string; role: string; verificationStatus: string }; tokens: AuthTokens; sessionId: string }> {
     const user = await this.prisma.user.findUnique({
       where: { email: email.toLowerCase() },
     });
@@ -420,6 +444,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
+        verificationStatus: user.verificationStatus,
       },
       tokens: {
         accessToken,
@@ -552,6 +577,9 @@ export class AuthService {
         email: true,
         name: true,
         role: true,
+        verificationStatus: true,
+        phone: true,
+        avatar: true,
         createdAt: true,
       },
     });

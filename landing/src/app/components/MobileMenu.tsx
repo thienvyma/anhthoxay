@@ -29,6 +29,7 @@ const defaultConfig: MobileMenuConfig = {
   items: [
     { href: '/', label: 'Trang chủ', icon: 'ri-home-fill' },
     { href: '/bao-gia', label: 'Báo giá', icon: 'ri-calculator-fill' },
+    { href: '/noi-that', label: 'Nội thất', icon: 'ri-home-smile-fill' },
     { href: '/blog', label: 'Blog', icon: 'ri-article-fill' },
     { href: '/chinh-sach', label: 'Chính sách', icon: 'ri-shield-check-fill' },
   ],
@@ -94,6 +95,7 @@ export function MobileMenu({ currentRoute, menuItems }: MobileMenuProps) {
     items = [
       { href: '/', label: 'Trang chủ', icon: 'ri-home-fill' },
       { href: '/bao-gia', label: 'Báo giá', icon: 'ri-calculator-fill' },
+      { href: '/noi-that', label: 'Nội thất', icon: 'ri-home-smile-fill' },
       { href: '/blog', label: 'Blog', icon: 'ri-article-fill' },
       { href: '/chinh-sach', label: 'Chính sách', icon: 'ri-shield-check-fill' },
     ];

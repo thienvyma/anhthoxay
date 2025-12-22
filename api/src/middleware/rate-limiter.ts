@@ -169,9 +169,8 @@ export function rateLimiter(options: RateLimiterOptions = {}) {
  * 2. Xóa comment TODO này
  */
 export function loginRateLimiter() {
-  const isDev = process.env.NODE_ENV !== 'production';
   return rateLimiter({
-    // TODO: [TESTING] Tạm thời 1000, production cần đổi về: isDev ? 100 : 5
+    // TODO: [TESTING] Tạm thời 1000, production cần đổi về: process.env.NODE_ENV !== 'production' ? 100 : 5
     maxAttempts: 1000,
     windowMs: 15 * 60 * 1000,
     keyGenerator: (c) => {

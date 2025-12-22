@@ -207,6 +207,23 @@ const sectionTypes: Array<{
     color: '#f5d393',
     example: 'Hiển thị trên mọi trang',
   },
+  // Interior
+  {
+    type: 'INTERIOR_QUOTE',
+    icon: 'ri-home-smile-line',
+    label: 'Báo Giá Nội Thất (Wizard)',
+    description: 'Wizard tương tác để khách chọn căn hộ và gói nội thất',
+    color: '#10b981',
+    example: 'Trang /noi-that',
+  },
+  {
+    type: 'INTERIOR_PRICING_TABLE',
+    icon: 'ri-price-tag-3-line',
+    label: 'Bảng Báo Giá Nội Thất',
+    description: 'Bảng giá các gói nội thất với tiêu đề và mô tả',
+    color: '#8b5cf6',
+    example: 'Trang chủ, landing page',
+  },
 ];
 
 export function SectionTypePicker({ onSelect, onCancel }: SectionTypePickerProps) {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens, API_URL } from '@app/shared';
+import { tokens, API_URL, resolveMediaUrl } from '@app/shared';
 import { useToast } from '../components/Toast';
 import { SaveQuoteModal } from '../components/SaveQuoteModal';
 
@@ -79,6 +79,7 @@ interface QuoteCalculatorData {
   };
   showMaterials?: boolean;
   maxWidth?: number;
+  disclaimerText?: string;
 }
 
 interface Props {
@@ -219,7 +220,7 @@ const MaterialSelector = memo(function MaterialSelector({
                   <div style={{ position: 'relative', width: '100%', height: '120px', background: tokens.color.background, overflow: 'hidden' }}>
                     {material.imageUrl ? (
                       <img
-                        src={material.imageUrl}
+                        src={resolveMediaUrl(material.imageUrl)}
                         alt={material.name}
                         loading="lazy"
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -335,6 +336,7 @@ export const QuoteCalculatorSection = memo(function QuoteCalculatorSection({ dat
     consultationTab = { label: 'Đăng Ký Tư Vấn', icon: 'ri-phone-line' },
     showMaterials = true,
     maxWidth = 900,
+    disclaimerText = '* Giá trên chỉ mang tính tham khảo. Liên hệ để được báo giá chính xác.',
   } = data;
 
   // Data states
@@ -599,9 +601,6 @@ export const QuoteCalculatorSection = memo(function QuoteCalculatorSection({ dat
                             <div style={{ fontWeight: 600, color: tokens.color.text }}>{cat.name}</div>
                             {cat.description && <div style={{ fontSize: '0.8rem', color: tokens.color.textMuted }}>{cat.description}</div>}
                           </div>
-                          {cat.coefficient !== 1 && (
-                            <span style={{ fontSize: '0.75rem', color: tokens.color.textMuted, background: tokens.color.surface, padding: '0.25rem 0.5rem', borderRadius: tokens.radius.sm }}>x{cat.coefficient}</span>
-                          )}
                           <i className="ri-arrow-right-s-line" style={{ color: tokens.color.textMuted }} />
                         </motion.div>
                       ))}
@@ -691,10 +690,6 @@ export const QuoteCalculatorSection = memo(function QuoteCalculatorSection({ dat
                         <span style={{ fontWeight: 500, color: tokens.color.text }}>{quoteResult.area} m²</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                        <span style={{ color: tokens.color.textMuted }}>Hệ số:</span>
-                        <span style={{ fontWeight: 500, color: tokens.color.text }}>x{quoteResult.coefficient}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                         <span style={{ color: tokens.color.textMuted }}>Chi phí thi công:</span>
                         <span style={{ fontWeight: 500, color: tokens.color.text }}>{formatCurrency(quoteResult.baseCost)}</span>
                       </div>
@@ -711,7 +706,7 @@ export const QuoteCalculatorSection = memo(function QuoteCalculatorSection({ dat
                         <span style={{ fontSize: '1.5rem', fontWeight: 700, color: tokens.color.primary }}>{formatCurrency(quoteResult.grandTotal)}</span>
                       </div>
                     </div>
-                    <p style={{ fontSize: '0.8rem', color: tokens.color.textMuted, textAlign: 'center', marginBottom: '1.5rem' }}>* Giá trên chỉ mang tính tham khảo. Liên hệ để được báo giá chính xác.</p>
+                    <p style={{ fontSize: '0.8rem', color: tokens.color.textMuted, textAlign: 'center', marginBottom: '1.5rem' }}>{disclaimerText}</p>
                     <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                       <button onClick={handleReset} style={{ flex: '1 1 100px', padding: '0.875rem', borderRadius: tokens.radius.md, border: `1px solid ${tokens.color.border}`, background: 'transparent', color: tokens.color.text, fontSize: '0.9rem', cursor: 'pointer' }}>
                         <i className="ri-refresh-line" /> Tính lại
