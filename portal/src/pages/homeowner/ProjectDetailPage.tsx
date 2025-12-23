@@ -20,6 +20,7 @@ import { Layout } from '../../components/Layout';
 import { LazyImage } from '../../components/LazyImage';
 import { BidComparison, MAX_COMPARISON_BIDS, validateBidComparisonSelection } from '../../components/BidComparison';
 import { PrintButton, PrintHeader, PrintFooter } from '../../components/PrintSupport';
+import { ResponsiveModal } from '../../components/responsive';
 import {
   projectsApi,
   type Project,
@@ -785,69 +786,49 @@ export function ProjectDetailPage() {
         </div>
 
         {/* Confirm Modal - Requirement 6.4 */}
-        {showConfirmModal && selectedBidId && (
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0, 0, 0, 0.7)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1000,
-              padding: 20,
-            }}
-            onClick={() => setShowConfirmModal(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="card"
-              style={{ padding: 24, maxWidth: 480, width: '100%' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2 style={{ fontSize: 20, fontWeight: 600, color: '#e4e7ec', marginBottom: 16 }}>
-                Xác nhận chọn nhà thầu
-              </h2>
-              
-              <p style={{ color: '#a1a1aa', marginBottom: 20, lineHeight: 1.6 }}>
-                Bạn có chắc chắn muốn chọn nhà thầu này? Sau khi xác nhận:
-              </p>
-              
-              <ul style={{ color: '#a1a1aa', marginBottom: 24, paddingLeft: 20, lineHeight: 1.8 }}>
-                <li>Bạn sẽ cần đặt cọc để bắt đầu dự án</li>
-                <li>Thông tin liên hệ của nhà thầu sẽ được hiển thị</li>
-                <li>Các đề xuất khác sẽ bị từ chối</li>
-              </ul>
-
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button
-                  className="btn btn-secondary"
-                  style={{ flex: 1 }}
-                  onClick={() => setShowConfirmModal(false)}
-                  disabled={isSubmitting}
-                >
-                  Hủy
-                </button>
-                <button
-                  className="btn btn-primary"
-                  style={{ flex: 1 }}
-                  onClick={handleSelectBid}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <i className="ri-loader-4-line spinner" style={{ marginRight: 8 }} />
-                      Đang xử lý...
-                    </>
-                  ) : (
-                    'Xác nhận'
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
+        <ResponsiveModal
+          isOpen={showConfirmModal && selectedBidId !== null}
+          onClose={() => setShowConfirmModal(false)}
+          title="Xác nhận chọn nhà thầu"
+          size="md"
+          footer={
+            <>
+              <button
+                className="btn btn-secondary"
+                style={{ flex: 1, minHeight: 44 }}
+                onClick={() => setShowConfirmModal(false)}
+                disabled={isSubmitting}
+              >
+                Hủy
+              </button>
+              <button
+                className="btn btn-primary"
+                style={{ flex: 1, minHeight: 44 }}
+                onClick={handleSelectBid}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <i className="ri-loader-4-line spinner" style={{ marginRight: 8 }} />
+                    Đang xử lý...
+                  </>
+                ) : (
+                  'Xác nhận'
+                )}
+              </button>
+            </>
+          }
+        >
+          <p style={{ color: '#a1a1aa', marginBottom: 20, lineHeight: 1.6 }}>
+            Bạn có chắc chắn muốn chọn nhà thầu này? Sau khi xác nhận:
+          </p>
+          
+          <ul style={{ color: '#a1a1aa', marginBottom: 0, paddingLeft: 20, lineHeight: 1.8 }}>
+            <li>Bạn sẽ cần đặt cọc để bắt đầu dự án</li>
+            <li>Thông tin liên hệ của nhà thầu sẽ được hiển thị</li>
+            <li>Các đề xuất khác sẽ bị từ chối</li>
+          </ul>
+        </ResponsiveModal>
 
         {/* Bid Comparison Modal - Requirements 20.1, 20.2, 20.3, 20.4 */}
         {showComparison && comparisonBidIds.length >= 2 && (

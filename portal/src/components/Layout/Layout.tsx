@@ -85,6 +85,8 @@ export function Layout({ children, showMobileNav = true }: LayoutProps) {
         style={{
           marginLeft: isMobile || isTablet ? 0 : (isSidebarOpen ? getMainMargin() : 0),
           transition: 'margin-left 0.3s ease',
+          // Ensure content doesn't overflow when sidebar is open
+          width: isMobile || isTablet ? '100%' : (isSidebarOpen ? `calc(100% - ${getMainMargin()}px)` : '100%'),
         }}
       >
         <div className="portal-content">

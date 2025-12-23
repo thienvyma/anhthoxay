@@ -99,17 +99,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     tokenStorage.setTokens(response.accessToken, response.refreshToken);
     setUser(response.user);
     
+    // Debug log
+    console.log('[AuthContext] Login response user:', response.user);
+    console.log('[AuthContext] User role:', response.user.role);
+    
     // Redirect based on role
     if (response.user.role === 'ADMIN' || response.user.role === 'MANAGER') {
       // Redirect admin/manager to admin app
       const adminUrl = window.location.origin.replace(':4203', ':4201').replace('portal', 'admin');
+      console.log('[AuthContext] Redirecting ADMIN/MANAGER to:', adminUrl);
       window.location.href = adminUrl;
       return;
     } else if (response.user.role === 'HOMEOWNER') {
+      console.log('[AuthContext] Redirecting HOMEOWNER to /homeowner');
       navigate('/homeowner');
     } else if (response.user.role === 'CONTRACTOR') {
+      console.log('[AuthContext] Redirecting CONTRACTOR to /contractor');
       navigate('/contractor');
     } else {
+      console.log('[AuthContext] Unknown role, redirecting to /');
       navigate('/');
     }
   }, [navigate]);

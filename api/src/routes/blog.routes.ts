@@ -44,10 +44,11 @@ const CreateBlogPostSchema = z.object({
   slug: z.string().regex(/^[a-z0-9-]+$/, 'Slug chỉ chứa chữ thường, số và dấu gạch ngang'),
   excerpt: z.string().max(500).optional(),
   content: z.string().min(1, 'Nội dung không được trống'),
-  featuredImage: z.string().url('URL hình ảnh không hợp lệ').optional().or(z.literal('')),
+  featuredImage: z.string().optional().transform(val => (!val || val === '') ? null : val),
   categoryId: z.string().min(1, 'Chọn danh mục'),
   tags: z.string().max(200).optional(),
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).default('DRAFT'),
+  isFeatured: z.boolean().default(false),
 });
 
 /**
@@ -351,6 +352,7 @@ export function createBlogRoutes(prisma: PrismaClient) {
           data: {
             ...body,
             authorId: user.sub,
+            publishedAt: body.status === 'PUBLISHED' ? new Date() : null,
           },
         });
 
@@ -385,9 +387,25 @@ export function createBlogRoutes(prisma: PrismaClient) {
         const id = c.req.param('id');
         const body = getValidatedBody<UpdateBlogPostInput>(c);
 
+        // Get current post to check status change
+        const currentPost = await prisma.blogPost.findUnique({
+          where: { id },
+          select: { status: true, publishedAt: true },
+        });
+
+        if (!currentPost) {
+          return errorResponse(c, 'NOT_FOUND', 'Blog post not found', 404);
+        }
+
+        // Set publishedAt when status changes to PUBLISHED
+        const updateData: Prisma.BlogPostUpdateInput = { ...body };
+        if (body.status === 'PUBLISHED' && currentPost.status !== 'PUBLISHED' && !currentPost.publishedAt) {
+          updateData.publishedAt = new Date();
+        }
+
         const post = await prisma.blogPost.update({
           where: { id },
-          data: body,
+          data: updateData,
         });
 
         return successResponse(c, post);

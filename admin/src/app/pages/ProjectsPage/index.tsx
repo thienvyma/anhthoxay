@@ -4,7 +4,7 @@
  * Admin page for managing construction projects.
  *
  * **Feature: bidding-phase2-core**
- * **Requirements: 10.1, 10.2, 10.3**
+ * **Requirements: 10.1, 10.2, 10.3, 10.4**
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -14,6 +14,8 @@ import { projectsApi, regionsApi, serviceCategoriesApi } from '../../api';
 import { useToast } from '../../components/Toast';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
+import { ResponsiveStack } from '../../../components/responsive';
+import { useResponsive } from '../../../hooks/useResponsive';
 import { ProjectTable } from './ProjectTable';
 import { ProjectDetailModal } from './ProjectDetailModal';
 import { ApprovalModal } from './ApprovalModal';
@@ -26,6 +28,7 @@ interface ProjectsPageProps {
 
 export function ProjectsPage({ embedded = false }: ProjectsPageProps) {
   const toast = useToast();
+  const { isMobile } = useResponsive();
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -195,7 +198,7 @@ export function ProjectsPage({ embedded = false }: ProjectsPageProps) {
       {/* Header - hidden when embedded */}
       {!embedded && (
         <div style={{ marginBottom: 24 }}>
-          <h2 style={{ color: tokens.color.text, fontSize: 24, fontWeight: 600, margin: 0 }}>
+          <h2 style={{ color: tokens.color.text, fontSize: isMobile ? 20 : 24, fontWeight: 600, margin: 0 }}>
             Quản lý Công trình
           </h2>
           <p style={{ color: tokens.color.muted, fontSize: 14, margin: '4px 0 0' }}>
@@ -205,7 +208,14 @@ export function ProjectsPage({ embedded = false }: ProjectsPageProps) {
       )}
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+      <div style={{ 
+        display: 'flex', 
+        gap: 8, 
+        marginBottom: 24, 
+        flexWrap: 'wrap',
+        overflowX: isMobile ? 'auto' : undefined,
+        paddingBottom: isMobile ? 4 : 0,
+      }}>
         {TABS.map((tab) => {
           const isActive = statusFilter === tab.status;
           const count = tabCounts[tab.status] || 0;
@@ -220,27 +230,29 @@ export function ProjectsPage({ embedded = false }: ProjectsPageProps) {
                 setPage(1);
               }}
               style={{
-                padding: '10px 20px',
+                padding: isMobile ? '8px 12px' : '10px 20px',
                 borderRadius: tokens.radius.md,
                 border: `1px solid ${isActive ? color : tokens.color.border}`,
                 background: isActive ? `${color}15` : 'transparent',
                 color: isActive ? color : tokens.color.muted,
                 cursor: 'pointer',
-                fontSize: 14,
+                fontSize: isMobile ? 12 : 14,
                 fontWeight: isActive ? 600 : 400,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
+                gap: 6,
+                whiteSpace: 'nowrap',
+                minHeight: '44px',
               }}
             >
-              {tab.label}
+              {isMobile ? tab.label.slice(0, 8) : tab.label}
               <span
                 style={{
-                  padding: '2px 8px',
+                  padding: '2px 6px',
                   borderRadius: tokens.radius.sm,
                   background: isActive ? color : tokens.color.border,
                   color: isActive ? '#fff' : tokens.color.muted,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: 600,
                 }}
               >
@@ -252,8 +264,12 @@ export function ProjectsPage({ embedded = false }: ProjectsPageProps) {
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 200, maxWidth: 400 }}>
+      <ResponsiveStack
+        direction={{ mobile: 'column', tablet: 'row', desktop: 'row' }}
+        gap={16}
+        style={{ marginBottom: 24 }}
+      >
+        <div style={{ flex: 1, minWidth: isMobile ? '100%' : 200, maxWidth: isMobile ? '100%' : 400 }}>
           <Input
             placeholder="Tìm theo mã hoặc tiêu đề..."
             value={search}
@@ -277,7 +293,8 @@ export function ProjectsPage({ embedded = false }: ProjectsPageProps) {
             background: tokens.color.surface,
             color: tokens.color.text,
             fontSize: 14,
-            minWidth: 150,
+            minWidth: isMobile ? '100%' : 150,
+            minHeight: '44px',
           }}
         >
           <option value="">Tất cả khu vực</option>
@@ -300,7 +317,8 @@ export function ProjectsPage({ embedded = false }: ProjectsPageProps) {
             background: tokens.color.surface,
             color: tokens.color.text,
             fontSize: 14,
-            minWidth: 150,
+            minWidth: isMobile ? '100%' : 150,
+            minHeight: '44px',
           }}
         >
           <option value="">Tất cả danh mục</option>
@@ -310,7 +328,7 @@ export function ProjectsPage({ embedded = false }: ProjectsPageProps) {
             </option>
           ))}
         </select>
-      </div>
+      </ResponsiveStack>
 
       {/* Projects Table */}
       <div
@@ -332,12 +350,18 @@ export function ProjectsPage({ embedded = false }: ProjectsPageProps) {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 24 }}>
+        <ResponsiveStack
+          direction={{ mobile: 'row', tablet: 'row', desktop: 'row' }}
+          justify="center"
+          align="center"
+          gap={8}
+          style={{ marginTop: 24 }}
+        >
           <Button variant="secondary" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
             <i className="ri-arrow-left-line" />
           </Button>
-          <span style={{ padding: '8px 16px', color: tokens.color.text }}>
-            Trang {page} / {totalPages} ({total} công trình)
+          <span style={{ padding: '8px 16px', color: tokens.color.text, fontSize: isMobile ? 12 : 14 }}>
+            {isMobile ? `${page}/${totalPages}` : `Trang ${page} / ${totalPages} (${total} công trình)`}
           </span>
           <Button
             variant="secondary"
@@ -346,7 +370,7 @@ export function ProjectsPage({ embedded = false }: ProjectsPageProps) {
           >
             <i className="ri-arrow-right-line" />
           </Button>
-        </div>
+        </ResponsiveStack>
       )}
 
       {/* Detail Modal */}

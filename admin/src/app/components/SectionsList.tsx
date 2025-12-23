@@ -1,8 +1,23 @@
 import { motion } from 'framer-motion';
 import { tokens } from '@app/shared';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useResponsive } from '../../hooks/useResponsive';
 import type { Section, SectionKind } from '../types';
 
 interface SectionsListProps {
@@ -16,21 +31,28 @@ interface SectionsListProps {
 
 interface SortableSectionItemProps {
   section: Section;
-  sectionType?: { kind: SectionKind; icon: string; label: string; description: string };
+  sectionType?: {
+    kind: SectionKind;
+    icon: string;
+    label: string;
+    description: string;
+  };
   color: string;
   onEdit: () => void;
   onDelete: () => void;
+  isMobile: boolean;
 }
 
-function SortableSectionItem({ section, sectionType, color, onEdit, onDelete }: SortableSectionItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: section.id });
+function SortableSectionItem({
+  section,
+  sectionType,
+  color,
+  onEdit,
+  onDelete,
+  isMobile,
+}: SortableSectionItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: section.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -48,30 +70,41 @@ function SortableSectionItem({ section, sectionType, color, onEdit, onDelete }: 
           borderColor: color + '40',
         }}
         style={{
-          padding: 16,
+          padding: isMobile ? 10 : 16,
           background: 'rgba(255,255,255,0.03)',
           border: `1px solid ${tokens.color.border}`,
           borderRadius: tokens.radius.md,
           display: 'flex',
-          alignItems: 'center',
+          flexDirection: isMobile ? 'column' : 'row',
+          alignItems: isMobile ? 'stretch' : 'center',
           justifyContent: 'space-between',
-          marginBottom: 12,
+          marginBottom: isMobile ? 8 : 12,
           transition: 'all 0.2s',
           cursor: isDragging ? 'grabbing' : 'default',
+          gap: isMobile ? 10 : 0,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: isMobile ? 10 : 16,
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
           {/* Drag Handle */}
           <div
             {...attributes}
             {...listeners}
             style={{
               cursor: 'grab',
-              padding: '8px 4px',
+              padding: isMobile ? '4px 2px' : '8px 4px',
               color: tokens.color.muted,
-              fontSize: 20,
+              fontSize: isMobile ? 16 : 20,
               display: 'flex',
               alignItems: 'center',
+              flexShrink: 0,
             }}
           >
             <i className="ri-draggable" />
@@ -80,77 +113,118 @@ function SortableSectionItem({ section, sectionType, color, onEdit, onDelete }: 
           {/* Icon */}
           <div
             style={{
-              width: 44,
-              height: 44,
+              width: isMobile ? 36 : 44,
+              height: isMobile ? 36 : 44,
               borderRadius: tokens.radius.md,
               background: `${color}20`,
               border: `2px solid ${color}40`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 20,
+              fontSize: isMobile ? 16 : 20,
               color: color,
+              flexShrink: 0,
             }}
           >
             <i className={sectionType?.icon || 'ri-layout-line'} />
           </div>
 
           {/* Info */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: tokens.color.text, fontWeight: 600, fontSize: 15, marginBottom: 4 }}>
+          <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+            <div
+              style={{
+                color: tokens.color.text,
+                fontWeight: 600,
+                fontSize: isMobile ? 13 : 15,
+                marginBottom: isMobile ? 2 : 4,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
               {sectionType?.label || section.kind}
             </div>
-            <div style={{ color: tokens.color.muted, fontSize: 13, display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span>Order: {section.order}</span>
-              <span>•</span>
-              <span>{sectionType?.description || 'Section'}</span>
+            <div
+              style={{
+                color: tokens.color.muted,
+                fontSize: isMobile ? 11 : 13,
+                display: 'flex',
+                alignItems: 'center',
+                gap: isMobile ? 6 : 12,
+                overflow: 'hidden',
+              }}
+            >
+              <span style={{ flexShrink: 0 }}>Order: {section.order}</span>
+              {!isMobile && (
+                <>
+                  <span>•</span>
+                  <span
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {sectionType?.description || 'Section'}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            flexShrink: 0,
+            justifyContent: isMobile ? 'flex-end' : 'flex-start',
+          }}
+        >
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onEdit}
             style={{
-              padding: '10px 18px',
+              padding: isMobile ? '6px 12px' : '10px 18px',
               background: 'rgba(255,255,255,0.05)',
               border: `1px solid ${tokens.color.border}`,
               borderRadius: tokens.radius.md,
               color: tokens.color.primary,
               cursor: 'pointer',
-              fontSize: 14,
+              fontSize: isMobile ? 12 : 14,
               fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 4,
+              minHeight: isMobile ? 32 : 40,
             }}
           >
             <i className="ri-edit-line" />
-            Edit
+            {!isMobile && 'Edit'}
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onDelete}
             style={{
-              padding: '10px 18px',
+              padding: isMobile ? '6px 12px' : '10px 18px',
               background: 'rgba(239, 68, 68, 0.1)',
               border: `1px solid rgba(239, 68, 68, 0.3)`,
               borderRadius: tokens.radius.md,
               color: '#EF4444',
               cursor: 'pointer',
-              fontSize: 14,
+              fontSize: isMobile ? 12 : 14,
               fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 4,
+              minHeight: isMobile ? 32 : 40,
             }}
           >
             <i className="ri-delete-bin-line" />
-            Delete
+            {!isMobile && 'Delete'}
           </motion.button>
         </div>
       </motion.div>
@@ -166,6 +240,7 @@ export function SectionsList({
   onDelete,
   onReorder,
 }: SectionsListProps) {
+  const { isMobile } = useResponsive();
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -241,6 +316,7 @@ export function SectionsList({
                 color={color}
                 onEdit={() => onEdit(section)}
                 onDelete={() => onDelete(section.id)}
+                isMobile={isMobile}
               />
             );
           })}

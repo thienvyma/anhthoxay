@@ -1,6 +1,14 @@
-import { ReactNode, useState } from 'react';
+/**
+ * Layout Component
+ * Main layout with responsive sidebar and navigation
+ *
+ * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5
+ */
+
+import { ReactNode, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokens } from '@app/shared';
+import { useResponsive } from '../../hooks/useResponsive';
 import type { RouteType } from '../types';
 
 interface LayoutProps {
@@ -12,9 +20,30 @@ interface LayoutProps {
   userEmail?: string;
 }
 
-export function Layout({ children, currentRoute, currentPageSlug, onNavigate, onLogout, userEmail }: LayoutProps) {
+// Sidebar widths
+const SIDEBAR_WIDTH = 260;
+const SIDEBAR_COLLAPSED_WIDTH = 80;
+
+export function Layout({
+  children,
+  currentRoute,
+  currentPageSlug,
+  onNavigate,
+  onLogout,
+  userEmail,
+}: LayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isMobile, isTablet, breakpoint } = useResponsive();
+
+  // Close mobile menu when navigating
+  const handleNavigate = useCallback(
+    (route: RouteType, slug?: string) => {
+      onNavigate(route, slug);
+      setMobileMenuOpen(false);
+    },
+    [onNavigate]
+  );
 
   const menuItems: Array<{ route: RouteType; icon: string; label: string }> = [
     { route: 'dashboard', icon: 'ri-dashboard-3-line', label: 'Dashboard' },
@@ -32,194 +61,257 @@ export function Layout({ children, currentRoute, currentPageSlug, onNavigate, on
     { route: 'settings', icon: 'ri-settings-3-line', label: 'Settings' },
   ];
 
-  return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: tokens.color.background }}>
-      {/* Sidebar */}
-      <motion.aside
-        initial={false}
-        animate={{ width: sidebarCollapsed ? 80 : 260 }}
+  // Calculate sidebar width based on state
+  const sidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
+
+  // Render menu item
+  const renderMenuItem = (
+    item: { route: RouteType; icon: string; label: string },
+    collapsed: boolean
+  ) => {
+    const isActive = currentRoute === item.route;
+    return (
+      <motion.button
+        key={item.route}
+        whileHover={{ scale: 1.02, x: 4 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => handleNavigate(item.route)}
         style={{
-          background: 'rgba(15,16,20,0.98)',
-          borderRight: `1px solid ${tokens.color.border}`,
+          width: '100%',
           display: 'flex',
-          flexDirection: 'column',
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          zIndex: 100,
-          transition: 'width 0.3s ease',
+          alignItems: 'center',
+          gap: 12,
+          padding: collapsed ? '12px' : '12px 16px',
+          marginBottom: 4,
+          background: isActive
+            ? `linear-gradient(90deg, ${tokens.color.primary}15, transparent)`
+            : 'transparent',
+          border: 'none',
+          borderLeft: isActive
+            ? `3px solid ${tokens.color.primary}`
+            : '3px solid transparent',
+          borderRadius: tokens.radius.md,
+          color: isActive ? tokens.color.primary : tokens.color.muted,
+          cursor: 'pointer',
+          fontSize: 15,
+          fontWeight: isActive ? 600 : 400,
+          transition: 'all 0.2s',
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          minHeight: '44px', // Touch target
         }}
-        className="desktop-sidebar"
+        title={collapsed ? item.label : undefined}
       >
-        {/* Logo */}
+        <i className={item.icon} style={{ fontSize: 20 }} />
+        {!collapsed && <span>{item.label}</span>}
+      </motion.button>
+    );
+  };
+
+  // Render user info section
+  const renderUserInfo = (collapsed: boolean) => {
+    if (collapsed) return null;
+
+    return (
+      <div
+        style={{
+          padding: isMobile ? '12px' : '16px',
+          borderTop: `1px solid ${tokens.color.border}`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
         <div
           style={{
-            padding: sidebarCollapsed ? '24px 16px' : '24px',
-            borderBottom: `1px solid ${tokens.color.border}`,
+            width: 36,
+            height: 36,
+            minWidth: 36,
+            borderRadius: '50%',
+            background: tokens.color.primary,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: sidebarCollapsed ? 'center' : 'space-between',
+            justifyContent: 'center',
+            fontSize: 16,
+            color: '#111',
+            fontWeight: 600,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: tokens.radius.md,
-                background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 20,
-                color: '#111',
-              }}
-            >
-              <i className="ri-admin-line" />
+          {userEmail?.charAt(0).toUpperCase() || 'A'}
+        </div>
+        <div style={{ flex: 1, overflow: 'hidden', minWidth: 0 }}>
+          <div
+            style={{
+              color: tokens.color.text,
+              fontSize: 14,
+              fontWeight: 500,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {userEmail || 'Admin'}
+          </div>
+          <div style={{ color: tokens.color.muted, fontSize: 12 }}>
+            Administrator
+          </div>
+        </div>
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={onLogout}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: tokens.color.error,
+            cursor: 'pointer',
+            fontSize: 18,
+            minWidth: '44px',
+            minHeight: '44px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          title="Logout"
+        >
+          <i className="ri-logout-circle-line" />
+        </motion.button>
+      </div>
+    );
+  };
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        minHeight: '100vh',
+        background: tokens.color.background,
+      }}
+      data-breakpoint={breakpoint}
+    >
+      {/* Desktop Sidebar */}
+      {!isMobile && (
+        <motion.aside
+          initial={false}
+          animate={{ width: sidebarWidth }}
+          style={{
+            background: 'rgba(15,16,20,0.98)',
+            borderRight: `1px solid ${tokens.color.border}`,
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'fixed',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            zIndex: tokens.zIndex.sticky,
+            transition: 'width 0.3s ease',
+          }}
+        >
+          {/* Logo */}
+          <div
+            style={{
+              padding: sidebarCollapsed ? '24px 16px' : '24px',
+              borderBottom: `1px solid ${tokens.color.border}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed ? 'center' : 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: tokens.radius.md,
+                  background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 20,
+                  color: '#111',
+                }}
+              >
+                <i className="ri-admin-line" />
+              </div>
+              {!sidebarCollapsed && (
+                <div>
+                  <div
+                    style={{
+                      color: tokens.color.text,
+                      fontWeight: 600,
+                      fontSize: 16,
+                    }}
+                  >
+                    Admin
+                  </div>
+                  <div style={{ color: tokens.color.muted, fontSize: 12 }}>
+                    Dashboard
+                  </div>
+                </div>
+              )}
             </div>
             {!sidebarCollapsed && (
-              <div>
-                <div style={{ color: tokens.color.text, fontWeight: 600, fontSize: 16 }}>Admin</div>
-                <div style={{ color: tokens.color.muted, fontSize: 12 }}>Dashboard</div>
-              </div>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setSidebarCollapsed(true)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: tokens.color.muted,
+                  cursor: 'pointer',
+                  fontSize: 20,
+                  minWidth: '44px',
+                  minHeight: '44px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <i className="ri-menu-fold-line" />
+              </motion.button>
             )}
           </div>
-          {!sidebarCollapsed && (
+
+          {/* Menu Items */}
+          <nav
+            style={{
+              flex: 1,
+              padding: sidebarCollapsed ? '12px 8px' : '12px',
+              overflowY: 'auto',
+            }}
+          >
+            {menuItems.map((item) => renderMenuItem(item, sidebarCollapsed))}
+          </nav>
+
+          {/* Collapse Button (when collapsed) */}
+          {sidebarCollapsed && (
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              onClick={() => setSidebarCollapsed(true)}
+              onClick={() => setSidebarCollapsed(false)}
               style={{
+                padding: '16px',
                 background: 'transparent',
                 border: 'none',
+                borderTop: `1px solid ${tokens.color.border}`,
                 color: tokens.color.muted,
                 cursor: 'pointer',
                 fontSize: 20,
+                minHeight: '44px',
               }}
             >
-              <i className="ri-menu-fold-line" />
+              <i className="ri-menu-unfold-line" />
             </motion.button>
           )}
-        </div>
 
-        {/* Menu Items */}
-        <nav style={{ flex: 1, padding: sidebarCollapsed ? '12px 8px' : '12px', overflowY: 'auto' }}>
-          {menuItems.map((item) => {
-            const isActive = currentRoute === item.route;
-            return (
-              <motion.button
-                key={item.route}
-                whileHover={{ scale: 1.02, x: 4 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  onNavigate(item.route);
-                  setMobileMenuOpen(false);
-                }}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: sidebarCollapsed ? '12px' : '12px 16px',
-                  marginBottom: 4,
-                  background: isActive
-                    ? `linear-gradient(90deg, ${tokens.color.primary}15, transparent)`
-                    : 'transparent',
-                  border: 'none',
-                  borderLeft: isActive ? `3px solid ${tokens.color.primary}` : '3px solid transparent',
-                  borderRadius: tokens.radius.md,
-                  color: isActive ? tokens.color.primary : tokens.color.muted,
-                  cursor: 'pointer',
-                  fontSize: 15,
-                  fontWeight: isActive ? 600 : 400,
-                  transition: 'all 0.2s',
-                  justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                }}
-                title={sidebarCollapsed ? item.label : undefined}
-              >
-                <i className={item.icon} style={{ fontSize: 20 }} />
-                {!sidebarCollapsed && <span>{item.label}</span>}
-              </motion.button>
-            );
-          })}
-        </nav>
+          {/* User Info */}
+          {renderUserInfo(sidebarCollapsed)}
+        </motion.aside>
+      )}
 
-        {/* Collapse Button (when collapsed) */}
-        {sidebarCollapsed && (
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setSidebarCollapsed(false)}
-            style={{
-              padding: '16px',
-              background: 'transparent',
-              border: 'none',
-              borderTop: `1px solid ${tokens.color.border}`,
-              color: tokens.color.muted,
-              cursor: 'pointer',
-              fontSize: 20,
-            }}
-          >
-            <i className="ri-menu-unfold-line" />
-          </motion.button>
-        )}
-
-        {/* User Info */}
-        {!sidebarCollapsed && (
-          <div
-            style={{
-              padding: '16px',
-              borderTop: `1px solid ${tokens.color.border}`,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-            }}
-          >
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: '50%',
-                background: tokens.color.primary,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 16,
-                color: '#111',
-                fontWeight: 600,
-              }}
-            >
-              {userEmail?.charAt(0).toUpperCase() || 'A'}
-            </div>
-            <div style={{ flex: 1, overflow: 'hidden' }}>
-              <div style={{ color: tokens.color.text, fontSize: 14, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {userEmail || 'Admin'}
-              </div>
-              <div style={{ color: tokens.color.muted, fontSize: 12 }}>Administrator</div>
-            </div>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={onLogout}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: tokens.color.error,
-                cursor: 'pointer',
-                fontSize: 18,
-              }}
-              title="Logout"
-            >
-              <i className="ri-logout-circle-line" />
-            </motion.button>
-          </div>
-        )}
-      </motion.aside>
-
-      {/* Mobile Menu */}
+      {/* Mobile Menu Overlay */}
       <AnimatePresence>
-        {mobileMenuOpen && (
+        {mobileMenuOpen && isMobile && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
@@ -230,14 +322,14 @@ export function Layout({ children, currentRoute, currentPageSlug, onNavigate, on
                 position: 'fixed',
                 inset: 0,
                 background: 'rgba(0,0,0,0.5)',
-                zIndex: 998,
+                zIndex: tokens.zIndex.overlay,
               }}
-              className="mobile-only"
             />
             <motion.div
               initial={{ x: -280 }}
               animate={{ x: 0 }}
               exit={{ x: -280 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               style={{
                 position: 'fixed',
                 left: 0,
@@ -246,14 +338,21 @@ export function Layout({ children, currentRoute, currentPageSlug, onNavigate, on
                 width: 280,
                 background: 'rgba(15,16,20,0.98)',
                 borderRight: `1px solid ${tokens.color.border}`,
-                zIndex: 999,
+                zIndex: tokens.zIndex.modal,
                 display: 'flex',
                 flexDirection: 'column',
               }}
-              className="mobile-only"
             >
-              {/* Same content as desktop sidebar */}
-              <div style={{ padding: '24px', borderBottom: `1px solid ${tokens.color.border}` }}>
+              {/* Mobile Header */}
+              <div
+                style={{
+                  padding: '16px',
+                  borderBottom: `1px solid ${tokens.color.border}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div
                     style={{
@@ -271,45 +370,48 @@ export function Layout({ children, currentRoute, currentPageSlug, onNavigate, on
                     <i className="ri-admin-line" />
                   </div>
                   <div>
-                    <div style={{ color: tokens.color.text, fontWeight: 600, fontSize: 16 }}>Admin</div>
-                    <div style={{ color: tokens.color.muted, fontSize: 12 }}>Dashboard</div>
-                  </div>
-                </div>
-              </div>
-
-              <nav style={{ flex: 1, padding: '12px', overflowY: 'auto' }}>
-                {menuItems.map((item) => {
-                  const isActive = currentRoute === item.route;
-                  return (
-                    <button
-                      key={item.route}
-                      onClick={() => {
-                        onNavigate(item.route);
-                        setMobileMenuOpen(false);
-                      }}
+                    <div
                       style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 12,
-                        padding: '12px 16px',
-                        marginBottom: 4,
-                        background: isActive ? `linear-gradient(90deg, ${tokens.color.primary}15, transparent)` : 'transparent',
-                        border: 'none',
-                        borderLeft: isActive ? `3px solid ${tokens.color.primary}` : '3px solid transparent',
-                        borderRadius: tokens.radius.md,
-                        color: isActive ? tokens.color.primary : tokens.color.muted,
-                        cursor: 'pointer',
-                        fontSize: 15,
-                        fontWeight: isActive ? 600 : 400,
+                        color: tokens.color.text,
+                        fontWeight: 600,
+                        fontSize: 16,
                       }}
                     >
-                      <i className={item.icon} style={{ fontSize: 20 }} />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
+                      Admin
+                    </div>
+                    <div style={{ color: tokens.color.muted, fontSize: 12 }}>
+                      Dashboard
+                    </div>
+                  </div>
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setMobileMenuOpen(false)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: tokens.color.muted,
+                    cursor: 'pointer',
+                    fontSize: 24,
+                    minWidth: '44px',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <i className="ri-close-line" />
+                </motion.button>
+              </div>
+
+              {/* Mobile Menu Items */}
+              <nav style={{ flex: 1, padding: '12px', overflowY: 'auto' }}>
+                {menuItems.map((item) => renderMenuItem(item, false))}
               </nav>
+
+              {/* Mobile User Info */}
+              {renderUserInfo(false)}
             </motion.div>
           </>
         )}
@@ -319,56 +421,99 @@ export function Layout({ children, currentRoute, currentPageSlug, onNavigate, on
       <div
         style={{
           flex: 1,
-          marginLeft: sidebarCollapsed ? 80 : 260,
+          marginLeft: isMobile ? 0 : sidebarWidth,
           transition: 'margin-left 0.3s ease',
+          minWidth: 0, // Prevent flex overflow
+          maxWidth: '100vw',
+          overflowX: 'hidden',
         }}
-        className="main-content"
       >
         {/* Top Bar */}
         <header
           style={{
             background: 'rgba(15,16,20,0.95)',
             borderBottom: `1px solid ${tokens.color.border}`,
-            padding: '16px 24px',
+            padding: isMobile ? '12px 16px' : '16px 24px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             position: 'sticky',
             top: 0,
-            zIndex: 90,
+            zIndex: tokens.zIndex.sticky,
             backdropFilter: 'blur(10px)',
+            gap: 12,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setMobileMenuOpen(true)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: tokens.color.text,
-                cursor: 'pointer',
-                fontSize: 24,
-                display: 'none',
-              }}
-              className="mobile-only-flex"
-            >
-              <i className="ri-menu-line" />
-            </motion.button>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: isMobile ? 12 : 16,
+              flex: 1,
+              minWidth: 0,
+            }}
+          >
+            {/* Mobile Menu Button */}
+            {isMobile && (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setMobileMenuOpen(true)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: tokens.color.text,
+                  cursor: 'pointer',
+                  fontSize: 24,
+                  minWidth: '44px',
+                  minHeight: '44px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <i className="ri-menu-line" />
+              </motion.button>
+            )}
 
-            <h1 style={{ color: tokens.color.text, fontSize: 24, fontWeight: 600, margin: 0 }}>
-              {menuItems.find((item) => item.route === currentRoute)?.label || 'Dashboard'}
-              {currentRoute === 'sections' && currentPageSlug && (
-                <span style={{ color: tokens.color.muted, fontSize: 16, fontWeight: 400, marginLeft: 8 }}>
+            <h1
+              style={{
+                color: tokens.color.text,
+                fontSize: isMobile ? 18 : isTablet ? 20 : 24,
+                fontWeight: 600,
+                margin: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {menuItems.find((item) => item.route === currentRoute)?.label ||
+                'Dashboard'}
+              {currentRoute === 'sections' && currentPageSlug && !isMobile && (
+                <span
+                  style={{
+                    color: tokens.color.muted,
+                    fontSize: 16,
+                    fontWeight: 400,
+                    marginLeft: 8,
+                  }}
+                >
                   / {currentPageSlug}
                 </span>
               )}
             </h1>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {/* Quick Actions */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: isMobile ? 8 : 12,
+              flexShrink: 0,
+            }}
+          >
+            {/* View Site Button */}
             <motion.a
               href="http://localhost:4200"
               target="_blank"
@@ -376,7 +521,7 @@ export function Layout({ children, currentRoute, currentPageSlug, onNavigate, on
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               style={{
-                padding: '8px 16px',
+                padding: isMobile ? '8px 12px' : '8px 16px',
                 background: 'rgba(255,255,255,0.05)',
                 border: `1px solid ${tokens.color.border}`,
                 borderRadius: tokens.radius.md,
@@ -386,51 +531,26 @@ export function Layout({ children, currentRoute, currentPageSlug, onNavigate, on
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
+                minHeight: '44px',
               }}
             >
               <i className="ri-external-link-line" />
-              <span className="desktop-only">View Site</span>
+              {!isMobile && <span>View Site</span>}
             </motion.a>
           </div>
         </header>
 
         {/* Page Content */}
-        <main style={{ padding: 24 }}>{children}</main>
+        <main
+          style={{
+            padding: isMobile ? 12 : isTablet ? 20 : 24,
+            maxWidth: '100%',
+            overflowX: 'hidden',
+          }}
+        >
+          {children}
+        </main>
       </div>
-
-      <style>{`
-        @media (max-width: 768px) {
-          .desktop-sidebar {
-            display: none;
-          }
-          .main-content {
-            margin-left: 0 !important;
-          }
-          .mobile-only {
-            display: block !important;
-          }
-          .mobile-only-flex {
-            display: flex !important;
-          }
-        }
-        @media (min-width: 769px) {
-          .mobile-only {
-            display: none !important;
-          }
-          .mobile-only-flex {
-            display: none !important;
-          }
-        }
-        .desktop-only {
-          display: inline;
-        }
-        @media (max-width: 640px) {
-          .desktop-only {
-            display: none;
-          }
-        }
-      `}</style>
     </div>
   );
 }
-

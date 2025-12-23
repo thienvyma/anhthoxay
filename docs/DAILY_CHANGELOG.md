@@ -4,7 +4,114 @@ Danh sách các file được tạo mới hoặc chỉnh sửa theo ngày, để
 
 ---
 
+## 2024-12-24
+
+### Task: Portal Responsive - Fix Horizontal Scroll & Content Overflow
+**✏️ Modified:**
+- `portal/src/styles/base.css` - Added overflow-x: hidden to html, body, #root
+- `portal/src/styles/layout/layout.css` - Added overflow-x: hidden and box-sizing to layout containers
+- `portal/src/styles/responsive.css` - Added mobile card overflow fix utilities
+- `portal/src/pages/homeowner/ProjectsPage.tsx` - Fixed budget format (5tr-10tr), stacked info vertically on mobile, improved card layout
+- `portal/src/components/Layout/Layout.tsx` - Fixed main content width calculation when sidebar is open (calc(100% - 260px))
+
+---
+
 ## 2024-12-23
+
+### Task: Portal Responsive Optimization - Responsive Components
+**🆕 Created:**
+- `portal/src/components/responsive/index.ts` - Centralized exports for all responsive components
+- `portal/src/components/responsive/ResponsiveTable.tsx` - Table that converts to card layout on mobile
+- `portal/src/components/responsive/ResponsiveModal.tsx` - Modal that becomes full-screen on mobile
+- `portal/src/components/responsive/ResponsiveFilters.tsx` - Collapsible filter panel for mobile
+- `portal/src/components/responsive/ResponsiveTabs.tsx` - Tab navigation with horizontal scroll on mobile
+- `portal/src/components/responsive/ResponsivePageHeader.tsx` - Consistent page header with responsive layout
+- `portal/src/components/responsive/ResponsiveActionBar.tsx` - Action buttons that wrap on mobile
+- `portal/src/components/responsive/ResponsiveGrid.tsx` - Auto-adjusting grid columns based on screen size
+- `portal/src/components/responsive/ResponsiveStack.tsx` - Flex container that changes direction based on screen size
+- `portal/src/components/responsive/ResponsivePageContainer.tsx` - Wrapper component preventing horizontal scroll
+- `portal/src/utils/responsive.ts` - Responsive utility functions for breakpoint-based values
+
+**✏️ Modified:**
+- `portal/src/pages/contractor/MarketplacePage.tsx` - Added ResponsiveFilters and ResponsivePageHeader
+- `portal/src/pages/contractor/MyBidsPage.tsx` - Added ResponsivePageHeader and mobile-optimized card layout
+- `portal/src/pages/homeowner/ProjectsPage.tsx` - Added ResponsiveFilters, ResponsivePageHeader, ResponsiveModal
+- `portal/src/pages/homeowner/ProjectDetailPage.tsx` - Replaced confirm modal with ResponsiveModal
+- `portal/src/styles/responsive.css` - Added new responsive utility classes
+
+---
+
+### Task: Admin Responsive Refactor - Unified Components
+**🆕 Created:**
+- `admin/src/components/responsive/ResponsivePageContainer.tsx` - Wrapper component preventing horizontal scroll
+- `admin/src/components/responsive/ResponsivePageHeader.tsx` - Consistent page header with title, subtitle, actions
+- `admin/src/components/responsive/ResponsiveActionBar.tsx` - Action buttons that wrap on mobile
+
+**✏️ Modified:**
+- `admin/src/app/components/Layout.tsx` - Added overflow-x: hidden to prevent horizontal scroll
+- `admin/src/app/components/PageSelectorBar.tsx` - Made fully responsive with mobile-optimized layout
+- `admin/src/app/components/StatsGrid.tsx` - Refactored to use ResponsiveGrid (2/3/4 columns)
+- `admin/src/app/components/StatsCard.tsx` - Made compact on mobile with smaller icons/text
+- `admin/src/app/pages/SectionsPage.tsx` - Made responsive with useResponsive hook
+- `admin/src/components/responsive/index.ts` - Export new layout components
+
+---
+
+### Task: Admin Responsive Optimization - Tasks 21-30
+**🆕 Created:**
+- `admin/src/components/responsive/ResponsiveFilters.tsx` - Collapsible filter panel for mobile with active count badge
+
+**✏️ Modified:**
+- `admin/src/app/pages/InteriorPage/index.tsx` - Refactored to use ResponsiveTabs with dropdown mode on mobile
+- `admin/src/app/pages/BiddingManagementPage/index.tsx` - Refactored to use ResponsiveTabs with dropdown mode
+- `admin/src/app/pages/SettingsPage/index.tsx` - Refactored to use ResponsiveTabs with dropdown mode
+- `admin/src/app/pages/PricingConfigPage/index.tsx` - Refactored to use ResponsiveTabs with dropdown mode
+- `admin/src/app/pages/MediaPage/index.tsx` - Added ResponsiveGrid and ResponsiveStack for mobile layout
+- `admin/src/app/pages/ProjectsPage/index.tsx` - Added ResponsiveStack for filters and pagination
+- `admin/src/app/pages/BidsPage/index.tsx` - Added ResponsiveStack for filters and pagination
+- `admin/src/components/responsive/index.ts` - Export ResponsiveFilters component
+
+---
+
+### Task: Fix Blog Post Creation - Validation Schema
+**✏️ Modified:**
+- `api/src/routes/blog.routes.ts` - Fixed `featuredImage` validation to properly handle empty string, added `isFeatured` field to schema, set `publishedAt` when status is PUBLISHED
+
+---
+
+### Task: Admin Dashboard Enhancement - Frontend Components
+**🆕 Created:**
+- `admin/src/app/components/StatsCard.tsx` - Individual stats card with icon, label, value, pending badge, hover animation
+- `admin/src/app/components/StatsGrid.tsx` - Responsive grid layout for 8 stats cards (4/2/1 columns)
+- `admin/src/app/components/PendingItemsSection.tsx` - Tabbed interface for pending projects, bids, contractors
+- `admin/src/app/components/ActivityFeed.tsx` - Recent activity feed with icons, timestamps, navigation
+- `admin/src/app/components/QuickActions.tsx` - Quick action buttons with badges for common admin tasks
+
+**✏️ Modified:**
+- `admin/src/app/pages/DashboardPage.tsx` - Refactored to use new components, added auto-refresh, error handling
+
+---
+
+### Task: Admin Dashboard Enhancement - Frontend API Client
+**🆕 Created:**
+- `admin/src/app/api/dashboard.ts` - Dashboard API client with getDashboardStats() and getActivityFeed() functions, TypeScript interfaces for all response types
+
+**✏️ Modified:**
+- `admin/src/app/api/index.ts` - Export dashboardApi and all dashboard types
+
+---
+
+### Task: Admin Dashboard Enhancement - API Endpoint and Service
+**🆕 Created:**
+- `api/src/schemas/dashboard.schema.ts` - Zod schemas for dashboard API responses (DashboardStatsResponse, ActivityFeedResponse)
+- `api/src/services/dashboard.service.ts` - DashboardService with stats aggregation, pending items, and activity feed
+- `api/src/services/dashboard.service.property.test.ts` - Property-based tests for 6 correctness properties
+- `api/src/routes/dashboard.routes.ts` - Dashboard routes with auth middleware
+
+**✏️ Modified:**
+- `api/src/main.ts` - Register dashboard routes at `/api/admin/dashboard`
+
+---
 
 ### Task: Mobile Menu - Fix Highlight Feature Not Working
 **✏️ Modified:**
@@ -4210,3 +4317,34 @@ All 15 tasks completed successfully. The Core Bidding System is now fully implem
 - Xác định 8 files >1000 lines (critical)
 - Đánh giá patterns: Route Factory ✅, Service Class ⚠️, React Components ⚠️
 - Đề xuất roadmap 6 tuần để cải thiện
+
+---
+
+## 2024-12-23 (continued)
+
+### Task: Admin Responsive Optimization - Foundation (Tasks 1-19)
+**🆕 Created:**
+- `admin/src/styles/variables.css` - CSS custom properties for breakpoints, spacing, typography, colors (from @app/shared tokens)
+- `admin/src/styles/responsive.css` - Global responsive utility classes (visibility, grid, spacing, typography, flex)
+- `admin/src/hooks/useResponsive.ts` - React hook for screen size detection with breakpoint helpers
+- `admin/src/utils/responsive.ts` - Utility functions for responsive values, grid columns, spacing, font sizes
+- `admin/src/utils/chartConfig.ts` - Responsive chart configuration utilities
+- `admin/src/components/responsive/ResponsiveGrid.tsx` - Auto-adjusting grid component
+- `admin/src/components/responsive/ResponsiveStack.tsx` - Flex container with responsive direction
+- `admin/src/components/responsive/ResponsiveModal.tsx` - Modal that becomes full-screen on mobile
+- `admin/src/components/responsive/ResponsiveTabs.tsx` - Tab navigation with scroll/dropdown modes
+- `admin/src/components/responsive/ResponsiveTable.tsx` - Table that converts to card layout on mobile
+- `admin/src/components/responsive/index.ts` - Centralized exports for responsive components
+
+**✏️ Modified:**
+- `admin/src/main.tsx` - Import CSS variables and responsive utilities
+- `admin/src/app/components/Layout.tsx` - Refactored with useResponsive hook, improved mobile menu, touch-friendly targets
+- `admin/src/app/pages/DashboardPage.tsx` - Refactored with ResponsiveGrid, ResponsiveStack for responsive layout
+- `admin/src/app/pages/UsersPage.tsx` - Refactored with ResponsiveTable, ResponsiveModal, ResponsiveStack
+
+**📝 Summary:**
+- Created centralized responsive system with CSS variables, utility classes, hooks, and components
+- Breakpoints: mobile ≤ 640px, tablet 641-1024px, desktop > 1024px
+- All components use tokens from @app/shared for consistency
+- Touch targets minimum 44x44px on mobile
+- Completed Tasks 1-19 of admin-responsive-optimization spec

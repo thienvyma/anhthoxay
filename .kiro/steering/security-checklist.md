@@ -505,6 +505,10 @@ Khi thêm route mới, cập nhật danh sách này:
 - `POST /api/admin/interior/sync/pull` - Pull dữ liệu từ Google Sheet vào DB (Rate limited: 1 req/phút)
 - `POST /api/admin/interior/sync/push` - Push dữ liệu từ DB ra Google Sheet (Rate limited: 1 req/phút)
 
+### Admin Routes - Dashboard (requireRole('ADMIN'))
+- `GET /api/admin/dashboard` - Lấy thống kê tổng quan dashboard (leads, projects, bids, contractors, etc.)
+- `GET /api/admin/dashboard/activity` - Lấy activity feed gần đây (limit param)
+
 ### Contractor Routes - Saved Projects (requireRole('CONTRACTOR'))
 - `GET /api/contractor/saved-projects` - Danh sách công trình đã lưu
 - `POST /api/contractor/saved-projects/:projectId` - Lưu công trình

@@ -1,19 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
+/**
+ * Pricing Config Page - Pricing configuration with responsive tabs
+ *
+ * Requirements: 5.1, 5.2
+ */
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { tokens } from '@app/shared';
+import { ResponsiveTabs, Tab } from '../../../components/responsive';
 import { ServiceCategoriesTab } from './ServiceCategoriesTab';
 import { UnitPricesTab } from './UnitPricesTab';
 import { MaterialsTab } from './MaterialsTab';
 import { FormulasTab } from './FormulasTab';
 import type { TabType, ServiceCategory, UnitPrice, Material, MaterialCategory, Formula } from './types';
 import { serviceCategoriesApi, unitPricesApi, materialsApi, materialCategoriesApi, formulasApi } from '../../api';
-
-const TABS: Array<{ key: TabType; icon: string; label: string }> = [
-  { key: 'service-categories', icon: 'ri-tools-line', label: 'Hạng mục' },
-  { key: 'unit-prices', icon: 'ri-money-dollar-circle-line', label: 'Đơn giá' },
-  { key: 'materials', icon: 'ri-paint-brush-line', label: 'Vật dụng' },
-  { key: 'formulas', icon: 'ri-calculator-line', label: 'Công thức' },
-];
 
 export function PricingConfigPage() {
   const [activeTab, setActiveTab] = useState<TabType>('service-categories');
@@ -51,6 +51,44 @@ export function PricingConfigPage() {
     fetchAllData();
   }, [fetchAllData]);
 
+  // Build tabs with content
+  const tabs: Tab[] = useMemo(
+    () => [
+      {
+        id: 'service-categories',
+        label: 'Hạng mục',
+        icon: 'ri-tools-line',
+        content: (
+          <ServiceCategoriesTab
+            categories={serviceCategories}
+            formulas={formulas}
+            materialCategories={materialCategories}
+            onRefresh={fetchAllData}
+          />
+        ),
+      },
+      {
+        id: 'unit-prices',
+        label: 'Đơn giá',
+        icon: 'ri-money-dollar-circle-line',
+        content: <UnitPricesTab unitPrices={unitPrices} onRefresh={fetchAllData} />,
+      },
+      {
+        id: 'materials',
+        label: 'Vật dụng',
+        icon: 'ri-paint-brush-line',
+        content: <MaterialsTab materials={materials} categories={materialCategories} onRefresh={fetchAllData} />,
+      },
+      {
+        id: 'formulas',
+        label: 'Công thức',
+        icon: 'ri-calculator-line',
+        content: <FormulasTab formulas={formulas} unitPrices={unitPrices} onRefresh={fetchAllData} />,
+      },
+    ],
+    [serviceCategories, unitPrices, materials, materialCategories, formulas, fetchAllData]
+  );
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
@@ -71,56 +109,15 @@ export function PricingConfigPage() {
         <p style={{ color: tokens.color.muted, margin: '8px 0 0' }}>Quản lý hạng mục, đơn giá, vật dụng và công thức tính giá</p>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'rgba(255,255,255,0.03)', padding: 4, borderRadius: 12, flexWrap: 'wrap' }}>
-        {TABS.map(tab => (
-          <motion.button
-            key={tab.key}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setActiveTab(tab.key)}
-            style={{
-              flex: 1,
-              minWidth: 120,
-              padding: '12px 16px',
-              background: activeTab === tab.key ? tokens.color.primary : 'transparent',
-              border: 'none',
-              borderRadius: 8,
-              color: activeTab === tab.key ? '#111' : tokens.color.muted,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              fontSize: 14,
-              fontWeight: activeTab === tab.key ? 600 : 400,
-              transition: 'all 0.2s',
-            }}
-          >
-            <i className={tab.icon} />
-            {tab.label}
-          </motion.button>
-        ))}
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'service-categories' && (
-        <ServiceCategoriesTab
-          categories={serviceCategories}
-          formulas={formulas}
-          materialCategories={materialCategories}
-          onRefresh={fetchAllData}
-        />
-      )}
-      {activeTab === 'unit-prices' && (
-        <UnitPricesTab unitPrices={unitPrices} onRefresh={fetchAllData} />
-      )}
-      {activeTab === 'materials' && (
-        <MaterialsTab materials={materials} categories={materialCategories} onRefresh={fetchAllData} />
-      )}
-      {activeTab === 'formulas' && (
-        <FormulasTab formulas={formulas} unitPrices={unitPrices} onRefresh={fetchAllData} />
-      )}
+      {/* Responsive Tabs */}
+      <ResponsiveTabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={(tabId) => setActiveTab(tabId as TabType)}
+        mobileMode="dropdown"
+        iconOnlyMobile={false}
+        testId="pricing-config-tabs"
+      />
     </div>
   );
 }

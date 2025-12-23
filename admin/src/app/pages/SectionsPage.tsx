@@ -10,9 +10,11 @@ import { SectionTypePicker } from '../components/SectionTypePicker';
 import { SectionsList } from '../components/SectionsList';
 import { PageSelectorBar } from '../components/PageSelectorBar';
 import { useToast } from '../components/Toast';
+import { useResponsive } from '../../hooks/useResponsive';
 
 export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
   const toast = useToast();
+  const { isMobile } = useResponsive();
   const [pages, setPages] = useState<Page[]>([]);
   const [page, setPage] = useState<Page | null>(null);
   const [loading, setLoading] = useState(true);
@@ -189,7 +191,16 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
   }
 
   return (
-    <div style={{ maxWidth: showLivePreview ? '100%' : 1400, margin: '0 auto', height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', padding: '0 20px' }}>
+    <div style={{ 
+      maxWidth: showLivePreview ? '100%' : 1400, 
+      margin: '0 auto', 
+      height: isMobile ? 'auto' : '100vh', 
+      overflow: isMobile ? 'visible' : 'hidden', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      padding: isMobile ? 0 : '0 20px',
+      minHeight: isMobile ? 'auto' : '100vh',
+    }}>
       {/* Page Selector Bar */}
       <PageSelectorBar
         pages={pages}
@@ -202,42 +213,60 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
       />
 
       {/* Actions Bar */}
-      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ 
+        marginBottom: isMobile ? 16 : 24, 
+        display: 'flex', 
+        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: isMobile ? 'stretch' : 'center', 
+        justifyContent: 'space-between',
+        gap: isMobile ? 12 : 16,
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div
             style={{
-              width: 40,
-              height: 40,
+              width: isMobile ? 36 : 40,
+              height: isMobile ? 36 : 40,
               borderRadius: tokens.radius.md,
               background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 20,
+              fontSize: isMobile ? 18 : 20,
               color: '#111',
+              flexShrink: 0,
             }}
           >
             <i className="ri-layout-grid-line" />
           </div>
           <div>
-            <h2 style={{ fontSize: 24, fontWeight: 700, color: tokens.color.text, margin: 0 }}>
+            <h2 style={{ fontSize: isMobile ? 18 : 24, fontWeight: 700, color: tokens.color.text, margin: 0 }}>
               Page Sections
             </h2>
-            <p style={{ color: tokens.color.muted, fontSize: 14, margin: 0 }}>
-              Drag sections to reorder • Click to edit
+            <p style={{ color: tokens.color.muted, fontSize: isMobile ? 12 : 14, margin: 0 }}>
+              {isMobile ? 'Tap to edit' : 'Drag sections to reorder • Click to edit'}
             </p>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ 
+          display: 'flex', 
+          gap: isMobile ? 8 : 12,
+          flexWrap: 'wrap',
+        }}>
+          {!isMobile && (
+            <Button 
+              onClick={() => setShowLivePreview(!showLivePreview)} 
+              icon={showLivePreview ? 'ri-layout-left-line' : 'ri-layout-right-line'}
+              variant="secondary"
+            >
+              {showLivePreview ? 'Hide' : 'Show'} Live Preview
+            </Button>
+          )}
           <Button 
-            onClick={() => setShowLivePreview(!showLivePreview)} 
-            icon={showLivePreview ? 'ri-layout-left-line' : 'ri-layout-right-line'}
-            variant="secondary"
+            onClick={() => setShowTypePicker(true)} 
+            icon="ri-add-line"
+            style={{ flex: isMobile ? 1 : 'none' }}
           >
-            {showLivePreview ? 'Hide' : 'Show'} Live Preview
-          </Button>
-          <Button onClick={() => setShowTypePicker(true)} icon="ri-add-line">
-            Add Section
+            {isMobile ? 'Add' : 'Add Section'}
           </Button>
         </div>
       </div>
@@ -247,16 +276,18 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
       <div style={{ 
         display: 'flex', 
         flex: 1, 
-        gap: 24, 
-        overflow: 'hidden',
+        gap: isMobile ? 16 : 24, 
+        overflow: isMobile ? 'visible' : 'hidden',
         paddingBottom: 20,
+        flexDirection: isMobile ? 'column' : 'row',
       }}>
         {/* Left Panel - Sections List */}
         <div style={{ 
-          flex: showLivePreview ? '0 0 50%' : '1 1 100%',
-          overflow: 'auto',
-          maxWidth: showLivePreview ? '50%' : '1400px',
-          margin: showLivePreview ? 0 : '0 auto',
+          flex: showLivePreview && !isMobile ? '0 0 50%' : '1 1 100%',
+          overflow: isMobile ? 'visible' : 'auto',
+          maxWidth: showLivePreview && !isMobile ? '50%' : '1400px',
+          margin: showLivePreview && !isMobile ? 0 : '0 auto',
+          width: '100%',
         }}>
 
           {!page?.sections || page.sections.length === 0 ? (
@@ -300,7 +331,7 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
         </div>
 
         {/* Right Panel - Live Preview */}
-        {showLivePreview && (
+        {showLivePreview && !isMobile && (
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}

@@ -17,6 +17,13 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Layout } from '../../components/Layout';
 import { projectsApi, type Project, type ProjectStatus, type ProjectQuery } from '../../api';
 import { useToast } from '../../components/Toast';
+import {
+  ResponsivePageHeader,
+  ResponsiveFilters,
+  ResponsiveModal,
+  useResponsive,
+  type FilterOption,
+} from '../../components/responsive';
 
 type TabStatus = 'all' | 'draft' | 'active' | 'completed';
 
@@ -64,6 +71,7 @@ export function ProjectsPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { isMobile } = useResponsive();
   
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -144,12 +152,6 @@ export function ProjectsPage() {
     setCurrentPage(1);
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCurrentPage(1);
-    loadProjects();
-  };
-
   const handleDeleteClick = (e: React.MouseEvent, project: Project) => {
     e.preventDefault();
     e.stopPropagation();
@@ -198,10 +200,24 @@ export function ProjectsPage() {
 
   const formatBudget = (min?: number, max?: number): string => {
     if (!min && !max) return 'Chưa xác định';
-    const format = (n: number) => new Intl.NumberFormat('vi-VN').format(n);
-    if (min && max) return `${format(min)} - ${format(max)} VNĐ`;
-    if (min) return `Từ ${format(min)} VNĐ`;
-    if (max) return `Đến ${format(max)} VNĐ`;
+    
+    // Format số với đơn vị rút gọn cho mobile
+    const formatNumber = (n: number): string => {
+      if (n >= 1000000000) {
+        return `${(n / 1000000000).toFixed(n % 1000000000 === 0 ? 0 : 1)}tỷ`;
+      }
+      if (n >= 1000000) {
+        return `${(n / 1000000).toFixed(n % 1000000 === 0 ? 0 : 1)}tr`;
+      }
+      if (n >= 1000) {
+        return `${(n / 1000).toFixed(0)}k`;
+      }
+      return new Intl.NumberFormat('vi-VN').format(n);
+    };
+    
+    if (min && max) return `${formatNumber(min)} - ${formatNumber(max)}`;
+    if (min) return `Từ ${formatNumber(min)}`;
+    if (max) return `Đến ${formatNumber(max)}`;
     return 'Chưa xác định';
   };
 
@@ -218,39 +234,71 @@ export function ProjectsPage() {
     return `Còn ${diffDays} ngày`;
   };
 
+  // Build filter options for ResponsiveFilters
+  const filterOptions: FilterOption[] = [
+    {
+      id: 'search',
+      label: 'Tìm kiếm',
+      type: 'search',
+      value: searchQuery,
+      placeholder: 'Tìm kiếm dự án...',
+    },
+    {
+      id: 'sort',
+      label: 'Sắp xếp',
+      type: 'select',
+      value: `${sortBy}-${sortOrder}`,
+      options: [
+        { value: 'createdAt-desc', label: 'Mới nhất' },
+        { value: 'createdAt-asc', label: 'Cũ nhất' },
+        { value: 'title-asc', label: 'Tên A-Z' },
+        { value: 'title-desc', label: 'Tên Z-A' },
+      ],
+    },
+  ];
+
+  // Handle filter change from ResponsiveFilters
+  const handleResponsiveFilterChange = (filterId: string, value: string) => {
+    switch (filterId) {
+      case 'search':
+        setSearchQuery(value);
+        break;
+      case 'sort': {
+        const [newSortBy, newSortOrder] = value.split('-');
+        setSortBy(newSortBy);
+        setSortOrder(newSortOrder as 'asc' | 'desc');
+        break;
+      }
+    }
+  };
+
+  // Clear all filters
+  const handleClearAllFilters = () => {
+    setSearchQuery('');
+    setSortBy('createdAt');
+    setSortOrder('desc');
+    setCurrentPage(1);
+  };
+
   return (
     <Layout>
-      <div style={{ padding: 24 }}>
+      <div style={{ padding: isMobile ? 16 : 24 }}>
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 24,
-            flexWrap: 'wrap',
-            gap: 16,
-          }}
-        >
-          <div>
-            <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
-              Dự án của tôi
-            </h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
-              Quản lý và theo dõi tất cả dự án
-            </p>
-          </div>
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate('/homeowner/projects/new')}
-            style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-          >
-            <i className="ri-add-line" style={{ fontSize: 18 }} />
-            Tạo dự án mới
-          </button>
-        </motion.div>
+        <ResponsivePageHeader
+          title="Dự án của tôi"
+          subtitle="Quản lý và theo dõi tất cả dự án"
+          icon="ri-building-line"
+          actions={
+            <button
+              className="btn btn-primary"
+              onClick={() => navigate('/homeowner/projects/new')}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 44 }}
+            >
+              <i className="ri-add-line" style={{ fontSize: 18 }} />
+              {!isMobile && 'Tạo dự án mới'}
+            </button>
+          }
+        />
 
         {/* Tabs - Requirement 5.1 */}
         <motion.div
@@ -273,16 +321,17 @@ export function ProjectsPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                padding: '10px 16px',
+                padding: isMobile ? '8px 12px' : '10px 16px',
                 borderRadius: 8,
                 border: 'none',
                 background: activeTab === tab.id ? 'rgba(245, 211, 147, 0.15)' : 'transparent',
                 color: activeTab === tab.id ? 'var(--primary)' : 'var(--text-secondary)',
                 cursor: 'pointer',
-                fontSize: 14,
+                fontSize: isMobile ? 13 : 14,
                 fontWeight: 500,
                 whiteSpace: 'nowrap',
                 transition: 'all 0.2s',
+                minHeight: 44, // Touch target
               }}
             >
               <i className={tab.icon} style={{ fontSize: 16 }} />
@@ -296,52 +345,15 @@ export function ProjectsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          style={{
-            display: 'flex',
-            gap: 12,
-            marginBottom: 24,
-            flexWrap: 'wrap',
-          }}
+          style={{ marginBottom: 24 }}
         >
-          <form onSubmit={handleSearch} style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ position: 'relative' }}>
-              <i
-                className="ri-search-line"
-                style={{
-                  position: 'absolute',
-                  left: 12,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--text-muted)',
-                  fontSize: 18,
-                }}
-              />
-              <input
-                type="text"
-                placeholder="Tìm kiếm dự án..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="input"
-                style={{ paddingLeft: 40 }}
-              />
-            </div>
-          </form>
-          
-          <select
-            value={`${sortBy}-${sortOrder}`}
-            onChange={(e) => {
-              const [newSortBy, newSortOrder] = e.target.value.split('-');
-              setSortBy(newSortBy);
-              setSortOrder(newSortOrder as 'asc' | 'desc');
-            }}
-            className="input"
-            style={{ width: 'auto', minWidth: 160 }}
-          >
-            <option value="createdAt-desc">Mới nhất</option>
-            <option value="createdAt-asc">Cũ nhất</option>
-            <option value="title-asc">Tên A-Z</option>
-            <option value="title-desc">Tên Z-A</option>
-          </select>
+          <ResponsiveFilters
+            filters={filterOptions}
+            onFilterChange={handleResponsiveFilterChange}
+            onClearAll={handleClearAllFilters}
+            showActiveCount={true}
+            collapsibleMobile={true}
+          />
         </motion.div>
 
         {/* Results count */}
@@ -359,8 +371,10 @@ export function ProjectsPage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-              gap: 20,
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: isMobile ? 12 : 20,
+              width: '100%',
+              boxSizing: 'border-box',
             }}
           >
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -402,8 +416,10 @@ export function ProjectsPage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-              gap: 20,
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: isMobile ? 12 : 20,
+              width: '100%',
+              boxSizing: 'border-box',
             }}
           >
             {projects.map((project, index) => (
@@ -415,15 +431,17 @@ export function ProjectsPage() {
               >
                 <Link
                   to={`/homeowner/projects/${project.id}`}
-                  style={{ textDecoration: 'none' }}
+                  style={{ textDecoration: 'none', display: 'block', width: '100%', minWidth: 0 }}
                 >
                   <div
                     className="card"
                     style={{
-                      padding: 20,
+                      padding: isMobile ? 16 : 20,
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                       height: '100%',
+                      overflow: 'hidden',
+                      boxSizing: 'border-box',
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.borderColor = 'var(--border-hover)';
@@ -435,20 +453,30 @@ export function ProjectsPage() {
                     }}
                   >
                     {/* Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                      <span
-                        className="badge"
-                        style={{
-                          background: `${STATUS_COLORS[project.status]}20`,
-                          color: STATUS_COLORS[project.status],
-                        }}
-                      >
-                        {STATUS_LABELS[project.status]}
-                      </span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: isMobile ? 'column' : 'row',
+                      justifyContent: 'space-between', 
+                      alignItems: isMobile ? 'flex-start' : 'flex-start', 
+                      marginBottom: 12,
+                      gap: isMobile ? 8 : 0,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span
+                          className="badge"
+                          style={{
+                            background: `${STATUS_COLORS[project.status]}20`,
+                            color: STATUS_COLORS[project.status],
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {STATUS_LABELS[project.status]}
+                        </span>
                         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                           {project.code}
                         </span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {/* Action buttons for DRAFT/REJECTED */}
                         {(canEdit(project.status) || canDelete(project.status)) && (
                           <div style={{ display: 'flex', gap: 4 }}>
@@ -466,6 +494,9 @@ export function ProjectsPage() {
                                   display: 'flex',
                                   alignItems: 'center',
                                   gap: 4,
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                  justifyContent: 'center',
                                 }}
                                 title="Sửa dự án"
                               >
@@ -488,6 +519,9 @@ export function ProjectsPage() {
                                   alignItems: 'center',
                                   gap: 4,
                                   opacity: deletingId === project.id ? 0.5 : 1,
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                  justifyContent: 'center',
                                 }}
                                 title="Xóa dự án"
                               >
@@ -532,28 +566,44 @@ export function ProjectsPage() {
                       {project.description}
                     </p>
 
-                    {/* Info Grid */}
+                    {/* Info Grid - Stack vertically on mobile */}
                     <div
                       style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
-                        gap: 12,
+                        display: 'flex',
+                        flexDirection: isMobile ? 'column' : 'row',
+                        gap: isMobile ? 8 : 12,
                         marginBottom: 16,
                       }}
                     >
-                      <div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>
                           Khu vực
                         </div>
-                        <div style={{ fontSize: 13, color: 'var(--text-primary)' }}>
+                        <div 
+                          style={{ 
+                            fontSize: 13, 
+                            color: 'var(--text-primary)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
                           {project.region?.name || 'Chưa xác định'}
                         </div>
                       </div>
-                      <div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>
                           Ngân sách
                         </div>
-                        <div style={{ fontSize: 13, color: 'var(--text-primary)' }}>
+                        <div 
+                          style={{ 
+                            fontSize: 13, 
+                            color: 'var(--text-primary)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
                           {formatBudget(project.budgetMin, project.budgetMax)}
                         </div>
                       </div>
@@ -710,90 +760,66 @@ export function ProjectsPage() {
         )}
 
         {/* Delete Confirmation Modal */}
-        {showDeleteModal && projectToDelete && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1000,
-            }}
-            onClick={() => setShowDeleteModal(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              onClick={(e) => e.stopPropagation()}
-              className="card"
+        <ResponsiveModal
+          isOpen={showDeleteModal && projectToDelete !== null}
+          onClose={() => setShowDeleteModal(false)}
+          title="Xóa dự án?"
+          size="sm"
+          footer={
+            <>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowDeleteModal(false)}
+                style={{ flex: 1, minHeight: 44 }}
+                disabled={deletingId !== null}
+              >
+                Hủy
+              </button>
+              <button
+                className="btn"
+                onClick={handleConfirmDelete}
+                disabled={deletingId !== null}
+                style={{
+                  flex: 1,
+                  background: 'var(--error)',
+                  color: '#fff',
+                  opacity: deletingId !== null ? 0.7 : 1,
+                  minHeight: 44,
+                }}
+              >
+                {deletingId !== null ? (
+                  <>
+                    <i className="ri-loader-4-line" style={{ marginRight: 8, animation: 'spin 1s linear infinite' }} />
+                    Đang xóa...
+                  </>
+                ) : (
+                  'Xóa dự án'
+                )}
+              </button>
+            </>
+          }
+        >
+          <div style={{ textAlign: 'center' }}>
+            <div
               style={{
-                padding: 24,
-                maxWidth: 400,
-                width: '90%',
+                width: 56,
+                height: 56,
+                borderRadius: '50%',
+                background: 'rgba(239, 68, 68, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
               }}
             >
-              <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                <div
-                  style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: '50%',
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 16px',
-                  }}
-                >
-                  <i className="ri-delete-bin-line" style={{ fontSize: 24, color: 'var(--error)' }} />
-                </div>
-                <h3 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>
-                  Xóa dự án?
-                </h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
-                  Bạn có chắc muốn xóa dự án <strong>"{projectToDelete.title}"</strong>? 
-                  Hành động này không thể hoàn tác.
-                </p>
-              </div>
-              
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowDeleteModal(false)}
-                  style={{ flex: 1 }}
-                  disabled={deletingId !== null}
-                >
-                  Hủy
-                </button>
-                <button
-                  className="btn"
-                  onClick={handleConfirmDelete}
-                  disabled={deletingId !== null}
-                  style={{
-                    flex: 1,
-                    background: 'var(--error)',
-                    color: '#fff',
-                    opacity: deletingId !== null ? 0.7 : 1,
-                  }}
-                >
-                  {deletingId !== null ? (
-                    <>
-                      <i className="ri-loader-4-line" style={{ marginRight: 8, animation: 'spin 1s linear infinite' }} />
-                      Đang xóa...
-                    </>
-                  ) : (
-                    'Xóa dự án'
-                  )}
-                </button>
-              </div>
-            </motion.div>
+              <i className="ri-delete-bin-line" style={{ fontSize: 24, color: 'var(--error)' }} />
+            </div>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
+              Bạn có chắc muốn xóa dự án <strong>"{projectToDelete?.title}"</strong>? 
+              Hành động này không thể hoàn tác.
+            </p>
           </div>
-        )}
+        </ResponsiveModal>
       </div>
     </Layout>
   );

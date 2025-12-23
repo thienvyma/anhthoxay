@@ -230,3 +230,338 @@
     max-width: 1400px;
   }
 }
+
+
+/* ============================================
+ * NEW RESPONSIVE UTILITIES
+ * Added for portal-responsive-optimization
+ * ============================================ */
+
+/* Touch target minimum size (44x44px) */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Responsive spacing utilities */
+.responsive-p-sm {
+  padding: 8px;
+}
+
+.responsive-p-md {
+  padding: 12px;
+}
+
+.responsive-p-lg {
+  padding: 16px;
+}
+
+@media (min-width: 640px) {
+  .responsive-p-sm {
+    padding: 12px;
+  }
+  
+  .responsive-p-md {
+    padding: 16px;
+  }
+  
+  .responsive-p-lg {
+    padding: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-p-sm {
+    padding: 16px;
+  }
+  
+  .responsive-p-md {
+    padding: 20px;
+  }
+  
+  .responsive-p-lg {
+    padding: 24px;
+  }
+}
+
+/* Responsive gap utilities */
+.responsive-gap-sm {
+  gap: 8px;
+}
+
+.responsive-gap-md {
+  gap: 12px;
+}
+
+.responsive-gap-lg {
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .responsive-gap-sm {
+    gap: 12px;
+  }
+  
+  .responsive-gap-md {
+    gap: 16px;
+  }
+  
+  .responsive-gap-lg {
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-gap-sm {
+    gap: 16px;
+  }
+  
+  .responsive-gap-md {
+    gap: 20px;
+  }
+  
+  .responsive-gap-lg {
+    gap: 24px;
+  }
+}
+
+/* Responsive stack (column on mobile, row on desktop) */
+.responsive-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .responsive-stack {
+    flex-direction: row;
+    gap: 16px;
+  }
+}
+
+/* Responsive stack reverse (row on mobile, column on desktop) */
+.responsive-stack-reverse {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .responsive-stack-reverse {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+/* Full width on mobile */
+.full-width-mobile {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .full-width-mobile {
+    width: auto;
+  }
+}
+
+/* Scrollable tabs container */
+.scrollable-tabs {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+.scrollable-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* Collapsible filter panel */
+.filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .filter-panel {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+}
+
+/* Card grid responsive */
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .card-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .card-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Modal responsive */
+.modal-fullscreen-mobile {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 0;
+}
+
+@media (min-width: 640px) {
+  .modal-fullscreen-mobile {
+    width: auto;
+    height: auto;
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 12px;
+  }
+}
+
+/* Button stack on mobile */
+.button-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .button-stack {
+    flex-direction: row;
+    gap: 12px;
+  }
+}
+
+/* Pulse animation for loading skeletons */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.skeleton {
+  animation: pulse 1.5s ease-in-out infinite;
+  background: var(--bg-tertiary, #27272a);
+  border-radius: 4px;
+}
+
+/* Spin animation for loading indicators */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+
+/* ============================================
+ * MOBILE CARD OVERFLOW FIX
+ * Requirements: 7.1, 7.2, 7.3, 7.4, 8.1, 8.2, 8.3, 8.4
+ * ============================================ */
+
+/* Ensure cards don't exceed viewport on mobile */
+@media (max-width: 640px) {
+  .card {
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  
+  /* Truncate long text in cards */
+  .card-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  
+  /* Limit description to 2 lines */
+  .card-description {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.5;
+  }
+  
+  /* Stack info items vertically on narrow screens */
+  .card-info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  /* Ensure badges don't wrap awkwardly */
+  .badge {
+    white-space: nowrap;
+    max-width: fit-content;
+  }
+}
+
+/* Prevent any element from causing horizontal scroll */
+.no-overflow {
+  overflow-x: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Text truncation utility */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Multi-line truncation */
+.line-clamp-2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+/* Word break for long text */
+.break-words {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}

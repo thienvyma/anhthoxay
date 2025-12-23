@@ -63,6 +63,7 @@ import { createSavedProjectRoutes } from './routes/saved-project.routes';
 import { createActivityRoutes } from './routes/activity.routes';
 import { createInteriorRoutes, createAdminInteriorRoutes } from './routes/interior.routes';
 import { createAdminInteriorSyncRoutes } from './routes/interior-sync.routes';
+import { createAdminDashboardRoutes } from './routes/dashboard.routes';
 
 // Service imports
 import { AuthService } from './services/auth.service';
@@ -286,6 +287,9 @@ app.route('/api/admin/interior', createAdminInteriorRoutes(prisma));
 
 // Interior Sync routes - Feature: interior-sheet-sync
 app.route('/api/admin/interior/sync', createAdminInteriorSyncRoutes(prisma));
+
+// Dashboard routes - Feature: admin-dashboard-enhancement
+app.route('/api/admin/dashboard', createAdminDashboardRoutes(prisma));
 
 // ============================================
 // GLOBAL ERROR HANDLER

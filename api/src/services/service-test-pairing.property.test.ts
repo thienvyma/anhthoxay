@@ -78,6 +78,7 @@ const UTILITY_SERVICES = [
   'badge-job.service.ts',
   'bidding-settings.service.ts',
   'contractor.service.ts',
+  'dashboard.service.ts', // Has property tests in dashboard.service.property.test.ts
   'dispute.service.ts',
   'google-sheets.service.ts',
   'leads.service.ts',

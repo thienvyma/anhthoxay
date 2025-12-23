@@ -1,12 +1,18 @@
 /**
  * Base styles - Reset, scrollbar, typography
  * Note: External imports and Tailwind directives are in main styles.css
+ * Requirements: 7.1 - Prevent horizontal scroll on mobile
  */
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+html {
+  /* Prevent horizontal scroll globally - Requirement 7.1 */
+  overflow-x: hidden;
 }
 
 html,
@@ -21,6 +27,10 @@ body,
   background: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
+  /* Prevent horizontal scroll - Requirement 7.1 */
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
 }
 
 code {

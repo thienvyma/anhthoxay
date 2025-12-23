@@ -1,0 +1,156 @@
+/**
+ * CSS Variables for Admin Dashboard
+ * Centralized responsive system - breakpoints, spacing, typography
+ * 
+ * Requirements: 11.1
+ */
+
+:root {
+  /* ========================================
+   * BREAKPOINTS
+   * Mobile: ≤ 640px
+   * Tablet: 641px - 1024px
+   * Desktop: > 1024px
+   * ======================================== */
+  --breakpoint-mobile: 640px;
+  --breakpoint-tablet: 1024px;
+  --breakpoint-desktop: 1280px;
+
+  /* ========================================
+   * SPACING (from @app/shared tokens)
+   * ======================================== */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 40px;
+  --spacing-2xl: 64px;
+  --spacing-3xl: 96px;
+
+  /* ========================================
+   * FONT SIZES (from @app/shared tokens)
+   * ======================================== */
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+  --font-size-4xl: 36px;
+  --font-size-h1: 48px;
+  --font-size-h2: 36px;
+  --font-size-h3: 28px;
+  --font-size-display: 64px;
+
+  /* ========================================
+   * COLORS (from @app/shared tokens)
+   * ======================================== */
+  --color-background: #0B0B0C;
+  --color-surface: #131316;
+  --color-surface-hover: #1A1A1E;
+  --color-primary: #F5D393;
+  --color-secondary: #C7A775;
+  --color-accent: #EFB679;
+  --color-text: #F4F4F5;
+  --color-text-muted: #A1A1AA;
+  --color-border: #27272A;
+  --color-border-hover: #3F3F46;
+  --color-success: #34D399;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+
+  /* ========================================
+   * BORDER RADIUS (from @app/shared tokens)
+   * ======================================== */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  /* ========================================
+   * SHADOWS (from @app/shared tokens)
+   * ======================================== */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 6px 24px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 44px rgba(0, 0, 0, 0.45);
+  --shadow-glow: 0 0 24px rgba(245, 211, 147, 0.3);
+
+  /* ========================================
+   * Z-INDEX (from @app/shared tokens)
+   * ======================================== */
+  --z-base: 1;
+  --z-dropdown: 1000;
+  --z-sticky: 1100;
+  --z-overlay: 1200;
+  --z-modal: 1300;
+  --z-toast: 1400;
+
+  /* ========================================
+   * TOUCH TARGET
+   * Minimum size for touch-friendly buttons
+   * ======================================== */
+  --touch-target-min: 44px;
+
+  /* ========================================
+   * RESPONSIVE SPACING
+   * These values change based on breakpoint
+   * Default: Desktop values
+   * ======================================== */
+  --spacing-page: var(--spacing-lg);
+  --spacing-section: var(--spacing-xl);
+  --spacing-card: var(--spacing-md);
+  --spacing-inline: var(--spacing-sm);
+
+  /* ========================================
+   * RESPONSIVE FONT SIZES
+   * Default: Desktop values
+   * ======================================== */
+  --font-heading-1: var(--font-size-3xl);
+  --font-heading-2: var(--font-size-2xl);
+  --font-heading-3: var(--font-size-xl);
+  --font-body: var(--font-size-base);
+  --font-caption: var(--font-size-sm);
+
+  /* ========================================
+   * LAYOUT
+   * ======================================== */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 72px;
+  --header-height: 64px;
+  --content-max-width: 1400px;
+}
+
+/* ========================================
+ * TABLET BREAKPOINT (641px - 1024px)
+ * ======================================== */
+@media (max-width: 1024px) {
+  :root {
+    --spacing-page: var(--spacing-md);
+    --spacing-section: var(--spacing-lg);
+    --spacing-card: var(--spacing-sm);
+
+    --font-heading-1: var(--font-size-2xl);
+    --font-heading-2: var(--font-size-xl);
+    --font-heading-3: var(--font-size-lg);
+  }
+}
+
+/* ========================================
+ * MOBILE BREAKPOINT (≤ 640px)
+ * ======================================== */
+@media (max-width: 640px) {
+  :root {
+    --spacing-page: var(--spacing-sm);
+    --spacing-section: var(--spacing-md);
+    --spacing-card: var(--spacing-sm);
+    --spacing-inline: var(--spacing-xs);
+
+    --font-heading-1: var(--font-size-xl);
+    --font-heading-2: var(--font-size-lg);
+    --font-heading-3: var(--font-size-base);
+    --font-body: var(--font-size-sm);
+  }
+}

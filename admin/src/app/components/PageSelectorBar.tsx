@@ -5,6 +5,7 @@ import { Button } from './Button';
 import { Input } from './Input';
 import { useToast } from './Toast';
 import { pagesApi } from '../api';
+import { useResponsive } from '../../hooks/useResponsive';
 import type { Page } from '../types';
 
 interface PageSelectorBarProps {
@@ -27,6 +28,7 @@ export function PageSelectorBar({
   onRefresh,
 }: PageSelectorBarProps) {
   const toast = useToast();
+  const { isMobile } = useResponsive();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
@@ -147,64 +149,76 @@ export function PageSelectorBar({
           background: `linear-gradient(135deg, ${tokens.color.surface}, rgba(20,21,26,0.95))`,
           border: `1px solid ${tokens.color.border}`,
           borderRadius: tokens.radius.lg,
-          padding: '20px 24px',
-          marginBottom: 24,
+          padding: isMobile ? '12px' : '20px 24px',
+          marginBottom: isMobile ? 16 : 24,
           boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row',
+          alignItems: isMobile ? 'stretch' : 'center', 
+          justifyContent: 'space-between', 
+          gap: isMobile ? 12 : 16 
+        }}>
           {/* Left: Page Selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: tokens.radius.md,
-                background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 20,
-                color: '#111',
-                flexShrink: 0,
-              }}
-            >
-              <i className="ri-pages-line" />
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+            {!isMobile && (
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: tokens.radius.md,
+                  background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 20,
+                  color: '#111',
+                  flexShrink: 0,
+                }}
+              >
+                <i className="ri-pages-line" />
+              </div>
+            )}
 
             {/* Dropdown */}
-            <div ref={dropdownRef} style={{ position: 'relative', flex: 1, maxWidth: 400 }}>
+            <div ref={dropdownRef} style={{ position: 'relative', flex: 1, minWidth: 0 }}>
               <motion.button
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 onClick={() => setShowDropdown(!showDropdown)}
                 style={{
                   width: '100%',
-                  padding: '12px 16px',
+                  padding: isMobile ? '10px 12px' : '12px 16px',
                   background: 'rgba(255,255,255,0.05)',
                   border: `1px solid ${tokens.color.border}`,
                   borderRadius: tokens.radius.md,
                   color: tokens.color.text,
                   cursor: 'pointer',
-                  fontSize: 16,
+                  fontSize: isMobile ? 14 : 16,
                   fontWeight: 600,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  gap: 12,
+                  gap: 8,
                   transition: 'all 0.2s',
+                  minWidth: 0,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <i className="ri-file-text-line" style={{ color: tokens.color.primary, fontSize: 18 }} />
-                  <span>{selectedPage?.title || selectedPage?.slug || 'Select a page'}</span>
-                  {selectedPage && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, overflow: 'hidden' }}>
+                  <i className="ri-file-text-line" style={{ color: tokens.color.primary, fontSize: isMobile ? 16 : 18, flexShrink: 0 }} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {selectedPage?.title || selectedPage?.slug || 'Select a page'}
+                  </span>
+                  {selectedPage && !isMobile && (
                     <span style={{ 
                       fontSize: 12, 
                       color: tokens.color.muted,
                       background: 'rgba(255,255,255,0.05)',
                       padding: '2px 8px',
                       borderRadius: tokens.radius.sm,
+                      flexShrink: 0,
                     }}>
                       /{selectedPage.slug}
                     </span>
@@ -214,7 +228,7 @@ export function PageSelectorBar({
                   className="ri-arrow-down-s-line"
                   animate={{ rotate: showDropdown ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
-                  style={{ fontSize: 20, color: tokens.color.muted }}
+                  style={{ fontSize: 20, color: tokens.color.muted, flexShrink: 0 }}
                 />
               </motion.button>
 
@@ -318,7 +332,13 @@ export function PageSelectorBar({
           </div>
 
           {/* Right: Actions */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ 
+            display: 'flex', 
+            gap: 8, 
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            justifyContent: isMobile ? 'flex-end' : 'flex-start',
+          }}>
             {/* ON/OFF Toggle for selected page */}
             {selectedPage && (
               <motion.button
@@ -327,7 +347,7 @@ export function PageSelectorBar({
                 onClick={handleToggleActive}
                 title={selectedPage.isActive !== false ? 'Tắt trang này' : 'Bật trang này'}
                 style={{
-                  padding: '8px 14px',
+                  padding: isMobile ? '6px 10px' : '8px 14px',
                   background: selectedPage.isActive !== false 
                     ? 'rgba(16, 185, 129, 0.15)' 
                     : 'rgba(239, 68, 68, 0.15)',
@@ -335,15 +355,16 @@ export function PageSelectorBar({
                   borderRadius: tokens.radius.md,
                   color: selectedPage.isActive !== false ? '#10B981' : '#EF4444',
                   cursor: 'pointer',
-                  fontSize: 13,
+                  fontSize: isMobile ? 12 : 13,
                   fontWeight: 600,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 6,
+                  gap: 4,
+                  minHeight: 36,
                 }}
               >
-                <i className={selectedPage.isActive !== false ? 'ri-eye-line' : 'ri-eye-off-line'} style={{ fontSize: 16 }} />
-                {selectedPage.isActive !== false ? 'ON' : 'OFF'}
+                <i className={selectedPage.isActive !== false ? 'ri-eye-line' : 'ri-eye-off-line'} style={{ fontSize: isMobile ? 14 : 16 }} />
+                {!isMobile && (selectedPage.isActive !== false ? 'ON' : 'OFF')}
               </motion.button>
             )}
 
@@ -353,22 +374,23 @@ export function PageSelectorBar({
               onClick={handleOpenCreateModal}
               title="Create new page"
               style={{
-                padding: '10px 16px',
+                padding: isMobile ? '6px 10px' : '10px 16px',
                 background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
                 border: 'none',
                 borderRadius: tokens.radius.md,
                 color: '#111',
                 cursor: 'pointer',
-                fontSize: 14,
+                fontSize: isMobile ? 12 : 14,
                 fontWeight: 600,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 6,
+                gap: 4,
                 boxShadow: `0 4px 12px ${tokens.color.primary}40`,
+                minHeight: 36,
               }}
             >
-              <i className="ri-add-line" style={{ fontSize: 16 }} />
-              New Page
+              <i className="ri-add-line" style={{ fontSize: isMobile ? 14 : 16 }} />
+              {!isMobile && 'New Page'}
             </motion.button>
 
             {selectedPage && (
@@ -379,13 +401,14 @@ export function PageSelectorBar({
                   onClick={handleOpenEditModal}
                   title="Edit page"
                   style={{
-                    padding: '10px 12px',
+                    padding: isMobile ? '6px 10px' : '10px 12px',
                     background: 'rgba(255,255,255,0.05)',
                     border: `1px solid ${tokens.color.border}`,
                     borderRadius: tokens.radius.md,
                     color: tokens.color.primary,
                     cursor: 'pointer',
-                    fontSize: 16,
+                    fontSize: isMobile ? 14 : 16,
+                    minHeight: 36,
                   }}
                 >
                   <i className="ri-edit-line" />
@@ -398,43 +421,47 @@ export function PageSelectorBar({
                     onClick={handleDelete}
                     title="Delete page"
                     style={{
-                      padding: '10px 12px',
+                      padding: isMobile ? '6px 10px' : '10px 12px',
                       background: 'rgba(255,255,255,0.05)',
                       border: `1px solid ${tokens.color.border}`,
                       borderRadius: tokens.radius.md,
                       color: tokens.color.error,
                       cursor: 'pointer',
-                      fontSize: 16,
+                      fontSize: isMobile ? 14 : 16,
+                      minHeight: 36,
                     }}
                   >
                     <i className="ri-delete-bin-line" />
                   </motion.button>
                 )}
 
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => window.open(`http://localhost:4200/#/${selectedPage.slug}`, '_blank')}
-                  title="Preview page"
-                  style={{
-                    padding: '10px 12px',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${tokens.color.border}`,
-                    borderRadius: tokens.radius.md,
-                    color: tokens.color.text,
-                    cursor: 'pointer',
-                    fontSize: 16,
-                  }}
-                >
-                  <i className="ri-external-link-line" />
-                </motion.button>
+                {!isMobile && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => window.open(`http://localhost:4200/#/${selectedPage.slug}`, '_blank')}
+                    title="Preview page"
+                    style={{
+                      padding: '10px 12px',
+                      background: 'rgba(255,255,255,0.05)',
+                      border: `1px solid ${tokens.color.border}`,
+                      borderRadius: tokens.radius.md,
+                      color: tokens.color.text,
+                      cursor: 'pointer',
+                      fontSize: 16,
+                      minHeight: 36,
+                    }}
+                  >
+                    <i className="ri-external-link-line" />
+                  </motion.button>
+                )}
               </>
             )}
           </div>
         </div>
 
         {/* Page Info */}
-        {selectedPage && (
+        {selectedPage && !isMobile && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}

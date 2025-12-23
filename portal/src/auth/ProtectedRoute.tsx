@@ -11,6 +11,16 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
+  // Debug log
+  console.log('[ProtectedRoute] Check:', {
+    path: location.pathname,
+    isLoading,
+    isAuthenticated,
+    user: user ? { id: user.id, role: user.role, name: user.name } : null,
+    allowedRoles,
+    roleIncluded: user && allowedRoles ? allowedRoles.includes(user.role) : 'N/A',
+  });
+
   // Show loading spinner while checking auth
   if (isLoading) {
     return (

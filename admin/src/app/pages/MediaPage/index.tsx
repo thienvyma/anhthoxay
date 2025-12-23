@@ -1,4 +1,10 @@
 // Media Page - Main Component
+/**
+ * Media Page - Media library management with responsive layout
+ *
+ * Requirements: 7.1, 7.2, 7.3, 7.4, 7.5
+ */
+
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { tokens, resolveMediaUrl } from '@app/shared';
@@ -8,6 +14,8 @@ import { mediaApi } from '../../api';
 import { MediaAsset } from '../../types';
 import { OptimizedImage } from '../../components/OptimizedImage';
 import { useToast } from '../../components/Toast';
+import { ResponsiveGrid, ResponsiveStack } from '../../../components/responsive';
+import { useResponsive } from '../../../hooks/useResponsive';
 
 import { MediaCard } from './MediaCard';
 import { EditMediaModal } from './EditMediaModal';
@@ -17,6 +25,7 @@ import type { MediaUsageInfo, DynamicCategory, EditMediaFormData } from './types
 
 export function MediaPage() {
   const toast = useToast();
+  const { isMobile } = useResponsive();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // State
@@ -187,35 +196,41 @@ export function MediaPage() {
   }
 
   return (
-    <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 24px' }}>
+    <div style={{ maxWidth: 1400, margin: '0 auto', padding: isMobile ? '0 16px' : '0 24px' }}>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         style={{
-          marginBottom: 32,
+          marginBottom: isMobile ? 20 : 32,
           background: 'rgba(12,12,16,0.7)',
           backdropFilter: 'blur(20px)',
           border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: '24px',
-          padding: '24px 28px',
+          borderRadius: isMobile ? '16px' : '24px',
+          padding: isMobile ? '16px' : '24px 28px',
           boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
         }}
       >
         {/* Title Row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <ResponsiveStack
+          direction={{ mobile: 'column', tablet: 'row', desktop: 'row' }}
+          align={isMobile ? 'stretch' : 'center'}
+          justify="between"
+          gap={isMobile ? 16 : 0}
+          style={{ marginBottom: 20 }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 16 }}>
             <motion.div
               whileHover={{ scale: 1.05, rotate: 15 }}
               style={{
-                width: 56,
-                height: 56,
-                borderRadius: '16px',
+                width: isMobile ? 44 : 56,
+                height: isMobile ? 44 : 56,
+                borderRadius: isMobile ? '12px' : '16px',
                 background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 28,
+                fontSize: isMobile ? 22 : 28,
                 color: '#0b0c0f',
               }}
             >
@@ -223,7 +238,7 @@ export function MediaPage() {
             </motion.div>
             <div>
               <h1 style={{
-                fontSize: 28,
+                fontSize: isMobile ? 22 : 28,
                 fontWeight: 700,
                 color: tokens.color.text,
                 margin: 0,
@@ -233,12 +248,12 @@ export function MediaPage() {
               }}>
                 Media Library
               </h1>
-              <p style={{ color: tokens.color.muted, fontSize: 14, margin: '2px 0 0 0' }}>
+              <p style={{ color: tokens.color.muted, fontSize: isMobile ? 12 : 14, margin: '2px 0 0 0' }}>
                 {usageSummary.total} files • {formatBytes(totalSize)}
               </p>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10, width: isMobile ? '100%' : 'auto' }}>
             <input
               ref={fileInputRef}
               type="file"
@@ -247,18 +262,34 @@ export function MediaPage() {
               onChange={(e) => handleFileUpload(e.target.files)}
               style={{ display: 'none' }}
             />
-            <Button variant="secondary" icon="ri-refresh-line" onClick={handleSyncMedia} loading={syncing}>
-              Sync
+            <Button 
+              variant="secondary" 
+              icon="ri-refresh-line" 
+              onClick={handleSyncMedia} 
+              loading={syncing}
+              style={isMobile ? { flex: 1 } : undefined}
+            >
+              {isMobile ? '' : 'Sync'}
             </Button>
-            <Button variant="primary" icon="ri-upload-cloud-line" onClick={() => fileInputRef.current?.click()} loading={uploading}>
+            <Button 
+              variant="primary" 
+              icon="ri-upload-cloud-line" 
+              onClick={() => fileInputRef.current?.click()} 
+              loading={uploading}
+              style={isMobile ? { flex: 1 } : undefined}
+            >
               Upload
             </Button>
           </div>
-        </div>
+        </ResponsiveStack>
 
         {/* Toolbar */}
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: 200 }}>
+        <ResponsiveStack
+          direction={{ mobile: 'column', tablet: 'row', desktop: 'row' }}
+          gap={12}
+          align={isMobile ? 'stretch' : 'center'}
+        >
+          <div style={{ flex: 1, minWidth: isMobile ? '100%' : 200 }}>
             <Input
               value={searchQuery}
               onChange={setSearchQuery}
@@ -268,36 +299,50 @@ export function MediaPage() {
             />
           </div>
 
-          <FilterTabs
-            filter={filter}
-            setFilter={setFilter}
-            dynamicCategories={dynamicCategories}
-            usageSummary={usageSummary}
-          />
+          <div style={{ 
+            display: 'flex', 
+            gap: 12, 
+            alignItems: 'center', 
+            flexWrap: 'wrap',
+            overflowX: isMobile ? 'auto' : undefined,
+            paddingBottom: isMobile ? 4 : 0,
+          }}>
+            <FilterTabs
+              filter={filter}
+              setFilter={setFilter}
+              dynamicCategories={dynamicCategories}
+              usageSummary={usageSummary}
+            />
 
-          {/* View Mode */}
-          <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: 3 }}>
-            {(['grid', 'list'] as const).map((mode) => (
-              <motion.button
-                key={mode}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setViewMode(mode)}
-                style={{
-                  padding: '6px 12px',
-                  background: viewMode === mode ? `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})` : 'transparent',
-                  border: 'none',
-                  borderRadius: '6px',
-                  color: viewMode === mode ? '#0b0c0f' : tokens.color.muted,
-                  cursor: 'pointer',
-                  fontSize: 16,
-                }}
-              >
-                <i className={mode === 'grid' ? 'ri-grid-line' : 'ri-list-check'} />
-              </motion.button>
-            ))}
+            {/* View Mode */}
+            <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: 3 }}>
+              {(['grid', 'list'] as const).map((mode) => (
+                <motion.button
+                  key={mode}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setViewMode(mode)}
+                  style={{
+                    padding: '6px 12px',
+                    background: viewMode === mode ? `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})` : 'transparent',
+                    border: 'none',
+                    borderRadius: '6px',
+                    color: viewMode === mode ? '#0b0c0f' : tokens.color.muted,
+                    cursor: 'pointer',
+                    fontSize: 16,
+                    minWidth: '44px',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <i className={mode === 'grid' ? 'ri-grid-line' : 'ri-list-check'} />
+                </motion.button>
+              ))}
+            </div>
           </div>
-        </div>
+        </ResponsiveStack>
       </motion.div>
 
       {/* Content */}
@@ -309,7 +354,10 @@ export function MediaPage() {
           onUpload={() => fileInputRef.current?.click()} 
         />
       ) : viewMode === 'grid' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
+        <ResponsiveGrid
+          cols={{ mobile: 2, tablet: 3, desktop: 4 }}
+          gap={{ mobile: 12, tablet: 16, desktop: 16 }}
+        >
           {sortedFiles.map((file, index) => (
             <MediaCard
               key={file.id}
@@ -322,7 +370,7 @@ export function MediaPage() {
               onCopy={copyToClipboard}
             />
           ))}
-        </div>
+        </ResponsiveGrid>
       ) : (
         <ListView 
           files={sortedFiles} 

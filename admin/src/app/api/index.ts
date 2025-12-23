@@ -92,6 +92,26 @@ export type {
   SheetType,
 } from './interior-sync';
 
+// Dashboard APIs
+export { dashboardApi } from './dashboard';
+export type {
+  LeadsStats,
+  ProjectsStats,
+  BidsStats,
+  ContractorsStats,
+  InteriorQuotesStats,
+  BlogPostsStats,
+  UsersStats,
+  MediaStats,
+  PendingProject,
+  PendingBid,
+  PendingContractor,
+  PendingItems,
+  DashboardStats,
+  ActivityType,
+  ActivityItem,
+} from './dashboard';
+
 // Backward compatible combined api export
 export const api = {
   // Auth

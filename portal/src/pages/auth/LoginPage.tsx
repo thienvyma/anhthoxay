@@ -233,8 +233,8 @@ export function LoginPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setEmail('homeowner1@test.com');
-                  setPassword('Test@123');
+                  setEmail('chunha1@gmail.com');
+                  setPassword('User@123');
                 }}
                 className="btn"
                 style={{
@@ -250,14 +250,14 @@ export function LoginPage() {
                 <i className="ri-home-heart-line" style={{ color: 'var(--info)' }} />
                 Chủ nhà
                 <span style={{ color: 'var(--text-muted)', fontSize: 11, marginLeft: 'auto' }}>
-                  homeowner1@test.com
+                  chunha1@gmail.com
                 </span>
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  setEmail('contractor1@test.com');
-                  setPassword('Test@123');
+                  setEmail('nhathau1@gmail.com');
+                  setPassword('User@123');
                 }}
                 className="btn"
                 style={{
@@ -273,14 +273,14 @@ export function LoginPage() {
                 <i className="ri-tools-line" style={{ color: 'var(--success)' }} />
                 Nhà thầu (Verified)
                 <span style={{ color: 'var(--text-muted)', fontSize: 11, marginLeft: 'auto' }}>
-                  contractor1@test.com
+                  nhathau1@gmail.com
                 </span>
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  setEmail('contractor4@test.com');
-                  setPassword('Test@123');
+                  setEmail('nhathau3@gmail.com');
+                  setPassword('User@123');
                 }}
                 className="btn"
                 style={{
@@ -296,7 +296,7 @@ export function LoginPage() {
                 <i className="ri-tools-line" style={{ color: 'var(--warning)' }} />
                 Nhà thầu (Pending)
                 <span style={{ color: 'var(--text-muted)', fontSize: 11, marginLeft: 'auto' }}>
-                  contractor4@test.com
+                  nhathau3@gmail.com
                 </span>
               </button>
             </div>
@@ -308,7 +308,7 @@ export function LoginPage() {
                 textAlign: 'center',
               }}
             >
-              Password: Test@123 (homeowner/contractor) | Admin@123 (admin)
+              Password: User@123 (homeowner/contractor) | Admin@123 (admin)
             </p>
           </div>
         )}

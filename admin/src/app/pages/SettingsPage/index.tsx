@@ -1,8 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+/**
+ * Settings Page - System configuration with responsive tabs
+ *
+ * Requirements: 5.1, 5.2
+ */
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { tokens } from '@app/shared';
 import { useToast } from '../../components/Toast';
 import { settingsApi } from '../../api';
+import { ResponsiveTabs, Tab } from '../../../components/responsive';
 import { LayoutTab } from './LayoutTab';
 import { CompanyTab } from './CompanyTab';
 import { PromoTab } from './PromoTab';
@@ -18,16 +24,7 @@ import {
   defaultPromoSettings,
   defaultHeaderConfig,
   defaultFooterConfig,
-  glass,
 } from './types';
-
-const TABS: Array<{ id: SettingsTab; label: string; icon: string }> = [
-  { id: 'account', label: 'Tài khoản', icon: 'ri-user-settings-line' },
-  { id: 'layout', label: 'Layout', icon: 'ri-layout-line' },
-  { id: 'company', label: 'Công ty', icon: 'ri-building-2-line' },
-  { id: 'promo', label: 'Quảng cáo', icon: 'ri-megaphone-line' },
-  { id: 'integrations', label: 'Tích hợp', icon: 'ri-plug-line' },
-];
 
 export function SettingsPage() {
   const toast = useToast();
@@ -82,6 +79,71 @@ export function SettingsPage() {
     toast.error(message);
   }, [toast]);
 
+  // Build tabs with content
+  const tabs: Tab[] = useMemo(
+    () => [
+      {
+        id: 'account',
+        label: 'Tài khoản',
+        icon: 'ri-user-settings-line',
+        content: (
+          <AccountTab
+            onShowMessage={showSavedMessage}
+            onError={handleError}
+          />
+        ),
+      },
+      {
+        id: 'layout',
+        label: 'Layout',
+        icon: 'ri-layout-line',
+        content: (
+          <LayoutTab
+            headerConfig={headerConfig}
+            footerConfig={footerConfig}
+            onHeaderChange={setHeaderConfig}
+            onFooterChange={setFooterConfig}
+            onShowMessage={showSavedMessage}
+            onError={handleError}
+          />
+        ),
+      },
+      {
+        id: 'company',
+        label: 'Công ty',
+        icon: 'ri-building-2-line',
+        content: (
+          <CompanyTab
+            settings={companySettings}
+            onChange={setCompanySettings}
+            onShowMessage={showSavedMessage}
+            onError={handleError}
+          />
+        ),
+      },
+      {
+        id: 'promo',
+        label: 'Quảng cáo',
+        icon: 'ri-megaphone-line',
+        content: (
+          <PromoTab
+            settings={promoSettings}
+            onChange={setPromoSettings}
+            onShowMessage={showSavedMessage}
+            onError={handleError}
+          />
+        ),
+      },
+      {
+        id: 'integrations',
+        label: 'Tích hợp',
+        icon: 'ri-plug-line',
+        content: <GoogleSheetsTab />,
+      },
+    ],
+    [companySettings, promoSettings, headerConfig, footerConfig, showSavedMessage, handleError]
+  );
+
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px' }}>
       {/* Header */}
@@ -111,91 +173,15 @@ export function SettingsPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div style={{
-        display: 'flex',
-        gap: 8,
-        marginBottom: 32,
-        padding: 8,
-        background: glass.background,
-        borderRadius: tokens.radius.lg,
-        border: glass.border,
-      }}>
-        {TABS.map((tab) => (
-          <motion.button
-            key={tab.id}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              flex: 1,
-              padding: '12px 16px',
-              background: activeTab === tab.id ? tokens.color.primary : 'transparent',
-              border: 'none',
-              borderRadius: tokens.radius.md,
-              color: activeTab === tab.id ? '#111' : tokens.color.text,
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              transition: 'all 0.2s',
-            }}
-          >
-            <i className={tab.icon} />
-            {tab.label}
-          </motion.button>
-        ))}
-      </div>
-
-      {/* Tab Content */}
-      <AnimatePresence mode="wait">
-        {activeTab === 'account' && (
-          <AccountTab
-            key="account"
-            onShowMessage={showSavedMessage}
-            onError={handleError}
-          />
-        )}
-
-        {activeTab === 'layout' && (
-          <LayoutTab
-            key="layout"
-            headerConfig={headerConfig}
-            footerConfig={footerConfig}
-            onHeaderChange={setHeaderConfig}
-            onFooterChange={setFooterConfig}
-            onShowMessage={showSavedMessage}
-            onError={handleError}
-          />
-        )}
-
-        {activeTab === 'company' && (
-          <CompanyTab
-            key="company"
-            settings={companySettings}
-            onChange={setCompanySettings}
-            onShowMessage={showSavedMessage}
-            onError={handleError}
-          />
-        )}
-
-        {activeTab === 'promo' && (
-          <PromoTab
-            key="promo"
-            settings={promoSettings}
-            onChange={setPromoSettings}
-            onShowMessage={showSavedMessage}
-            onError={handleError}
-          />
-        )}
-
-        {activeTab === 'integrations' && (
-          <GoogleSheetsTab key="integrations" />
-        )}
-      </AnimatePresence>
+      {/* Responsive Tabs */}
+      <ResponsiveTabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={(tabId) => setActiveTab(tabId as SettingsTab)}
+        mobileMode="dropdown"
+        iconOnlyMobile={false}
+        testId="settings-page-tabs"
+      />
     </div>
   );
 }

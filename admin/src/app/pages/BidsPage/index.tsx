@@ -4,7 +4,7 @@
  * Admin page for managing contractor bids.
  *
  * **Feature: bidding-phase2-core**
- * **Requirements: 11.1, 11.2, 11.3**
+ * **Requirements: 10.3, 10.5, 11.1, 11.2, 11.3**
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -14,6 +14,8 @@ import { bidsApi, projectsApi } from '../../api';
 import { useToast } from '../../components/Toast';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
+import { ResponsiveStack } from '../../../components/responsive';
+import { useResponsive } from '../../../hooks/useResponsive';
 import { BidTable } from './BidTable';
 import { BidDetailModal } from './BidDetailModal';
 import { ApprovalModal } from './ApprovalModal';
@@ -26,6 +28,7 @@ interface BidsPageProps {
 
 export function BidsPage({ embedded = false }: BidsPageProps) {
   const toast = useToast();
+  const { isMobile } = useResponsive();
   const [bids, setBids] = useState<BidListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -188,7 +191,7 @@ export function BidsPage({ embedded = false }: BidsPageProps) {
       {/* Header - hidden when embedded */}
       {!embedded && (
         <div style={{ marginBottom: 24 }}>
-          <h2 style={{ color: tokens.color.text, fontSize: 24, fontWeight: 600, margin: 0 }}>
+          <h2 style={{ color: tokens.color.text, fontSize: isMobile ? 20 : 24, fontWeight: 600, margin: 0 }}>
             Quản lý Bid
           </h2>
           <p style={{ color: tokens.color.muted, fontSize: 14, margin: '4px 0 0' }}>
@@ -198,7 +201,14 @@ export function BidsPage({ embedded = false }: BidsPageProps) {
       )}
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+      <div style={{ 
+        display: 'flex', 
+        gap: 8, 
+        marginBottom: 24, 
+        flexWrap: 'wrap',
+        overflowX: isMobile ? 'auto' : undefined,
+        paddingBottom: isMobile ? 4 : 0,
+      }}>
         {TABS.map((tab) => {
           const isActive = statusFilter === tab.status;
           const count = tabCounts[tab.status] || 0;
@@ -213,27 +223,29 @@ export function BidsPage({ embedded = false }: BidsPageProps) {
                 setPage(1);
               }}
               style={{
-                padding: '10px 20px',
+                padding: isMobile ? '8px 12px' : '10px 20px',
                 borderRadius: tokens.radius.md,
                 border: `1px solid ${isActive ? color : tokens.color.border}`,
                 background: isActive ? `${color}15` : 'transparent',
                 color: isActive ? color : tokens.color.muted,
                 cursor: 'pointer',
-                fontSize: 14,
+                fontSize: isMobile ? 12 : 14,
                 fontWeight: isActive ? 600 : 400,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
+                gap: 6,
+                whiteSpace: 'nowrap',
+                minHeight: '44px',
               }}
             >
-              {tab.label}
+              {isMobile ? tab.label.slice(0, 6) : tab.label}
               <span
                 style={{
-                  padding: '2px 8px',
+                  padding: '2px 6px',
                   borderRadius: tokens.radius.sm,
                   background: isActive ? color : tokens.color.border,
                   color: isActive ? '#fff' : tokens.color.muted,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: 600,
                 }}
               >
@@ -245,8 +257,12 @@ export function BidsPage({ embedded = false }: BidsPageProps) {
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 200, maxWidth: 400 }}>
+      <ResponsiveStack
+        direction={{ mobile: 'column', tablet: 'row', desktop: 'row' }}
+        gap={16}
+        style={{ marginBottom: 24 }}
+      >
+        <div style={{ flex: 1, minWidth: isMobile ? '100%' : 200, maxWidth: isMobile ? '100%' : 400 }}>
           <Input
             placeholder="Tìm theo mã bid..."
             value={search}
@@ -270,7 +286,8 @@ export function BidsPage({ embedded = false }: BidsPageProps) {
             background: tokens.color.surface,
             color: tokens.color.text,
             fontSize: 14,
-            minWidth: 200,
+            minWidth: isMobile ? '100%' : 200,
+            minHeight: '44px',
           }}
         >
           <option value="">Tất cả công trình</option>
@@ -280,7 +297,7 @@ export function BidsPage({ embedded = false }: BidsPageProps) {
             </option>
           ))}
         </select>
-      </div>
+      </ResponsiveStack>
 
       {/* Bids Table */}
       <div
@@ -302,12 +319,18 @@ export function BidsPage({ embedded = false }: BidsPageProps) {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 24 }}>
+        <ResponsiveStack
+          direction={{ mobile: 'row', tablet: 'row', desktop: 'row' }}
+          justify="center"
+          align="center"
+          gap={8}
+          style={{ marginTop: 24 }}
+        >
           <Button variant="secondary" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
             <i className="ri-arrow-left-line" />
           </Button>
-          <span style={{ padding: '8px 16px', color: tokens.color.text }}>
-            Trang {page} / {totalPages} ({total} bid)
+          <span style={{ padding: '8px 16px', color: tokens.color.text, fontSize: isMobile ? 12 : 14 }}>
+            {isMobile ? `${page}/${totalPages}` : `Trang ${page} / ${totalPages} (${total} bid)`}
           </span>
           <Button
             variant="secondary"
@@ -316,7 +339,7 @@ export function BidsPage({ embedded = false }: BidsPageProps) {
           >
             <i className="ri-arrow-right-line" />
           </Button>
-        </div>
+        </ResponsiveStack>
       )}
 
       {/* Detail Modal */}

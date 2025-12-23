@@ -17,6 +17,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Layout } from '../../components/Layout';
 import { useToast } from '../../components/Toast';
 import {
+  ResponsivePageHeader,
+  useResponsive,
+} from '../../components/responsive';
+import {
   bidsApi,
   type Bid,
   type BidStatus,
@@ -62,6 +66,7 @@ export function MyBidsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
+  const { isMobile } = useResponsive();
 
   const [bids, setBids] = useState<Bid[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -177,22 +182,266 @@ export function MyBidsPage() {
     return bid.status === 'SELECTED';
   };
 
+  // Render bid card for mobile
+  const renderBidCard = (bid: Bid, index: number) => (
+    <motion.div
+      key={bid.id}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.05 * index }}
+      className="card"
+      style={{
+        padding: isMobile ? 16 : 20,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: 12,
+        }}
+      >
+        <span
+          className="badge"
+          style={{
+            background: `${STATUS_COLORS[bid.status]}20`,
+            color: STATUS_COLORS[bid.status],
+          }}
+        >
+          {STATUS_LABELS[bid.status]}
+        </span>
+        <span style={{ fontSize: 12, color: '#71717a' }}>{bid.code}</span>
+      </div>
+
+      {/* Project Info - Requirement 10.2 */}
+      {bid.project && (
+        <div
+          style={{
+            padding: 12,
+            background: 'rgba(255, 255, 255, 0.02)',
+            borderRadius: 8,
+            marginBottom: 16,
+          }}
+        >
+          <h3
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              color: '#e4e7ec',
+              marginBottom: 4,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {bid.project.title}
+          </h3>
+          <div style={{ fontSize: 12, color: '#71717a' }}>
+            {bid.project.code} • {bid.project.region?.name || 'Chưa xác định'}
+          </div>
+        </div>
+      )}
+
+      {/* Bid Details */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 11, color: '#71717a', marginBottom: 2 }}>
+            Giá đề xuất
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: '#f5d393' }}>
+            {formatCurrency(bid.price)}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 11, color: '#71717a', marginBottom: 2 }}>
+            Thời gian
+          </div>
+          <div style={{ fontSize: 14, color: '#e4e7ec' }}>{bid.timeline}</div>
+        </div>
+      </div>
+
+      {/* Proposal Preview */}
+      <p
+        style={{
+          fontSize: 13,
+          color: '#a1a1aa',
+          marginBottom: 16,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          lineHeight: 1.5,
+          flex: 1,
+        }}
+      >
+        {bid.proposal}
+      </p>
+
+      {/* Contact Info for Selected Bids - Requirements 10.4, 10.5 */}
+      {isSelectedBid(bid) && bid.project?.owner && (
+        <div
+          style={{
+            padding: 12,
+            background: 'rgba(34, 197, 94, 0.1)',
+            borderRadius: 8,
+            marginBottom: 16,
+            border: '1px solid rgba(34, 197, 94, 0.2)',
+          }}
+        >
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: '#22c55e',
+              marginBottom: 8,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <i className="ri-user-line" />
+            Thông tin chủ nhà
+          </div>
+          <div style={{ fontSize: 14, color: '#e4e7ec', marginBottom: 4 }}>
+            {bid.project.owner.name}
+          </div>
+          {bid.project.owner.email && (
+            <div style={{ fontSize: 13, color: '#a1a1aa', marginBottom: 2 }}>
+              <i className="ri-mail-line" style={{ marginRight: 6 }} />
+              {bid.project.owner.email}
+            </div>
+          )}
+          {bid.project.owner.phone && (
+            <div style={{ fontSize: 13, color: '#a1a1aa' }}>
+              <i className="ri-phone-line" style={{ marginRight: 6 }} />
+              {bid.project.owner.phone}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Review Note for Rejected */}
+      {bid.status === 'REJECTED' && bid.reviewNote && (
+        <div
+          style={{
+            padding: 12,
+            background: 'rgba(239, 68, 68, 0.1)',
+            borderRadius: 8,
+            marginBottom: 16,
+            border: '1px solid rgba(239, 68, 68, 0.2)',
+          }}
+        >
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: '#ef4444',
+              marginBottom: 4,
+            }}
+          >
+            Lý do từ chối
+          </div>
+          <div style={{ fontSize: 13, color: '#a1a1aa' }}>{bid.reviewNote}</div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          justifyContent: 'space-between',
+          alignItems: isMobile ? 'stretch' : 'center',
+          gap: isMobile ? 12 : 0,
+          paddingTop: 12,
+          borderTop: '1px solid #27272a',
+          marginTop: 'auto',
+        }}
+      >
+        <span style={{ fontSize: 12, color: '#71717a' }}>
+          {formatDate(bid.createdAt)}
+        </span>
+
+        {/* Actions - Requirement 10.3 */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {canEditBid(bid) && (
+            <button
+              className="btn btn-secondary"
+              style={{ padding: '6px 12px', fontSize: 13, flex: isMobile ? 1 : 'none' }}
+              onClick={() =>
+                navigate(`/contractor/marketplace/${bid.projectId}/bid?edit=${bid.id}`)
+              }
+            >
+              <i className="ri-edit-line" style={{ marginRight: 4 }} />
+              Sửa
+            </button>
+          )}
+          {canWithdrawBid(bid) && (
+            <button
+              className="btn btn-secondary"
+              style={{
+                padding: '6px 12px',
+                fontSize: 13,
+                color: '#ef4444',
+                borderColor: 'rgba(239, 68, 68, 0.3)',
+                flex: isMobile ? 1 : 'none',
+              }}
+              onClick={() => handleWithdrawBid(bid.id)}
+              disabled={withdrawingBidId === bid.id}
+            >
+              {withdrawingBidId === bid.id ? (
+                <i className="ri-loader-4-line spinner" />
+              ) : (
+                <>
+                  <i className="ri-close-line" style={{ marginRight: 4 }} />
+                  Rút
+                </>
+              )}
+            </button>
+          )}
+          {isSelectedBid(bid) && (
+            <button
+              className="btn btn-primary"
+              style={{ padding: '6px 12px', fontSize: 13, flex: isMobile ? 1 : 'none' }}
+              onClick={() => navigate(`/contractor/my-bids/${bid.id}`)}
+            >
+              <i className="ri-chat-1-line" style={{ marginRight: 4 }} />
+              Liên hệ
+            </button>
+          )}
+          <button
+            className="btn btn-secondary"
+            style={{ padding: '6px 12px', fontSize: 13, flex: isMobile ? 1 : 'none' }}
+            onClick={() => navigate(`/contractor/my-bids/${bid.id}`)}
+          >
+            Chi tiết
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+
   return (
     <Layout>
-      <div style={{ padding: 24 }}>
+      <div style={{ padding: isMobile ? 16 : 24 }}>
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{ marginBottom: 24 }}
-        >
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#e4e7ec', marginBottom: 4 }}>
-            Đề xuất của tôi
-          </h1>
-          <p style={{ color: '#a1a1aa', fontSize: 14 }}>
-            Quản lý và theo dõi tất cả đề xuất đã gửi
-          </p>
-        </motion.div>
+        <ResponsivePageHeader
+          title="Đề xuất của tôi"
+          subtitle="Quản lý và theo dõi tất cả đề xuất đã gửi"
+          icon="ri-file-list-3-line"
+        />
 
         {/* Tabs - Requirement 10.1 */}
         <motion.div
@@ -215,16 +464,17 @@ export function MyBidsPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                padding: '10px 16px',
+                padding: isMobile ? '8px 12px' : '10px 16px',
                 borderRadius: 8,
                 border: 'none',
                 background: activeTab === tab.id ? 'rgba(245, 211, 147, 0.15)' : 'transparent',
                 color: activeTab === tab.id ? '#f5d393' : '#a1a1aa',
                 cursor: 'pointer',
-                fontSize: 14,
+                fontSize: isMobile ? 13 : 14,
                 fontWeight: 500,
                 whiteSpace: 'nowrap',
                 transition: 'all 0.2s',
+                minHeight: 44, // Touch target
               }}
             >
               <i className={tab.icon} style={{ fontSize: 16 }} />
@@ -271,8 +521,8 @@ export function MyBidsPage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-              gap: 20,
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(350px, 1fr))',
+              gap: isMobile ? 16 : 20,
             }}
           >
             {[1, 2, 3, 4].map((i) => (
@@ -314,256 +564,11 @@ export function MyBidsPage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-              gap: 20,
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(350px, 1fr))',
+              gap: isMobile ? 16 : 20,
             }}
           >
-            {bids.map((bid, index) => (
-              <motion.div
-                key={bid.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 * index }}
-                className="card"
-                style={{
-                  padding: 20,
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                {/* Header */}
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: 12,
-                  }}
-                >
-                  <span
-                    className="badge"
-                    style={{
-                      background: `${STATUS_COLORS[bid.status]}20`,
-                      color: STATUS_COLORS[bid.status],
-                    }}
-                  >
-                    {STATUS_LABELS[bid.status]}
-                  </span>
-                  <span style={{ fontSize: 12, color: '#71717a' }}>{bid.code}</span>
-                </div>
-
-                {/* Project Info - Requirement 10.2 */}
-                {bid.project && (
-                  <div
-                    style={{
-                      padding: 12,
-                      background: 'rgba(255, 255, 255, 0.02)',
-                      borderRadius: 8,
-                      marginBottom: 16,
-                    }}
-                  >
-                    <h3
-                      style={{
-                        fontSize: 15,
-                        fontWeight: 600,
-                        color: '#e4e7ec',
-                        marginBottom: 4,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {bid.project.title}
-                    </h3>
-                    <div style={{ fontSize: 12, color: '#71717a' }}>
-                      {bid.project.code} • {bid.project.region?.name || 'Chưa xác định'}
-                    </div>
-                  </div>
-                )}
-
-                {/* Bid Details */}
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: 12,
-                    marginBottom: 16,
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: 11, color: '#71717a', marginBottom: 2 }}>
-                      Giá đề xuất
-                    </div>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: '#f5d393' }}>
-                      {formatCurrency(bid.price)}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: '#71717a', marginBottom: 2 }}>
-                      Thời gian
-                    </div>
-                    <div style={{ fontSize: 14, color: '#e4e7ec' }}>{bid.timeline}</div>
-                  </div>
-                </div>
-
-                {/* Proposal Preview */}
-                <p
-                  style={{
-                    fontSize: 13,
-                    color: '#a1a1aa',
-                    marginBottom: 16,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    lineHeight: 1.5,
-                    flex: 1,
-                  }}
-                >
-                  {bid.proposal}
-                </p>
-
-                {/* Contact Info for Selected Bids - Requirements 10.4, 10.5 */}
-                {isSelectedBid(bid) && bid.project?.owner && (
-                  <div
-                    style={{
-                      padding: 12,
-                      background: 'rgba(34, 197, 94, 0.1)',
-                      borderRadius: 8,
-                      marginBottom: 16,
-                      border: '1px solid rgba(34, 197, 94, 0.2)',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: '#22c55e',
-                        marginBottom: 8,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                      }}
-                    >
-                      <i className="ri-user-line" />
-                      Thông tin chủ nhà
-                    </div>
-                    <div style={{ fontSize: 14, color: '#e4e7ec', marginBottom: 4 }}>
-                      {bid.project.owner.name}
-                    </div>
-                    {bid.project.owner.email && (
-                      <div style={{ fontSize: 13, color: '#a1a1aa', marginBottom: 2 }}>
-                        <i className="ri-mail-line" style={{ marginRight: 6 }} />
-                        {bid.project.owner.email}
-                      </div>
-                    )}
-                    {bid.project.owner.phone && (
-                      <div style={{ fontSize: 13, color: '#a1a1aa' }}>
-                        <i className="ri-phone-line" style={{ marginRight: 6 }} />
-                        {bid.project.owner.phone}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Review Note for Rejected */}
-                {bid.status === 'REJECTED' && bid.reviewNote && (
-                  <div
-                    style={{
-                      padding: 12,
-                      background: 'rgba(239, 68, 68, 0.1)',
-                      borderRadius: 8,
-                      marginBottom: 16,
-                      border: '1px solid rgba(239, 68, 68, 0.2)',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: '#ef4444',
-                        marginBottom: 4,
-                      }}
-                    >
-                      Lý do từ chối
-                    </div>
-                    <div style={{ fontSize: 13, color: '#a1a1aa' }}>{bid.reviewNote}</div>
-                  </div>
-                )}
-
-                {/* Footer */}
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    paddingTop: 12,
-                    borderTop: '1px solid #27272a',
-                    marginTop: 'auto',
-                  }}
-                >
-                  <span style={{ fontSize: 12, color: '#71717a' }}>
-                    {formatDate(bid.createdAt)}
-                  </span>
-
-                  {/* Actions - Requirement 10.3 */}
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {canEditBid(bid) && (
-                      <button
-                        className="btn btn-secondary"
-                        style={{ padding: '6px 12px', fontSize: 13 }}
-                        onClick={() =>
-                          navigate(`/contractor/marketplace/${bid.projectId}/bid?edit=${bid.id}`)
-                        }
-                      >
-                        <i className="ri-edit-line" style={{ marginRight: 4 }} />
-                        Sửa
-                      </button>
-                    )}
-                    {canWithdrawBid(bid) && (
-                      <button
-                        className="btn btn-secondary"
-                        style={{
-                          padding: '6px 12px',
-                          fontSize: 13,
-                          color: '#ef4444',
-                          borderColor: 'rgba(239, 68, 68, 0.3)',
-                        }}
-                        onClick={() => handleWithdrawBid(bid.id)}
-                        disabled={withdrawingBidId === bid.id}
-                      >
-                        {withdrawingBidId === bid.id ? (
-                          <i className="ri-loader-4-line spinner" />
-                        ) : (
-                          <>
-                            <i className="ri-close-line" style={{ marginRight: 4 }} />
-                            Rút
-                          </>
-                        )}
-                      </button>
-                    )}
-                    {isSelectedBid(bid) && (
-                      <button
-                        className="btn btn-primary"
-                        style={{ padding: '6px 12px', fontSize: 13 }}
-                        onClick={() => navigate(`/contractor/my-bids/${bid.id}`)}
-                      >
-                        <i className="ri-chat-1-line" style={{ marginRight: 4 }} />
-                        Liên hệ
-                      </button>
-                    )}
-                    <button
-                      className="btn btn-secondary"
-                      style={{ padding: '6px 12px', fontSize: 13 }}
-                      onClick={() => navigate(`/contractor/my-bids/${bid.id}`)}
-                    >
-                      Chi tiết
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+            {bids.map((bid, index) => renderBidCard(bid, index))}
           </div>
         ) : (
           <motion.div

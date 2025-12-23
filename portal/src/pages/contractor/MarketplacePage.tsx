@@ -13,12 +13,18 @@
  * **Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 21.1**
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { Layout } from '../../components/Layout';
 import { useSavedProjects } from '../../hooks/useSavedProjects';
+import {
+  ResponsiveFilters,
+  ResponsivePageHeader,
+  useResponsive,
+  type FilterOption,
+} from '../../components/responsive';
 import {
   marketplaceApi,
   type Project,
@@ -42,6 +48,7 @@ export function ContractorMarketplacePage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { isSaved, toggleSave } = useSavedProjects();
+  const { isMobile } = useResponsive();
 
   // State
   const [projects, setProjects] = useState<Project[]>([]);
@@ -71,6 +78,92 @@ export function ContractorMarketplacePage() {
 
   // Check verification status
   const isVerified = user?.verificationStatus === 'VERIFIED';
+
+  // Build filter options for ResponsiveFilters
+  const filterOptions: FilterOption[] = useMemo(() => [
+    {
+      id: 'search',
+      label: 'Tìm kiếm',
+      type: 'search',
+      value: searchQuery,
+      placeholder: 'Tìm kiếm dự án...',
+    },
+    {
+      id: 'region',
+      label: 'Khu vực',
+      type: 'select',
+      value: selectedRegion,
+      placeholder: 'Tất cả khu vực',
+      options: regions.map((r) => ({ value: r.id, label: r.name })),
+    },
+    {
+      id: 'category',
+      label: 'Hạng mục',
+      type: 'select',
+      value: selectedCategory,
+      placeholder: 'Tất cả hạng mục',
+      options: categories.map((c) => ({ value: c.id, label: c.name })),
+    },
+    {
+      id: 'budget',
+      label: 'Ngân sách',
+      type: 'select',
+      value: selectedBudgetIndex.toString(),
+      options: BUDGET_RANGES.map((r, i) => ({ value: i.toString(), label: r.label })),
+    },
+    {
+      id: 'sort',
+      label: 'Sắp xếp',
+      type: 'select',
+      value: `${sortBy}-${sortOrder}`,
+      options: [
+        { value: 'createdAt-desc', label: 'Mới nhất' },
+        { value: 'createdAt-asc', label: 'Cũ nhất' },
+        { value: 'bidDeadline-asc', label: 'Sắp hết hạn' },
+        { value: 'budgetMax-desc', label: 'Ngân sách cao nhất' },
+        { value: 'budgetMin-asc', label: 'Ngân sách thấp nhất' },
+      ],
+    },
+  ], [searchQuery, selectedRegion, selectedCategory, selectedBudgetIndex, sortBy, sortOrder, regions, categories]);
+
+  // Handle filter change from ResponsiveFilters
+  const handleResponsiveFilterChange = (filterId: string, value: string) => {
+    switch (filterId) {
+      case 'search':
+        setSearchQuery(value);
+        break;
+      case 'region':
+        setSelectedRegion(value);
+        handleFilterChange();
+        break;
+      case 'category':
+        setSelectedCategory(value);
+        handleFilterChange();
+        break;
+      case 'budget':
+        setSelectedBudgetIndex(parseInt(value, 10) || 0);
+        handleFilterChange();
+        break;
+      case 'sort': {
+        const [newSortBy, newSortOrder] = value.split('-');
+        setSortBy(newSortBy);
+        setSortOrder(newSortOrder as 'asc' | 'desc');
+        handleFilterChange();
+        break;
+      }
+    }
+  };
+
+  // Clear all filters
+  const handleClearAllFilters = () => {
+    setSelectedRegion('');
+    setSelectedCategory('');
+    setSelectedBudgetIndex(0);
+    setSearchQuery('');
+    setSortBy('createdAt');
+    setSortOrder('desc');
+    setCurrentPage(1);
+  };
 
   // Load filter options
   useEffect(() => {
@@ -154,11 +247,6 @@ export function ContractorMarketplacePage() {
   }, [currentPage, selectedRegion, selectedCategory, selectedBudgetIndex, searchQuery, sortBy, sortOrder, setSearchParams]);
 
   // Handlers
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCurrentPage(1);
-  };
-
   const handleFilterChange = () => {
     setCurrentPage(1);
   };
@@ -241,18 +329,11 @@ export function ContractorMarketplacePage() {
         )}
 
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{ marginBottom: 24 }}
-        >
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
-            Marketplace
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
-            Tìm kiếm và đấu giá các dự án phù hợp với chuyên môn của bạn
-          </p>
-        </motion.div>
+        <ResponsivePageHeader
+          title="Marketplace"
+          subtitle="Tìm kiếm và đấu giá các dự án phù hợp với chuyên môn của bạn"
+          icon="ri-store-2-line"
+        />
 
         {/* Filters - Requirement 9.2 */}
         <motion.div
@@ -260,108 +341,15 @@ export function ContractorMarketplacePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="card"
-          style={{ padding: 20, marginBottom: 24 }}
+          style={{ padding: isMobile ? 12 : 20, marginBottom: 24 }}
         >
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: 16,
-            }}
-          >
-            {/* Search */}
-            <form onSubmit={handleSearch} style={{ gridColumn: 'span 2' }}>
-              <div style={{ position: 'relative' }}>
-                <i
-                  className="ri-search-line"
-                  style={{
-                    position: 'absolute',
-                    left: 12,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: 'var(--text-muted)',
-                    fontSize: 18,
-                  }}
-                />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm dự án..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="input"
-                  style={{ paddingLeft: 40 }}
-                />
-              </div>
-            </form>
-
-            {/* Region Filter */}
-            <select
-              value={selectedRegion}
-              onChange={(e) => {
-                setSelectedRegion(e.target.value);
-                handleFilterChange();
-              }}
-              className="input"
-            >
-              <option value="">Tất cả khu vực</option>
-              {regions.map((region) => (
-                <option key={region.id} value={region.id}>
-                  {region.name}
-                </option>
-              ))}
-            </select>
-
-            {/* Category Filter */}
-            <select
-              value={selectedCategory}
-              onChange={(e) => {
-                setSelectedCategory(e.target.value);
-                handleFilterChange();
-              }}
-              className="input"
-            >
-              <option value="">Tất cả hạng mục</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-
-            {/* Budget Filter */}
-            <select
-              value={selectedBudgetIndex}
-              onChange={(e) => {
-                setSelectedBudgetIndex(parseInt(e.target.value, 10));
-                handleFilterChange();
-              }}
-              className="input"
-            >
-              {BUDGET_RANGES.map((range, index) => (
-                <option key={index} value={index}>
-                  {range.label}
-                </option>
-              ))}
-            </select>
-
-            {/* Sort */}
-            <select
-              value={`${sortBy}-${sortOrder}`}
-              onChange={(e) => {
-                const [newSortBy, newSortOrder] = e.target.value.split('-');
-                setSortBy(newSortBy);
-                setSortOrder(newSortOrder as 'asc' | 'desc');
-                handleFilterChange();
-              }}
-              className="input"
-            >
-              <option value="createdAt-desc">Mới nhất</option>
-              <option value="createdAt-asc">Cũ nhất</option>
-              <option value="bidDeadline-asc">Sắp hết hạn</option>
-              <option value="budgetMax-desc">Ngân sách cao nhất</option>
-              <option value="budgetMin-asc">Ngân sách thấp nhất</option>
-            </select>
-          </div>
+          <ResponsiveFilters
+            filters={filterOptions}
+            onFilterChange={handleResponsiveFilterChange}
+            onClearAll={handleClearAllFilters}
+            showActiveCount={true}
+            collapsibleMobile={true}
+          />
         </motion.div>
 
         {/* Results count */}
@@ -665,13 +653,7 @@ export function ContractorMarketplacePage() {
             </p>
             <button
               className="btn btn-secondary"
-              onClick={() => {
-                setSelectedRegion('');
-                setSelectedCategory('');
-                setSelectedBudgetIndex(0);
-                setSearchQuery('');
-                setCurrentPage(1);
-              }}
+              onClick={handleClearAllFilters}
             >
               Xóa bộ lọc
             </button>
