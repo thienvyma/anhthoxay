@@ -4,7 +4,8 @@
  * Requirements: 5.1, 5.2
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { tokens } from '@app/shared';
 import { useToast } from '../../components/Toast';
 import { settingsApi } from '../../api';
@@ -29,6 +30,8 @@ import {
 export function SettingsPage() {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<SettingsTab>('account');
+  const [isReady, setIsReady] = useState(false);
+  const mountedRef = useRef(true);
 
   // State
   const [companySettings, setCompanySettings] = useState<CompanySettings>(defaultCompanySettings);
@@ -36,8 +39,15 @@ export function SettingsPage() {
   const [headerConfig, setHeaderConfig] = useState<HeaderConfig>(defaultHeaderConfig);
   const [footerConfig, setFooterConfig] = useState<FooterConfig>(defaultFooterConfig);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   // Fetch settings on mount - using settingsApi
-  // If settings don't exist, save defaults to database
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -46,11 +56,12 @@ export function SettingsPage() {
           settingsApi.get('promo').catch(() => null),
         ]);
 
+        if (!mountedRef.current) return;
+
         // Company settings
         if (companyData?.value && typeof companyData.value === 'object') {
           setCompanySettings((prev) => ({ ...prev, ...(companyData.value as CompanySettings) }));
         } else {
-          // Save default company settings to database
           await settingsApi.update('company', { value: defaultCompanySettings }).catch((e) => console.warn('Failed to save default company settings:', e));
         }
 
@@ -58,28 +69,30 @@ export function SettingsPage() {
         if (promoData?.value && typeof promoData.value === 'object') {
           setPromoSettings((prev) => ({ ...prev, ...(promoData.value as PromoSettings) }));
         } else {
-          // Save default promo settings to database
           await settingsApi.update('promo', { value: defaultPromoSettings }).catch((e) => console.warn('Failed to save default promo settings:', e));
         }
       } catch (error) {
         console.error('Failed to fetch settings:', error);
+      } finally {
+        if (mountedRef.current) {
+          setIsReady(true);
+        }
       }
     };
 
     fetchSettings();
   }, []);
 
-  // Show floating toast message
+  // Stable callbacks using refs
   const showSavedMessage = useCallback((message: string) => {
     toast.success(message);
   }, [toast]);
 
-  // Error handler
   const handleError = useCallback((message: string) => {
     toast.error(message);
   }, [toast]);
 
-  // Build tabs with content
+  // Build tabs with content - all tabs are rendered but only active one is visible
   const tabs: Tab[] = useMemo(
     () => [
       {
@@ -143,6 +156,54 @@ export function SettingsPage() {
     ],
     [companySettings, promoSettings, headerConfig, footerConfig, showSavedMessage, handleError]
   );
+
+  // Show loading state until ready
+  if (!isReady) {
+    return (
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px' }}>
+        {/* Header */}
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
+            <div style={{
+              width: 48,
+              height: 48,
+              borderRadius: tokens.radius.lg,
+              background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 24,
+              color: '#111',
+            }}>
+              <i className="ri-settings-3-line" />
+            </div>
+            <div>
+              <h1 style={{ fontSize: 28, fontWeight: 700, color: tokens.color.text, margin: 0 }}>
+                Cài Đặt
+              </h1>
+              <p style={{ color: tokens.color.muted, fontSize: 14, margin: 0 }}>
+                Quản lý cấu hình website và thông tin công ty
+              </p>
+            </div>
+          </div>
+        </div>
+        {/* Loading indicator */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              border: `3px solid ${tokens.color.border}`,
+              borderTopColor: tokens.color.primary,
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px' }}>

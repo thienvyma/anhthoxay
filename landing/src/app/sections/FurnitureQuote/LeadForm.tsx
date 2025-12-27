@@ -228,6 +228,9 @@ export const LeadForm = memo(function LeadForm({
 
       // Submit to leads API
       // Requirements: 5.5 - Set source = 'FURNITURE_QUOTE'
+      console.log('[LeadForm] Submitting to:', `${API_URL}/leads`);
+      console.log('[LeadForm] Payload:', { name: formData.name, phone: formData.phone, email: formData.email || undefined, content, source: 'FURNITURE_QUOTE' });
+      
       const res = await fetch(`${API_URL}/leads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -240,16 +243,21 @@ export const LeadForm = memo(function LeadForm({
         }),
       });
 
+      console.log('[LeadForm] Response status:', res.status);
+      
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        const errorMessage = errorData.error?.message || 'Có lỗi xảy ra. Vui lòng thử lại!';
+        console.log('[LeadForm] Error response:', errorData);
+        const errorMessage = errorData.error?.message || errorData.error || 'Có lỗi xảy ra. Vui lòng thử lại!';
         toast.error(errorMessage);
         setSubmitting(false);
         return;
       }
 
       const result = await res.json();
+      console.log('[LeadForm] Success response:', result);
       const leadId = result.data?.id || result.id;
+      console.log('[LeadForm] Extracted leadId:', leadId);
 
       toast.success(successMessage);
 

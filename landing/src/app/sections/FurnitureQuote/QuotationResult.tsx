@@ -10,7 +10,6 @@ import { tokens, resolveMediaUrl } from '@app/shared';
 import {
   furnitureAPI,
   FurnitureFee,
-  FurnitureCombo,
   FurnitureProduct,
   QuotationItem,
   FeeBreakdown,
@@ -33,8 +32,6 @@ export interface QuotationSelections {
   axis: number | null;
   layout: { id: string; apartmentType: string } | null;
   apartmentTypeDetail: { id: string; apartmentType: string; imageUrl: string | null; description: string | null } | null;
-  selectionType: 'COMBO' | 'CUSTOM' | null;
-  combo: FurnitureCombo | null;
   products: SelectedProduct[];
 }
 
@@ -86,22 +83,18 @@ const calculateUnitNumber = (buildingCode: string, floor: number, axis: number):
 /**
  * Calculate quotation pricing
  * - basePrice = sum of item prices * quantities
- * - Filter fees by applicability matching selectionType
  * - Apply FIXED fees directly, PERCENTAGE fees as basePrice * value / 100
  * **Validates: Requirements 4.5, 7.6**
  */
 const calculateQuotation = (
   items: QuotationItem[],
-  fees: FurnitureFee[],
-  selectionType: 'COMBO' | 'CUSTOM'
+  fees: FurnitureFee[]
 ): QuotationResultData => {
   // Calculate base price
   const basePrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  // Filter applicable fees
-  const applicableFees = fees.filter(
-    (fee) => fee.applicability === 'BOTH' || fee.applicability === selectionType
-  );
+  // Filter active fees
+  const applicableFees = fees.filter((fee) => fee.isActive);
 
   // Calculate fee amounts
   const feesBreakdown: FeeBreakdown[] = applicableFees.map((fee) => {
@@ -271,22 +264,13 @@ const QuotationPreview = memo(function QuotationPreview({
       >
         <div style={{ fontSize: '0.875rem', color: tokens.color.muted }}>Loại nội thất</div>
         <div style={{ fontWeight: 600, color: tokens.color.text }}>
-          {selections.selectionType === 'COMBO' ? (
-            <>
-              <i className="ri-gift-line" style={{ marginRight: '0.5rem', color: tokens.color.primary }} />
-              Combo: {selections.combo?.name}
-            </>
-          ) : (
-            <>
-              <i className="ri-settings-line" style={{ marginRight: '0.5rem', color: tokens.color.primary }} />
-              Tùy chỉnh ({selections.products.length} sản phẩm)
-            </>
-          )}
+          <i className="ri-settings-line" style={{ marginRight: '0.5rem', color: tokens.color.primary }} />
+          Tùy chỉnh ({selections.products.length} sản phẩm)
         </div>
       </div>
 
-      {/* Items List (for Custom selection) */}
-      {selections.selectionType === 'CUSTOM' && selections.products.length > 0 && (
+      {/* Items List */}
+      {selections.products.length > 0 && (
         <div
           style={{
             marginBottom: '1rem',
@@ -373,17 +357,24 @@ const QuotationPreview = memo(function QuotationPreview({
 
 // ============================================
 // SUCCESS VIEW COMPONENT
+// Styled to match PDF layout
 // ============================================
 
 const SuccessView = memo(function SuccessView({
   quotationResult,
   selections,
+  quotationId,
   onNewQuotation,
+  onError,
 }: {
   quotationResult: QuotationResultData;
   selections: QuotationSelections;
+  quotationId: string | null;
   onNewQuotation: () => void;
+  onError: (message: string) => void;
 }) {
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
   const unitNumber = useMemo(() => {
     if (selections.building && selections.floor && selections.axis !== null) {
       return calculateUnitNumber(selections.building.code, selections.floor, selections.axis);
@@ -391,103 +382,403 @@ const SuccessView = memo(function SuccessView({
     return '';
   }, [selections.building, selections.floor, selections.axis]);
 
+  const handleDownloadPdf = useCallback(async () => {
+    if (!quotationId) {
+      onError('Không tìm thấy mã báo giá');
+      return;
+    }
+    setDownloadingPdf(true);
+    try {
+      await furnitureAPI.downloadQuotationPdf(quotationId);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Không thể tải PDF');
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }, [quotationId, onError]);
+
+  // Build items for display
+  const items = useMemo(() => {
+    return selections.products.map((p) => ({
+      name: p.product.name,
+      price: p.product.price,
+      quantity: p.quantity,
+    }));
+  }, [selections]);
+
   return (
     <motion.div
       key="success"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
     >
-      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-        >
-          <i
-            className="ri-checkbox-circle-fill"
-            style={{ fontSize: '4rem', color: tokens.color.primary }}
-          />
-        </motion.div>
-        <h3
+      {/* PDF-like Quotation Card */}
+      <div
+        style={{
+          background: tokens.color.surface,
+          borderRadius: tokens.radius.lg,
+          border: `1px solid ${tokens.color.border}`,
+          overflow: 'hidden',
+          marginBottom: '1.5rem',
+        }}
+      >
+        {/* Header - Company & Document Info */}
+        <div
           style={{
-            margin: '1rem 0 0.5rem',
-            fontSize: '1.5rem',
-            fontWeight: 700,
-            color: tokens.color.text,
+            padding: '1.5rem',
+            borderBottom: `1px solid ${tokens.color.border}`,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            flexWrap: 'wrap',
+            gap: '1rem',
           }}
         >
-          Báo giá của bạn
-        </h3>
-        <p style={{ color: tokens.color.muted, margin: 0 }}>
+          <div>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: '1.5rem',
+                fontWeight: 700,
+                color: tokens.color.primary,
+                fontFamily: tokens.font.display,
+              }}
+            >
+              ANH THỢ XÂY
+            </h2>
+            <p
+              style={{
+                margin: '0.25rem 0 0',
+                fontSize: '1.125rem',
+                fontWeight: 600,
+                color: tokens.color.text,
+              }}
+            >
+              BÁO GIÁ NỘI THẤT
+            </p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ margin: 0, fontSize: '0.875rem', color: tokens.color.muted }}>
+              Ngày: {new Date().toLocaleDateString('vi-VN')}
+            </p>
+            {quotationId && (
+              <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: tokens.color.muted }}>
+                Mã: {quotationId.slice(-8).toUpperCase()}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Apartment Info Section */}
+        <div
+          style={{
+            padding: '1.5rem',
+            borderBottom: `1px solid ${tokens.color.border}`,
+          }}
+        >
+          <h3
+            style={{
+              margin: '0 0 1rem',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              color: tokens.color.primary,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}
+          >
+            <i className="ri-building-line" style={{ marginRight: '0.5rem' }} />
+            Thông tin căn hộ
+          </h3>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '0.75rem',
+            }}
+          >
+            <div>
+              <span style={{ fontSize: '0.75rem', color: tokens.color.muted }}>Chủ đầu tư</span>
+              <p style={{ margin: '0.25rem 0 0', fontWeight: 500, color: tokens.color.text }}>
+                {selections.developer?.name}
+              </p>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.75rem', color: tokens.color.muted }}>Dự án</span>
+              <p style={{ margin: '0.25rem 0 0', fontWeight: 500, color: tokens.color.text }}>
+                {selections.project?.name}
+              </p>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.75rem', color: tokens.color.muted }}>Tòa nhà</span>
+              <p style={{ margin: '0.25rem 0 0', fontWeight: 500, color: tokens.color.text }}>
+                {selections.building?.name}
+              </p>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.75rem', color: tokens.color.muted }}>Số căn hộ</span>
+              <p style={{ margin: '0.25rem 0 0', fontWeight: 500, color: tokens.color.text }}>
+                {unitNumber}
+              </p>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.75rem', color: tokens.color.muted }}>Loại căn hộ</span>
+              <p style={{ margin: '0.25rem 0 0', fontWeight: 500, color: tokens.color.text }}>
+                {selections.apartmentTypeDetail?.apartmentType.toUpperCase()}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Selection Type Section */}
+        <div
+          style={{
+            padding: '1.5rem',
+            borderBottom: `1px solid ${tokens.color.border}`,
+          }}
+        >
+          <h3
+            style={{
+              margin: '0 0 1rem',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              color: tokens.color.primary,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}
+          >
+            <i className="ri-checkbox-circle-line" style={{ marginRight: '0.5rem' }} />
+            Loại lựa chọn
+          </h3>
+          <p style={{ margin: 0, fontWeight: 500, color: tokens.color.text }}>
+            <i className="ri-settings-line" style={{ marginRight: '0.5rem', color: tokens.color.primary }} />
+            Tùy chọn sản phẩm ({selections.products.length} sản phẩm)
+          </p>
+        </div>
+
+        {/* Items Table Section */}
+        {items.length > 0 && (
+          <div
+            style={{
+              padding: '1.5rem',
+              borderBottom: `1px solid ${tokens.color.border}`,
+            }}
+          >
+            <h3
+              style={{
+                margin: '0 0 1rem',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                color: tokens.color.primary,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+            >
+              <i className="ri-list-check" style={{ marginRight: '0.5rem' }} />
+              Sản phẩm đã chọn
+            </h3>
+
+            {/* Table Header */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 60px 100px 100px',
+                gap: '0.5rem',
+                padding: '0.75rem 0',
+                borderBottom: `1px solid ${tokens.color.border}`,
+                fontSize: '0.75rem',
+                color: tokens.color.muted,
+                fontWeight: 500,
+              }}
+            >
+              <span>Sản phẩm</span>
+              <span style={{ textAlign: 'right' }}>SL</span>
+              <span style={{ textAlign: 'right' }}>Đơn giá</span>
+              <span style={{ textAlign: 'right' }}>Thành tiền</span>
+            </div>
+
+            {/* Table Rows */}
+            {items.map((item, idx) => (
+              <div
+                key={idx}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 60px 100px 100px',
+                  gap: '0.5rem',
+                  padding: '0.75rem 0',
+                  borderBottom: `1px solid ${tokens.color.border}`,
+                  fontSize: '0.875rem',
+                }}
+              >
+                <span style={{ color: tokens.color.text }}>{item.name}</span>
+                <span style={{ textAlign: 'right', color: tokens.color.text }}>{item.quantity}</span>
+                <span style={{ textAlign: 'right', color: tokens.color.muted }}>
+                  {formatCurrency(item.price)}
+                </span>
+                <span style={{ textAlign: 'right', fontWeight: 600, color: tokens.color.text }}>
+                  {formatCurrency(item.price * item.quantity)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Price Breakdown Section */}
+        <div style={{ padding: '1.5rem' }}>
+          <h3
+            style={{
+              margin: '0 0 1rem',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              color: tokens.color.primary,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}
+          >
+            <i className="ri-money-dollar-circle-line" style={{ marginRight: '0.5rem' }} />
+            Chi tiết giá
+          </h3>
+
+          <div style={{ maxWidth: '350px', marginLeft: 'auto' }}>
+            {/* Base Price */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                padding: '0.5rem 0',
+              }}
+            >
+              <span style={{ color: tokens.color.muted }}>Giá cơ bản:</span>
+              <span style={{ color: tokens.color.text }}>{formatCurrency(quotationResult.basePrice)}</span>
+            </div>
+
+            {/* Fees */}
+            {quotationResult.fees.map((fee, idx) => (
+              <div
+                key={idx}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '0.5rem 0',
+                }}
+              >
+                <span style={{ color: tokens.color.muted }}>
+                  {fee.name}
+                  {fee.type === 'PERCENTAGE' && ` (${fee.value}%)`}:
+                </span>
+                <span style={{ color: tokens.color.text }}>{formatCurrency(fee.amount)}</span>
+              </div>
+            ))}
+
+            {/* Total */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                padding: '1rem 0 0',
+                marginTop: '0.5rem',
+                borderTop: `2px solid ${tokens.color.primary}`,
+              }}
+            >
+              <span style={{ fontWeight: 700, color: tokens.color.primary, fontSize: '1rem' }}>
+                TỔNG CỘNG:
+              </span>
+              <span style={{ fontWeight: 700, color: tokens.color.primary, fontSize: '1.25rem' }}>
+                {formatCurrency(quotationResult.totalPrice)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Note */}
+        <div
+          style={{
+            padding: '1rem 1.5rem',
+            background: tokens.color.background,
+            borderTop: `1px solid ${tokens.color.border}`,
+            textAlign: 'center',
+          }}
+        >
+          <p style={{ margin: 0, fontSize: '0.75rem', color: tokens.color.muted }}>
+            Báo giá này chỉ mang tính chất tham khảo. Giá thực tế có thể thay đổi tùy theo thời điểm và điều kiện cụ thể.
+          </p>
+          <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', color: tokens.color.muted }}>
+            © ANH THỢ XÂY - Đối tác tin cậy cho ngôi nhà của bạn
+          </p>
+        </div>
+      </div>
+
+      {/* Success Message */}
+      <div
+        style={{
+          textAlign: 'center',
+          marginBottom: '1.5rem',
+          padding: '1rem',
+          background: `${tokens.color.success}15`,
+          borderRadius: tokens.radius.md,
+          border: `1px solid ${tokens.color.success}30`,
+        }}
+      >
+        <i
+          className="ri-checkbox-circle-fill"
+          style={{ fontSize: '1.5rem', color: tokens.color.success, marginBottom: '0.5rem', display: 'block' }}
+        />
+        <p style={{ margin: 0, fontWeight: 600, color: tokens.color.text }}>
+          Báo giá đã được tạo thành công!
+        </p>
+        <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: tokens.color.muted }}>
           Chúng tôi sẽ liên hệ với bạn sớm nhất
         </p>
       </div>
 
-      {/* Summary */}
-      <div
-        style={{
-          padding: '1.5rem',
-          borderRadius: tokens.radius.md,
-          background: tokens.color.background,
-          marginBottom: '1.5rem',
-        }}
-      >
-        {/* Apartment Info */}
-        <div
-          style={{
-            marginBottom: '1rem',
-            paddingBottom: '1rem',
-            borderBottom: `1px solid ${tokens.color.border}`,
-          }}
-        >
-          <div style={{ fontSize: '0.875rem', color: tokens.color.muted }}>Căn hộ</div>
-          <div style={{ fontWeight: 600, color: tokens.color.text }}>
-            {selections.building?.name} - {unitNumber}
-          </div>
-          <div style={{ fontSize: '0.875rem', color: tokens.color.muted }}>
-            {selections.apartmentTypeDetail?.apartmentType.toUpperCase()}
-          </div>
-        </div>
-
-        {/* Price Breakdown */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: tokens.color.muted }}>Giá nội thất</span>
-            <span style={{ fontWeight: 600, color: tokens.color.text }}>
-              {formatCurrency(quotationResult.basePrice)}
-            </span>
-          </div>
-          {quotationResult.fees.map((fee, idx) => (
-            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: tokens.color.muted }}>
-                {fee.name} {fee.type === 'PERCENTAGE' && `(${fee.value}%)`}
-              </span>
-              <span style={{ color: tokens.color.text }}>{formatCurrency(fee.amount)}</span>
-            </div>
-          ))}
-          <div
+      {/* Actions */}
+      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        {quotationId && (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleDownloadPdf}
+            disabled={downloadingPdf}
             style={{
+              flex: 1,
+              minWidth: '140px',
+              padding: '0.875rem',
+              borderRadius: tokens.radius.md,
+              border: 'none',
+              background: tokens.color.primary,
+              color: '#111',
+              fontSize: '1rem',
+              fontWeight: 600,
+              cursor: downloadingPdf ? 'not-allowed' : 'pointer',
               display: 'flex',
-              justifyContent: 'space-between',
-              paddingTop: '0.75rem',
-              marginTop: '0.5rem',
-              borderTop: `2px solid ${tokens.color.border}`,
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              opacity: downloadingPdf ? 0.7 : 1,
             }}
           >
-            <span style={{ fontWeight: 700, color: tokens.color.text }}>Tổng cộng</span>
-            <span style={{ fontSize: '1.5rem', fontWeight: 700, color: tokens.color.primary }}>
-              {formatCurrency(quotationResult.totalPrice)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div style={{ display: 'flex', gap: '0.75rem' }}>
+            {downloadingPdf ? (
+              <>
+                <motion.span
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  style={{ display: 'inline-block' }}
+                >
+                  <i className="ri-loader-4-line" />
+                </motion.span>
+                Đang tải...
+              </>
+            ) : (
+              <>
+                <i className="ri-file-pdf-line" /> Tải PDF
+              </>
+            )}
+          </motion.button>
+        )}
         <button
           onClick={onNewQuotation}
           style={{
             flex: 1,
+            minWidth: '140px',
             padding: '0.875rem',
             borderRadius: tokens.radius.md,
             border: `1px solid ${tokens.color.border}`,
@@ -527,47 +818,38 @@ export const QuotationResult = memo(function QuotationResult({
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [quotationResult, setQuotationResult] = useState<QuotationResultData | null>(null);
+  const [quotationId, setQuotationId] = useState<string | null>(null);
 
   // Fetch fees on mount
   // Requirements: 7.6 - Fetch applicable fees
   useEffect(() => {
-    if (selections.selectionType) {
-      setLoading(true);
-      furnitureAPI
-        .getFees(selections.selectionType)
-        .then(setFees)
-        .catch((err) => {
-          onError(err instanceof Error ? err.message : 'Không thể tải danh sách phí');
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [selections.selectionType, onError]);
+    setLoading(true);
+    furnitureAPI.getFees()
+      .then((allFees) => {
+        setFees(allFees);
+      })
+      .catch((err) => {
+        onError(err instanceof Error ? err.message : 'Không thể tải danh sách phí');
+      })
+      .finally(() => setLoading(false));
+  }, [onError]);
 
   // Calculate quotation when fees are loaded
   // Requirements: 7.6 - Calculate total using calculateQuotation logic
   useEffect(() => {
-    if (!loading && selections.selectionType) {
+    if (!loading && selections.products.length > 0) {
       const items: QuotationItem[] = [];
 
-      if (selections.selectionType === 'COMBO' && selections.combo) {
+      selections.products.forEach((p) => {
         items.push({
-          productId: selections.combo.id,
-          name: selections.combo.name,
-          price: selections.combo.price,
-          quantity: 1,
+          productId: p.product.id,
+          name: p.product.name,
+          price: p.product.price,
+          quantity: p.quantity,
         });
-      } else if (selections.selectionType === 'CUSTOM') {
-        selections.products.forEach((p) => {
-          items.push({
-            productId: p.product.id,
-            name: p.product.name,
-            price: p.product.price,
-            quantity: p.quantity,
-          });
-        });
-      }
+      });
 
-      const result = calculateQuotation(items, fees, selections.selectionType);
+      const result = calculateQuotation(items, fees);
       setQuotationResult(result);
     }
   }, [loading, fees, selections]);
@@ -575,7 +857,7 @@ export const QuotationResult = memo(function QuotationResult({
   // Handle submit quotation
   // Requirements: 7.8 - Save quotation to database
   const handleSubmit = useCallback(async () => {
-    if (!selections.selectionType || !quotationResult) {
+    if (!quotationResult) {
       onError('Vui lòng chọn nội thất trước');
       return;
     }
@@ -601,27 +883,18 @@ export const QuotationResult = memo(function QuotationResult({
       // Build items array
       const items: QuotationItem[] = [];
 
-      if (selections.selectionType === 'COMBO' && selections.combo) {
+      selections.products.forEach((p) => {
         items.push({
-          productId: selections.combo.id,
-          name: selections.combo.name,
-          price: selections.combo.price,
-          quantity: 1,
+          productId: p.product.id,
+          name: p.product.name,
+          price: p.product.price,
+          quantity: p.quantity,
         });
-      } else {
-        selections.products.forEach((p) => {
-          items.push({
-            productId: p.product.id,
-            name: p.product.name,
-            price: p.product.price,
-            quantity: p.quantity,
-          });
-        });
-      }
+      });
 
       // Create quotation via API
       // Requirements: 7.8, 11.2 - Include all required fields
-      await furnitureAPI.createQuotation({
+      const quotation = await furnitureAPI.createQuotation({
         leadData: {
           name: leadData.name,
           phone: leadData.phone,
@@ -635,12 +908,11 @@ export const QuotationResult = memo(function QuotationResult({
         axis: selections.axis,
         apartmentType: selections.apartmentTypeDetail.apartmentType,
         layoutImageUrl: selections.apartmentTypeDetail.imageUrl || undefined,
-        selectionType: selections.selectionType,
-        comboId: selections.combo?.id,
-        comboName: selections.combo?.name,
         items,
       });
 
+      // Save quotation ID for PDF download
+      setQuotationId(quotation.id);
       setSubmitted(true);
       onSuccess('Báo giá đã được tạo thành công!');
     } catch (err) {
@@ -686,7 +958,9 @@ export const QuotationResult = memo(function QuotationResult({
       <SuccessView
         quotationResult={quotationResult}
         selections={selections}
+        quotationId={quotationId}
         onNewQuotation={onComplete}
+        onError={onError}
       />
     );
   }

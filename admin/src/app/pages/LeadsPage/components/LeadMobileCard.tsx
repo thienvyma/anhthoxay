@@ -1,27 +1,46 @@
 import { tokens } from '@app/shared';
 import { Card } from '../../../components/Card';
 import { Button } from '../../../components/Button';
-import { statusColors, statusLabels } from '../types';
+import { statusColors, statusLabels, sourceColors, sourceLabels } from '../types';
 import type { CustomerLead } from '../types';
 
 interface LeadMobileCardProps {
   lead: CustomerLead;
   onSelect: (lead: CustomerLead) => void;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
+  hasFurnitureQuotation?: boolean;
 }
 
 /**
  * LeadMobileCard - Mobile-optimized card view for a lead
  */
-export function LeadMobileCard({ lead, onSelect }: LeadMobileCardProps) {
+export function LeadMobileCard({ lead, onSelect, isSelected, onToggleSelect, hasFurnitureQuotation }: LeadMobileCardProps) {
   const colors = statusColors[lead.status];
+  const srcColors = sourceColors[lead.source];
   
   return (
-    <Card style={{ padding: 16 }}>
+    <Card style={{ 
+      padding: 16,
+      background: isSelected ? 'rgba(239, 68, 68, 0.1)' : undefined,
+      border: isSelected ? `1px solid ${tokens.color.error}` : undefined,
+    }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-        <div>
-          <div style={{ color: tokens.color.text, fontWeight: 600, fontSize: 16 }}>{lead.name}</div>
-          <div style={{ color: tokens.color.muted, fontSize: 13, marginTop: 4 }}>{lead.phone}</div>
-          {lead.email && <div style={{ color: tokens.color.muted, fontSize: 12 }}>{lead.email}</div>}
+        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+          {onToggleSelect && (
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={onToggleSelect}
+              onClick={(e) => e.stopPropagation()}
+              style={{ cursor: 'pointer', width: 18, height: 18, marginTop: 2 }}
+            />
+          )}
+          <div>
+            <div style={{ color: tokens.color.text, fontWeight: 600, fontSize: 16 }}>{lead.name}</div>
+            <div style={{ color: tokens.color.muted, fontSize: 13, marginTop: 4 }}>{lead.phone}</div>
+            {lead.email && <div style={{ color: tokens.color.muted, fontSize: 12 }}>{lead.email}</div>}
+          </div>
         </div>
         <span style={{
           padding: '4px 10px',
@@ -51,19 +70,44 @@ export function LeadMobileCard({ lead, onSelect }: LeadMobileCardProps) {
       )}
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{
             padding: '2px 6px',
             borderRadius: 4,
-            background: 'rgba(255,255,255,0.05)',
-            color: tokens.color.muted,
+            background: srcColors?.bg || 'rgba(255,255,255,0.05)',
+            color: srcColors?.text || tokens.color.muted,
             fontSize: 11,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 3,
           }}>
-            {lead.source}
+            <i className={srcColors?.icon || 'ri-file-list-line'} />
+            {sourceLabels[lead.source] || lead.source}
           </span>
-          {lead.quoteData && (
-            <span style={{ fontSize: 11, color: tokens.color.primary }}>
-              <i className="ri-calculator-line" /> Báo giá
+          {lead.source === 'FURNITURE_QUOTE' && (
+            <span style={{ 
+              fontSize: 10, 
+              color: hasFurnitureQuotation ? tokens.color.success : tokens.color.warning,
+              background: hasFurnitureQuotation ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+              padding: '2px 6px',
+              borderRadius: 4,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 3,
+            }}>
+              <i className={hasFurnitureQuotation ? 'ri-checkbox-circle-fill' : 'ri-time-line'} />
+              {hasFurnitureQuotation ? 'Đã báo giá' : 'Chưa báo giá'}
+            </span>
+          )}
+          {lead.quoteData && lead.source !== 'FURNITURE_QUOTE' && (
+            <span style={{ 
+              fontSize: 10, 
+              color: tokens.color.primary,
+              background: 'rgba(245, 211, 147, 0.15)',
+              padding: '2px 6px',
+              borderRadius: 4,
+            }}>
+              <i className="ri-calculator-line" /> Có báo giá
             </span>
           )}
         </div>

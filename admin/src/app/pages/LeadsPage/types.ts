@@ -16,9 +16,6 @@ export interface FurnitureQuotation {
   unitNumber: string;
   apartmentType: string;
   layoutImageUrl: string | null;
-  selectionType: 'COMBO' | 'CUSTOM';
-  comboId: string | null;
-  comboName: string | null;
   items: string;
   basePrice: number;
   fees: string;
@@ -67,4 +64,17 @@ export const statusLabels: Record<string, string> = {
   CONTACTED: 'Đã liên hệ',
   CONVERTED: 'Đã chuyển đổi',
   CANCELLED: 'Đã hủy',
+};
+
+// Source colors and labels
+export const sourceColors: Record<string, { bg: string; text: string; icon: string }> = {
+  FURNITURE_QUOTE: { bg: 'rgba(139, 92, 246, 0.2)', text: '#8B5CF6', icon: 'ri-sofa-line' },
+  QUOTE_FORM: { bg: 'rgba(245, 211, 147, 0.2)', text: '#F5D393', icon: 'ri-calculator-line' },
+  CONTACT_FORM: { bg: 'rgba(59, 130, 246, 0.2)', text: '#3b82f6', icon: 'ri-mail-line' },
+};
+
+export const sourceLabels: Record<string, string> = {
+  FURNITURE_QUOTE: 'Nội thất',
+  QUOTE_FORM: 'Báo giá',
+  CONTACT_FORM: 'Liên hệ',
 };

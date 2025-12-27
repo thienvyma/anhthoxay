@@ -10,7 +10,6 @@ import type {
   FurnitureBuilding,
   FurnitureLayout,
   FurnitureApartmentType,
-  FurnitureCombo,
   FurnitureProduct,
 } from '../../api/furniture';
 
@@ -37,8 +36,6 @@ export interface Selections {
   axis: number | null;
   layout: FurnitureLayout | null;
   apartmentTypeDetail: FurnitureApartmentType | null;
-  selectionType: 'COMBO' | 'CUSTOM' | null;
-  combo: FurnitureCombo | null;
   products: Array<{ product: FurnitureProduct; quantity: number }>;
 }
 

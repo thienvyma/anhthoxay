@@ -71,131 +71,6 @@ export function PromoTab({ settings, onChange, onShowMessage, onError }: PromoTa
       exit={{ opacity: 0, y: -20 }}
       style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
     >
-      {/* Announcement - For User Page (Future) */}
-      <Card 
-        icon="ri-notification-badge-line" 
-        title="Thông Báo (Trang User)" 
-        subtitle="Thông báo hiển thị cho khách hàng đã đăng ký - Sẽ phát triển sau"
-      >
-        <div style={{
-          padding: 16,
-          background: 'rgba(245, 211, 147, 0.1)',
-          border: '1px solid rgba(245, 211, 147, 0.3)',
-          borderRadius: tokens.radius.md,
-          marginBottom: 20,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: tokens.color.primary }}>
-            <i className="ri-information-line" />
-            <span style={{ fontSize: 13 }}>
-              Tính năng này sẽ hiển thị thông báo trên trang User (đang phát triển)
-            </span>
-          </div>
-        </div>
-
-        {/* Toggle */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: 16,
-          background: glass.background,
-          border: glass.border,
-          borderRadius: tokens.radius.md,
-          marginBottom: 16,
-        }}>
-          <div>
-            <div style={{ color: tokens.color.text, fontWeight: 500 }}>Bật thông báo</div>
-            <div style={{ color: tokens.color.muted, fontSize: 13 }}>Hiển thị thông báo khi trang User hoàn thành</div>
-          </div>
-          <ToggleSwitch 
-            checked={settings.announcement.enabled} 
-            onChange={(v) => updateAnnouncement('enabled', v)} 
-          />
-        </div>
-
-        <Input
-          label="Nội dung thông báo"
-          value={settings.announcement.text}
-          onChange={(v) => updateAnnouncement('text', v)}
-          placeholder="🎉 Khuyến mãi đặc biệt..."
-          fullWidth
-        />
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
-          <Input
-            label="Link (tùy chọn)"
-            value={settings.announcement.link || ''}
-            onChange={(v) => updateAnnouncement('link', v)}
-            placeholder="/bao-gia"
-            fullWidth
-          />
-          <Input
-            label="Text nút"
-            value={settings.announcement.linkText || ''}
-            onChange={(v) => updateAnnouncement('linkText', v)}
-            placeholder="Xem ngay"
-            fullWidth
-          />
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: 8, color: tokens.color.text, fontWeight: 500 }}>
-              Màu nền
-            </label>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                type="color"
-                value={settings.announcement.backgroundColor}
-                onChange={(e) => updateAnnouncement('backgroundColor', e.target.value)}
-                style={{ width: 40, height: 40, border: 'none', borderRadius: tokens.radius.sm, cursor: 'pointer' }}
-              />
-              <input
-                type="text"
-                value={settings.announcement.backgroundColor}
-                onChange={(e) => updateAnnouncement('backgroundColor', e.target.value)}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  background: glass.background,
-                  border: glass.border,
-                  borderRadius: tokens.radius.md,
-                  color: tokens.color.text,
-                  fontSize: 14,
-                }}
-              />
-            </div>
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: 8, color: tokens.color.text, fontWeight: 500 }}>
-              Màu chữ
-            </label>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                type="color"
-                value={settings.announcement.textColor}
-                onChange={(e) => updateAnnouncement('textColor', e.target.value)}
-                style={{ width: 40, height: 40, border: 'none', borderRadius: tokens.radius.sm, cursor: 'pointer' }}
-              />
-              <input
-                type="text"
-                value={settings.announcement.textColor}
-                onChange={(e) => updateAnnouncement('textColor', e.target.value)}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  background: glass.background,
-                  border: glass.border,
-                  borderRadius: tokens.radius.md,
-                  color: tokens.color.text,
-                  fontSize: 14,
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </Card>
-
       {/* Popup Banner - For Landing Page */}
       <Card 
         icon="ri-window-line" 
@@ -370,6 +245,131 @@ export function PromoTab({ settings, onChange, onShowMessage, onError }: PromoTa
           {saving ? 'Đang lưu...' : 'Lưu cài đặt'}
         </Button>
       </div>
+
+      {/* Announcement - For User Page (Future) - Moved to bottom */}
+      <Card 
+        icon="ri-notification-badge-line" 
+        title="Thông Báo (Trang User)" 
+        subtitle="Thông báo hiển thị cho khách hàng đã đăng ký - Sẽ phát triển sau"
+      >
+        <div style={{
+          padding: 16,
+          background: 'rgba(245, 211, 147, 0.1)',
+          border: '1px solid rgba(245, 211, 147, 0.3)',
+          borderRadius: tokens.radius.md,
+          marginBottom: 20,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: tokens.color.primary }}>
+            <i className="ri-information-line" />
+            <span style={{ fontSize: 13 }}>
+              Tính năng này sẽ hiển thị thông báo trên trang User (đang phát triển)
+            </span>
+          </div>
+        </div>
+
+        {/* Toggle */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 16,
+          background: glass.background,
+          border: glass.border,
+          borderRadius: tokens.radius.md,
+          marginBottom: 16,
+        }}>
+          <div>
+            <div style={{ color: tokens.color.text, fontWeight: 500 }}>Bật thông báo</div>
+            <div style={{ color: tokens.color.muted, fontSize: 13 }}>Hiển thị thông báo khi trang User hoàn thành</div>
+          </div>
+          <ToggleSwitch 
+            checked={settings.announcement.enabled} 
+            onChange={(v) => updateAnnouncement('enabled', v)} 
+          />
+        </div>
+
+        <Input
+          label="Nội dung thông báo"
+          value={settings.announcement.text}
+          onChange={(v) => updateAnnouncement('text', v)}
+          placeholder="🎉 Khuyến mãi đặc biệt..."
+          fullWidth
+        />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
+          <Input
+            label="Link (tùy chọn)"
+            value={settings.announcement.link || ''}
+            onChange={(v) => updateAnnouncement('link', v)}
+            placeholder="/bao-gia"
+            fullWidth
+          />
+          <Input
+            label="Text nút"
+            value={settings.announcement.linkText || ''}
+            onChange={(v) => updateAnnouncement('linkText', v)}
+            placeholder="Xem ngay"
+            fullWidth
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: 8, color: tokens.color.text, fontWeight: 500 }}>
+              Màu nền
+            </label>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                type="color"
+                value={settings.announcement.backgroundColor}
+                onChange={(e) => updateAnnouncement('backgroundColor', e.target.value)}
+                style={{ width: 40, height: 40, border: 'none', borderRadius: tokens.radius.sm, cursor: 'pointer' }}
+              />
+              <input
+                type="text"
+                value={settings.announcement.backgroundColor}
+                onChange={(e) => updateAnnouncement('backgroundColor', e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  background: glass.background,
+                  border: glass.border,
+                  borderRadius: tokens.radius.md,
+                  color: tokens.color.text,
+                  fontSize: 14,
+                }}
+              />
+            </div>
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: 8, color: tokens.color.text, fontWeight: 500 }}>
+              Màu chữ
+            </label>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                type="color"
+                value={settings.announcement.textColor}
+                onChange={(e) => updateAnnouncement('textColor', e.target.value)}
+                style={{ width: 40, height: 40, border: 'none', borderRadius: tokens.radius.sm, cursor: 'pointer' }}
+              />
+              <input
+                type="text"
+                value={settings.announcement.textColor}
+                onChange={(e) => updateAnnouncement('textColor', e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  background: glass.background,
+                  border: glass.border,
+                  borderRadius: tokens.radius.md,
+                  color: tokens.color.text,
+                  fontSize: 14,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </Card>
     </motion.div>
   );
 }

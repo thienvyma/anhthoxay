@@ -112,43 +112,9 @@ export interface FurnitureProduct {
 }
 
 /**
- * Furniture Combo Item
- * Junction table linking combos to products with quantity
- */
-export interface FurnitureComboItem {
-  id: string;
-  comboId: string;
-  productId: string;
-  product?: FurnitureProduct;
-  quantity: number;
-}
-
-/**
- * Furniture Combo
- * Pre-configured furniture package for specific apartment types
- */
-export interface FurnitureCombo {
-  id: string;
-  name: string;
-  apartmentTypes: string; // JSON array string: ["1pn", "2pn"]
-  price: number;
-  imageUrl: string | null;
-  description: string | null;
-  isActive: boolean;
-  items?: FurnitureComboItem[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-/**
  * Fee Type enum
  */
 export type FeeType = 'FIXED' | 'PERCENTAGE';
-
-/**
- * Fee Applicability enum
- */
-export type FeeApplicability = 'COMBO' | 'CUSTOM' | 'BOTH';
 
 /**
  * Furniture Fee
@@ -159,28 +125,11 @@ export interface FurnitureFee {
   name: string;
   type: FeeType;
   value: number;
-  applicability: FeeApplicability;
   description: string | null;
   isActive: boolean;
   order: number;
   createdAt: string;
   updatedAt: string;
-}
-
-/**
- * Selection Type enum for quotations
- */
-export type SelectionType = 'COMBO' | 'CUSTOM';
-
-/**
- * Quotation Item
- * Individual item in a quotation
- */
-export interface FurnitureQuotationItem {
-  productId: string;
-  name: string;
-  price: number;
-  quantity: number;
 }
 
 /**
@@ -210,9 +159,6 @@ export interface FurnitureQuotation {
   unitNumber: string; // Calculated: {buildingCode}.{floor}{axis}
   apartmentType: string;
   layoutImageUrl: string | null;
-  selectionType: SelectionType;
-  comboId: string | null;
-  comboName: string | null;
   items: string; // JSON string of FurnitureQuotationItem[]
   basePrice: number;
   fees: string; // JSON string of FurnitureQuotationFee[]
@@ -225,7 +171,7 @@ export interface FurnitureQuotation {
 /**
  * Tab types for FurniturePage navigation
  */
-export type TabType = 'management' | 'catalog' | 'combo' | 'settings';
+export type TabType = 'management' | 'catalog' | 'settings' | 'pdf';
 
 // ========== TAB PROPS ==========
 
@@ -252,14 +198,6 @@ export interface ManagementTabProps extends TabProps {
  */
 export interface CatalogTabProps extends TabProps {
   categories: FurnitureCategory[];
-  products: FurnitureProduct[];
-}
-
-/**
- * Props for ComboTab
- */
-export interface ComboTabProps extends TabProps {
-  combos: FurnitureCombo[];
   products: FurnitureProduct[];
 }
 
@@ -416,47 +354,12 @@ export interface UpdateProductInput {
 }
 
 /**
- * Input for combo item
- */
-export interface ComboItemInput {
-  productId: string;
-  quantity: number;
-}
-
-/**
- * Input for creating a combo
- */
-export interface CreateComboInput {
-  name: string;
-  apartmentTypes: string[];
-  price: number;
-  imageUrl?: string;
-  description?: string;
-  isActive?: boolean;
-  items?: ComboItemInput[];
-}
-
-/**
- * Input for updating a combo
- */
-export interface UpdateComboInput {
-  name?: string;
-  apartmentTypes?: string[];
-  price?: number;
-  imageUrl?: string | null;
-  description?: string | null;
-  isActive?: boolean;
-  items?: ComboItemInput[];
-}
-
-/**
  * Input for creating a fee
  */
 export interface CreateFeeInput {
   name: string;
   type: FeeType;
   value: number;
-  applicability: FeeApplicability;
   description?: string;
   order?: number;
   isActive?: boolean;
@@ -469,7 +372,6 @@ export interface UpdateFeeInput {
   name?: string;
   type?: FeeType;
   value?: number;
-  applicability?: FeeApplicability;
   description?: string | null;
   order?: number;
   isActive?: boolean;
@@ -530,3 +432,102 @@ export interface MetricsGridRow {
 
 // Re-export API_URL from shared for convenience
 export { API_URL } from '@app/shared';
+
+
+// ========== PDF SETTINGS TYPES ==========
+
+/**
+ * PDF Settings for furniture quotations
+ */
+export interface FurniturePdfSettings {
+  id: string;
+  companyName: string;
+  companyTagline: string;
+  companyLogo: string | null;
+  documentTitle: string;
+  primaryColor: string;
+  textColor: string;
+  mutedColor: string;
+  borderColor: string;
+  // Font sizes
+  companyNameSize: number;
+  documentTitleSize: number;
+  sectionTitleSize: number;
+  bodyTextSize: number;
+  footerTextSize: number;
+  // Section titles
+  apartmentInfoTitle: string;
+  selectionTypeTitle: string;
+  productsTitle: string;
+  priceDetailsTitle: string;
+  contactInfoTitle: string;
+  totalLabel: string;
+  // Footer
+  footerNote: string;
+  footerCopyright: string;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  contactAddress: string | null;
+  contactWebsite: string | null;
+  additionalNotes: string | null;
+  validityDays: number;
+  // Show/hide
+  showLayoutImage: boolean;
+  showItemsTable: boolean;
+  showFeeDetails: boolean;
+  showContactInfo: boolean;
+  showValidityDate: boolean;
+  showQuotationCode: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Input for updating PDF settings
+ */
+export interface UpdatePdfSettingsInput {
+  companyName?: string;
+  companyTagline?: string;
+  companyLogo?: string | null;
+  documentTitle?: string;
+  primaryColor?: string;
+  textColor?: string;
+  mutedColor?: string;
+  borderColor?: string;
+  // Font sizes
+  companyNameSize?: number;
+  documentTitleSize?: number;
+  sectionTitleSize?: number;
+  bodyTextSize?: number;
+  footerTextSize?: number;
+  // Section titles
+  apartmentInfoTitle?: string;
+  selectionTypeTitle?: string;
+  productsTitle?: string;
+  priceDetailsTitle?: string;
+  contactInfoTitle?: string;
+  totalLabel?: string;
+  // Footer
+  footerNote?: string;
+  footerCopyright?: string;
+  contactPhone?: string | null;
+  contactEmail?: string | null;
+  contactAddress?: string | null;
+  contactWebsite?: string | null;
+  additionalNotes?: string | null;
+  validityDays?: number;
+  // Show/hide
+  showLayoutImage?: boolean;
+  showItemsTable?: boolean;
+  showFeeDetails?: boolean;
+  showContactInfo?: boolean;
+  showValidityDate?: boolean;
+  showQuotationCode?: boolean;
+}
+
+/**
+ * Props for PdfSettingsTab
+ */
+export interface PdfSettingsTabProps extends TabProps {
+  pdfSettings: FurniturePdfSettings | null;
+}

@@ -11,8 +11,8 @@ import { tokens } from '@app/shared';
 import { ResponsiveTabs, Tab } from '../../../components/responsive';
 import { ManagementTab } from './ManagementTab';
 import { CatalogTab } from './CatalogTab';
-import { ComboTab } from './ComboTab';
 import { SettingsTab } from './SettingsTab';
+import { PdfSettingsTab } from './PdfSettingsTab';
 import type {
   TabType,
   FurnitureDeveloper,
@@ -22,8 +22,8 @@ import type {
   FurnitureApartmentType,
   FurnitureCategory,
   FurnitureProduct,
-  FurnitureCombo,
   FurnitureFee,
+  FurniturePdfSettings,
 } from './types';
 import {
   furnitureDevelopersApi,
@@ -31,8 +31,8 @@ import {
   furnitureBuildingsApi,
   furnitureCategoriesApi,
   furnitureProductsApi,
-  furnitureCombosApi,
   furnitureFeesApi,
+  furniturePdfSettingsApi,
 } from '../../api/furniture';
 
 export function FurniturePage() {
@@ -47,8 +47,8 @@ export function FurniturePage() {
   const [apartmentTypes, setApartmentTypes] = useState<FurnitureApartmentType[]>([]);
   const [categories, setCategories] = useState<FurnitureCategory[]>([]);
   const [products, setProducts] = useState<FurnitureProduct[]>([]);
-  const [combos, setCombos] = useState<FurnitureCombo[]>([]);
   const [fees, setFees] = useState<FurnitureFee[]>([]);
+  const [pdfSettings, setPdfSettings] = useState<FurniturePdfSettings | null>(null);
 
   /**
    * Fetch all data on mount
@@ -63,16 +63,16 @@ export function FurniturePage() {
         buildingsData,
         categoriesData,
         productsData,
-        combosData,
         feesData,
+        pdfSettingsData,
       ] = await Promise.all([
         furnitureDevelopersApi.list(),
         furnitureProjectsApi.list(),
         furnitureBuildingsApi.list(),
         furnitureCategoriesApi.list(),
         furnitureProductsApi.list(),
-        furnitureCombosApi.list(),
         furnitureFeesApi.list(),
+        furniturePdfSettingsApi.get().catch(() => null),
       ]);
 
       setDevelopers(developersData);
@@ -80,8 +80,8 @@ export function FurniturePage() {
       setBuildings(buildingsData);
       setCategories(categoriesData);
       setProducts(productsData);
-      setCombos(combosData);
       setFees(feesData);
+      setPdfSettings(pdfSettingsData);
 
       // Layouts and apartmentTypes are fetched per building, so we start with empty arrays
       // They will be populated when a building is selected in ManagementTab
@@ -103,8 +103,8 @@ export function FurniturePage() {
    * Requirements: 1.1
    * Tab 1: id='management', label='Quản lý', icon='ri-building-line'
    * Tab 2: id='catalog', label='Catalog', icon='ri-store-line'
-   * Tab 3: id='combo', label='Combo', icon='ri-gift-line'
-   * Tab 4: id='settings', label='Cài đặt', icon='ri-settings-line'
+   * Tab 3: id='settings', label='Phí', icon='ri-money-dollar-circle-line'
+   * Tab 4: id='pdf', label='PDF', icon='ri-file-pdf-line'
    */
   const tabs: Tab[] = useMemo(
     () => [
@@ -136,21 +136,9 @@ export function FurniturePage() {
         ),
       },
       {
-        id: 'combo',
-        label: 'Combo',
-        icon: 'ri-gift-line',
-        content: (
-          <ComboTab
-            combos={combos}
-            products={products}
-            onRefresh={fetchAllData}
-          />
-        ),
-      },
-      {
         id: 'settings',
-        label: 'Cài đặt',
-        icon: 'ri-settings-line',
+        label: 'Phí',
+        icon: 'ri-money-dollar-circle-line',
         content: (
           <SettingsTab
             fees={fees}
@@ -158,8 +146,19 @@ export function FurniturePage() {
           />
         ),
       },
+      {
+        id: 'pdf',
+        label: 'PDF',
+        icon: 'ri-file-pdf-line',
+        content: (
+          <PdfSettingsTab
+            pdfSettings={pdfSettings}
+            onRefresh={fetchAllData}
+          />
+        ),
+      },
     ],
-    [developers, projects, buildings, layouts, apartmentTypes, categories, products, combos, fees, fetchAllData]
+    [developers, projects, buildings, layouts, apartmentTypes, categories, products, fees, pdfSettings, fetchAllData]
   );
 
   // Loading state
@@ -189,7 +188,7 @@ export function FurniturePage() {
           Quản lý Nội thất
         </h1>
         <p style={{ color: tokens.color.muted, margin: '8px 0 0' }}>
-          Quản lý dự án, sản phẩm nội thất, combo và cài đặt phí
+          Quản lý dự án, sản phẩm nội thất và cài đặt phí
         </p>
       </div>
 

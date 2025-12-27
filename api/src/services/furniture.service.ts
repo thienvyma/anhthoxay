@@ -9,7 +9,6 @@
  * - Apartment Types (Loại căn hộ)
  * - Categories (Danh mục sản phẩm)
  * - Products (Sản phẩm nội thất)
- * - Combos (Gói combo)
  * - Fees (Phí)
  * - Quotations (Báo giá)
  *
@@ -27,7 +26,6 @@ import {
   FurnitureApartmentType,
   FurnitureCategory,
   FurnitureProduct,
-  FurnitureCombo,
   FurnitureFee,
   FurnitureQuotation,
 } from '@prisma/client';
@@ -57,19 +55,6 @@ export class FurnitureServiceError extends Error {
 // ============================================
 // TYPES & INTERFACES
 // ============================================
-
-/**
- * Combo with items relation
- */
-export interface FurnitureComboWithItems extends FurnitureCombo {
-  items: Array<{
-    id: string;
-    comboId: string;
-    productId: string;
-    quantity: number;
-    product: FurnitureProduct;
-  }>;
-}
 
 /**
  * Product with category relation
@@ -219,36 +204,11 @@ export interface UpdateProductInput {
   isActive?: boolean;
 }
 
-export interface CreateComboItemInput {
-  productId: string;
-  quantity: number;
-}
-
-export interface CreateComboInput {
-  name: string;
-  apartmentTypes: string[];
-  price: number;
-  imageUrl?: string;
-  description?: string;
-  isActive?: boolean;
-  items: CreateComboItemInput[];
-}
-
-export interface UpdateComboInput {
-  name?: string;
-  apartmentTypes?: string[];
-  price?: number;
-  imageUrl?: string;
-  description?: string;
-  isActive?: boolean;
-  items?: CreateComboItemInput[];
-}
-
 export interface CreateFeeInput {
   name: string;
   type: 'FIXED' | 'PERCENTAGE';
   value: number;
-  applicability: 'COMBO' | 'CUSTOM' | 'BOTH';
+  applicability?: 'CUSTOM' | 'BOTH';  // Keep for DB compatibility, default to BOTH
   description?: string;
   isActive?: boolean;
   order?: number;
@@ -258,7 +218,7 @@ export interface UpdateFeeInput {
   name?: string;
   type?: 'FIXED' | 'PERCENTAGE';
   value?: number;
-  applicability?: 'COMBO' | 'CUSTOM' | 'BOTH';
+  applicability?: 'CUSTOM' | 'BOTH';  // Keep for DB compatibility
   description?: string;
   isActive?: boolean;
   order?: number;
@@ -274,9 +234,6 @@ export interface CreateQuotationInput {
   axis: number;
   apartmentType: string;
   layoutImageUrl?: string;
-  selectionType: 'COMBO' | 'CUSTOM';
-  comboId?: string;
-  comboName?: string;
   items: QuotationItem[];
   fees: FurnitureFee[];
 }
@@ -943,188 +900,16 @@ export class FurnitureService {
   }
 
   // ============================================
-  // COMBOS
-  // _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
-  // ============================================
-
-  /**
-   * Get all active combos, optionally filtered by apartment type
-   */
-  async getCombos(apartmentType?: string): Promise<FurnitureComboWithItems[]> {
-    const combos = await this.prisma.furnitureCombo.findMany({
-      where: { isActive: true },
-      orderBy: { name: 'asc' },
-      include: {
-        items: {
-          include: { product: true },
-        },
-      },
-    });
-
-    // Filter by apartment type if provided
-    if (apartmentType) {
-      const normalizedType = apartmentType.trim().toLowerCase();
-      return combos.filter((combo) => {
-        const types: string[] = JSON.parse(combo.apartmentTypes);
-        return types.some((t) => t.toLowerCase() === normalizedType);
-      });
-    }
-
-    return combos;
-  }
-
-  /**
-   * Create a new combo with items
-   */
-  async createCombo(input: CreateComboInput): Promise<FurnitureComboWithItems> {
-    const { items, apartmentTypes, ...comboData } = input;
-
-    return this.prisma.furnitureCombo.create({
-      data: {
-        ...comboData,
-        apartmentTypes: JSON.stringify(apartmentTypes),
-        items: {
-          create: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-          })),
-        },
-      },
-      include: {
-        items: {
-          include: { product: true },
-        },
-      },
-    });
-  }
-
-  /**
-   * Update a combo
-   * @throws FurnitureServiceError if not found
-   */
-  async updateCombo(
-    id: string,
-    input: UpdateComboInput
-  ): Promise<FurnitureComboWithItems> {
-    const { items, apartmentTypes, ...comboData } = input;
-
-    try {
-      // Update combo data
-      const updateData: Prisma.FurnitureComboUpdateInput = { ...comboData };
-      if (apartmentTypes !== undefined) {
-        updateData.apartmentTypes = JSON.stringify(apartmentTypes);
-      }
-
-      // If items are provided, replace all items
-      if (items !== undefined) {
-        // Delete existing items
-        await this.prisma.furnitureComboItem.deleteMany({
-          where: { comboId: id },
-        });
-
-        // Create new items
-        await this.prisma.furnitureComboItem.createMany({
-          data: items.map((item) => ({
-            comboId: id,
-            productId: item.productId,
-            quantity: item.quantity,
-          })),
-        });
-      }
-
-      return await this.prisma.furnitureCombo.update({
-        where: { id },
-        data: updateData,
-        include: {
-          items: {
-            include: { product: true },
-          },
-        },
-      });
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2025') {
-          throw new FurnitureServiceError('NOT_FOUND', 'Combo not found', 404);
-        }
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Delete a combo
-   * @throws FurnitureServiceError if not found
-   */
-  async deleteCombo(id: string): Promise<void> {
-    try {
-      await this.prisma.furnitureCombo.delete({ where: { id } });
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2025') {
-          throw new FurnitureServiceError('NOT_FOUND', 'Combo not found', 404);
-        }
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Duplicate a combo
-   * Create copy with name = `${originalName} (Copy)`
-   * @throws FurnitureServiceError if not found
-   */
-  async duplicateCombo(id: string): Promise<FurnitureComboWithItems> {
-    const original = await this.prisma.furnitureCombo.findUnique({
-      where: { id },
-      include: {
-        items: true,
-      },
-    });
-
-    if (!original) {
-      throw new FurnitureServiceError('NOT_FOUND', 'Combo not found', 404);
-    }
-
-    return this.prisma.furnitureCombo.create({
-      data: {
-        name: `${original.name} (Copy)`,
-        apartmentTypes: original.apartmentTypes,
-        price: original.price,
-        imageUrl: original.imageUrl,
-        description: original.description,
-        isActive: original.isActive,
-        items: {
-          create: original.items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-          })),
-        },
-      },
-      include: {
-        items: {
-          include: { product: true },
-        },
-      },
-    });
-  }
-
-
-  // ============================================
   // FEES
   // _Requirements: 4.1, 4.2, 4.3, 4.4_
   // ============================================
 
   /**
-   * Get all active fees, optionally filtered by applicability
+   * Get all active fees
    */
-  async getFees(applicability?: 'COMBO' | 'CUSTOM' | 'BOTH'): Promise<FurnitureFee[]> {
-    const where: Prisma.FurnitureFeeWhereInput = { isActive: true };
-    if (applicability) {
-      where.applicability = applicability;
-    }
-
+  async getFees(): Promise<FurnitureFee[]> {
     return this.prisma.furnitureFee.findMany({
-      where,
+      where: { isActive: true },
       orderBy: { order: 'asc' },
     });
   }
@@ -1134,7 +919,10 @@ export class FurnitureService {
    */
   async createFee(input: CreateFeeInput): Promise<FurnitureFee> {
     return this.prisma.furnitureFee.create({
-      data: input,
+      data: {
+        ...input,
+        applicability: input.applicability || 'BOTH',  // Default to BOTH for all fees
+      },
     });
   }
 
@@ -1194,25 +982,18 @@ export class FurnitureService {
   /**
    * Calculate quotation pricing
    * - basePrice = sum of item prices * quantities
-   * - Filter fees by applicability matching selectionType
    * - Apply FIXED fees directly, PERCENTAGE fees as basePrice * value / 100
    * _Requirements: 4.5, 7.6_
    */
   calculateQuotation(
     items: QuotationItem[],
-    fees: FurnitureFee[],
-    selectionType: 'COMBO' | 'CUSTOM'
+    fees: FurnitureFee[]
   ): QuotationCalculation {
     // Calculate base price
     const basePrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-    // Filter applicable fees
-    const applicableFees = fees.filter(
-      (fee) => fee.applicability === 'BOTH' || fee.applicability === selectionType
-    );
-
     // Calculate fee amounts
-    const feesBreakdown: FeeBreakdown[] = applicableFees.map((fee) => {
+    const feesBreakdown: FeeBreakdown[] = fees.map((fee) => {
       const amount =
         fee.type === 'FIXED' ? fee.value : (basePrice * fee.value) / 100;
       return {
@@ -1263,8 +1044,7 @@ export class FurnitureService {
     // Calculate pricing
     const calculation = this.calculateQuotation(
       input.items,
-      input.fees,
-      input.selectionType
+      input.fees
     );
 
     return this.prisma.furnitureQuotation.create({
@@ -1279,9 +1059,6 @@ export class FurnitureService {
         unitNumber,
         apartmentType: input.apartmentType,
         layoutImageUrl: input.layoutImageUrl,
-        selectionType: input.selectionType,
-        comboId: input.comboId,
-        comboName: input.comboName,
         items: JSON.stringify(input.items),
         basePrice: calculation.basePrice,
         fees: JSON.stringify(calculation.feesBreakdown),

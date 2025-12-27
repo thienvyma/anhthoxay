@@ -21,7 +21,6 @@ import type {
   CreateFeeInput,
   UpdateFeeInput,
   FeeType,
-  FeeApplicability,
 } from './types';
 
 // ========== MODAL TYPES ==========
@@ -31,13 +30,6 @@ type ModalType = 'fee' | 'deleteFee' | null;
 const FEE_TYPE_OPTIONS = [
   { value: 'FIXED', label: 'Cố định (VNĐ)' },
   { value: 'PERCENTAGE', label: 'Phần trăm (%)' },
-];
-
-// ========== APPLICABILITY OPTIONS ==========
-const APPLICABILITY_OPTIONS = [
-  { value: 'COMBO', label: 'Chỉ Combo' },
-  { value: 'CUSTOM', label: 'Chỉ Custom' },
-  { value: 'BOTH', label: 'Cả hai' },
 ];
 
 // ========== COMPONENT ==========
@@ -55,7 +47,6 @@ export function SettingsTab({ fees, onRefresh }: SettingsTabProps) {
     name: '',
     type: 'FIXED',
     value: 0,
-    applicability: 'BOTH',
     description: '',
     order: 0,
     isActive: true,
@@ -77,11 +68,6 @@ export function SettingsTab({ fees, onRefresh }: SettingsTabProps) {
     return formatPrice(fee.value);
   };
 
-  const getApplicabilityLabel = (applicability: FeeApplicability) => {
-    const option = APPLICABILITY_OPTIONS.find((opt) => opt.value === applicability);
-    return option?.label || applicability;
-  };
-
   const getTypeLabel = (type: FeeType) => {
     const option = FEE_TYPE_OPTIONS.find((opt) => opt.value === type);
     return option?.label || type;
@@ -95,7 +81,6 @@ export function SettingsTab({ fees, onRefresh }: SettingsTabProps) {
       name: fee?.name || '',
       type: fee?.type || 'FIXED',
       value: fee?.value || 0,
-      applicability: fee?.applicability || 'BOTH',
       description: fee?.description || '',
       order: fee?.order || 0,
       isActive: fee?.isActive ?? true,
@@ -237,29 +222,9 @@ export function SettingsTab({ fees, onRefresh }: SettingsTabProps) {
         ),
       },
       {
-        key: 'applicability' as keyof FurnitureFee,
-        header: 'Áp dụng',
-        priority: 4,
-        hideOnMobile: true,
-        render: (value) => (
-          <span
-            style={{
-              background: `${tokens.color.muted}20`,
-              color: tokens.color.text,
-              padding: '4px 10px',
-              borderRadius: 12,
-              fontSize: 12,
-              fontWeight: 500,
-            }}
-          >
-            {getApplicabilityLabel(value as FeeApplicability)}
-          </span>
-        ),
-      },
-      {
         key: 'isActive' as keyof FurnitureFee,
         header: 'Trạng thái',
-        priority: 5,
+        priority: 4,
         align: 'center',
         render: (value, row) => (
           <motion.button
@@ -335,7 +300,6 @@ export function SettingsTab({ fees, onRefresh }: SettingsTabProps) {
             <ul style={{ margin: 0, paddingLeft: 20, color: tokens.color.muted, fontSize: 13, lineHeight: 1.6 }}>
               <li><strong>Cố định (VNĐ):</strong> Phí được cộng trực tiếp vào tổng giá (VD: 500,000 VNĐ)</li>
               <li><strong>Phần trăm (%):</strong> Phí được tính theo % của giá cơ bản (VD: 5%)</li>
-              <li><strong>Áp dụng:</strong> Chọn loại báo giá mà phí sẽ được áp dụng (Combo, Custom, hoặc cả hai)</li>
             </ul>
           </div>
         </div>
@@ -416,13 +380,6 @@ export function SettingsTab({ fees, onRefresh }: SettingsTabProps) {
             placeholder={feeForm.type === 'PERCENTAGE' ? 'VD: 5' : 'VD: 500000'}
             required
             fullWidth
-          />
-
-          <Select
-            label="Áp dụng cho"
-            value={feeForm.applicability}
-            onChange={(val) => setFeeForm((prev) => ({ ...prev, applicability: val as FeeApplicability }))}
-            options={APPLICABILITY_OPTIONS}
           />
 
           <TextArea

@@ -18,6 +18,7 @@ import type { PageData } from './types';
 // Lazy load all pages for better performance
 const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })));
 const QuotePage = lazy(() => import('./pages/QuotePage').then(m => ({ default: m.QuotePage })));
+const QuotationResultPage = lazy(() => import('./pages/QuotationResultPage').then(m => ({ default: m.QuotationResultPage })));
 // GalleryPage removed - không còn sử dụng
 const AboutPage = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })));
 const ContactPage = lazy(() => import('./pages/ContactPage').then(m => ({ default: m.ContactPage })));
@@ -127,10 +128,10 @@ function AppContent() {
       document.body.style.backgroundPosition = 'center';
       document.body.style.backgroundAttachment = 'fixed';
     } else {
-      // Default background - construction/renovation theme
+      // Default background - elegant interior design theme
       document.body.style.backgroundImage = `
-        linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.6) 100%),
-        url("https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=30")
+        linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.65) 100%),
+        url("https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1920&q=40")
       `;
       document.body.style.backgroundSize = 'cover';
       document.body.style.backgroundPosition = 'center';
@@ -406,6 +407,7 @@ function AppContent() {
             <Routes>
               <Route path="/" element={page ? <HomePage page={page} /> : null} />
               <Route path="/bao-gia" element={<QuotePage />} />
+              <Route path="/bao-gia/ket-qua/:id" element={<QuotationResultPage />} />
               {/* Gallery page removed */}
               <Route path="/about" element={currentPage ? <AboutPage page={currentPage} /> : null} />
               <Route path="/contact" element={currentPage ? <ContactPage page={currentPage} /> : null} />

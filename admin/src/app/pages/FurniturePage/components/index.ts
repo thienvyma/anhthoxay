@@ -18,9 +18,3 @@ export { CategoryForm } from './CategoryForm';
 export type { CategoryFormProps } from './CategoryForm';
 export { ProductForm } from './ProductForm';
 export type { ProductFormProps } from './ProductForm';
-
-// ComboTab components
-export { ComboTable } from './ComboTable';
-export type { ComboTableProps } from './ComboTable';
-export { ComboForm } from './ComboForm';
-export type { ComboFormProps } from './ComboForm';

@@ -9,7 +9,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { execSync } from 'child_process';
 
 /**
  * Helper function to get all .tsx files in a directory recursively

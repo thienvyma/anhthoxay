@@ -62,6 +62,18 @@ export interface ResponsiveTableProps<T> {
 
   /** Test ID for testing */
   testId?: string;
+
+  /** Enable row selection */
+  selectable?: boolean;
+
+  /** Selected row IDs */
+  selectedIds?: Set<string>;
+
+  /** Toggle single row selection */
+  onToggleSelect?: (id: string) => void;
+
+  /** Toggle all rows selection */
+  onToggleSelectAll?: () => void;
 }
 
 /**
@@ -171,6 +183,10 @@ export function ResponsiveTable<T>({
   onRowClick,
   className = '',
   testId,
+  selectable = false,
+  selectedIds,
+  onToggleSelect,
+  onToggleSelectAll,
 }: ResponsiveTableProps<T>) {
   const { isMobile, breakpoint } = useResponsive();
 
@@ -357,6 +373,23 @@ export function ResponsiveTable<T>({
       >
         <thead>
           <tr>
+            {selectable && (
+              <th
+                style={{
+                  padding: tokens.space.md,
+                  width: 40,
+                  borderBottom: `1px solid ${tokens.color.border}`,
+                  backgroundColor: tokens.color.background,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={data.length > 0 && selectedIds?.size === data.length}
+                  onChange={onToggleSelectAll}
+                  style={{ cursor: 'pointer', width: 18, height: 18 }}
+                />
+              </th>
+            )}
             {visibleColumns.map((column) => (
               <th
                 key={String(column.key)}
@@ -400,11 +433,11 @@ export function ResponsiveTable<T>({
         </thead>
         <tbody>
           {loading ? (
-            <TableSkeleton columns={visibleColumns.length + (actions ? 1 : 0)} />
+            <TableSkeleton columns={visibleColumns.length + (actions ? 1 : 0) + (selectable ? 1 : 0)} />
           ) : data.length === 0 ? (
             <tr>
               <td
-                colSpan={visibleColumns.length + (actions ? 1 : 0)}
+                colSpan={visibleColumns.length + (actions ? 1 : 0) + (selectable ? 1 : 0)}
                 style={{
                   padding: tokens.space.xl,
                   textAlign: 'center',
@@ -415,22 +448,44 @@ export function ResponsiveTable<T>({
               </td>
             </tr>
           ) : (
-            data.map((row, index) => (
+            data.map((row, index) => {
+              const rowKey = getRowKey(row, index);
+              const isSelected = selectable && selectedIds?.has(String(rowKey));
+              return (
               <tr
-                key={getRowKey(row, index)}
+                key={rowKey}
                 onClick={() => onRowClick?.(row)}
                 style={{
                   cursor: onRowClick ? 'pointer' : 'default',
                   transition: 'background-color 0.2s',
+                  backgroundColor: isSelected ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    tokens.color.surfaceHover;
+                  if (!isSelected) {
+                    e.currentTarget.style.backgroundColor = tokens.color.surfaceHover;
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.backgroundColor = isSelected ? 'rgba(239, 68, 68, 0.1)' : 'transparent';
                 }}
               >
+                {selectable && (
+                  <td
+                    style={{
+                      padding: tokens.space.md,
+                      borderBottom: `1px solid ${tokens.color.border}`,
+                      width: 40,
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => onToggleSelect?.(String(rowKey))}
+                      style={{ cursor: 'pointer', width: 18, height: 18 }}
+                    />
+                  </td>
+                )}
                 {visibleColumns.map((column) => (
                   <td
                     key={String(column.key)}
@@ -459,7 +514,8 @@ export function ResponsiveTable<T>({
                   </td>
                 )}
               </tr>
-            ))
+              );
+            })
           )}
         </tbody>
       </table>

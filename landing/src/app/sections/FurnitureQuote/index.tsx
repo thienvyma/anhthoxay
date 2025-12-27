@@ -16,17 +16,22 @@ import {
   FurnitureApartmentType,
   FurnitureCategory,
   FurnitureProduct,
-  FurnitureCombo,
   FurnitureFee,
   QuotationItem,
 } from '../../api/furniture';
 import { LeadForm, LeadData } from './LeadForm';
-import { StepIndicator, SelectionCard, NavigationButtons } from './components';
+import { StepIndicator, SelectionCard, NavigationButtons, Pagination } from './components';
 import type { FurnitureQuoteData, Selections, QuotationResultData } from './types';
 
 interface Props {
   data: FurnitureQuoteData;
 }
+
+// ============================================
+// CONSTANTS
+// ============================================
+
+const ITEMS_PER_PAGE = 6; // Number of items per page for pagination
 
 // ============================================
 // HELPERS
@@ -59,7 +64,6 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
   const [apartmentTypes, setApartmentTypes] = useState<FurnitureApartmentType[]>([]);
   const [categories, setCategories] = useState<FurnitureCategory[]>([]);
   const [products, setProducts] = useState<FurnitureProduct[]>([]);
-  const [combos, setCombos] = useState<FurnitureCombo[]>([]);
   const [fees, setFees] = useState<FurnitureFee[]>([]);
 
   // UI states
@@ -77,8 +81,6 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
     axis: null,
     layout: null,
     apartmentTypeDetail: null,
-    selectionType: null,
-    combo: null,
     products: [],
   });
 
@@ -87,10 +89,23 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
 
   // Quotation result
   const [quotationResult, setQuotationResult] = useState<QuotationResultData | null>(null);
+  const [quotationId, setQuotationId] = useState<string | null>(null);
+
+  // Pagination states for each step
+  const [pageStates, setPageStates] = useState({
+    developers: 1,
+    projects: 1,
+    buildings: 1,
+    layouts: 1,
+    products: 1,
+  });
+
+  // Category filter for products
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Step labels - Requirements: 6.1
-  const stepLabels = ['Chủ đầu tư', 'Dự án', 'Tòa nhà', 'Căn hộ', 'Layout', 'Thông tin', 'Nội thất'];
-  const totalSteps = 7;
+  const stepLabels = ['Chủ đầu tư', 'Dự án', 'Tòa nhà', 'Căn hộ', 'Layout', 'Thông tin', 'Nội thất', 'Báo giá'];
+  const totalSteps = 8;
 
   // Fetch initial data
   useEffect(() => {
@@ -137,21 +152,9 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
     }
   }, [selections.layout, selections.building]);
 
-  // Fetch combos when apartment type is selected
-  useEffect(() => {
-    if (selections.apartmentTypeDetail) {
-      furnitureAPI
-        .getCombos(selections.apartmentTypeDetail.apartmentType)
-        .then(setCombos)
-        .catch(console.error);
-    } else {
-      setCombos([]);
-    }
-  }, [selections.apartmentTypeDetail]);
-
   // Fetch products and categories for custom selection
   useEffect(() => {
-    if (selections.selectionType === 'CUSTOM') {
+    if (selections.apartmentTypeDetail) {
       Promise.all([furnitureAPI.getCategories(), furnitureAPI.getProducts()])
         .then(([cats, prods]) => {
           setCategories(cats);
@@ -159,14 +162,16 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
         })
         .catch(console.error);
     }
-  }, [selections.selectionType]);
+  }, [selections.apartmentTypeDetail]);
 
   // Fetch fees
   useEffect(() => {
-    if (selections.selectionType) {
-      furnitureAPI.getFees(selections.selectionType).then(setFees).catch(console.error);
+    if (selections.apartmentTypeDetail) {
+      furnitureAPI.getFees()
+        .then(setFees)
+        .catch(console.error);
     }
-  }, [selections.selectionType]);
+  }, [selections.apartmentTypeDetail]);
 
   // ============================================
   // HANDLERS
@@ -182,8 +187,6 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
       axis: null,
       layout: null,
       apartmentTypeDetail: null,
-      selectionType: null,
-      combo: null,
       products: [],
     }));
     setCurrentStep(2);
@@ -198,8 +201,6 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
       axis: null,
       layout: null,
       apartmentTypeDetail: null,
-      selectionType: null,
-      combo: null,
       products: [],
     }));
     setCurrentStep(3);
@@ -213,8 +214,6 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
       axis: null,
       layout: null,
       apartmentTypeDetail: null,
-      selectionType: null,
-      combo: null,
       products: [],
     }));
     setCurrentStep(4);
@@ -237,8 +236,6 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
           axis,
           layout,
           apartmentTypeDetail: null,
-          selectionType: null,
-          combo: null,
           products: [],
         }));
         setCurrentStep(5);
@@ -253,8 +250,6 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
     setSelections((prev) => ({
       ...prev,
       apartmentTypeDetail: apt,
-      selectionType: null,
-      combo: null,
       products: [],
     }));
     setCurrentStep(6);
@@ -265,19 +260,6 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
   const handleLeadSubmit = useCallback((data: LeadData) => {
     setLeadData(data);
     setCurrentStep(7);
-  }, []);
-
-  const handleSelectionTypeSelect = useCallback((type: 'COMBO' | 'CUSTOM') => {
-    setSelections((prev) => ({
-      ...prev,
-      selectionType: type,
-      combo: null,
-      products: [],
-    }));
-  }, []);
-
-  const handleComboSelect = useCallback((combo: FurnitureCombo) => {
-    setSelections((prev) => ({ ...prev, combo, products: [] }));
   }, []);
 
   const handleProductToggle = useCallback((product: FurnitureProduct) => {
@@ -300,18 +282,15 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
   }, []);
 
   const handleCalculateQuotation = useCallback(async () => {
-    if (!selections.selectionType) {
-      toast.error('Vui lòng chọn loại nội thất');
-      return;
-    }
-
-    if (selections.selectionType === 'COMBO' && !selections.combo) {
-      toast.error('Vui lòng chọn combo');
-      return;
-    }
-
-    if (selections.selectionType === 'CUSTOM' && selections.products.length === 0) {
+    if (selections.products.length === 0) {
       toast.error('Vui lòng chọn ít nhất một sản phẩm');
+      return;
+    }
+
+    // Validate lead data exists (from step 6)
+    if (!leadData.id && (!leadData.name || !leadData.phone)) {
+      toast.error('Vui lòng quay lại bước 6 để nhập thông tin liên hệ');
+      setCurrentStep(6);
       return;
     }
 
@@ -319,35 +298,20 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
 
     try {
       // Calculate quotation
-      let basePrice = 0;
+      const basePrice = selections.products.reduce((sum, p) => sum + p.product.price * p.quantity, 0);
       const items: QuotationItem[] = [];
-
-      if (selections.selectionType === 'COMBO' && selections.combo) {
-        basePrice = selections.combo.price;
+      
+      selections.products.forEach((p) => {
         items.push({
-          productId: selections.combo.id,
-          name: selections.combo.name,
-          price: selections.combo.price,
-          quantity: 1,
+          productId: p.product.id,
+          name: p.product.name,
+          price: p.product.price,
+          quantity: p.quantity,
         });
-      } else {
-        basePrice = selections.products.reduce((sum, p) => sum + p.product.price * p.quantity, 0);
-        selections.products.forEach((p) => {
-          items.push({
-            productId: p.product.id,
-            name: p.product.name,
-            price: p.product.price,
-            quantity: p.quantity,
-          });
-        });
-      }
+      });
 
       // Apply fees
-      const applicableFees = fees.filter(
-        (f) => f.applicability === 'BOTH' || f.applicability === selections.selectionType
-      );
-
-      const feesBreakdown = applicableFees.map((f) => ({
+      const feesBreakdown = fees.filter(f => f.isActive).map((f) => ({
         name: f.name,
         type: f.type,
         value: f.value,
@@ -360,12 +324,8 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
       // Create quotation via API
       if (selections.developer && selections.project && selections.building && 
           selections.floor && selections.axis !== null && selections.apartmentTypeDetail) {
-        await furnitureAPI.createQuotation({
-          leadData: {
-            name: leadData.name,
-            phone: leadData.phone,
-            email: leadData.email,
-          },
+        // Use leadId if available (from LeadForm), otherwise pass leadData for API to create new lead
+        const quotationPayload: Parameters<typeof furnitureAPI.createQuotation>[0] = {
           developerName: selections.developer.name,
           projectName: selections.project.name,
           buildingName: selections.building.name,
@@ -373,22 +333,48 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
           floor: selections.floor,
           axis: selections.axis,
           apartmentType: selections.apartmentTypeDetail.apartmentType,
-          layoutImageUrl: selections.apartmentTypeDetail.imageUrl || undefined,
-          selectionType: selections.selectionType,
-          comboId: selections.combo?.id,
-          comboName: selections.combo?.name,
           items,
-        });
+        };
+
+        // Only add layoutImageUrl if it's a valid non-empty string
+        // Convert relative path to full URL using resolveMediaUrl
+        if (selections.apartmentTypeDetail.imageUrl && selections.apartmentTypeDetail.imageUrl.trim() !== '') {
+          quotationPayload.layoutImageUrl = resolveMediaUrl(selections.apartmentTypeDetail.imageUrl);
+        }
+
+        // If leadId exists (from LeadForm submission), use it; otherwise pass leadData
+        if (leadData.id) {
+          quotationPayload.leadId = leadData.id;
+        } else {
+          quotationPayload.leadData = {
+            name: leadData.name,
+            phone: leadData.phone,
+            email: leadData.email || undefined,
+          };
+        }
+
+        // Debug log
+        console.log('[FurnitureQuote] Creating quotation with payload:', JSON.stringify(quotationPayload, null, 2));
+
+        const quotation = await furnitureAPI.createQuotation(quotationPayload);
+        
+        // Store quotation ID and result, then move to step 8
+        setQuotationId(quotation.id);
+        setQuotationResult({ basePrice, fees: feesBreakdown, totalPrice });
+        setCurrentStep(8);
+        toast.success('Báo giá đã được tạo thành công!');
+        return;
       }
 
       setQuotationResult({ basePrice, fees: feesBreakdown, totalPrice });
+      setCurrentStep(8);
       toast.success('Báo giá đã được tạo thành công!');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Có lỗi xảy ra');
     } finally {
       setSubmitting(false);
     }
-  }, [selections, fees, leadData, toast]);
+  }, [selections, fees, leadData, toast, setCurrentStep]);
 
   // Step click handler - Requirements: 6.1 - Allow clicking previous steps to go back
   const handleStepClick = useCallback((step: number) => {
@@ -415,8 +401,6 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
       axis: null,
       layout: null,
       apartmentTypeDetail: null,
-      selectionType: null,
-      combo: null,
       products: [],
     });
     setLeadData({ name: '', phone: '' });
@@ -528,17 +512,44 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
                   <i className="ri-building-4-line" style={{ marginRight: '0.5rem', color: tokens.color.primary }} />
                   Chọn chủ đầu tư
                 </h3>
-                <div style={{ display: 'grid', gap: '0.75rem' }}>
-                  {developers.map((dev) => (
-                    <SelectionCard
-                      key={dev.id}
-                      title={dev.name}
-                      icon="ri-building-4-line"
-                      isSelected={selections.developer?.id === dev.id}
-                      onClick={() => handleDeveloperSelect(dev)}
-                    />
-                  ))}
-                </div>
+                {(() => {
+                  const totalPages = Math.ceil(developers.length / ITEMS_PER_PAGE);
+                  const paginatedDevelopers = developers.slice(
+                    (pageStates.developers - 1) * ITEMS_PER_PAGE,
+                    pageStates.developers * ITEMS_PER_PAGE
+                  );
+                  return (
+                    <>
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={pageStates.developers}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -10 }}
+                          transition={{ duration: 0.2 }}
+                          style={{ display: 'grid', gap: '0.75rem' }}
+                        >
+                          {paginatedDevelopers.map((dev) => (
+                            <SelectionCard
+                              key={dev.id}
+                              title={dev.name}
+                              icon="ri-building-4-line"
+                              isSelected={selections.developer?.id === dev.id}
+                              onClick={() => handleDeveloperSelect(dev)}
+                            />
+                          ))}
+                        </motion.div>
+                      </AnimatePresence>
+                      <Pagination
+                        currentPage={pageStates.developers}
+                        totalPages={totalPages}
+                        onPageChange={(page) => setPageStates(prev => ({ ...prev, developers: page }))}
+                        itemsPerPage={ITEMS_PER_PAGE}
+                        totalItems={developers.length}
+                      />
+                    </>
+                  );
+                })()}
                 {developers.length === 0 && (
                   <p style={{ textAlign: 'center', color: tokens.color.muted, padding: '2rem' }}>
                     Chưa có dữ liệu chủ đầu tư
@@ -562,18 +573,45 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
                 <p style={{ margin: '0 0 1rem', fontSize: '0.875rem', color: tokens.color.muted }}>
                   Chủ đầu tư: <strong style={{ color: tokens.color.primary }}>{selections.developer?.name}</strong>
                 </p>
-                <div style={{ display: 'grid', gap: '0.75rem' }}>
-                  {projects.map((proj) => (
-                    <SelectionCard
-                      key={proj.id}
-                      title={proj.name}
-                      subtitle={`Mã: ${proj.code}`}
-                      icon="ri-community-line"
-                      isSelected={selections.project?.id === proj.id}
-                      onClick={() => handleProjectSelect(proj)}
-                    />
-                  ))}
-                </div>
+                {(() => {
+                  const totalPages = Math.ceil(projects.length / ITEMS_PER_PAGE);
+                  const paginatedProjects = projects.slice(
+                    (pageStates.projects - 1) * ITEMS_PER_PAGE,
+                    pageStates.projects * ITEMS_PER_PAGE
+                  );
+                  return (
+                    <>
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={pageStates.projects}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -10 }}
+                          transition={{ duration: 0.2 }}
+                          style={{ display: 'grid', gap: '0.75rem' }}
+                        >
+                          {paginatedProjects.map((proj) => (
+                            <SelectionCard
+                              key={proj.id}
+                              title={proj.name}
+                              subtitle={`Mã: ${proj.code}`}
+                              icon="ri-community-line"
+                              isSelected={selections.project?.id === proj.id}
+                              onClick={() => handleProjectSelect(proj)}
+                            />
+                          ))}
+                        </motion.div>
+                      </AnimatePresence>
+                      <Pagination
+                        currentPage={pageStates.projects}
+                        totalPages={totalPages}
+                        onPageChange={(page) => setPageStates(prev => ({ ...prev, projects: page }))}
+                        itemsPerPage={ITEMS_PER_PAGE}
+                        totalItems={projects.length}
+                      />
+                    </>
+                  );
+                })()}
                 {projects.length === 0 && (
                   <p style={{ textAlign: 'center', color: tokens.color.muted, padding: '2rem' }}>
                     Chưa có dự án nào
@@ -598,18 +636,45 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
                 <p style={{ margin: '0 0 1rem', fontSize: '0.875rem', color: tokens.color.muted }}>
                   Dự án: <strong style={{ color: tokens.color.primary }}>{selections.project?.name}</strong>
                 </p>
-                <div style={{ display: 'grid', gap: '0.75rem' }}>
-                  {buildings.map((bld) => (
-                    <SelectionCard
-                      key={bld.id}
-                      title={bld.name}
-                      subtitle={`Mã: ${bld.code} • ${bld.maxFloor} tầng • ${bld.maxAxis + 1} trục`}
-                      icon="ri-building-line"
-                      isSelected={selections.building?.id === bld.id}
-                      onClick={() => handleBuildingSelect(bld)}
-                    />
-                  ))}
-                </div>
+                {(() => {
+                  const totalPages = Math.ceil(buildings.length / ITEMS_PER_PAGE);
+                  const paginatedBuildings = buildings.slice(
+                    (pageStates.buildings - 1) * ITEMS_PER_PAGE,
+                    pageStates.buildings * ITEMS_PER_PAGE
+                  );
+                  return (
+                    <>
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={pageStates.buildings}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -10 }}
+                          transition={{ duration: 0.2 }}
+                          style={{ display: 'grid', gap: '0.75rem' }}
+                        >
+                          {paginatedBuildings.map((bld) => (
+                            <SelectionCard
+                              key={bld.id}
+                              title={bld.name}
+                              subtitle={`Mã: ${bld.code} • ${bld.maxFloor} tầng • ${bld.maxAxis + 1} trục`}
+                              icon="ri-building-line"
+                              isSelected={selections.building?.id === bld.id}
+                              onClick={() => handleBuildingSelect(bld)}
+                            />
+                          ))}
+                        </motion.div>
+                      </AnimatePresence>
+                      <Pagination
+                        currentPage={pageStates.buildings}
+                        totalPages={totalPages}
+                        onPageChange={(page) => setPageStates(prev => ({ ...prev, buildings: page }))}
+                        itemsPerPage={ITEMS_PER_PAGE}
+                        totalItems={buildings.length}
+                      />
+                    </>
+                  );
+                })()}
                 {buildings.length === 0 && (
                   <p style={{ textAlign: 'center', color: tokens.color.muted, padding: '2rem' }}>
                     Chưa có tòa nhà nào
@@ -740,41 +805,68 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
                   Loại căn hộ: <strong style={{ color: tokens.color.primary }}>{selections.layout?.apartmentType?.toUpperCase()}</strong>
                 </p>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
-                  {apartmentTypes.map((apt) => (
-                    <motion.div
-                      key={apt.id}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => handleApartmentTypeSelect(apt)}
-                      style={{
-                        borderRadius: tokens.radius.md,
-                        background: selections.apartmentTypeDetail?.id === apt.id ? `${tokens.color.primary}15` : tokens.color.surface,
-                        border: `2px solid ${selections.apartmentTypeDetail?.id === apt.id ? tokens.color.primary : tokens.color.border}`,
-                        cursor: 'pointer',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {apt.imageUrl && (
-                        <div style={{ width: '100%', height: 180, background: tokens.color.background }}>
-                          <img
-                            src={resolveMediaUrl(apt.imageUrl)}
-                            alt={apt.apartmentType}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        </div>
-                      )}
-                      <div style={{ padding: '1rem' }}>
-                        <div style={{ fontWeight: 600, color: tokens.color.text, marginBottom: '0.25rem' }}>
-                          {apt.apartmentType.toUpperCase()}
-                        </div>
-                        {apt.description && (
-                          <div style={{ fontSize: '0.8rem', color: tokens.color.muted }}>{apt.description}</div>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                {(() => {
+                  const totalPages = Math.ceil(apartmentTypes.length / ITEMS_PER_PAGE);
+                  const paginatedLayouts = apartmentTypes.slice(
+                    (pageStates.layouts - 1) * ITEMS_PER_PAGE,
+                    pageStates.layouts * ITEMS_PER_PAGE
+                  );
+                  return (
+                    <>
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={pageStates.layouts}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -10 }}
+                          transition={{ duration: 0.2 }}
+                          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}
+                        >
+                          {paginatedLayouts.map((apt) => (
+                            <motion.div
+                              key={apt.id}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => handleApartmentTypeSelect(apt)}
+                              style={{
+                                borderRadius: tokens.radius.md,
+                                background: selections.apartmentTypeDetail?.id === apt.id ? `${tokens.color.primary}15` : tokens.color.surface,
+                                border: `2px solid ${selections.apartmentTypeDetail?.id === apt.id ? tokens.color.primary : tokens.color.border}`,
+                                cursor: 'pointer',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              {apt.imageUrl && (
+                                <div style={{ width: '100%', height: 180, background: tokens.color.background }}>
+                                  <img
+                                    src={resolveMediaUrl(apt.imageUrl)}
+                                    alt={apt.apartmentType}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  />
+                                </div>
+                              )}
+                              <div style={{ padding: '1rem' }}>
+                                <div style={{ fontWeight: 600, color: tokens.color.text, marginBottom: '0.25rem' }}>
+                                  {apt.apartmentType.toUpperCase()}
+                                </div>
+                                {apt.description && (
+                                  <div style={{ fontSize: '0.8rem', color: tokens.color.muted }}>{apt.description}</div>
+                                )}
+                              </div>
+                            </motion.div>
+                          ))}
+                        </motion.div>
+                      </AnimatePresence>
+                      <Pagination
+                        currentPage={pageStates.layouts}
+                        totalPages={totalPages}
+                        onPageChange={(page) => setPageStates(prev => ({ ...prev, layouts: page }))}
+                        itemsPerPage={ITEMS_PER_PAGE}
+                        totalItems={apartmentTypes.length}
+                      />
+                    </>
+                  );
+                })()}
 
                 {apartmentTypes.length === 0 && (
                   <p style={{ textAlign: 'center', color: tokens.color.muted, padding: '2rem' }}>
@@ -841,259 +933,215 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
                   Chọn nội thất
                 </h3>
 
-                {/* Selection Type Toggle - Requirements: 7.1 */}
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                  <button
-                    onClick={() => handleSelectionTypeSelect('COMBO')}
-                    style={{
-                      flex: 1,
-                      padding: '1rem',
-                      borderRadius: tokens.radius.md,
-                      border: `2px solid ${selections.selectionType === 'COMBO' ? tokens.color.primary : tokens.color.border}`,
-                      background: selections.selectionType === 'COMBO' ? `${tokens.color.primary}15` : 'transparent',
-                      color: tokens.color.text,
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.5rem',
-                    }}
-                  >
-                    <i className="ri-gift-line" style={{ color: tokens.color.primary }} />
-                    Combo
-                  </button>
-                  <button
-                    onClick={() => handleSelectionTypeSelect('CUSTOM')}
-                    style={{
-                      flex: 1,
-                      padding: '1rem',
-                      borderRadius: tokens.radius.md,
-                      border: `2px solid ${selections.selectionType === 'CUSTOM' ? tokens.color.primary : tokens.color.border}`,
-                      background: selections.selectionType === 'CUSTOM' ? `${tokens.color.primary}15` : 'transparent',
-                      color: tokens.color.text,
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.5rem',
-                    }}
-                  >
-                    <i className="ri-settings-line" style={{ color: tokens.color.primary }} />
-                    Tùy chỉnh
-                  </button>
-                </div>
-
-                {/* Combo Selection - Requirements: 7.2 */}
-                {selections.selectionType === 'COMBO' && (
-                  <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1rem' }}>
-                    {combos.map((combo) => (
-                      <motion.div
-                        key={combo.id}
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
-                        onClick={() => handleComboSelect(combo)}
-                        style={{
-                          padding: '1rem',
-                          borderRadius: tokens.radius.md,
-                          background: selections.combo?.id === combo.id ? `${tokens.color.primary}15` : tokens.color.background,
-                          border: `2px solid ${selections.combo?.id === combo.id ? tokens.color.primary : tokens.color.border}`,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '1rem',
-                        }}
-                      >
-                        {combo.imageUrl && (
-                          <div
-                            style={{
-                              width: 80,
-                              height: 80,
-                              borderRadius: tokens.radius.sm,
-                              background: `url(${resolveMediaUrl(combo.imageUrl)}) center/cover`,
-                              flexShrink: 0,
-                            }}
-                          />
-                        )}
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 600, color: tokens.color.text }}>{combo.name}</div>
-                          {combo.description && (
-                            <div style={{ fontSize: '0.8rem', color: tokens.color.muted, marginTop: '0.25rem' }}>
-                              {combo.description}
-                            </div>
-                          )}
-                          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: tokens.color.primary, marginTop: '0.5rem' }}>
-                            {formatCurrency(combo.price)}
-                          </div>
-                        </div>
-                        {selections.combo?.id === combo.id && (
-                          <i className="ri-check-circle-fill" style={{ fontSize: '1.5rem', color: tokens.color.primary }} />
-                        )}
-                      </motion.div>
-                    ))}
-                    {combos.length === 0 && (
-                      <p style={{ textAlign: 'center', color: tokens.color.muted, padding: '2rem' }}>
-                        Không có combo nào cho loại căn hộ này
-                      </p>
-                    )}
-                  </div>
-                )}
-
                 {/* Custom Selection - Requirements: 7.3, 7.4, 7.5 */}
-                {selections.selectionType === 'CUSTOM' && (
-                  <div>
-                    {/* Category Filter */}
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                      {categories.map((cat) => (
-                        <button
-                          key={cat.id}
-                          style={{
-                            padding: '0.5rem 1rem',
-                            borderRadius: tokens.radius.sm,
-                            border: `1px solid ${tokens.color.border}`,
-                            background: tokens.color.surface,
-                            color: tokens.color.text,
-                            fontSize: '0.875rem',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          {cat.icon && <i className={cat.icon} style={{ marginRight: '0.25rem' }} />}
-                          {cat.name}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Products Grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-                      {products.map((product) => {
-                        const isSelected = selections.products.some((p) => p.product.id === product.id);
-                        const selectedProduct = selections.products.find((p) => p.product.id === product.id);
-                        return (
-                          <motion.div
-                            key={product.id}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => handleProductToggle(product)}
-                            style={{
-                              borderRadius: tokens.radius.md,
-                              background: isSelected ? `${tokens.color.primary}15` : tokens.color.background,
-                              border: `2px solid ${isSelected ? tokens.color.primary : tokens.color.border}`,
-                              cursor: 'pointer',
-                              overflow: 'hidden',
-                            }}
-                          >
-                            {product.imageUrl && (
-                              <div style={{ width: '100%', height: 120, background: tokens.color.surface }}>
-                                <img
-                                  src={resolveMediaUrl(product.imageUrl)}
-                                  alt={product.name}
-                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                />
-                              </div>
-                            )}
-                            <div style={{ padding: '0.75rem' }}>
-                              <div style={{ fontWeight: 600, color: tokens.color.text, fontSize: '0.85rem' }}>
-                                {product.name}
-                              </div>
-                              <div style={{ fontSize: '0.9rem', fontWeight: 600, color: tokens.color.primary, marginTop: '0.25rem' }}>
-                                {formatCurrency(product.price)}
-                              </div>
-                              {isSelected && selectedProduct && (
-                                <div
-                                  style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <button
-                                    onClick={() => handleProductQuantityChange(product.id, selectedProduct.quantity - 1)}
-                                    style={{
-                                      width: 24,
-                                      height: 24,
-                                      borderRadius: '50%',
-                                      border: `1px solid ${tokens.color.border}`,
-                                      background: 'transparent',
-                                      color: tokens.color.text,
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                    }}
-                                  >
-                                    <i className="ri-subtract-line" style={{ fontSize: '0.75rem' }} />
-                                  </button>
-                                  <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>{selectedProduct.quantity}</span>
-                                  <button
-                                    onClick={() => handleProductQuantityChange(product.id, selectedProduct.quantity + 1)}
-                                    style={{
-                                      width: 24,
-                                      height: 24,
-                                      borderRadius: '50%',
-                                      border: `1px solid ${tokens.color.border}`,
-                                      background: 'transparent',
-                                      color: tokens.color.text,
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                    }}
-                                  >
-                                    <i className="ri-add-line" style={{ fontSize: '0.75rem' }} />
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </motion.div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Selected Products Summary */}
-                    {selections.products.length > 0 && (
-                      <div
+                <div>
+                  {/* Category Filter */}
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                    <button
+                      onClick={() => {
+                        setSelectedCategory(null);
+                        setPageStates(prev => ({ ...prev, products: 1 }));
+                      }}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        borderRadius: tokens.radius.sm,
+                        border: `1px solid ${selectedCategory === null ? tokens.color.primary : tokens.color.border}`,
+                        background: selectedCategory === null ? `${tokens.color.primary}15` : tokens.color.surface,
+                        color: selectedCategory === null ? tokens.color.primary : tokens.color.text,
+                        fontSize: '0.875rem',
+                        cursor: 'pointer',
+                        fontWeight: selectedCategory === null ? 600 : 400,
+                      }}
+                    >
+                      Tất cả
+                    </button>
+                    {categories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => {
+                          setSelectedCategory(cat.id);
+                          setPageStates(prev => ({ ...prev, products: 1 }));
+                        }}
                         style={{
-                          padding: '1rem',
-                          borderRadius: tokens.radius.md,
-                          background: `${tokens.color.primary}10`,
-                          border: `1px solid ${tokens.color.primary}`,
-                          marginBottom: '1rem',
+                          padding: '0.5rem 1rem',
+                          borderRadius: tokens.radius.sm,
+                          border: `1px solid ${selectedCategory === cat.id ? tokens.color.primary : tokens.color.border}`,
+                          background: selectedCategory === cat.id ? `${tokens.color.primary}15` : tokens.color.surface,
+                          color: selectedCategory === cat.id ? tokens.color.primary : tokens.color.text,
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          fontWeight: selectedCategory === cat.id ? 600 : 400,
                         }}
                       >
-                        <div style={{ fontSize: '0.875rem', color: tokens.color.muted }}>
-                          Đã chọn {selections.products.length} sản phẩm
-                        </div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: tokens.color.primary }}>
-                          {formatCurrency(selections.products.reduce((sum, p) => sum + p.product.price * p.quantity, 0))}
-                        </div>
-                      </div>
-                    )}
+                        {cat.icon && <i className={cat.icon} style={{ marginRight: '0.25rem' }} />}
+                        {cat.name}
+                      </button>
+                    ))}
                   </div>
-                )}
+
+                  {/* Products Grid with Pagination */}
+                  {(() => {
+                    const filteredProducts = selectedCategory
+                      ? products.filter(p => p.categoryId === selectedCategory)
+                      : products;
+                    const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+                    const paginatedProducts = filteredProducts.slice(
+                      (pageStates.products - 1) * ITEMS_PER_PAGE,
+                      pageStates.products * ITEMS_PER_PAGE
+                    );
+                    
+                    return (
+                      <>
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                            key={`${selectedCategory}-${pageStates.products}`}
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -10 }}
+                            transition={{ duration: 0.2 }}
+                            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1rem' }}
+                          >
+                            {paginatedProducts.map((product) => {
+                              const isSelected = selections.products.some((p) => p.product.id === product.id);
+                              const selectedProduct = selections.products.find((p) => p.product.id === product.id);
+                              return (
+                                <motion.div
+                                  key={product.id}
+                                  whileHover={{ scale: 1.02 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  onClick={() => handleProductToggle(product)}
+                                  style={{
+                                    borderRadius: tokens.radius.md,
+                                    background: isSelected ? `${tokens.color.primary}15` : tokens.color.background,
+                                    border: `2px solid ${isSelected ? tokens.color.primary : tokens.color.border}`,
+                                    cursor: 'pointer',
+                                    overflow: 'hidden',
+                                  }}
+                                >
+                                  {product.imageUrl && (
+                                    <div style={{ width: '100%', height: 120, background: tokens.color.surface }}>
+                                      <img
+                                        src={resolveMediaUrl(product.imageUrl)}
+                                        alt={product.name}
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                      />
+                                    </div>
+                                  )}
+                                  <div style={{ padding: '0.75rem' }}>
+                                    <div style={{ fontWeight: 600, color: tokens.color.text, fontSize: '0.85rem' }}>
+                                      {product.name}
+                                    </div>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: tokens.color.primary, marginTop: '0.25rem' }}>
+                                      {formatCurrency(product.price)}
+                                    </div>
+                                    {isSelected && selectedProduct && (
+                                      <div
+                                        style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <button
+                                          onClick={() => handleProductQuantityChange(product.id, selectedProduct.quantity - 1)}
+                                          style={{
+                                            width: 24,
+                                            height: 24,
+                                            borderRadius: '50%',
+                                            border: `1px solid ${tokens.color.border}`,
+                                            background: 'transparent',
+                                            color: tokens.color.text,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                          }}
+                                        >
+                                          <i className="ri-subtract-line" style={{ fontSize: '0.75rem' }} />
+                                        </button>
+                                        <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>{selectedProduct.quantity}</span>
+                                        <button
+                                          onClick={() => handleProductQuantityChange(product.id, selectedProduct.quantity + 1)}
+                                          style={{
+                                            width: 24,
+                                            height: 24,
+                                            borderRadius: '50%',
+                                            border: `1px solid ${tokens.color.border}`,
+                                            background: 'transparent',
+                                            color: tokens.color.text,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                          }}
+                                        >
+                                          <i className="ri-add-line" style={{ fontSize: '0.75rem' }} />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </motion.div>
+                              );
+                            })}
+                          </motion.div>
+                        </AnimatePresence>
+                        
+                        {filteredProducts.length === 0 && (
+                          <p style={{ textAlign: 'center', color: tokens.color.muted, padding: '2rem' }}>
+                            Không có sản phẩm nào trong danh mục này
+                          </p>
+                        )}
+                        
+                        <Pagination
+                          currentPage={pageStates.products}
+                          totalPages={totalPages}
+                          onPageChange={(page) => setPageStates(prev => ({ ...prev, products: page }))}
+                          itemsPerPage={ITEMS_PER_PAGE}
+                          totalItems={filteredProducts.length}
+                        />
+                      </>
+                    );
+                  })()}
+
+                  {/* Selected Products Summary */}
+                  {selections.products.length > 0 && (
+                    <div
+                      style={{
+                        padding: '1rem',
+                        borderRadius: tokens.radius.md,
+                        background: `${tokens.color.primary}10`,
+                        border: `1px solid ${tokens.color.primary}`,
+                        marginBottom: '1rem',
+                        marginTop: '1rem',
+                      }}
+                    >
+                      <div style={{ fontSize: '0.875rem', color: tokens.color.muted }}>
+                        Đã chọn {selections.products.length} sản phẩm
+                      </div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 700, color: tokens.color.primary }}>
+                        {formatCurrency(selections.products.reduce((sum, p) => sum + p.product.price * p.quantity, 0))}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <NavigationButtons
                   onBack={handleBack}
                   onNext={handleCalculateQuotation}
                   nextLabel={submitting ? 'Đang xử lý...' : 'Xem báo giá'}
-                  nextDisabled={
-                    submitting ||
-                    !selections.selectionType ||
-                    (selections.selectionType === 'COMBO' && !selections.combo) ||
-                    (selections.selectionType === 'CUSTOM' && selections.products.length === 0)
-                  }
+                  nextDisabled={submitting || selections.products.length === 0}
                   showBack={true}
                 />
               </motion.div>
             )}
 
-            {/* Quotation Result */}
-            {quotationResult && (
+            {/* Step 8: Quotation Result - Requirements: 7.6, 7.7, 7.8 */}
+            {currentStep === 8 && quotationResult && (
               <motion.div
-                key="result"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
+                key="step8"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
               >
-                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                {/* Success Header */}
+                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
@@ -1101,67 +1149,230 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
                   >
                     <i
                       className="ri-checkbox-circle-fill"
-                      style={{ fontSize: '4rem', color: tokens.color.primary }}
+                      style={{ fontSize: '2.5rem', color: tokens.color.primary }}
                     />
                   </motion.div>
-                  <h3 style={{ margin: '1rem 0 0.5rem', fontSize: '1.5rem', fontWeight: 700, color: tokens.color.text }}>
+                  <h3 style={{ margin: '0.5rem 0 0.25rem', fontSize: '1.1rem', fontWeight: 700, color: tokens.color.text }}>
                     Báo giá của bạn
                   </h3>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: tokens.color.muted }}>
+                    Chúng tôi sẽ liên hệ với bạn sớm nhất
+                  </p>
                 </div>
 
-                {/* Summary */}
+                {/* Quotation Card - PDF Style */}
                 <div
                   style={{
-                    padding: '1.5rem',
                     borderRadius: tokens.radius.md,
                     background: tokens.color.background,
-                    marginBottom: '1.5rem',
+                    border: `1px solid ${tokens.color.border}`,
+                    overflow: 'hidden',
+                    marginBottom: '1rem',
                   }}
                 >
-                  {/* Apartment Info */}
-                  <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: `1px solid ${tokens.color.border}` }}>
-                    <div style={{ fontSize: '0.875rem', color: tokens.color.muted }}>Căn hộ</div>
-                    <div style={{ fontWeight: 600, color: tokens.color.text }}>
-                      {selections.building?.name} - {selections.floor && selections.axis !== null && calculateUnitNumber(selections.building?.code || '', selections.floor, selections.axis)}
+                  {/* Header - Company Info */}
+                  <div
+                    style={{
+                      padding: '1rem 1.25rem',
+                      borderBottom: `1px solid ${tokens.color.border}`,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 700, color: tokens.color.primary, fontSize: '1.25rem', fontFamily: 'serif' }}>
+                        ANH THỢ XÂY
+                      </div>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 600, color: tokens.color.text, marginTop: '0.25rem' }}>
+                        BÁO GIÁ NỘI THẤT
+                      </div>
                     </div>
-                    <div style={{ fontSize: '0.875rem', color: tokens.color.muted }}>
-                      {selections.apartmentTypeDetail?.apartmentType.toUpperCase()}
+                    <div style={{ textAlign: 'right', fontSize: '0.75rem', color: tokens.color.muted }}>
+                      <div>Ngày: <span style={{ color: tokens.color.primary }}>{new Date().toLocaleDateString('vi-VN')}</span></div>
+                      {quotationId && <div>Mã: <span style={{ color: tokens.color.primary }}>{quotationId.slice(-8).toUpperCase()}</span></div>}
                     </div>
                   </div>
 
-                  {/* Price Breakdown */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: tokens.color.muted }}>Giá nội thất</span>
-                      <span style={{ fontWeight: 600, color: tokens.color.text }}>{formatCurrency(quotationResult.basePrice)}</span>
+                  {/* Apartment Info Section */}
+                  <div style={{ padding: '1rem 1.25rem', borderBottom: `1px solid ${tokens.color.border}` }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 600, color: tokens.color.primary, marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      <i className="ri-building-line" style={{ marginRight: '0.35rem' }} />
+                      THÔNG TIN CĂN HỘ
                     </div>
-                    {quotationResult.fees.map((fee, idx) => (
-                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: tokens.color.muted }}>
-                          {fee.name} {fee.type === 'PERCENTAGE' && `(${fee.value}%)`}
-                        </span>
-                        <span style={{ color: tokens.color.text }}>{formatCurrency(fee.amount)}</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem 1.5rem', fontSize: '0.8rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: tokens.color.muted }}>Chủ đầu tư:</span>
+                        <span style={{ color: tokens.color.primary, fontWeight: 500 }}>{selections.developer?.name}</span>
                       </div>
-                    ))}
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        paddingTop: '0.75rem',
-                        marginTop: '0.5rem',
-                        borderTop: `2px solid ${tokens.color.border}`,
-                      }}
-                    >
-                      <span style={{ fontWeight: 700, color: tokens.color.text }}>Tổng cộng</span>
-                      <span style={{ fontSize: '1.5rem', fontWeight: 700, color: tokens.color.primary }}>
-                        {formatCurrency(quotationResult.totalPrice)}
-                      </span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: tokens.color.muted }}>Dự án:</span>
+                        <span style={{ color: tokens.color.primary, fontWeight: 500 }}>{selections.project?.name}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: tokens.color.muted }}>Tòa nhà:</span>
+                        <span style={{ color: tokens.color.primary, fontWeight: 500 }}>{selections.building?.name}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: tokens.color.muted }}>Căn hộ:</span>
+                        <span style={{ color: tokens.color.primary, fontWeight: 500 }}>
+                          {selections.floor && selections.axis !== null && selections.building && 
+                            calculateUnitNumber(selections.building.code, selections.floor, selections.axis)}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: tokens.color.muted }}>Loại:</span>
+                        <span style={{ color: tokens.color.primary, fontWeight: 500 }}>{selections.apartmentTypeDetail?.apartmentType.toUpperCase()}</span>
+                      </div>
                     </div>
+                  </div>
+
+                  {/* Selection Type Section */}
+                  <div style={{ padding: '1rem 1.25rem', borderBottom: `1px solid ${tokens.color.border}` }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 600, color: tokens.color.primary, marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      <i className="ri-checkbox-circle-line" style={{ marginRight: '0.35rem' }} />
+                      NỘI THẤT ĐÃ CHỌN
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: tokens.color.text }}>
+                      <span><i className="ri-sofa-line" style={{ marginRight: '0.35rem', color: tokens.color.primary }} />{selections.products.length} sản phẩm</span>
+                    </div>
+                  </div>
+
+                  {/* Products Table - PDF Style */}
+                  {selections.products.length > 0 && (
+                    <div style={{ padding: '1rem 1.25rem', borderBottom: `1px solid ${tokens.color.border}` }}>
+                      <div style={{ fontSize: '0.7rem', fontWeight: 600, color: tokens.color.primary, marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        <i className="ri-list-check" style={{ marginRight: '0.35rem' }} />
+                        SẢN PHẨM ĐÃ CHỌN
+                      </div>
+                      {/* Table Header */}
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 50px 90px 100px',
+                          gap: '0.5rem',
+                          padding: '0.5rem 0',
+                          borderBottom: `1px solid ${tokens.color.border}`,
+                          fontSize: '0.7rem',
+                          color: tokens.color.muted,
+                          fontWeight: 500,
+                        }}
+                      >
+                        <span>Sản phẩm</span>
+                        <span style={{ textAlign: 'right' }}>SL</span>
+                        <span style={{ textAlign: 'right' }}>Đơn giá</span>
+                        <span style={{ textAlign: 'right' }}>Thành tiền</span>
+                      </div>
+                      {/* Table Rows */}
+                      {selections.products.map((item) => (
+                        <div
+                          key={item.product.id}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 50px 90px 100px',
+                            gap: '0.5rem',
+                            padding: '0.6rem 0',
+                            borderBottom: `1px dashed ${tokens.color.border}`,
+                            fontSize: '0.8rem',
+                          }}
+                        >
+                          <span style={{ color: tokens.color.text }}>{item.product.name}</span>
+                          <span style={{ textAlign: 'right', color: tokens.color.text }}>x{item.quantity}</span>
+                          <span style={{ textAlign: 'right', color: tokens.color.muted }}>{formatCurrency(item.product.price)}</span>
+                          <span style={{ textAlign: 'right', color: tokens.color.primary, fontWeight: 600 }}>
+                            {formatCurrency(item.product.price * item.quantity)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Price Details Section - PDF Style */}
+                  <div style={{ padding: '1rem 1.25rem' }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 600, color: tokens.color.primary, marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      <i className="ri-money-dollar-circle-line" style={{ marginRight: '0.35rem' }} />
+                      CHI TIẾT GIÁ
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: tokens.color.muted }}>Giá nội thất:</span>
+                        <span style={{ color: tokens.color.text, fontWeight: 500 }}>{formatCurrency(quotationResult.basePrice)} đ</span>
+                      </div>
+                      {quotationResult.fees.map((fee, idx) => (
+                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: tokens.color.muted }}>
+                            {fee.name}{fee.type === 'PERCENTAGE' ? ` (${fee.value}%)` : ''}:
+                          </span>
+                          <span style={{ color: tokens.color.text, fontWeight: 500 }}>{formatCurrency(fee.amount)} đ</span>
+                        </div>
+                      ))}
+                      {/* Total */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          paddingTop: '0.75rem',
+                          marginTop: '0.5rem',
+                          borderTop: `2px solid ${tokens.color.primary}`,
+                        }}
+                      >
+                        <span style={{ fontWeight: 700, color: tokens.color.primary, fontSize: '0.9rem' }}>TỔNG CỘNG:</span>
+                        <span style={{ fontSize: '1.35rem', fontWeight: 700, color: tokens.color.primary }}>
+                          {formatCurrency(quotationResult.totalPrice)} đ
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer Note */}
+                  <div
+                    style={{
+                      padding: '0.75rem 1.25rem',
+                      background: tokens.color.surface,
+                      borderTop: `1px solid ${tokens.color.border}`,
+                      textAlign: 'center',
+                      fontSize: '0.7rem',
+                      color: tokens.color.muted,
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    Báo giá này chỉ mang tính chất tham khảo. Giá thực tế có thể thay đổi tùy theo thời điểm và điều kiện cụ thể.
                   </div>
                 </div>
 
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  {quotationId && (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={async () => {
+                        try {
+                          await furnitureAPI.downloadQuotationPdf(quotationId);
+                        } catch {
+                          toast.error('Không thể tải PDF');
+                        }
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '0.875rem',
+                        borderRadius: tokens.radius.md,
+                        border: 'none',
+                        background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+                        color: '#111',
+                        fontSize: '0.95rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                      }}
+                    >
+                      <i className="ri-file-pdf-line" /> Tải PDF
+                    </motion.button>
+                  )}
                   <button
                     onClick={handleReset}
                     style={{
@@ -1171,7 +1382,7 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
                       border: `1px solid ${tokens.color.border}`,
                       background: 'transparent',
                       color: tokens.color.text,
-                      fontSize: '1rem',
+                      fontSize: '0.95rem',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',

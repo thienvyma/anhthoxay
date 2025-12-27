@@ -1242,8 +1242,6 @@ model FurnitureProduct {
   order       Int               @default(0)
   isActive    Boolean           @default(true)
 
-  comboItems FurnitureComboItem[]
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1251,42 +1249,12 @@ model FurnitureProduct {
   @@index([isActive])
 }
 
-model FurnitureCombo {
-  id             String  @id @default(cuid())
-  name           String
-  apartmentTypes String // JSON array: ["1pn", "2pn"]
-  price          Float
-  imageUrl       String?
-  description    String?
-  isActive       Boolean @default(true)
-
-  items FurnitureComboItem[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([isActive])
-}
-
-model FurnitureComboItem {
-  id        String           @id @default(cuid())
-  comboId   String
-  combo     FurnitureCombo   @relation(fields: [comboId], references: [id], onDelete: Cascade)
-  productId String
-  product   FurnitureProduct @relation(fields: [productId], references: [id])
-  quantity  Int              @default(1)
-
-  @@unique([comboId, productId])
-  @@index([comboId])
-  @@index([productId])
-}
-
 model FurnitureFee {
   id            String  @id @default(cuid())
   name          String
   type          String // FIXED, PERCENTAGE
   value         Float
-  applicability String // COMBO, CUSTOM, BOTH
+  applicability String  @default("ALL") // ALL (applies to all quotations)
   description   String?
   isActive      Boolean @default(true)
   order         Int     @default(0)
@@ -1294,8 +1262,67 @@ model FurnitureFee {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([applicability])
   @@index([isActive])
+}
+
+// Singleton model for PDF settings
+model FurniturePdfSettings {
+  id String @id @default("default")
+
+  // Company info
+  companyName    String @default("ANH THỢ XÂY")
+  companyTagline String @default("Đối tác tin cậy cho ngôi nhà của bạn")
+  companyLogo    String? // URL to logo image
+
+  // Document settings
+  documentTitle String @default("BÁO GIÁ NỘI THẤT")
+
+  // Colors (hex format)
+  primaryColor String @default("#F5D393")
+  textColor    String @default("#333333")
+  mutedColor   String @default("#666666")
+  borderColor  String @default("#E0E0E0")
+
+  // Font sizes (in points)
+  companyNameSize   Int @default(24)
+  documentTitleSize Int @default(18)
+  sectionTitleSize  Int @default(12)
+  bodyTextSize      Int @default(10)
+  footerTextSize    Int @default(8)
+
+  // Section titles (customizable)
+  apartmentInfoTitle  String @default("THÔNG TIN CĂN HỘ")
+  productsTitle       String @default("SẢN PHẨM ĐÃ CHỌN")
+  priceDetailsTitle   String @default("CHI TIẾT GIÁ")
+  contactInfoTitle    String @default("THÔNG TIN LIÊN HỆ")
+  totalLabel          String @default("TỔNG CỘNG")
+
+  // Footer settings
+  footerNote      String @default("Báo giá này chỉ mang tính chất tham khảo. Giá thực tế có thể thay đổi tùy theo thời điểm và điều kiện cụ thể.")
+  footerCopyright String @default("© ANH THỢ XÂY - Đối tác tin cậy cho ngôi nhà của bạn")
+
+  // Contact info (optional, shown in PDF)
+  contactPhone   String?
+  contactEmail   String?
+  contactAddress String?
+  contactWebsite String?
+
+  // Additional notes (shown before footer)
+  additionalNotes String?
+
+  // Validity period (days)
+  validityDays Int @default(30)
+
+  // Show/hide sections
+  showLayoutImage Boolean @default(true)
+  showItemsTable  Boolean @default(true)
+  showFeeDetails  Boolean @default(true)
+  showContactInfo Boolean @default(false)
+  showValidityDate Boolean @default(true)
+  showQuotationCode Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model FurnitureQuotation {
@@ -1313,11 +1340,6 @@ model FurnitureQuotation {
   unitNumber     String // Calculated: {buildingCode}.{floor}{axis}
   apartmentType  String
   layoutImageUrl String?
-
-  // Selection
-  selectionType String // COMBO, CUSTOM
-  comboId       String?
-  comboName     String?
 
   // Items (JSON for flexibility)
   items String // JSON: [{ productId, name, price, quantity }]

@@ -199,50 +199,6 @@ export const createProductSchema = z.object({
 export const updateProductSchema = createProductSchema.partial();
 
 // ============================================
-// COMBO SCHEMAS
-// _Requirements: 3.2, 3.3_
-// ============================================
-
-/**
- * Schema for combo item
- */
-export const comboItemSchema = z.object({
-  productId: z.string().cuid('ID sản phẩm không hợp lệ'),
-  quantity: z.number().int().min(1, 'Số lượng tối thiểu là 1'),
-});
-
-/**
- * Schema for creating a combo
- */
-export const createComboSchema = z.object({
-  name: z.string().min(1, 'Tên combo không được trống').max(200),
-  apartmentTypes: z
-    .array(z.string().min(1).max(20))
-    .min(1, 'Phải chọn ít nhất 1 loại căn hộ'),
-  price: z.number().positive('Giá phải lớn hơn 0'),
-  imageUrl: z.string().url('URL ảnh không hợp lệ').optional().nullable(),
-  description: z.string().max(1000).optional().nullable(),
-  isActive: z.boolean().default(true),
-  items: z.array(comboItemSchema).min(1, 'Combo phải có ít nhất 1 sản phẩm'),
-});
-
-/**
- * Schema for updating a combo
- */
-export const updateComboSchema = z.object({
-  name: z.string().min(1, 'Tên combo không được trống').max(200).optional(),
-  apartmentTypes: z
-    .array(z.string().min(1).max(20))
-    .min(1, 'Phải chọn ít nhất 1 loại căn hộ')
-    .optional(),
-  price: z.number().positive('Giá phải lớn hơn 0').optional(),
-  imageUrl: z.string().url('URL ảnh không hợp lệ').optional().nullable(),
-  description: z.string().max(1000).optional().nullable(),
-  isActive: z.boolean().optional(),
-  items: z.array(comboItemSchema).min(1, 'Combo phải có ít nhất 1 sản phẩm').optional(),
-});
-
-// ============================================
 // FEE SCHEMAS
 // _Requirements: 4.2_
 // ============================================
@@ -253,9 +209,9 @@ export const updateComboSchema = z.object({
 export const feeTypeEnum = z.enum(['FIXED', 'PERCENTAGE']);
 
 /**
- * Fee applicability enum
+ * Fee applicability enum - kept for DB compatibility, COMBO removed
  */
-export const feeApplicabilityEnum = z.enum(['COMBO', 'CUSTOM', 'BOTH']);
+export const feeApplicabilityEnum = z.enum(['CUSTOM', 'BOTH']);
 
 /**
  * Schema for creating a fee
@@ -264,7 +220,7 @@ export const createFeeSchema = z.object({
   name: z.string().min(1, 'Tên phí không được trống').max(100),
   type: feeTypeEnum,
   value: z.number().positive('Giá trị phải lớn hơn 0'),
-  applicability: feeApplicabilityEnum,
+  applicability: feeApplicabilityEnum.default('BOTH'),  // Default to BOTH
   description: z.string().max(500).optional().nullable(),
   isActive: z.boolean().default(true),
   order: z.number().int().min(0).default(0),
@@ -281,15 +237,10 @@ export const updateFeeSchema = createFeeSchema.partial();
 // ============================================
 
 /**
- * Selection type enum
- */
-export const selectionTypeEnum = z.enum(['COMBO', 'CUSTOM']);
-
-/**
  * Schema for quotation item
  */
 export const quotationItemSchema = z.object({
-  productId: z.string().cuid('ID sản phẩm không hợp lệ'),
+  productId: z.string().min(1, 'ID sản phẩm không được trống'),
   name: z.string().min(1),
   price: z.number().nonnegative(),
   quantity: z.number().int().min(1),
@@ -308,6 +259,7 @@ export const leadDataSchema = z.object({
 /**
  * Schema for creating a quotation
  * Supports either leadId (existing lead) or leadData (create new lead)
+ * Items must have at least 1 product
  */
 export const createQuotationSchema = z.object({
   leadId: z.string().cuid('ID khách hàng không hợp lệ').optional().nullable(),
@@ -319,11 +271,9 @@ export const createQuotationSchema = z.object({
   floor: z.number().int().min(1, 'Tầng phải lớn hơn 0'),
   axis: z.number().int().min(0, 'Trục không được âm'),
   apartmentType: z.string().min(1, 'Loại căn hộ không được trống'),
-  layoutImageUrl: z.string().url('URL ảnh không hợp lệ').optional().nullable(),
-  selectionType: selectionTypeEnum,
-  comboId: z.string().cuid('ID combo không hợp lệ').optional().nullable(),
-  comboName: z.string().optional().nullable(),
-  items: z.array(quotationItemSchema),
+  // Accept both relative paths (/uploads/...) and full URLs (http://...)
+  layoutImageUrl: z.string().optional().nullable(),
+  items: z.array(quotationItemSchema).min(1, 'Phải chọn ít nhất một sản phẩm'),
 }).refine(
   (data) => data.leadId || data.leadData,
   { message: 'Phải có leadId hoặc leadData', path: ['leadId'] }
@@ -378,18 +328,9 @@ export const queryProductsSchema = z.object({
 });
 
 /**
- * Schema for querying combos
- */
-export const queryCombosSchema = z.object({
-  apartmentType: z.string().optional(),
-});
-
-/**
  * Schema for querying fees
  */
-export const queryFeesSchema = z.object({
-  applicability: feeApplicabilityEnum.optional(),
-});
+export const queryFeesSchema = z.object({});
 
 /**
  * Schema for querying quotations
@@ -428,9 +369,6 @@ export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
 export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
-export type ComboItemInput = z.infer<typeof comboItemSchema>;
-export type CreateComboInput = z.infer<typeof createComboSchema>;
-export type UpdateComboInput = z.infer<typeof updateComboSchema>;
 export type CreateFeeInput = z.infer<typeof createFeeSchema>;
 export type UpdateFeeInput = z.infer<typeof updateFeeSchema>;
 export type QuotationItemInput = z.infer<typeof quotationItemSchema>;
@@ -441,7 +379,6 @@ export type QueryLayoutsInput = z.infer<typeof queryLayoutsSchema>;
 export type QueryLayoutByAxisInput = z.infer<typeof queryLayoutByAxisSchema>;
 export type QueryApartmentTypesInput = z.infer<typeof queryApartmentTypesSchema>;
 export type QueryProductsInput = z.infer<typeof queryProductsSchema>;
-export type QueryCombosInput = z.infer<typeof queryCombosSchema>;
 export type QueryFeesInput = z.infer<typeof queryFeesSchema>;
 export type QueryQuotationsInput = z.infer<typeof queryQuotationsSchema>;
 export type SyncInput = z.infer<typeof syncSchema>;

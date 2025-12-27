@@ -13,6 +13,23 @@ interface ContactInfoData {
   socialLinks?: Array<{ platform: string; url: string }>;
 }
 
+// Extract URL from iframe tag if data contains the whole iframe code
+function extractMapUrl(input: string | undefined): string {
+  if (!input) return '';
+  const trimmed = input.trim();
+
+  // If input contains iframe tag, extract src URL
+  if (trimmed.includes('<iframe') && trimmed.includes('src=')) {
+    const srcMatch = trimmed.match(/src="([^"]+)"/);
+    if (srcMatch && srcMatch[1]) {
+      return srcMatch[1];
+    }
+  }
+
+  // Otherwise return as-is
+  return trimmed;
+}
+
 export const ContactInfo = memo(function ContactInfo({ data }: { data: ContactInfoData }) {
   // Default configuration with deep merge to preserve defaults
   const defaultData = {
@@ -33,8 +50,10 @@ export const ContactInfo = memo(function ContactInfo({ data }: { data: ContactIn
     ...defaultData,
     ...data,
     // Special handling for arrays - only use custom if provided, else use defaults
-    hours: (data.hours && data.hours.length > 0) ? data.hours : defaultData.hours,
+    hours: data.hours && data.hours.length > 0 ? data.hours : defaultData.hours,
     socialLinks: data.socialLinks || defaultData.socialLinks,
+    // Extract URL from iframe tag if needed
+    mapEmbedUrl: extractMapUrl(data.mapEmbedUrl),
   };
 
   const hours = mergedData.hours;
@@ -261,7 +280,9 @@ export const ContactInfo = memo(function ContactInfo({ data }: { data: ContactIn
             minHeight: 400,
           }}
         >
-          {mergedData.mapEmbedUrl ? (
+          {mergedData.mapEmbedUrl &&
+          (mergedData.mapEmbedUrl.includes('google.com/maps/embed') ||
+            mergedData.mapEmbedUrl.includes('google.com/maps/d/embed')) ? (
             <iframe
               src={mergedData.mapEmbedUrl}
               width="100%"

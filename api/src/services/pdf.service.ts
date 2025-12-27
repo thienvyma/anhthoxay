@@ -5,10 +5,21 @@
  *
  * **Feature: furniture-quotation**
  * **Requirements: 8.2**
+ * 
+ * **Font Setup:**
+ * For Vietnamese text support, download Noto Sans fonts to api/fonts/:
+ * - NotoSans-Regular.ttf
+ * - NotoSans-Bold.ttf
+ * 
+ * Download from: https://fonts.google.com/noto/specimen/Noto+Sans
+ * Or use: https://github.com/googlefonts/noto-fonts/tree/main/hinted/ttf/NotoSans
  */
 
 import PDFDocument from 'pdfkit';
-import type { FurnitureQuotation } from '@prisma/client';
+import type { FurnitureQuotation, FurniturePdfSettings } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import * as path from 'path';
+import * as fs from 'fs';
 
 // ============================================
 // TYPES
@@ -28,28 +39,172 @@ export interface QuotationFee {
   amount: number;
 }
 
+// Default settings (used if no settings in DB)
+const DEFAULT_SETTINGS: Omit<FurniturePdfSettings, 'id' | 'createdAt' | 'updatedAt'> = {
+  companyName: 'ANH THO XAY',
+  companyTagline: 'Doi tac tin cay cho ngoi nha cua ban',
+  companyLogo: null,
+  documentTitle: 'BAO GIA NOI THAT',
+  primaryColor: '#F5D393',
+  textColor: '#333333',
+  mutedColor: '#666666',
+  borderColor: '#E0E0E0',
+  companyNameSize: 24,
+  documentTitleSize: 18,
+  sectionTitleSize: 12,
+  bodyTextSize: 10,
+  footerTextSize: 8,
+  apartmentInfoTitle: 'THONG TIN CAN HO',
+  productsTitle: 'SAN PHAM DA CHON',
+  priceDetailsTitle: 'CHI TIET GIA',
+  contactInfoTitle: 'THONG TIN LIEN HE',
+  totalLabel: 'TONG CONG',
+  footerNote: 'Bao gia nay chi mang tinh chat tham khao. Gia thuc te co the thay doi tuy theo thoi diem va dieu kien cu the.',
+  footerCopyright: '© ANH THO XAY - Doi tac tin cay cho ngoi nha cua ban',
+  contactPhone: null,
+  contactEmail: null,
+  contactAddress: null,
+  contactWebsite: null,
+  additionalNotes: null,
+  validityDays: 30,
+  showLayoutImage: true,
+  showItemsTable: true,
+  showFeeDetails: true,
+  showContactInfo: false,
+  showValidityDate: true,
+  showQuotationCode: true,
+};
+
+// ============================================
+// FONT HELPERS
+// ============================================
+
+/**
+ * Check if fonts directory exists and has required fonts
+ */
+function getFontsPath(): { regular: string | null; bold: string | null } {
+  const fontsDir = path.join(__dirname, '../../fonts');
+  const regularPath = path.join(fontsDir, 'NotoSans-Regular.ttf');
+  const boldPath = path.join(fontsDir, 'NotoSans-Bold.ttf');
+  
+  return {
+    regular: fs.existsSync(regularPath) ? regularPath : null,
+    bold: fs.existsSync(boldPath) ? boldPath : null,
+  };
+}
+
+/**
+ * Remove Vietnamese diacritics for fallback font support
+ */
+function removeVietnameseDiacritics(str: string): string {
+  const diacriticsMap: Record<string, string> = {
+    'à': 'a', 'á': 'a', 'ả': 'a', 'ã': 'a', 'ạ': 'a',
+    'ă': 'a', 'ằ': 'a', 'ắ': 'a', 'ẳ': 'a', 'ẵ': 'a', 'ặ': 'a',
+    'â': 'a', 'ầ': 'a', 'ấ': 'a', 'ẩ': 'a', 'ẫ': 'a', 'ậ': 'a',
+    'đ': 'd',
+    'è': 'e', 'é': 'e', 'ẻ': 'e', 'ẽ': 'e', 'ẹ': 'e',
+    'ê': 'e', 'ề': 'e', 'ế': 'e', 'ể': 'e', 'ễ': 'e', 'ệ': 'e',
+    'ì': 'i', 'í': 'i', 'ỉ': 'i', 'ĩ': 'i', 'ị': 'i',
+    'ò': 'o', 'ó': 'o', 'ỏ': 'o', 'õ': 'o', 'ọ': 'o',
+    'ô': 'o', 'ồ': 'o', 'ố': 'o', 'ổ': 'o', 'ỗ': 'o', 'ộ': 'o',
+    'ơ': 'o', 'ờ': 'o', 'ớ': 'o', 'ở': 'o', 'ỡ': 'o', 'ợ': 'o',
+    'ù': 'u', 'ú': 'u', 'ủ': 'u', 'ũ': 'u', 'ụ': 'u',
+    'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ử': 'u', 'ữ': 'u', 'ự': 'u',
+    'ỳ': 'y', 'ý': 'y', 'ỷ': 'y', 'ỹ': 'y', 'ỵ': 'y',
+    'À': 'A', 'Á': 'A', 'Ả': 'A', 'Ã': 'A', 'Ạ': 'A',
+    'Ă': 'A', 'Ằ': 'A', 'Ắ': 'A', 'Ẳ': 'A', 'Ẵ': 'A', 'Ặ': 'A',
+    'Â': 'A', 'Ầ': 'A', 'Ấ': 'A', 'Ẩ': 'A', 'Ẫ': 'A', 'Ậ': 'A',
+    'Đ': 'D',
+    'È': 'E', 'É': 'E', 'Ẻ': 'E', 'Ẽ': 'E', 'Ẹ': 'E',
+    'Ê': 'E', 'Ề': 'E', 'Ế': 'E', 'Ể': 'E', 'Ễ': 'E', 'Ệ': 'E',
+    'Ì': 'I', 'Í': 'I', 'Ỉ': 'I', 'Ĩ': 'I', 'Ị': 'I',
+    'Ò': 'O', 'Ó': 'O', 'Ỏ': 'O', 'Õ': 'O', 'Ọ': 'O',
+    'Ô': 'O', 'Ồ': 'O', 'Ố': 'O', 'Ổ': 'O', 'Ỗ': 'O', 'Ộ': 'O',
+    'Ơ': 'O', 'Ờ': 'O', 'Ớ': 'O', 'Ở': 'O', 'Ỡ': 'O', 'Ợ': 'O',
+    'Ù': 'U', 'Ú': 'U', 'Ủ': 'U', 'Ũ': 'U', 'Ụ': 'U',
+    'Ư': 'U', 'Ừ': 'U', 'Ứ': 'U', 'Ử': 'U', 'Ữ': 'U', 'Ự': 'U',
+    'Ỳ': 'Y', 'Ý': 'Y', 'Ỷ': 'Y', 'Ỹ': 'Y', 'Ỵ': 'Y',
+  };
+  
+  return str.split('').map(char => diacriticsMap[char] || char).join('');
+}
+
 // ============================================
 // PDF SERVICE
 // ============================================
 
 /**
+ * Get PDF settings from database or use defaults
+ */
+async function getPdfSettings(prisma?: PrismaClient): Promise<typeof DEFAULT_SETTINGS> {
+  if (!prisma) return DEFAULT_SETTINGS;
+
+  try {
+    const settings = await prisma.furniturePdfSettings.findUnique({ where: { id: 'default' } });
+    if (settings) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...rest } = settings;
+      return rest;
+    }
+  } catch {
+    // Ignore errors, use defaults
+  }
+  return DEFAULT_SETTINGS;
+}
+
+/**
  * Generate a PDF document for a furniture quotation
  * @param quotation - The quotation data
+ * @param prisma - Optional Prisma client to fetch settings
  * @returns Buffer containing the PDF
  * _Requirements: 8.2_
  */
-export async function generateQuotationPDF(quotation: FurnitureQuotation): Promise<Buffer> {
+export async function generateQuotationPDF(
+  quotation: FurnitureQuotation,
+  prisma?: PrismaClient
+): Promise<Buffer> {
+  const settings = await getPdfSettings(prisma);
+  const fonts = getFontsPath();
+  const hasVietnameseFont = fonts.regular !== null;
+
+  // Helper to process text based on font availability
+  const processText = (text: string): string => {
+    if (hasVietnameseFont) return text;
+    return removeVietnameseDiacritics(text);
+  };
+
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({
         size: 'A4',
         margin: 50,
         info: {
-          Title: `Báo giá nội thất - ${quotation.unitNumber}`,
-          Author: 'ANH THỢ XÂY',
+          Title: `${processText(settings.documentTitle)} - ${quotation.unitNumber}`,
+          Author: processText(settings.companyName),
           Subject: 'Furniture Quotation',
         },
       });
+
+      // Register fonts for Vietnamese support
+      let fontName = 'Helvetica';
+      let fontNameBold = 'Helvetica-Bold';
+      
+      if (fonts.regular) {
+        try {
+          doc.registerFont('NotoSans', fonts.regular);
+          fontName = 'NotoSans';
+          if (fonts.bold) {
+            doc.registerFont('NotoSans-Bold', fonts.bold);
+            fontNameBold = 'NotoSans-Bold';
+          } else {
+            fontNameBold = 'NotoSans';
+          }
+        } catch (fontError) {
+          console.warn('Failed to load custom fonts, using Helvetica:', fontError);
+        }
+      }
+      
+      doc.font(fontName);
 
       const chunks: Buffer[] = [];
       doc.on('data', (chunk: Buffer) => chunks.push(chunk));
@@ -57,74 +212,75 @@ export async function generateQuotationPDF(quotation: FurnitureQuotation): Promi
       doc.on('error', reject);
 
       // Parse JSON fields
-      const items: QuotationItem[] = typeof quotation.items === 'string' 
-        ? JSON.parse(quotation.items) 
-        : (quotation.items || []);
-      const fees: QuotationFee[] = typeof quotation.fees === 'string' 
-        ? JSON.parse(quotation.fees) 
-        : (quotation.fees || []);
+      const items: QuotationItem[] =
+        typeof quotation.items === 'string' ? JSON.parse(quotation.items) : quotation.items || [];
+      const fees: QuotationFee[] =
+        typeof quotation.fees === 'string' ? JSON.parse(quotation.fees) : quotation.fees || [];
 
-      // Colors
-      const primaryColor = '#F5D393';
-      const textColor = '#333333';
-      const mutedColor = '#666666';
-      const borderColor = '#E0E0E0';
+      // Colors from settings
+      const primaryColor = settings.primaryColor;
+      const textColor = settings.textColor;
+      const mutedColor = settings.mutedColor;
+      const borderColor = settings.borderColor;
+
+      // Font sizes from settings
+      const companyNameSize = settings.companyNameSize;
+      const documentTitleSize = settings.documentTitleSize;
+      const sectionTitleSize = settings.sectionTitleSize;
+      const bodyTextSize = settings.bodyTextSize;
+      const footerTextSize = settings.footerTextSize;
 
       // ============================================
       // HEADER
       // ============================================
-      
-      // Company name
-      doc.fontSize(24)
-        .fillColor(primaryColor)
-        .text('ANH THỢ XÂY', 50, 50, { align: 'left' });
-      
-      // Document title
-      doc.fontSize(18)
-        .fillColor(textColor)
-        .text('BÁO GIÁ NỘI THẤT', 50, 85, { align: 'left' });
 
-      // Date
+      // Company name (bold)
+      doc.font(fontNameBold).fontSize(companyNameSize).fillColor(primaryColor).text(processText(settings.companyName), 50, 50, { align: 'left' });
+
+      // Document title (bold)
+      doc
+        .font(fontNameBold)
+        .fontSize(documentTitleSize)
+        .fillColor(textColor)
+        .text(processText(settings.documentTitle), 50, 50 + companyNameSize + 10, { align: 'left' });
+
+      // Date and Code (regular)
+      doc.font(fontName);
       const createdDate = new Date(quotation.createdAt);
-      doc.fontSize(10)
-        .fillColor(mutedColor)
-        .text(`Ngày: ${createdDate.toLocaleDateString('vi-VN')}`, 400, 50, { align: 'right' });
-      
-      // Quotation ID
-      doc.text(`Mã: ${quotation.id.slice(-8).toUpperCase()}`, 400, 65, { align: 'right' });
+      doc.fontSize(bodyTextSize).fillColor(mutedColor).text(processText(`Ngày: ${createdDate.toLocaleDateString('vi-VN')}`), 400, 50, { align: 'right' });
+
+      if (settings.showQuotationCode) {
+        doc.text(processText(`Mã: ${quotation.id.slice(-8).toUpperCase()}`), 400, 50 + bodyTextSize + 5, { align: 'right' });
+      }
 
       // Horizontal line
-      doc.moveTo(50, 115)
-        .lineTo(545, 115)
-        .strokeColor(borderColor)
-        .stroke();
+      const headerEndY = 50 + companyNameSize + documentTitleSize + 30;
+      doc.moveTo(50, headerEndY).lineTo(545, headerEndY).strokeColor(borderColor).stroke();
 
       // ============================================
       // APARTMENT INFO
       // ============================================
-      
-      let yPos = 135;
-      
-      doc.fontSize(12)
-        .fillColor(primaryColor)
-        .text('THÔNG TIN CĂN HỘ', 50, yPos);
-      
-      yPos += 25;
+
+      let yPos = headerEndY + 20;
+
+      doc.font(fontNameBold).fontSize(sectionTitleSize).fillColor(primaryColor).text(processText(settings.apartmentInfoTitle), 50, yPos);
+
+      yPos += sectionTitleSize + 12;
 
       // Info table
       const infoData = [
-        ['Chủ đầu tư:', quotation.developerName],
-        ['Dự án:', quotation.projectName],
-        ['Tòa nhà:', quotation.buildingName],
-        ['Số căn hộ:', quotation.unitNumber],
-        ['Loại căn hộ:', quotation.apartmentType.toUpperCase()],
+        [processText('Chủ đầu tư:'), processText(quotation.developerName)],
+        [processText('Dự án:'), processText(quotation.projectName)],
+        [processText('Tòa nhà:'), processText(quotation.buildingName)],
+        [processText('Số căn hộ:'), quotation.unitNumber],
+        [processText('Loại căn hộ:'), quotation.apartmentType.toUpperCase()],
       ];
 
-      doc.fontSize(10);
+      doc.font(fontName).fontSize(bodyTextSize);
       for (const [label, value] of infoData) {
         doc.fillColor(mutedColor).text(label, 50, yPos, { width: 100 });
         doc.fillColor(textColor).text(value, 150, yPos);
-        yPos += 18;
+        yPos += bodyTextSize + 8;
       }
 
       yPos += 15;
@@ -132,45 +288,31 @@ export async function generateQuotationPDF(quotation: FurnitureQuotation): Promi
       // ============================================
       // SELECTION TYPE
       // ============================================
-      
-      doc.fontSize(12)
-        .fillColor(primaryColor)
-        .text('LOẠI LỰA CHỌN', 50, yPos);
-      
-      yPos += 25;
 
-      const selectionLabel = quotation.selectionType === 'COMBO' ? 'Combo trọn gói' : 'Tùy chọn sản phẩm';
-      doc.fontSize(10)
-        .fillColor(textColor)
-        .text(selectionLabel, 50, yPos);
-      
-      if (quotation.comboName) {
-        yPos += 18;
-        doc.fillColor(mutedColor).text('Tên combo:', 50, yPos, { width: 100 });
-        doc.fillColor(textColor).text(quotation.comboName, 150, yPos);
-      }
+      doc.font(fontNameBold).fontSize(sectionTitleSize).fillColor(primaryColor).text(processText('LOAI LUA CHON'), 50, yPos);
+
+      yPos += sectionTitleSize + 12;
+
+      doc.font(fontName).fontSize(bodyTextSize).fillColor(textColor).text(processText('Tùy chọn sản phẩm'), 50, yPos);
 
       yPos += 30;
 
       // ============================================
       // ITEMS TABLE
       // ============================================
-      
-      if (items.length > 0) {
-        doc.fontSize(12)
-          .fillColor(primaryColor)
-          .text('SẢN PHẨM ĐÃ CHỌN', 50, yPos);
-        
-        yPos += 25;
+
+      if (settings.showItemsTable && items.length > 0) {
+        doc.font(fontNameBold).fontSize(sectionTitleSize).fillColor(primaryColor).text(processText(settings.productsTitle), 50, yPos);
+
+        yPos += sectionTitleSize + 12;
 
         // Table header
         const tableLeft = 50;
         const colWidths = [250, 60, 100, 85];
-        const headers = ['Sản phẩm', 'SL', 'Đơn giá', 'Thành tiền'];
+        const headers = [processText('Sản phẩm'), 'SL', processText('Đơn giá'), processText('Thành tiền')];
 
-        doc.fontSize(9)
-          .fillColor(mutedColor);
-        
+        doc.font(fontName).fontSize(bodyTextSize - 1).fillColor(mutedColor);
+
         let xPos = tableLeft;
         for (let i = 0; i < headers.length; i++) {
           const align = i === 0 ? 'left' : 'right';
@@ -178,18 +320,15 @@ export async function generateQuotationPDF(quotation: FurnitureQuotation): Promi
           xPos += colWidths[i];
         }
 
-        yPos += 15;
+        yPos += bodyTextSize + 5;
 
         // Table line
-        doc.moveTo(tableLeft, yPos)
-          .lineTo(545, yPos)
-          .strokeColor(borderColor)
-          .stroke();
+        doc.moveTo(tableLeft, yPos).lineTo(545, yPos).strokeColor(borderColor).stroke();
 
         yPos += 8;
 
         // Table rows
-        doc.fontSize(9).fillColor(textColor);
+        doc.fontSize(bodyTextSize - 1).fillColor(textColor);
         for (const item of items) {
           // Check if we need a new page
           if (yPos > 700) {
@@ -198,15 +337,15 @@ export async function generateQuotationPDF(quotation: FurnitureQuotation): Promi
           }
 
           xPos = tableLeft;
-          doc.text(item.name, xPos, yPos, { width: colWidths[0] });
+          doc.text(processText(item.name), xPos, yPos, { width: colWidths[0] });
           xPos += colWidths[0];
           doc.text(item.quantity.toString(), xPos, yPos, { width: colWidths[1], align: 'right' });
           xPos += colWidths[1];
           doc.text(formatCurrency(item.price), xPos, yPos, { width: colWidths[2], align: 'right' });
           xPos += colWidths[2];
           doc.text(formatCurrency(item.price * item.quantity), xPos, yPos, { width: colWidths[3], align: 'right' });
-          
-          yPos += 18;
+
+          yPos += bodyTextSize + 8;
         }
 
         yPos += 10;
@@ -215,73 +354,146 @@ export async function generateQuotationPDF(quotation: FurnitureQuotation): Promi
       // ============================================
       // PRICE BREAKDOWN
       // ============================================
-      
-      // Check if we need a new page
-      if (yPos > 650) {
-        doc.addPage();
-        yPos = 50;
+
+      if (settings.showFeeDetails) {
+        // Check if we need a new page
+        if (yPos > 650) {
+          doc.addPage();
+          yPos = 50;
+        }
+
+        doc.font(fontNameBold).fontSize(sectionTitleSize).fillColor(primaryColor).text(processText(settings.priceDetailsTitle), 50, yPos);
+
+        yPos += sectionTitleSize + 12;
+
+        // Price table
+        const priceLeft = 300;
+        const priceWidth = 245;
+
+        // Base price
+        doc.font(fontName).fontSize(bodyTextSize).fillColor(mutedColor).text(processText('Giá cơ bản:'), priceLeft, yPos, { width: 120 });
+        doc.fillColor(textColor).text(formatCurrency(quotation.basePrice) + ' VNĐ', priceLeft + 120, yPos, {
+          width: priceWidth - 120,
+          align: 'right',
+        });
+
+        yPos += bodyTextSize + 10;
+
+        // Fees
+        for (const fee of fees) {
+          const feeLabel = fee.type === 'PERCENTAGE' ? processText(`${fee.name} (${fee.value}%):`) : processText(`${fee.name}:`);
+
+          doc.fillColor(mutedColor).text(feeLabel, priceLeft, yPos, { width: 120 });
+          doc.fillColor(textColor).text(formatCurrency(fee.amount) + ' VNĐ', priceLeft + 120, yPos, {
+            width: priceWidth - 120,
+            align: 'right',
+          });
+
+          yPos += bodyTextSize + 10;
+        }
+
+        // Total line
+        doc.moveTo(priceLeft, yPos).lineTo(545, yPos).strokeColor(borderColor).stroke();
+
+        yPos += 10;
+
+        // Total
+        doc.font(fontNameBold).fontSize(sectionTitleSize).fillColor(primaryColor).text(processText(`${settings.totalLabel}:`), priceLeft, yPos, { width: 120 });
+        doc
+          .fontSize(sectionTitleSize + 2)
+          .fillColor(primaryColor)
+          .text(formatCurrency(quotation.totalPrice) + ' VNĐ', priceLeft + 120, yPos, {
+            width: priceWidth - 120,
+            align: 'right',
+          });
       }
 
-      doc.fontSize(12)
-        .fillColor(primaryColor)
-        .text('CHI TIẾT GIÁ', 50, yPos);
-      
-      yPos += 25;
+      // ============================================
+      // CONTACT INFO (if enabled)
+      // ============================================
 
-      // Price table
-      const priceLeft = 300;
-      const priceWidth = 245;
+      if (
+        settings.showContactInfo &&
+        (settings.contactPhone || settings.contactEmail || settings.contactAddress || settings.contactWebsite)
+      ) {
+        yPos += 40;
 
-      // Base price
-      doc.fontSize(10)
-        .fillColor(mutedColor)
-        .text('Giá cơ bản:', priceLeft, yPos, { width: 120 });
-      doc.fillColor(textColor)
-        .text(formatCurrency(quotation.basePrice) + ' VNĐ', priceLeft + 120, yPos, { width: priceWidth - 120, align: 'right' });
-      
-      yPos += 20;
+        if (yPos > 680) {
+          doc.addPage();
+          yPos = 50;
+        }
 
-      // Fees
-      for (const fee of fees) {
-        const feeLabel = fee.type === 'PERCENTAGE' 
-          ? `${fee.name} (${fee.value}%):` 
-          : `${fee.name}:`;
-        
-        doc.fillColor(mutedColor)
-          .text(feeLabel, priceLeft, yPos, { width: 120 });
-        doc.fillColor(textColor)
-          .text(formatCurrency(fee.amount) + ' VNĐ', priceLeft + 120, yPos, { width: priceWidth - 120, align: 'right' });
-        
+        doc.font(fontNameBold).fontSize(sectionTitleSize).fillColor(primaryColor).text(processText(settings.contactInfoTitle), 50, yPos);
+
+        yPos += sectionTitleSize + 10;
+        doc.font(fontName).fontSize(bodyTextSize).fillColor(textColor);
+
+        if (settings.contactPhone) {
+          doc.text(processText(`Điện thoại: ${settings.contactPhone}`), 50, yPos);
+          yPos += bodyTextSize + 5;
+        }
+        if (settings.contactEmail) {
+          doc.text(`Email: ${settings.contactEmail}`, 50, yPos);
+          yPos += bodyTextSize + 5;
+        }
+        if (settings.contactAddress) {
+          doc.text(processText(`Địa chỉ: ${settings.contactAddress}`), 50, yPos);
+          yPos += bodyTextSize + 5;
+        }
+        if (settings.contactWebsite) {
+          doc.text(`Website: ${settings.contactWebsite}`, 50, yPos);
+          yPos += bodyTextSize + 5;
+        }
+      }
+
+      // ============================================
+      // ADDITIONAL NOTES (if any)
+      // ============================================
+
+      if (settings.additionalNotes) {
         yPos += 20;
+
+        if (yPos > 680) {
+          doc.addPage();
+          yPos = 50;
+        }
+
+        doc.font(fontName).fontSize(bodyTextSize).fillColor(mutedColor).text(processText(settings.additionalNotes), 50, yPos, { width: 495 });
       }
 
-      // Total line
-      doc.moveTo(priceLeft, yPos)
-        .lineTo(545, yPos)
-        .strokeColor(borderColor)
-        .stroke();
-      
-      yPos += 10;
+      // ============================================
+      // VALIDITY PERIOD
+      // ============================================
 
-      // Total
-      doc.fontSize(12)
-        .fillColor(primaryColor)
-        .text('TỔNG CỘNG:', priceLeft, yPos, { width: 120 });
-      doc.fontSize(14)
-        .fillColor(primaryColor)
-        .text(formatCurrency(quotation.totalPrice) + ' VNĐ', priceLeft + 120, yPos, { width: priceWidth - 120, align: 'right' });
+      if (settings.showValidityDate && settings.validityDays > 0) {
+        const validUntil = new Date(quotation.createdAt);
+        validUntil.setDate(validUntil.getDate() + settings.validityDays);
+
+        yPos += 30;
+        if (yPos > 720) {
+          doc.addPage();
+          yPos = 50;
+        }
+
+        doc
+          .font(fontName)
+          .fontSize(footerTextSize + 1)
+          .fillColor(mutedColor)
+          .text(processText(`Báo giá có hiệu lực đến: ${validUntil.toLocaleDateString('vi-VN')}`), 50, yPos, {
+            align: 'center',
+            width: 495,
+          });
+      }
 
       // ============================================
       // FOOTER
       // ============================================
-      
+
       const footerY = 750;
-      
-      doc.fontSize(8)
-        .fillColor(mutedColor)
-        .text('Báo giá này chỉ mang tính chất tham khảo. Giá thực tế có thể thay đổi tùy theo thời điểm và điều kiện cụ thể.', 50, footerY, { align: 'center', width: 495 });
-      
-      doc.text('© ANH THỢ XÂY - Đối tác tin cậy cho ngôi nhà của bạn', 50, footerY + 15, { align: 'center', width: 495 });
+
+      doc.font(fontName).fontSize(footerTextSize).fillColor(mutedColor).text(processText(settings.footerNote), 50, footerY, { align: 'center', width: 495 });
+
+      doc.text(processText(settings.footerCopyright), 50, footerY + footerTextSize + 7, { align: 'center', width: 495 });
 
       // Finalize PDF
       doc.end();

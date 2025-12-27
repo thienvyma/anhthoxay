@@ -82,18 +82,20 @@ function getInitialDimensions(): { width: number; height: number } {
 export function useResponsive(): ResponsiveState {
   const [dimensions, setDimensions] = useState(getInitialDimensions);
 
-  // Debounced resize handler
+  // Debounced resize handler - only update if dimensions actually changed
   const handleResize = useCallback(() => {
-    setDimensions({
-      width: window.innerWidth,
-      height: window.innerHeight,
+    const newWidth = window.innerWidth;
+    const newHeight = window.innerHeight;
+    setDimensions((prev) => {
+      // Only update if dimensions actually changed to prevent unnecessary re-renders
+      if (prev.width === newWidth && prev.height === newHeight) {
+        return prev;
+      }
+      return { width: newWidth, height: newHeight };
     });
   }, []);
 
   useEffect(() => {
-    // Set initial dimensions on mount (for SSR hydration)
-    handleResize();
-
     // Create debounced handler
     const debouncedResize = debounce(handleResize, 100);
 

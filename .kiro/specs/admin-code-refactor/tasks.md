@@ -100,7 +100,7 @@
     - Verify UI functionality
     - _Requirements: 2.7, 8.2, 8.3_
 
-  - [ ]* 2.7 Write property test for UsersPage file size
+  - [x]* 2.7 Write property test for UsersPage file size
     - **Property 1: File size constraints after refactoring**
     - **Validates: Requirements 2.7**
 
@@ -196,7 +196,7 @@
     - Verify each form file is under 200 lines
 
     - _Requirements: 3.5, 3.6, 8.2, 8.3_
-  - [ ]* 4.10 Write property test for form file sizes
+  - [x]* 4.10 Write property test for form file sizes
     - **Property 2: Form file size constraints**
     - **Validates: Requirements 3.5**
 
@@ -240,7 +240,7 @@
 
     - Run lint and typecheck
     - _Requirements: 4.5, 8.2, 8.3_
-  - [ ]* 5.8 Write property test for preview file sizes
+  - [x]* 5.8 Write property test for preview file sizes
     - **Property 3: Preview file size constraints**
     - **Validates: Requirements 4.4**
 
@@ -289,7 +289,7 @@
     - Run lint and typecheck
     - Verify UI functionality
     - _Requirements: 5.4, 8.2, 8.3_
-  - [ ]* 7.5 Write property test for LayoutTab file size
+  - [x]* 7.5 Write property test for LayoutTab file size
     - **Property 1: File size constraints after refactoring**
     - **Validates: Requirements 5.4**
 
@@ -344,7 +344,7 @@
     - Run lint and typecheck
     - Verify UI functionality
     - _Requirements: 6.6, 8.2, 8.3_
-  - [ ]* 8.7 Write property test for Tab file sizes
+  - [x]* 8.7 Write property test for Tab file sizes
     - **Property 1: File size constraints after refactoring**
     - **Validates: Requirements 6.6**
 
@@ -393,7 +393,7 @@
     - Run lint and typecheck
     - Verify UI functionality
     - _Requirements: 7.5, 8.2, 8.3_
-  - [ ]* 9.7 Write property test for FurnitureQuote file size
+  - [x]* 9.7 Write property test for FurnitureQuote file size
     - **Property 1: File size constraints after refactoring**
     - **Validates: Requirements 7.5**
 

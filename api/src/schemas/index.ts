@@ -557,17 +557,12 @@ export {
   // Product schemas
   createProductSchema,
   updateProductSchema,
-  // Combo schemas
-  comboItemSchema,
-  createComboSchema,
-  updateComboSchema,
   // Fee schemas
   feeTypeEnum as furnitureFeeTypeEnum,
   feeApplicabilityEnum,
   createFeeSchema as createFurnitureFeeSchema,
   updateFeeSchema as updateFurnitureFeeSchema,
   // Quotation schemas
-  selectionTypeEnum,
   quotationItemSchema,
   createQuotationSchema,
   // Query schemas
@@ -577,7 +572,6 @@ export {
   queryLayoutByAxisSchema,
   queryApartmentTypesSchema,
   queryProductsSchema,
-  queryCombosSchema,
   queryFeesSchema,
   queryQuotationsSchema,
   // Types
@@ -595,9 +589,6 @@ export {
   type UpdateCategoryInput,
   type CreateProductInput,
   type UpdateProductInput,
-  type ComboItemInput,
-  type CreateComboInput,
-  type UpdateComboInput,
   type CreateFeeInput as CreateFurnitureFeeInput,
   type UpdateFeeInput as UpdateFurnitureFeeInput,
   type QuotationItemInput,
@@ -608,7 +599,6 @@ export {
   type QueryLayoutByAxisInput,
   type QueryApartmentTypesInput,
   type QueryProductsInput,
-  type QueryCombosInput,
   type QueryFeesInput,
   type QueryQuotationsInput,
 } from './furniture.schema';

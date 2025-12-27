@@ -83,33 +83,11 @@ export interface FurnitureProduct {
   category?: FurnitureCategory;
 }
 
-export interface FurnitureComboItem {
-  id: string;
-  comboId: string;
-  productId: string;
-  quantity: number;
-  product?: FurnitureProduct;
-}
-
-export interface FurnitureCombo {
-  id: string;
-  name: string;
-  apartmentTypes: string; // JSON array
-  price: number;
-  imageUrl: string | null;
-  description: string | null;
-  isActive: boolean;
-  items?: FurnitureComboItem[];
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface FurnitureFee {
   id: string;
   name: string;
   type: 'FIXED' | 'PERCENTAGE';
   value: number;
-  applicability: 'COMBO' | 'CUSTOM' | 'BOTH';
   description: string | null;
   isActive: boolean;
   order: number;
@@ -147,9 +125,6 @@ export interface CreateQuotationInput {
   axis: number;
   apartmentType: string;
   layoutImageUrl?: string;
-  selectionType: 'COMBO' | 'CUSTOM';
-  comboId?: string;
-  comboName?: string;
   items: QuotationItem[];
 }
 
@@ -165,9 +140,6 @@ export interface FurnitureQuotation {
   unitNumber: string;
   apartmentType: string;
   layoutImageUrl: string | null;
-  selectionType: 'COMBO' | 'CUSTOM';
-  comboId: string | null;
-  comboName: string | null;
   items: string; // JSON
   basePrice: number;
   fees: string; // JSON
@@ -191,6 +163,30 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> 
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Request failed' }));
+    // Handle validation errors with details
+    if (error.error === 'Validation failed' && error.details) {
+      const fieldErrors = error.details.fieldErrors || {};
+      const formErrors = error.details.formErrors || [];
+      const errorMessages: string[] = [];
+      
+      // Collect field errors
+      for (const [field, messages] of Object.entries(fieldErrors)) {
+        if (Array.isArray(messages) && messages.length > 0) {
+          errorMessages.push(`${field}: ${messages.join(', ')}`);
+        }
+      }
+      
+      // Collect form errors
+      if (Array.isArray(formErrors) && formErrors.length > 0) {
+        errorMessages.push(...formErrors);
+      }
+      
+      const errorMessage = errorMessages.length > 0 
+        ? errorMessages.join('; ') 
+        : 'Dữ liệu không hợp lệ';
+      throw new Error(errorMessage);
+    }
+    
     const errorMessage =
       error.error?.message || error.error || `API Error: ${response.status} ${response.statusText}`;
     throw new Error(errorMessage);
@@ -248,14 +244,8 @@ export const furnitureAPI = {
     return apiFetch<FurnitureProduct[]>(`/api/furniture/products${query}`);
   },
 
-  getCombos: (apartmentType?: string) => {
-    const query = apartmentType ? `?apartmentType=${encodeURIComponent(apartmentType)}` : '';
-    return apiFetch<FurnitureCombo[]>(`/api/furniture/combos${query}`);
-  },
-
-  getFees: (applicability?: 'COMBO' | 'CUSTOM' | 'BOTH') => {
-    const query = applicability ? `?applicability=${applicability}` : '';
-    return apiFetch<FurnitureFee[]>(`/api/furniture/fees${query}`);
+  getFees: () => {
+    return apiFetch<FurnitureFee[]>('/api/furniture/fees');
   },
 
   // Quotation
@@ -264,6 +254,39 @@ export const furnitureAPI = {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  },
+
+  // Download PDF for a quotation
+  // Requirements: 8.2 - PDF export for furniture quotations
+  downloadQuotationPdf: async (quotationId: string): Promise<void> => {
+    const url = `${API_URL}/api/furniture/quotations/${quotationId}/pdf`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error('Không thể tải PDF');
+    }
+    
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    
+    // Get filename from Content-Disposition header or use default
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'bao-gia.pdf';
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="(.+)"/);
+      if (match) {
+        filename = match[1];
+      }
+    }
+    
+    // Create temporary link and trigger download
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
   },
 };
 

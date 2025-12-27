@@ -26,8 +26,12 @@ export function PromoPopup() {
         
         const json = await res.json();
         // Unwrap standardized response format { success: true, data: T }
+        // Response format: { success: true, data: { key: 'promo', value: { popup: {...}, announcement: {...} } } }
         const data = json.data || json;
-        const popupData = data?.value?.popup || data?.popup;
+        // Settings API returns { key, value } where value contains the actual settings
+        const settingsValue = data?.value || data;
+        const popupData = settingsValue?.popup;
+        
         if (popupData && popupData.enabled) {
           setSettings(popupData);
         }

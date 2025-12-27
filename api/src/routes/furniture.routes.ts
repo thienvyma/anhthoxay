@@ -15,9 +15,10 @@ import {
   createDeveloperSchema, updateDeveloperSchema, createProjectSchema, updateProjectSchema,
   createBuildingSchema, updateBuildingSchema, createLayoutSchema, updateLayoutSchema,
   createApartmentTypeSchema, updateApartmentTypeSchema, createCategorySchema, updateCategorySchema,
-  createProductSchema, updateProductSchema, createComboSchema, updateComboSchema,
+  createProductSchema, updateProductSchema,
   createFeeSchema, updateFeeSchema, createQuotationSchema, syncSchema,
 } from '../schemas/furniture.schema';
+// Note: Combo schemas removed as part of furniture-combo removal
 import { googleSheetsService } from '../services/google-sheets.service';
 
 function handleServiceError(c: Parameters<typeof errorResponse>[0], error: unknown) {
@@ -87,25 +88,19 @@ export function createFurniturePublicRoutes(prisma: PrismaClient) {
     catch (error) { return handleServiceError(c, error); }
   });
 
-  app.get('/combos', async (c) => {
-    try { return successResponse(c, await furnitureService.getCombos(c.req.query('apartmentType'))); }
-    catch (error) { return handleServiceError(c, error); }
-  });
-
   app.get('/fees', async (c) => {
     try {
-      const applicability = c.req.query('applicability') as 'COMBO' | 'CUSTOM' | 'BOTH' | undefined;
-      if (applicability && !['COMBO', 'CUSTOM', 'BOTH'].includes(applicability)) {
-        return errorResponse(c, 'VALIDATION_ERROR', 'applicability must be COMBO, CUSTOM, or BOTH', 400);
-      }
-      return successResponse(c, await furnitureService.getFees(applicability));
+      return successResponse(c, await furnitureService.getFees());
     } catch (error) { return handleServiceError(c, error); }
   });
   app.post('/quotations', validate(createQuotationSchema), async (c) => {
     try {
       const body = getValidatedBody<z.infer<typeof createQuotationSchema>>(c);
+      console.log('[Furniture API] POST /quotations - body:', JSON.stringify(body, null, 2));
+      
       let leadId = body.leadId;
       if (!leadId && body.leadData) {
+        console.log('[Furniture API] Creating new lead from leadData');
         const newLead = await prisma.customerLead.create({
           data: {
             name: body.leadData.name,
@@ -117,10 +112,13 @@ export function createFurniturePublicRoutes(prisma: PrismaClient) {
           },
         });
         leadId = newLead.id;
+        console.log('[Furniture API] Created new lead with id:', leadId);
       }
       if (!leadId) return errorResponse(c, 'VALIDATION_ERROR', 'Phai co leadId hoac leadData', 400);
-      const fees = await furnitureService.getFees(body.selectionType === 'COMBO' ? 'COMBO' : 'CUSTOM');
-      const bothFees = await furnitureService.getFees('BOTH');
+      
+      // Get all active fees
+      const fees = await furnitureService.getFees();
+      
       const quotation = await furnitureService.createQuotation({
         leadId,
         developerName: body.developerName,
@@ -131,13 +129,28 @@ export function createFurniturePublicRoutes(prisma: PrismaClient) {
         axis: body.axis,
         apartmentType: body.apartmentType,
         layoutImageUrl: body.layoutImageUrl,
-        selectionType: body.selectionType,
-        comboId: body.comboId,
-        comboName: body.comboName,
         items: body.items,
-        fees: [...fees, ...bothFees],
+        fees,
       });
       return successResponse(c, quotation, 201);
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  // Public PDF endpoint - allows downloading PDF for a quotation by ID
+  // Requirements: 8.2 - PDF export for furniture quotations
+  app.get('/quotations/:id/pdf', async (c) => {
+    try {
+      const quotation = await furnitureService.getQuotationById(c.req.param('id'));
+      const { generateQuotationPDF } = await import('../services/pdf.service');
+      const pdfBuffer = await generateQuotationPDF(quotation, prisma);
+      const filename = 'bao-gia-' + quotation.unitNumber.replace(/\s+/g, '-') + '-' + new Date(quotation.createdAt).toISOString().split('T')[0] + '.pdf';
+      return new Response(new Uint8Array(pdfBuffer), {
+        headers: { 
+          'Content-Type': 'application/pdf', 
+          'Content-Disposition': 'attachment; filename="' + filename + '"', 
+          'Content-Length': pdfBuffer.length.toString() 
+        },
+      });
     } catch (error) { return handleServiceError(c, error); }
   });
 
@@ -284,33 +297,9 @@ export function createFurnitureAdminRoutes(prisma: PrismaClient) {
     catch (error) { return handleServiceError(c, error); }
   });
 
-  app.get('/combos', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
-    try { return successResponse(c, await furnitureService.getCombos(c.req.query('apartmentType'))); }
-    catch (error) { return handleServiceError(c, error); }
-  });
-  app.post('/combos', authenticate(), requireRole('ADMIN', 'MANAGER'), validate(createComboSchema), async (c) => {
-    try { return successResponse(c, await furnitureService.createCombo(getValidatedBody<z.infer<typeof createComboSchema>>(c)), 201); }
-    catch (error) { return handleServiceError(c, error); }
-  });
-  app.put('/combos/:id', authenticate(), requireRole('ADMIN', 'MANAGER'), validate(updateComboSchema), async (c) => {
-    try { return successResponse(c, await furnitureService.updateCombo(c.req.param('id'), getValidatedBody<z.infer<typeof updateComboSchema>>(c))); }
-    catch (error) { return handleServiceError(c, error); }
-  });
-  app.delete('/combos/:id', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
-    try { await furnitureService.deleteCombo(c.req.param('id')); return successResponse(c, { ok: true }); }
-    catch (error) { return handleServiceError(c, error); }
-  });
-  app.post('/combos/:id/duplicate', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
-    try { return successResponse(c, await furnitureService.duplicateCombo(c.req.param('id')), 201); }
-    catch (error) { return handleServiceError(c, error); }
-  });
   app.get('/fees', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
     try {
-      const applicability = c.req.query('applicability') as 'COMBO' | 'CUSTOM' | 'BOTH' | undefined;
-      if (applicability && !['COMBO', 'CUSTOM', 'BOTH'].includes(applicability)) {
-        return errorResponse(c, 'VALIDATION_ERROR', 'applicability must be COMBO, CUSTOM, or BOTH', 400);
-      }
-      return successResponse(c, await furnitureService.getFees(applicability));
+      return successResponse(c, await furnitureService.getFees());
     } catch (error) { return handleServiceError(c, error); }
   });
   app.post('/fees', authenticate(), requireRole('ADMIN', 'MANAGER'), validate(createFeeSchema), async (c) => {
@@ -326,6 +315,7 @@ export function createFurnitureAdminRoutes(prisma: PrismaClient) {
     catch (error) { return handleServiceError(c, error); }
   });
 
+
   app.get('/quotations', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
     try {
       const leadId = c.req.query('leadId');
@@ -337,7 +327,7 @@ export function createFurnitureAdminRoutes(prisma: PrismaClient) {
     try {
       const quotation = await furnitureService.getQuotationById(c.req.param('id'));
       const { generateQuotationPDF } = await import('../services/pdf.service');
-      const pdfBuffer = await generateQuotationPDF(quotation);
+      const pdfBuffer = await generateQuotationPDF(quotation, prisma);
       const filename = 'bao-gia-' + quotation.unitNumber.replace(/\s+/g, '-') + '-' + new Date(quotation.createdAt).toISOString().split('T')[0] + '.pdf';
       return new Response(new Uint8Array(pdfBuffer), {
         headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="' + filename + '"', 'Content-Length': pdfBuffer.length.toString() },
@@ -384,6 +374,46 @@ export function createFurnitureAdminRoutes(prisma: PrismaClient) {
       const result = await googleSheetsService.syncFurniturePush(spreadsheetId, furnitureService);
       if (!result.success) return errorResponse(c, 'SYNC_ERROR', result.error || 'Dong bo that bai', 500);
       return successResponse(c, { success: true, counts: result.counts, message: 'Dong bo thanh cong' });
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  // ========== PDF SETTINGS ==========
+  
+  // Get PDF settings
+  app.get('/pdf-settings', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      let settings = await prisma.furniturePdfSettings.findUnique({ where: { id: 'default' } });
+      if (!settings) {
+        // Create default settings if not exists
+        settings = await prisma.furniturePdfSettings.create({ data: { id: 'default' } });
+      }
+      return successResponse(c, settings);
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  // Update PDF settings
+  app.put('/pdf-settings', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const body = await c.req.json();
+      // Remove id and timestamps from update data
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...updateData } = body;
+      
+      const settings = await prisma.furniturePdfSettings.upsert({
+        where: { id: 'default' },
+        update: updateData,
+        create: { id: 'default', ...updateData },
+      });
+      return successResponse(c, settings);
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  // Reset PDF settings to defaults
+  app.post('/pdf-settings/reset', authenticate(), requireRole('ADMIN'), async (c) => {
+    try {
+      await prisma.furniturePdfSettings.delete({ where: { id: 'default' } }).catch(() => { /* ignore if not exists */ });
+      const settings = await prisma.furniturePdfSettings.create({ data: { id: 'default' } });
+      return successResponse(c, settings);
     } catch (error) { return handleServiceError(c, error); }
   });
 

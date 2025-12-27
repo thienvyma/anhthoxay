@@ -27,7 +27,7 @@ function countLines(filePath: string): number {
  */
 function countLinesInDirectory(
   dirPath: string,
-  extension: string = '.tsx'
+  extension = '.tsx'
 ): { file: string; lines: number }[] {
   const absolutePath = path.resolve(__dirname, dirPath);
   if (!fs.existsSync(absolutePath)) {
@@ -42,6 +42,9 @@ function countLinesInDirectory(
       lines: countLines(path.join(dirPath, file)),
     }));
 }
+
+// Export for potential use in other tests
+export { countLines, countLinesInDirectory };
 
 describe('Property 1: File size constraints after refactoring', () => {
   /**
@@ -145,11 +148,6 @@ describe('Property 1: File size constraints after refactoring', () => {
       expect(lines).toBeLessThan(500);
     });
 
-    it('ComboTab.tsx should be under 500 lines', () => {
-      const lines = countLines('./FurniturePage/ComboTab.tsx');
-      expect(lines).toBeLessThan(500);
-    });
-
     it('should have extracted components', () => {
       const componentsDir = path.resolve(__dirname, './FurniturePage/components');
       expect(fs.existsSync(componentsDir)).toBe(true);
@@ -159,8 +157,6 @@ describe('Property 1: File size constraints after refactoring', () => {
         'ProductGrid.tsx',
         'CategoryForm.tsx',
         'ProductForm.tsx',
-        'ComboTable.tsx',
-        'ComboForm.tsx',
       ];
 
       for (const component of expectedComponents) {

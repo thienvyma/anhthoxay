@@ -6,3 +6,4 @@
 export { StepIndicator } from './StepIndicator';
 export { SelectionCard } from './SelectionCard';
 export { NavigationButtons } from './NavigationButtons';
+export { Pagination } from './Pagination';

@@ -270,7 +270,6 @@ export function UsersPage() {
       <UserTable
         users={users}
         loading={loading}
-        isMobile={isMobile}
         onEdit={openEditModal}
         onDelete={handleDelete}
         onBan={handleBan}

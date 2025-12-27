@@ -132,6 +132,80 @@ export const EnhancedHero = memo(function EnhancedHero({ data }: { data: HeroDat
         />
       )}
 
+      {/* Animated Light Effect - White/Light color for contrast */}
+      <motion.div
+        animate={{
+          background: [
+            'radial-gradient(600px circle at 20% 30%, rgba(255,255,255,0.08), transparent 50%)',
+            'radial-gradient(600px circle at 80% 60%, rgba(255,255,255,0.10), transparent 50%)',
+            'radial-gradient(600px circle at 50% 80%, rgba(255,255,255,0.06), transparent 50%)',
+            'radial-gradient(600px circle at 20% 30%, rgba(255,255,255,0.08), transparent 50%)',
+          ],
+        }}
+        transition={{
+          duration: 10,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 0,
+          borderRadius: tokens.radius.xl,
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* Secondary Light Orb - Soft white glow */}
+      <motion.div
+        animate={{
+          background: [
+            'radial-gradient(500px circle at 70% 20%, rgba(255,255,255,0.05), transparent 60%)',
+            'radial-gradient(500px circle at 30% 70%, rgba(255,255,255,0.07), transparent 60%)',
+            'radial-gradient(500px circle at 70% 20%, rgba(255,255,255,0.05), transparent 60%)',
+          ],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: 'easeInOut',
+          delay: 2,
+        }}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 0,
+          borderRadius: tokens.radius.xl,
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* Accent Light Streak - Moving highlight */}
+      <motion.div
+        animate={{
+          opacity: [0.3, 0.6, 0.3],
+          x: ['-100%', '200%'],
+        }}
+        transition={{
+          duration: 6,
+          repeat: Infinity,
+          ease: 'easeInOut',
+          repeatDelay: 3,
+        }}
+        style={{
+          position: 'absolute',
+          top: '20%',
+          left: 0,
+          width: '30%',
+          height: '60%',
+          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent)',
+          zIndex: 0,
+          borderRadius: tokens.radius.xl,
+          pointerEvents: 'none',
+          filter: 'blur(40px)',
+        }}
+      />
+
       {/* Gradient Overlay */}
       <div
         style={{

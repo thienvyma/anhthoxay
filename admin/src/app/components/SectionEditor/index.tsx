@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokens } from '@app/shared';
 import { Button } from '../Button';
@@ -17,14 +17,33 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
   const [imagePickerField, setImagePickerField] = useState<string | null>(null);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [syncAll, setSyncAll] = useState(true); // Default: sync all sections of same kind
+  const initialDataRef = useRef<string>('');
 
   useEffect(() => {
     if (section?.data) {
       setFormData(section.data as Record<string, unknown>);
+      initialDataRef.current = JSON.stringify(section.data);
     } else {
-      setFormData(getDefaultData(kind));
+      const defaultData = getDefaultData(kind);
+      setFormData(defaultData);
+      initialDataRef.current = JSON.stringify(defaultData);
     }
   }, [section?.id, kind]);
+
+  // Check if form has been modified
+  const hasChanges = () => {
+    return JSON.stringify(formData) !== initialDataRef.current;
+  };
+
+  // Handle backdrop click - only close if no changes
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      if (!hasChanges()) {
+        onCancel();
+      }
+      // If has changes, do nothing (don't close)
+    }
+  };
 
   async function handleSubmit() {
     setSaving(true);
@@ -108,9 +127,7 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) onCancel();
-        }}
+        onClick={handleBackdropClick}
         style={{
           position: 'fixed',
           inset: 0,

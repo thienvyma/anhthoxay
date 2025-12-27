@@ -130,12 +130,12 @@ export function FurnitureQuotationHistory({ quotations, loading }: FurnitureQuot
                 <span style={{
                   padding: '2px 8px',
                   borderRadius: 4,
-                  background: quotation.selectionType === 'COMBO' ? 'rgba(16,185,129,0.2)' : 'rgba(59,130,246,0.2)',
-                  color: quotation.selectionType === 'COMBO' ? '#10b981' : '#3b82f6',
+                  background: 'rgba(59,130,246,0.2)',
+                  color: '#3b82f6',
                   fontSize: 11,
                   fontWeight: 500,
                 }}>
-                  {quotation.selectionType === 'COMBO' ? 'Combo' : 'Tùy chọn'}
+                  Tùy chọn ({items.length})
                 </span>
                 
                 {/* Total Price */}
@@ -178,14 +178,6 @@ export function FurnitureQuotationHistory({ quotations, loading }: FurnitureQuot
                       {quotation.developerName} • {quotation.projectName} • {quotation.buildingName}
                     </div>
                   </div>
-                  
-                  {/* Combo Name if applicable */}
-                  {quotation.comboName && (
-                    <div style={{ marginTop: 12, fontSize: 13 }}>
-                      <span style={{ color: tokens.color.muted }}>Combo: </span>
-                      <span style={{ color: tokens.color.text }}>{quotation.comboName}</span>
-                    </div>
-                  )}
                   
                   {/* Items */}
                   {items.length > 0 && (

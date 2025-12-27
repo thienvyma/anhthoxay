@@ -4,7 +4,521 @@ Danh sách các file được tạo mới hoặc chỉnh sửa theo ngày, để
 
 ---
 
+## 2025-12-28
+
+### Task: Thêm cột "Trạng thái báo giá" cho leads nội thất
+**✏️ Modified:**
+- `admin/src/app/pages/LeadsPage/index.tsx` - Truyền `leadsWithFurnitureQuotes` vào `getLeadTableColumns()`
+- `admin/src/app/pages/LeadsPage/components/LeadTableColumns.tsx` - Thêm cột "Trạng thái báo giá" hiển thị rõ "Đã hoàn thành" / "Chưa hoàn thành" cho leads nội thất
+
+### Task: Fix bugs và thêm tính năng xóa lead + filter nguồn nội thất
+**✏️ Modified:**
+- `landing/src/app/components/PromoPopup.tsx` - Sửa logic unwrap settings response để popup quảng cáo hiển thị đúng
+- `admin/src/app/pages/SettingsPage/PromoTab.tsx` - Chuyển "Thông Báo (Trang User)" xuống dưới "Popup Quảng Cáo (Landing)"
+- `admin/src/app/pages/LeadsPage/index.tsx` - Thêm bulk delete, filter theo nguồn (FURNITURE_QUOTE, QUOTE_FORM, CONTACT_FORM), tracking leads có báo giá nội thất
+- `admin/src/app/pages/LeadsPage/components/LeadDetailModal.tsx` - Thêm UI xóa lead với confirm dialog
+- `admin/src/app/pages/LeadsPage/components/LeadMobileCard.tsx` - Thêm checkbox selection, hiển thị source badge với màu, badge "Đã báo giá/Chưa báo giá" cho nội thất
+- `admin/src/app/pages/LeadsPage/components/LeadTableColumns.tsx` - Thêm badge nội thất, source với icon và màu sắc
+- `admin/src/app/pages/LeadsPage/types.ts` - Thêm sourceColors, sourceLabels cho FURNITURE_QUOTE, QUOTE_FORM, CONTACT_FORM
+- `admin/src/components/responsive/ResponsiveTable.tsx` - Thêm props selectable, selectedIds, onToggleSelect, onToggleSelectAll
+
+### Task: Fix SettingsPage bị trống khi navigate trực tiếp
+**✏️ Modified:**
+- `admin/src/app/pages/SettingsPage/index.tsx`:
+  - Thêm `isReady` state để hiển thị loading khi fetch settings
+  - Thêm `mountedRef` để tránh memory leak khi component unmount
+  - Quay lại cách render tabs cũ (không lazy rendering) để giữ state của các tab
+
+- `admin/src/components/responsive/ResponsiveTabs.tsx`:
+  - Thêm fallback cho `activeTabData` nếu không tìm thấy tab
+  - Thêm early return nếu không có tabs hoặc activeTabData
+
+- `admin/src/hooks/useResponsive.ts`:
+  - Sửa `handleResize` để chỉ update state khi dimensions thực sự thay đổi
+  - Loại bỏ việc gọi `handleResize()` ngay lập tức trong useEffect
+
+- `admin/src/app/app.tsx`:
+  - Đổi `AnimatePresence mode="wait"` thành `mode="popLayout" initial={false}`
+  - Giảm animation duration từ 0.2s xuống 0.15s
+  - Loại bỏ animation y offset để tránh layout shift
+
+---
+
+### Task: Thêm pagination cho FurnitureQuote section
+**🆕 Created:**
+- `landing/src/app/sections/FurnitureQuote/components/Pagination.tsx`:
+  - Component pagination với hiệu ứng chuyển trang
+  - Hiển thị số trang, nút prev/next, ellipsis cho nhiều trang
+  - Hiển thị thông tin items (1-6 / 20)
+
+**✏️ Modified:**
+- `landing/src/app/sections/FurnitureQuote/components/index.ts`:
+  - Export Pagination component
+
+- `landing/src/app/sections/FurnitureQuote/index.tsx`:
+  - Thêm ITEMS_PER_PAGE constant (6 items/page)
+  - Thêm pageStates để quản lý trang cho từng step
+  - Thêm selectedCategory state cho filter sản phẩm
+  - Step 1 (Chủ đầu tư): Pagination + hiệu ứng chuyển trang
+  - Step 2 (Dự án): Pagination + hiệu ứng chuyển trang
+  - Step 3 (Tòa nhà): Pagination + hiệu ứng chuyển trang
+  - Step 5 (Layout): Pagination + hiệu ứng chuyển trang
+  - Step 7 (Nội thất): Pagination + filter theo category + hiệu ứng chuyển trang
+  - Category filter có nút "Tất cả" và highlight category đang chọn
+
+---
+
+### Task: Fix block trích dẫn và màu nền các bố cục RichTextSection
+**✏️ Modified:**
+- `landing/src/app/sections/RichTextSection.tsx`:
+  - Quote block: Giảm padding (24px→12px vertical, 32px→24px horizontal) để glass background ôm sát text hơn
+  - Quote block: Giảm font-size (18px→16px), line-height (1.8→1.7), margin (32px→24px)
+  - Layout centered: Thêm background card giống layout default (gradient + border + shadow)
+  - Layout split-left/split-right: Đổi background content từ 0.95/0.98 opacity về 0.6/0.4 giống default
+  - Layout full-width: Bỏ background gradient khi không có backgroundImage (để trong suốt)
+
+- `admin/src/app/components/VisualBlockEditor.tsx`:
+  - Quote preview: Giảm padding (14px→10px vertical, 18px→16px horizontal) đồng bộ với landing
+  - Quote preview: Giảm margin (16px→16px), line-height (1.7→1.6), footer margin (10px→8px)
+
+---
+
+### Task: Thêm color picker cho paragraph và quote blocks + Sửa click outside modal
+**✏️ Modified:**
+- `admin/src/app/components/VisualBlockEditor.tsx`:
+  - Paragraph block: Thêm color picker cho màu nền (backgroundColor) và màu chữ (textColor)
+  - Quote block: Thêm color picker cho màu chữ (textColor) bên cạnh màu glass đã có
+  - Fix TypeScript errors với proper type casting
+
+- `admin/src/app/components/SectionEditor/index.tsx`:
+  - Thêm logic kiểm tra form có thay đổi không (hasChanges)
+  - Click outside modal chỉ đóng khi form chưa có thay đổi
+  - Nếu đang có nội dung/thay đổi, click outside sẽ không đóng modal
+
+- `landing/src/app/sections/RichTextSection.tsx`:
+  - Paragraph block: Hỗ trợ hiển thị backgroundColor và textColor
+  - Quote block: Hỗ trợ hiển thị textColor tùy chỉnh
+
+---
+
+### Task: Tối ưu trang trí cho block danh sách, trích dẫn, đường kẻ
+**✏️ Modified:**
+- `landing/src/app/sections/RichTextSection.tsx`:
+  - List block: Container với corner accents, numbered items có gradient circle badges, bullet items có glowing dots
+  - Quote block: Large decorative quote mark background, gradient left bar, styled author footer
+  - Divider block: 3 styles - solid (gradient lines + center ornament), dashed (animated segments), dotted (glowing dots)
+
+- `admin/src/app/components/SectionEditor/previews/RichTextPreview.tsx`:
+  - Cập nhật renderBlockLight() và renderBlock() cho list, quote, divider với styling tương tự landing
+  - List: Corner accents, gradient number badges, glowing bullet dots
+  - Quote: Large quote icon background, gradient left bar, decorative circle
+  - Divider: 3 styles với gradient ornaments
+
+- `admin/src/app/components/VisualBlockEditor.tsx`:
+  - Cập nhật BlockPreviewItem cho list, quote, divider với enhanced styling
+  - Matching với landing page decorations
+
+---
+
+### Task: Nâng cấp EnhancedHero với hiệu ứng ánh sáng + RichTextSection với nhiều layout
+**✏️ Modified:**
+- `landing/src/app/sections/EnhancedHero.tsx`:
+  - Thêm hiệu ứng ánh sáng chuyển động (animated light orbs)
+  - Sử dụng màu trắng/sáng để tương phản tốt với background tối
+  - Thêm accent light streak di chuyển ngang
+
+- `landing/src/app/sections/RichTextSection.tsx`:
+  - Thêm 5 layout options: default (card), centered, split-left, split-right, full-width
+  - Thêm tùy chọn căn chỉnh văn bản (left/center/right)
+  - Thêm tùy chọn ảnh nền cho split và full-width layouts
+  - Thêm tùy chọn khoảng cách dọc (small/medium/large)
+  - Thêm tùy chọn hiển thị trang trí (decorations)
+  - Thêm animations với Framer Motion
+  - Fix: Ảnh trong blocks giờ dùng resolveMediaUrl để hiển thị đúng
+  - Fix: Tăng maxWidth mặc định (wide=1100px) để đồng đều với các section khác
+  - Thêm: Block-level alignment (căn chỉnh riêng từng block)
+
+- `admin/src/app/components/VisualBlockEditor.tsx`:
+  - Thêm AlignmentSelector component cho từng block
+  - Heading và Paragraph blocks giờ có thể căn chỉnh riêng lẻ
+
+- `admin/src/app/components/SectionEditor/forms/RichTextForm.tsx`:
+  - Thêm UI chọn layout với visual buttons
+  - Thêm ImageSection cho ảnh nền
+  - Thêm RangeInput cho overlay
+  - Thêm SelectInput cho căn chỉnh văn bản, khoảng cách dọc
+  - Thêm checkbox cho hiển thị trang trí
+  - Cập nhật MAX_WIDTHS với giá trị mới
+
+- `admin/src/app/components/SectionEditor/previews/RichTextPreview.tsx`:
+  - Cập nhật preview hiển thị đúng theo layout đã chọn
+  - Thêm layout badges để dễ nhận biết
+  - Thêm renderBlockLight cho dark backgrounds
+
+---
+
+### Task: Tối ưu UI trang Quản lý tài khoản (UsersPage)
+**✏️ Modified:**
+- `admin/src/app/pages/UsersPage/components/UserTable.tsx`:
+  - Tối ưu layout nút actions: xếp ngang thay vì dọc
+  - Bỏ border và background cho nút, chỉ hiện hover effect
+  - Giảm kích thước nút để gọn gàng hơn trên PC
+  - Đổi icon "Ban" từ `ri-forbid-line` sang `ri-logout-circle-line` (rõ nghĩa hơn)
+  - Bỏ prop `isMobile` không cần thiết
+
+- `admin/src/app/pages/UsersPage/types.ts`:
+  - Xóa `isMobile` khỏi `UserTableProps`
+
+- `admin/src/app/pages/UsersPage/index.tsx`:
+  - Cập nhật gọi `UserTable` không truyền `isMobile`
+
+---
+
+### Task: Hoàn thành xóa Combo - PDF Service và Migration (remove-furniture-combo Task 12-14)
+**✏️ Modified:**
+- `api/src/services/pdf.service.ts`:
+  - Xóa `selectionTypeTitle` khỏi DEFAULT_SETTINGS
+  - Xóa logic kiểm tra `selectionType === 'COMBO'`
+  - Xóa hiển thị `comboName` trong PDF
+  - Đơn giản hóa section "SELECTION TYPE" - chỉ hiển thị "Tùy chọn sản phẩm"
+
+- `api/src/services/furniture.service.ts`:
+  - Xóa `selectionType: 'CUSTOM'` trong createQuotation (field đã bị xóa khỏi schema)
+
+**Database Migration:**
+- Xóa tables: `FurnitureCombo`, `FurnitureComboItem`
+- Xóa columns: `selectionType` từ `FurnitureQuotation`, `selectionTypeTitle` từ `FurniturePdfSettings`
+
+---
+
+### Task: Cập nhật Tests và Cleanup (remove-furniture-combo Task 11)
+**✏️ Modified:**
+- `admin/src/app/api.ts`:
+  - Xóa export `furnitureCombosApi` (không còn tồn tại)
+  - Xóa type exports `FurnitureCombo`, `FurnitureComboItem`
+
+- `api/src/services/furniture.service.property.test.ts`:
+  - Xóa mock `furnitureCombo` và `furnitureComboItem` trong createMockPrisma()
+  - Xóa generators: `feeApplicabilityGen`, `selectionTypeGen`, `comboNameGen`
+  - Xóa toàn bộ describe block "Property 6: Combo Duplication"
+  - Cập nhật "Property 7: Fee Calculation Correctness" - bỏ selectionType parameter
+  - Cập nhật "Property 11: Quotation Data Completeness" - bỏ combo fields
+  - Cập nhật feeGen - bỏ applicability field
+
+- `admin/src/app/pages/file-size.property.test.ts`:
+  - Xóa test "ComboTab.tsx should be under 500 lines"
+  - Xóa 'ComboTable.tsx', 'ComboForm.tsx' từ expectedComponents list
+
+---
+
+### Task: Xóa Combo API Routes và Service (remove-furniture-combo)
+**✏️ Modified:**
+- `api/src/routes/furniture.routes.ts`:
+  - Xóa public route GET `/combos`
+  - Xóa admin routes: GET/POST/PUT/DELETE `/combos`, POST `/combos/:id/duplicate`
+  - Xóa import `createComboSchema`, `updateComboSchema`
+  - Cập nhật fees routes - bỏ applicability filter
+  - Cập nhật quotations POST route - bỏ combo logic
+
+- `api/src/services/furniture.service.ts`:
+  - Xóa import `FurnitureCombo` từ Prisma
+  - Xóa interface `FurnitureComboWithItems`
+  - Xóa input types: `CreateComboItemInput`, `CreateComboInput`, `UpdateComboInput`
+  - Cập nhật `CreateFeeInput`, `UpdateFeeInput` - bỏ COMBO applicability
+  - Cập nhật `CreateQuotationInput` - bỏ `selectionType`, `comboId`, `comboName`
+  - Xóa methods: `getCombos`, `createCombo`, `updateCombo`, `deleteCombo`, `duplicateCombo`
+  - Cập nhật `getFees` - bỏ applicability filter
+  - Cập nhật `calculateQuotation` - bỏ selectionType parameter
+  - Cập nhật `createQuotation` - hardcode selectionType='CUSTOM'
+
+- `api/src/schemas/furniture.schema.ts`:
+  - Xóa schemas: `comboItemSchema`, `createComboSchema`, `updateComboSchema`
+  - Cập nhật `feeApplicabilityEnum` - bỏ 'COMBO', chỉ giữ 'CUSTOM' và 'BOTH'
+  - Xóa `selectionTypeEnum`
+  - Cập nhật `createQuotationSchema` - bỏ `selectionType`, `comboId`, `comboName`
+  - Xóa `queryCombosSchema`
+  - Cập nhật type exports - bỏ combo types
+
+- `api/src/schemas/index.ts`:
+  - Xóa exports: `comboItemSchema`, `createComboSchema`, `updateComboSchema`, `selectionTypeEnum`, `queryCombosSchema`
+  - Xóa type exports: `ComboItemInput`, `CreateComboInput`, `UpdateComboInput`, `QueryCombosInput`
+
+---
+
+### Task: Cải thiện giao diện báo giá Step 8 giống PDF
+**✏️ Modified:**
+- `landing/src/app/sections/FurnitureQuote/index.tsx`:
+  - Cập nhật Step 8 với giao diện chuyên nghiệp hơn giống PDF:
+    - Header: Company name với font serif, document title "BÁO GIÁ NỘI THẤT"
+    - Ngày và mã báo giá với màu primary highlight
+    - Section titles với uppercase, letter-spacing, icon
+    - Thông tin căn hộ: 2 cột với label/value justify-between
+    - Bảng sản phẩm: Header row với columns (Sản phẩm, SL, Đơn giá, Thành tiền)
+    - Chi tiết giá: Hiển thị đơn vị "đ" sau số tiền
+    - Tổng cộng: Font size lớn hơn, border-top primary
+    - Footer note: Italic style
+    - Nút Tải PDF: Gradient background (primary → accent)
+
+---
+
+### Task: Hiển thị báo giá nội thất trong Step 8 thay vì redirect
+**✏️ Modified:**
+- `landing/src/app/sections/FurnitureQuote/index.tsx`:
+  - Thay đổi `totalSteps` từ 7 thành 8
+  - Cập nhật `stepLabels` thêm 'Báo giá' là step 8
+  - Thêm state `quotationId` để lưu ID báo giá
+  - Cập nhật `handleCalculateQuotation` để set state và chuyển sang step 8 thay vì navigate
+  - Thêm Step 8 render block với giao diện báo giá:
+    - Header với success icon và thông báo
+    - Card báo giá với thông tin căn hộ (chủ đầu tư, dự án, tòa nhà, số căn hộ, loại)
+    - Loại nội thất (Combo/Tùy chỉnh)
+    - Danh sách sản phẩm (cho Custom selection)
+    - Chi tiết giá (giá cơ bản, các loại phí, tổng cộng)
+    - Nút tải PDF và nút báo giá mới
+  - Xóa import `useNavigate` không còn sử dụng
+
+**🐛 Bug Fixed:**
+- Trước: Sau khi tính báo giá, redirect sang trang `/bao-gia/ket-qua/:id` riêng biệt
+- Sau: Hiển thị kết quả báo giá ngay trong Step 8, gói gọn trong khung báo giá nội thất hiện có
+
+---
+
 ## 2025-12-27
+
+### Task: Cải thiện PDF Settings với Live Preview và fix font
+**🆕 Created:**
+- `api/fonts/` - Thư mục chứa fonts cho PDF (cần download NotoSans-Regular.ttf và NotoSans-Bold.ttf)
+
+**✏️ Modified:**
+- `admin/src/app/pages/FurniturePage/components/PdfPreview.tsx`:
+  - Thêm Live Preview với zoom controls (scale 50%-150%)
+  - Cải thiện UI với header, zoom buttons, reset button
+  - Sử dụng tokens từ @app/shared cho styling
+  - Thêm animation với framer-motion
+- `admin/src/app/pages/FurniturePage/PdfSettingsTab.tsx`:
+  - Thêm toggle button để ẩn/hiện Preview
+  - Cải thiện layout responsive (flex thay vì grid)
+  - Thêm description cho header
+  - Animation khi toggle preview
+- `api/src/services/pdf.service.ts`:
+  - Thêm font helper functions (getFontsPath, removeVietnameseDiacritics)
+  - Xử lý fallback khi không có font tiếng Việt (chuyển dấu thành không dấu)
+  - Sử dụng font bold cho tiêu đề
+  - Thêm processText helper để xử lý text theo font availability
+  - Thêm hướng dẫn download fonts trong comment
+- `admin/src/app/api/furniture.ts`:
+  - Fix lỗi body JSON bị stringify 2 lần trong furniturePdfSettingsApi.update
+
+---
+
+### Task: Thêm PDF Settings Tab cho FurniturePage
+**🆕 Created:**
+- `admin/src/app/pages/FurniturePage/PdfSettingsTab.tsx`:
+  - Tab mới để cài đặt chi tiết PDF báo giá nội thất
+  - Cài đặt thông tin công ty (tên, slogan, logo, tiêu đề)
+  - Cài đặt màu sắc (primary, text, muted, border)
+  - Cài đặt thông tin liên hệ (phone, email, address, website)
+  - Cài đặt footer (ghi chú, copyright, ghi chú bổ sung)
+  - Cài đặt hiển thị (layout image, items table, fee details, contact info)
+  - Thời hạn hiệu lực báo giá (ngày)
+
+**✏️ Modified:**
+- `infra/prisma/schema.prisma`:
+  - Thêm model `FurniturePdfSettings` (singleton) với các fields cài đặt PDF
+- `api/src/routes/furniture.routes.ts`:
+  - Thêm routes: GET/PUT `/pdf-settings`, POST `/pdf-settings/reset`
+- `api/src/services/pdf.service.ts`:
+  - Cập nhật `generateQuotationPDF` để sử dụng settings từ database
+  - Thêm contact info section, additional notes, validity period
+- `admin/src/app/api/furniture.ts`:
+  - Thêm `FurniturePdfSettings` type và `furniturePdfSettingsApi`
+- `admin/src/app/pages/FurniturePage/types.ts`:
+  - Thêm types: `FurniturePdfSettings`, `UpdatePdfSettingsInput`, `PdfSettingsTabProps`
+  - Cập nhật `TabType` thêm 'pdf'
+- `admin/src/app/pages/FurniturePage/index.tsx`:
+  - Import và thêm tab PDF vào tabs array
+  - Fetch PDF settings cùng với data khác
+
+---
+
+### Task: Complete admin-code-refactor spec - Final verification
+**✏️ Modified:**
+- `admin/src/app/pages/file-size.property.test.ts`:
+  - Fix lint error: Remove inferrable type annotation
+  - Export `countLinesInDirectory` function
+- `admin/src/app/code-quality.property.test.ts`:
+  - Fix lint warning: Remove unused `execSync` import
+
+**✅ Verification:**
+- All property tests pass (36 tests)
+- Lint: 0 errors, 0 warnings
+- Typecheck: All projects pass
+- All tasks in admin-code-refactor spec marked complete
+
+---
+
+### Task: Fix phí báo giá nội thất và thêm PDF export cho landing
+**✏️ Modified:**
+- `landing/src/app/sections/FurnitureQuote/QuotationResult.tsx`:
+  - Fix: Fetch cả fees theo selectionType VÀ fees có applicability='BOTH'
+  - Thêm state `quotationId` để lưu ID sau khi tạo báo giá
+  - Cập nhật SuccessView: giao diện giống PDF với đầy đủ thông tin:
+    - Header: Logo ANH THỢ XÂY, tiêu đề BÁO GIÁ NỘI THẤT, ngày và mã báo giá
+    - Thông tin căn hộ: Chủ đầu tư, Dự án, Tòa nhà, Số căn hộ, Loại căn hộ
+    - Loại lựa chọn: Combo trọn gói / Tùy chọn sản phẩm
+    - Bảng sản phẩm: Tên, SL, Đơn giá, Thành tiền
+    - Chi tiết giá: Giá cơ bản, các loại phí, Tổng cộng
+    - Footer: Ghi chú và copyright
+  - Thêm nút "Tải PDF" với loading state
+- `landing/src/app/sections/FurnitureQuote/index.tsx`:
+  - Fix: Fetch cả fees theo selectionType VÀ fees có applicability='BOTH'
+- `landing/src/app/api/furniture.ts`:
+  - Thêm method `downloadQuotationPdf(quotationId)` để tải PDF từ public endpoint
+- `api/src/routes/furniture.routes.ts`:
+  - Thêm public endpoint `GET /api/furniture/quotations/:id/pdf` để tải PDF báo giá
+
+**🐛 Bug Fixed:**
+1. Phí không được áp dụng đúng: Trước đây chỉ fetch fees theo selectionType (COMBO/CUSTOM), bỏ qua fees có applicability='BOTH'. Giờ fetch cả 2 và merge.
+2. PDF không có trong landing: Thêm public endpoint và nút tải PDF trong SuccessView sau khi tạo báo giá thành công.
+3. Giao diện báo giá web giống PDF: Cập nhật SuccessView với layout tương tự PDF.
+
+---
+
+### Task: Debug chi tiết lỗi tạo báo giá nội thất
+**✏️ Modified:**
+- `landing/src/app/sections/FurnitureQuote/LeadForm.tsx`:
+  - Thêm console.log debug để trace API calls
+  - Log payload, response status, response data, extracted leadId
+- `landing/src/app/sections/FurnitureQuote/index.tsx`:
+  - Thêm console.log debug cho quotation payload
+- `api/src/routes/furniture.routes.ts`:
+  - Thêm console.log debug cho POST /quotations
+
+**🔍 Debug Flow:**
+1. LeadForm gọi POST /leads → log payload và response
+2. LeadForm extract leadId từ response.data.id
+3. handleCalculateQuotation gọi POST /api/furniture/quotations với leadId
+4. API route log body và xử lý
+
+**📝 Để test:**
+1. Chạy `pnpm dev:api` (port 4202)
+2. Chạy `pnpm dev:landing` (port 4200)
+3. Mở browser console để xem logs
+4. Thực hiện flow báo giá nội thất
+
+---
+
+### Task: Fix ROOT CAUSE lỗi tạo báo giá nội thất - layoutImageUrl validation
+**✏️ Modified:**
+- `api/src/schemas/furniture.schema.ts`:
+  - `layoutImageUrl`: bỏ `.url()` validation vì database lưu relative path (`/uploads/...`)
+  - Schema giờ chấp nhận cả relative path và full URL
+- `landing/src/app/sections/FurnitureQuote/index.tsx`:
+  - Dùng `resolveMediaUrl()` để convert relative path thành full URL trước khi gửi API
+  - Đảm bảo tính nhất quán khi lưu vào database
+
+**🔧 Root Cause:**
+- `layoutImageUrl` từ database là relative path: `/uploads/apartment-types/1pn1pk-layout.jpg`
+- Schema có `.url()` validation yêu cầu full URL (http/https)
+- Kết quả: validation fail với message "URL ảnh không hợp lệ"
+
+---
+
+### Task: Fix ROOT CAUSE lỗi tạo báo giá nội thất - Deep Debug
+**✏️ Modified:**
+- `landing/src/app/sections/FurnitureQuote/index.tsx`:
+  - Fix `layoutImageUrl`: chỉ gửi nếu là string hợp lệ (không gửi empty string)
+  - Fix `email`: gửi `undefined` thay vì empty string
+  - Thêm debug log để trace payload
+  - Tách riêng logic set `comboId` và `comboName`
+- `landing/src/app/api/furniture.ts`:
+  - Cải thiện error handling: parse validation errors chi tiết từ `details.fieldErrors`
+  - Hiển thị lỗi cụ thể thay vì chỉ "Validation failed"
+- `api/src/routes/furniture.routes.ts`:
+  - Thêm debug logs để trace request body và lead creation
+- `api/src/schemas/furniture.schema.ts`:
+  - `quotationItemSchema.productId`: bỏ `.cuid()`, chỉ cần `.min(1)`
+  - `createQuotationSchema`: COMBO cần `comboId` khi items rỗng
+
+**🔧 Potential Issues Found:**
+1. `layoutImageUrl` có thể là empty string `""` → fail URL validation
+2. `email` có thể là empty string `""` → fail email validation
+3. Validation errors không hiển thị chi tiết cho user
+
+---
+
+### Task: Fix ROOT CAUSE lỗi tạo báo giá nội thất - COMBO selection
+**✏️ Modified:**
+- `landing/src/app/sections/FurnitureQuote/index.tsx` - Đơn giản hóa `handleCalculateQuotation`:
+  - COMBO selection: gửi items rỗng, để API tự fetch combo items từ DB
+  - Loại bỏ logic phức tạp tạo placeholder items
+  - API sẽ luôn lấy combo items mới nhất từ database
+- `api/src/schemas/furniture.schema.ts` - Cập nhật validation:
+  - `quotationItemSchema.productId`: bỏ `.cuid()` validation, chỉ cần `.min(1)`
+  - `createQuotationSchema`: cập nhật refine để COMBO cần `comboId` khi items rỗng
+- Không cần sửa `api/src/routes/furniture.routes.ts` - logic đã đúng
+
+**🔧 Root Cause:**
+- Schema validation quá strict: yêu cầu `productId` phải là CUID
+- Landing tạo placeholder item với `combo.id` làm `productId` (không phải product ID thực)
+- Validation fail trước khi route handler có cơ hội xử lý
+
+---
+
+### Task: Fix lỗi tạo báo giá nội thất - Invalid request data (v2)
+**✏️ Modified:**
+- `landing/src/app/sections/FurnitureQuote/index.tsx` - Fix `handleCalculateQuotation`:
+  - Thêm validation kiểm tra `leadData` trước khi gọi API
+  - Nếu thiếu `leadId` và `leadData` rỗng, redirect về step 6
+  - Xử lý COMBO selection: sử dụng `combo.items` nếu có, fallback nếu không
+  - Thêm `setCurrentStep` vào dependencies của useCallback
+- `api/src/schemas/furniture.schema.ts` - Cập nhật `createQuotationSchema`:
+  - Cho phép `items` array rỗng với `.default([])`
+  - Thêm refine validation: CUSTOM phải có ít nhất 1 item
+- `api/src/routes/furniture.routes.ts` - Cập nhật POST `/quotations`:
+  - Xử lý COMBO selection khi `items` rỗng: fetch combo items từ DB
+  - Fallback tạo placeholder item nếu combo không có items
+
+---
+
+### Task: Fix lỗi tạo báo giá nội thất - Invalid request data
+**✏️ Modified:**
+- `landing/src/app/sections/FurnitureQuote/index.tsx` - Fix `handleCalculateQuotation`:
+  - Sử dụng `leadId` từ LeadForm nếu có (lead đã được tạo trước đó)
+  - Chỉ truyền `leadData` nếu chưa có `leadId`
+  - Fix lỗi 400 Bad Request khi tạo quotation
+
+---
+
+### Task: Bổ sung seed đầy đủ cho Furniture System + Cập nhật hình nền Landing
+**✏️ Modified:**
+- `infra/prisma/seed.ts` - Bổ sung seed đầy đủ:
+  - Thêm 9 FurnitureApartmentType records (cho building A và SAP)
+  - Thêm 6 FurnitureFee records (phí thi công, vận chuyển, thiết kế, VAT, bảo hành, tư vấn)
+  - Cập nhật HERO section imageUrl với hình nền có sẵn (`/.media/backgrounds/b67afd77-2c47-43fb-8730-7524acdc1556.webp`)
+  - Fix `let adminUser` → `const adminUser`
+  - Cập nhật summary để include apartment types và fees
+
+**🔧 Fixed:**
+- FurnitureFee model TỒN TẠI trong schema (comment cũ sai)
+- Seed chạy thành công với đầy đủ data cho admin báo giá
+- API chạy được trên port 4202
+
+---
+
+### Task: Fix seed.ts để phù hợp với Prisma schema
+**✏️ Modified:**
+- `infra/prisma/seed.ts` - Fix các fields không tồn tại trong schema:
+  - FurnitureCategory: loại bỏ `slug` field
+  - FurnitureProduct: loại bỏ `code`, `basePrice`, `material`, `color`, `brand`, `warrantyMonths`, đổi `basePrice` thành `price`
+  - FurnitureCombo: loại bỏ `code`, `totalPrice`, `discountAmount`, đổi thành `price`
+  - Loại bỏ FurnitureFee seeding (model không tồn tại)
+
+**🔧 Fixed:**
+- Seed chạy thành công
+- API chạy được sau khi seed
+
+---
 
 ### Task: Property Tests for admin-code-refactor spec (Optional Tasks)
 **🆕 Created:**

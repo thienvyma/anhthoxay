@@ -67,17 +67,6 @@ const createMockPrisma = () => ({
     delete: vi.fn(),
     count: vi.fn(),
   },
-  furnitureCombo: {
-    findMany: vi.fn(),
-    findUnique: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-  },
-  furnitureComboItem: {
-    deleteMany: vi.fn(),
-    createMany: vi.fn(),
-  },
   furnitureFee: {
     findMany: vi.fn(),
     create: vi.fn(),
@@ -122,12 +111,6 @@ const quantityGen = fc.integer({ min: 1, max: 100 });
 // Fee type generator
 const feeTypeGen = fc.constantFrom('FIXED', 'PERCENTAGE') as fc.Arbitrary<'FIXED' | 'PERCENTAGE'>;
 
-// Fee applicability generator
-const feeApplicabilityGen = fc.constantFrom('COMBO', 'CUSTOM', 'BOTH') as fc.Arbitrary<'COMBO' | 'CUSTOM' | 'BOTH'>;
-
-// Selection type generator
-const selectionTypeGen = fc.constantFrom('COMBO', 'CUSTOM') as fc.Arbitrary<'COMBO' | 'CUSTOM'>;
-
 // Quotation item generator
 const quotationItemGen: fc.Arbitrary<QuotationItem> = fc.record({
   productId: fc.uuid(),
@@ -136,13 +119,12 @@ const quotationItemGen: fc.Arbitrary<QuotationItem> = fc.record({
   quantity: quantityGen,
 });
 
-// Fee generator
+// Fee generator (without applicability - combo removed)
 const feeGen: fc.Arbitrary<FurnitureFee> = fc.record({
   id: fc.uuid(),
   name: fc.string({ minLength: 1, maxLength: 50 }),
   type: feeTypeGen,
   value: fc.float({ min: Math.fround(0.01), max: Math.fround(100), noNaN: true }),
-  applicability: feeApplicabilityGen,
   description: fc.option(fc.string({ maxLength: 200 }), { nil: null }),
   isActive: fc.constant(true),
   order: fc.integer({ min: 0, max: 100 }),
@@ -152,9 +134,6 @@ const feeGen: fc.Arbitrary<FurnitureFee> = fc.record({
 
 // Apartment type generator (normalized)
 const apartmentTypeGen = fc.constantFrom('1pn', '2pn', '3pn', '1pn+', 'penhouse', 'shophouse');
-
-// Combo name generator
-const comboNameGen = fc.string({ minLength: 1, maxLength: 100 }).filter(s => s.trim().length > 0);
 
 
 // ============================================
@@ -371,22 +350,21 @@ describe('Property 8: Unit Number Format', () => {
 // ============================================
 // PROPERTY 7: Fee Calculation Correctness
 // **Feature: furniture-quotation, Property 7: Fee Calculation Correctness**
-// totalPrice = basePrice + sum(applicable fees)
+// totalPrice = basePrice + sum(fees)
 // **Validates: Requirements 4.5, 7.6**
 // ============================================
 
 describe('Property 7: Fee Calculation Correctness', () => {
-  it('should calculate totalPrice as basePrice plus sum of applicable fees', () => {
+  it('should calculate totalPrice as basePrice plus sum of fees', () => {
     fc.assert(
       fc.property(
         fc.array(quotationItemGen, { minLength: 1, maxLength: 10 }),
         fc.array(feeGen, { minLength: 0, maxLength: 5 }),
-        selectionTypeGen,
-        (items, fees, selectionType) => {
+        (items, fees) => {
           const mockPrisma = createMockPrisma();
           const service = new FurnitureService(mockPrisma as never);
 
-          const result = service.calculateQuotation(items, fees, selectionType);
+          const result = service.calculateQuotation(items, fees);
 
           // Calculate expected base price
           const expectedBasePrice = items.reduce(
@@ -394,11 +372,8 @@ describe('Property 7: Fee Calculation Correctness', () => {
             0
           );
 
-          // Calculate expected fees
-          const applicableFees = fees.filter(
-            (fee) => fee.applicability === 'BOTH' || fee.applicability === selectionType
-          );
-          const expectedFeeTotal = applicableFees.reduce((sum, fee) => {
+          // Calculate expected fees (all fees apply now - no applicability filter)
+          const expectedFeeTotal = fees.reduce((sum, fee) => {
             const amount =
               fee.type === 'FIXED'
                 ? fee.value
@@ -411,77 +386,6 @@ describe('Property 7: Fee Calculation Correctness', () => {
           // Allow small floating point tolerance
           expect(result.basePrice).toBeCloseTo(expectedBasePrice, 5);
           expect(result.totalPrice).toBeCloseTo(expectedTotal, 5);
-
-          return true;
-        }
-      ),
-      { numRuns: 100 }
-    );
-  });
-
-  it('should only include fees matching selectionType or BOTH', () => {
-    fc.assert(
-      fc.property(
-        fc.array(quotationItemGen, { minLength: 1, maxLength: 5 }),
-        selectionTypeGen,
-        (items, selectionType) => {
-          const mockPrisma = createMockPrisma();
-          const service = new FurnitureService(mockPrisma as never);
-
-          // Create fees with different applicabilities
-          const fees: FurnitureFee[] = [
-            {
-              id: '1',
-              name: 'Combo Only Fee',
-              type: 'FIXED',
-              value: 100,
-              applicability: 'COMBO',
-              description: null,
-              isActive: true,
-              order: 0,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-            {
-              id: '2',
-              name: 'Custom Only Fee',
-              type: 'FIXED',
-              value: 200,
-              applicability: 'CUSTOM',
-              description: null,
-              isActive: true,
-              order: 1,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-            {
-              id: '3',
-              name: 'Both Fee',
-              type: 'FIXED',
-              value: 50,
-              applicability: 'BOTH',
-              description: null,
-              isActive: true,
-              order: 2,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-          ];
-
-          const result = service.calculateQuotation(items, fees, selectionType);
-
-          // Check that only applicable fees are included
-          const feeNames = result.feesBreakdown.map((f) => f.name);
-
-          if (selectionType === 'COMBO') {
-            expect(feeNames).toContain('Combo Only Fee');
-            expect(feeNames).not.toContain('Custom Only Fee');
-            expect(feeNames).toContain('Both Fee');
-          } else {
-            expect(feeNames).not.toContain('Combo Only Fee');
-            expect(feeNames).toContain('Custom Only Fee');
-            expect(feeNames).toContain('Both Fee');
-          }
 
           return true;
         }
@@ -505,7 +409,6 @@ describe('Property 7: Fee Calculation Correctness', () => {
               name: 'Percentage Fee',
               type: 'PERCENTAGE',
               value: percentage,
-              applicability: 'BOTH',
               description: null,
               isActive: true,
               order: 0,
@@ -514,7 +417,7 @@ describe('Property 7: Fee Calculation Correctness', () => {
             },
           ];
 
-          const result = service.calculateQuotation(items, fees, 'COMBO');
+          const result = service.calculateQuotation(items, fees);
 
           const expectedFeeAmount = (result.basePrice * percentage) / 100;
 
@@ -527,7 +430,7 @@ describe('Property 7: Fee Calculation Correctness', () => {
     );
   });
 
-  it('should return zero fees when no fees are applicable', () => {
+  it('should return zero fees when no fees are provided', () => {
     fc.assert(
       fc.property(
         fc.array(quotationItemGen, { minLength: 1, maxLength: 5 }),
@@ -535,7 +438,7 @@ describe('Property 7: Fee Calculation Correctness', () => {
           const mockPrisma = createMockPrisma();
           const service = new FurnitureService(mockPrisma as never);
 
-          const result = service.calculateQuotation(items, [], 'COMBO');
+          const result = service.calculateQuotation(items, []);
 
           expect(result.feesBreakdown).toHaveLength(0);
           expect(result.totalPrice).toBeCloseTo(result.basePrice, 5);
@@ -548,114 +451,6 @@ describe('Property 7: Fee Calculation Correctness', () => {
   });
 });
 
-
-// ============================================
-// PROPERTY 6: Combo Duplication
-// **Feature: furniture-quotation, Property 6: Combo Duplication**
-// Duplicated combo has name with "(Copy)" suffix and same properties
-// **Validates: Requirements 3.4**
-// ============================================
-
-describe('Property 6: Combo Duplication', () => {
-  it('should create duplicate with "(Copy)" suffix and same properties', async () => {
-    await fc.assert(
-      fc.asyncProperty(
-        comboNameGen,
-        fc.array(apartmentTypeGen, { minLength: 1, maxLength: 3 }),
-        priceGen,
-        fc.option(fc.webUrl(), { nil: null }),
-        fc.option(fc.string({ maxLength: 500 }), { nil: null }),
-        async (name, apartmentTypes, price, imageUrl, description) => {
-          const mockPrisma = createMockPrisma();
-
-          const originalCombo = {
-            id: 'original-id',
-            name,
-            apartmentTypes: JSON.stringify(apartmentTypes),
-            price,
-            imageUrl,
-            description,
-            isActive: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            items: [
-              { id: 'item-1', comboId: 'original-id', productId: 'prod-1', quantity: 2 },
-            ],
-          };
-
-          const duplicatedCombo = {
-            id: 'new-id',
-            name: `${name} (Copy)`,
-            apartmentTypes: originalCombo.apartmentTypes,
-            price: originalCombo.price,
-            imageUrl: originalCombo.imageUrl,
-            description: originalCombo.description,
-            isActive: originalCombo.isActive,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            items: [
-              {
-                id: 'new-item-1',
-                comboId: 'new-id',
-                productId: 'prod-1',
-                quantity: 2,
-                product: { id: 'prod-1', name: 'Product 1' },
-              },
-            ],
-          };
-
-          mockPrisma.furnitureCombo.findUnique.mockResolvedValue(originalCombo);
-          mockPrisma.furnitureCombo.create.mockResolvedValue(duplicatedCombo);
-
-          const service = new FurnitureService(mockPrisma as never);
-          const result = await service.duplicateCombo('original-id');
-
-          // Name should have "(Copy)" suffix
-          expect(result.name).toBe(`${name} (Copy)`);
-
-          // Other properties should be the same
-          expect(result.apartmentTypes).toBe(originalCombo.apartmentTypes);
-          expect(result.price).toBe(originalCombo.price);
-          expect(result.imageUrl).toBe(originalCombo.imageUrl);
-          expect(result.description).toBe(originalCombo.description);
-          expect(result.isActive).toBe(originalCombo.isActive);
-
-          // ID should be different
-          expect(result.id).not.toBe(originalCombo.id);
-
-          return true;
-        }
-      ),
-      { numRuns: 100 }
-    );
-  });
-
-  it('should throw NOT_FOUND error when combo does not exist', async () => {
-    await fc.assert(
-      fc.asyncProperty(fc.uuid(), async (comboId) => {
-        const mockPrisma = createMockPrisma();
-        mockPrisma.furnitureCombo.findUnique.mockResolvedValue(null);
-
-        const service = new FurnitureService(mockPrisma as never);
-
-        await expect(service.duplicateCombo(comboId)).rejects.toThrow(
-          FurnitureServiceError
-        );
-
-        try {
-          await service.duplicateCombo(comboId);
-        } catch (error) {
-          expect(error).toBeInstanceOf(FurnitureServiceError);
-          expect((error as FurnitureServiceError).code).toBe('NOT_FOUND');
-          expect((error as FurnitureServiceError).statusCode).toBe(404);
-        }
-
-        return true;
-      }),
-      { numRuns: 50 }
-    );
-  });
-});
 
 // ============================================
 // PROPERTY 4: ApartmentType Normalization
@@ -1248,12 +1043,12 @@ describe('Property 9: Invalid Axis Error Handling', () => {
 // **Feature: furniture-quotation, Property 11: Quotation Data Completeness**
 // For any created quotation, the stored record SHALL contain all required fields:
 // developerName, projectName, buildingName, buildingCode, floor, axis, unitNumber,
-// apartmentType, selectionType, items, basePrice, fees, and totalPrice.
+// apartmentType, items, basePrice, fees, and totalPrice.
 // **Validates: Requirements 11.2**
 // ============================================
 
 describe('Property 11: Quotation Data Completeness', () => {
-  // Generator for valid quotation input
+  // Generator for valid quotation input (without combo fields)
   const quotationInputGen = fc.record({
     leadId: fc.uuid(),
     developerName: fc.string({ minLength: 1, maxLength: 100 }).filter(s => s.trim().length > 0),
@@ -1264,9 +1059,6 @@ describe('Property 11: Quotation Data Completeness', () => {
     axis: axisGen,
     apartmentType: apartmentTypeGen,
     layoutImageUrl: fc.option(fc.webUrl(), { nil: undefined }),
-    selectionType: selectionTypeGen,
-    comboId: fc.option(fc.uuid(), { nil: undefined }),
-    comboName: fc.option(fc.string({ minLength: 1, maxLength: 100 }), { nil: undefined }),
     items: fc.array(quotationItemGen, { minLength: 1, maxLength: 10 }),
     fees: fc.array(feeGen, { minLength: 0, maxLength: 5 }),
   });
@@ -1294,11 +1086,8 @@ describe('Property 11: Quotation Data Completeness', () => {
             0
           );
 
-          // Calculate expected fees
-          const applicableFees = input.fees.filter(
-            (fee) => fee.applicability === 'BOTH' || fee.applicability === input.selectionType
-          );
-          const expectedFeesBreakdown = applicableFees.map((fee) => ({
+          // Calculate expected fees (all fees apply now)
+          const expectedFeesBreakdown = input.fees.map((fee) => ({
             name: fee.name,
             type: fee.type,
             value: fee.value,
@@ -1327,7 +1116,6 @@ describe('Property 11: Quotation Data Completeness', () => {
           expect(result.axis).toBe(input.axis);
           expect(result.unitNumber).toBe(expectedUnitNumber);
           expect(result.apartmentType).toBe(input.apartmentType);
-          expect(result.selectionType).toBe(input.selectionType);
           expect(result.items).toBeDefined();
           expect(result.basePrice).toBeCloseTo(expectedBasePrice, 5);
           expect(result.fees).toBeDefined();
@@ -1396,7 +1184,6 @@ describe('Property 11: Quotation Data Completeness', () => {
             floor,
             axis,
             apartmentType: '1pn',
-            selectionType: 'COMBO' as const,
             items: [{ productId: 'prod-1', name: 'Product 1', price: 1000, quantity: 1 }],
             fees: [],
           };
@@ -1429,21 +1216,17 @@ describe('Property 11: Quotation Data Completeness', () => {
     );
   });
 
-  it('should include optional fields when provided', async () => {
+  it('should include optional layoutImageUrl when provided', async () => {
     await fc.assert(
       fc.asyncProperty(
         quotationInputGen,
         fc.webUrl(),
-        fc.uuid(),
-        fc.string({ minLength: 1, maxLength: 100 }),
-        async (input, layoutImageUrl, comboId, comboName) => {
+        async (input, layoutImageUrl) => {
           const mockPrisma = createMockPrisma();
 
           const inputWithOptionals = {
             ...input,
             layoutImageUrl,
-            comboId,
-            comboName,
           };
 
           // Mock lead exists
@@ -1463,10 +1246,8 @@ describe('Property 11: Quotation Data Completeness', () => {
           const service = new FurnitureService(mockPrisma as never);
           const result = await service.createQuotation(inputWithOptionals);
 
-          // Verify optional fields are included
+          // Verify optional field is included
           expect(result.layoutImageUrl).toBe(layoutImageUrl);
-          expect(result.comboId).toBe(comboId);
-          expect(result.comboName).toBe(comboName);
 
           return true;
         }
@@ -1487,7 +1268,6 @@ describe('Property 11: Quotation Data Completeness', () => {
       floor: 1,
       axis: 0,
       apartmentType: '1pn',
-      selectionType: 'CUSTOM' as const,
       items: [] as QuotationItem[],
       fees: [],
     };

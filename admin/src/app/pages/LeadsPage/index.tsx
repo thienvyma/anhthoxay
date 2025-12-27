@@ -28,18 +28,27 @@ export function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState<CustomerLead | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterSource, setFilterSource] = useState<string>(''); // Filter by source
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [exporting, setExporting] = useState(false);
   
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  
   // Furniture quotation history state
   const [furnitureQuotations, setFurnitureQuotations] = useState<FurnitureQuotation[]>([]);
   const [loadingQuotations, setLoadingQuotations] = useState(false);
   
+  // Track which leads have furniture quotations
+  const [leadsWithFurnitureQuotes, setLeadsWithFurnitureQuotes] = useState<Set<string>>(new Set());
+  
   const debouncedSearch = useDebounce(searchQuery, 300);
-  const columns = useMemo(() => getLeadTableColumns(), []);
+  const columns = useMemo(() => getLeadTableColumns(leadsWithFurnitureQuotes), [leadsWithFurnitureQuotes]);
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -50,15 +59,40 @@ export function LeadsPage() {
         page: currentPage,
         limit: 20,
       });
-      setLeads(response.data);
+      
+      // Filter by source if selected
+      let filteredData = response.data;
+      if (filterSource) {
+        filteredData = response.data.filter(lead => lead.source === filterSource);
+      }
+      
+      setLeads(filteredData);
       setTotalPages(response.totalPages);
-      setTotal(response.total);
+      setTotal(filterSource ? filteredData.length : response.total);
+      
+      // Check which leads have furniture quotations
+      const leadsToCheck = filteredData.filter(l => l.source === 'FURNITURE_QUOTE');
+      if (leadsToCheck.length > 0) {
+        const quotesPromises = leadsToCheck.map(lead => 
+          furnitureQuotationsApi.list(lead.id).catch(() => [])
+        );
+        const quotesResults = await Promise.all(quotesPromises);
+        const withQuotes = new Set<string>();
+        leadsToCheck.forEach((lead, idx) => {
+          if (quotesResults[idx] && quotesResults[idx].length > 0) {
+            withQuotes.add(lead.id);
+          }
+        });
+        setLeadsWithFurnitureQuotes(withQuotes);
+      } else {
+        setLeadsWithFurnitureQuotes(new Set());
+      }
     } catch (error) {
       console.error('Failed to fetch leads:', error);
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, filterStatus, currentPage]);
+  }, [debouncedSearch, filterStatus, filterSource, currentPage]);
 
   useEffect(() => {
     fetchLeads();
@@ -67,7 +101,7 @@ export function LeadsPage() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, filterStatus]);
+  }, [debouncedSearch, filterStatus, filterSource]);
 
   // Fetch furniture quotations when a lead is selected
   useEffect(() => {
@@ -87,14 +121,13 @@ export function LeadsPage() {
 
   const updateLeadStatus = async (id: string, status: string) => {
     try {
-      await leadsApi.update(id, { status });
-      fetchLeads();
-      if (selectedLead?.id === id) {
-        const response = await leadsApi.list({ search: id, limit: 1 });
-        if (response.data.length > 0) {
-          setSelectedLead(response.data[0]);
-        }
+      const updatedLead = await leadsApi.update(id, { status });
+      // Update selectedLead immediately with the response
+      if (selectedLead?.id === id && updatedLead) {
+        setSelectedLead(updatedLead);
       }
+      // Refresh the list
+      fetchLeads();
     } catch (error) {
       console.error('Failed to update lead:', error);
     }
@@ -104,6 +137,51 @@ export function LeadsPage() {
     await leadsApi.update(id, { notes });
     fetchLeads();
   };
+
+  const deleteLead = async (id: string) => {
+    await leadsApi.delete(id);
+    fetchLeads();
+  };
+
+  // Bulk selection handlers
+  const toggleSelectAll = useCallback(() => {
+    if (selectedIds.size === leads.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(leads.map(l => l.id)));
+    }
+  }, [leads, selectedIds.size]);
+
+  const toggleSelectOne = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => leadsApi.delete(id)));
+      setSelectedIds(new Set());
+      setShowBulkDeleteConfirm(false);
+      fetchLeads();
+    } catch (error) {
+      console.error('Bulk delete failed:', error);
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  // Clear selection when page/filter changes
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [currentPage, filterStatus, filterSource, debouncedSearch]);
 
   const handleExport = async () => {
     setExporting(true);
@@ -128,9 +206,41 @@ export function LeadsPage() {
     return result;
   }, [leads]);
 
+  // Source stats
+  const sourceStats = useMemo(() => {
+    const result = { 
+      FURNITURE_QUOTE: 0, 
+      QUOTE_FORM: 0, 
+      CONTACT_FORM: 0,
+      withFurnitureQuotation: 0,
+      withoutFurnitureQuotation: 0,
+    };
+    leads.forEach(l => {
+      if (l.source === 'FURNITURE_QUOTE') {
+        result.FURNITURE_QUOTE++;
+        if (leadsWithFurnitureQuotes.has(l.id)) {
+          result.withFurnitureQuotation++;
+        } else {
+          result.withoutFurnitureQuotation++;
+        }
+      } else if (l.source === 'QUOTE_FORM') {
+        result.QUOTE_FORM++;
+      } else {
+        result.CONTACT_FORM++;
+      }
+    });
+    return result;
+  }, [leads, leadsWithFurnitureQuotes]);
+
   const renderMobileCard = useCallback((lead: CustomerLead) => (
-    <LeadMobileCard lead={lead} onSelect={setSelectedLead} />
-  ), []);
+    <LeadMobileCard 
+      lead={lead} 
+      onSelect={setSelectedLead} 
+      isSelected={selectedIds.has(lead.id)}
+      onToggleSelect={() => toggleSelectOne(lead.id)}
+      hasFurnitureQuotation={leadsWithFurnitureQuotes.has(lead.id)}
+    />
+  ), [selectedIds, toggleSelectOne, leadsWithFurnitureQuotes]);
 
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto' }}>
@@ -161,11 +271,100 @@ export function LeadsPage() {
         </Button>
       </ResponsiveStack>
 
+      {/* Bulk Actions Bar */}
+      {selectedIds.size > 0 && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 16px',
+          background: 'rgba(239, 68, 68, 0.1)',
+          border: `1px solid ${tokens.color.error}`,
+          borderRadius: 8,
+          marginBottom: 16,
+        }}>
+          <span style={{ color: tokens.color.text, fontSize: 14 }}>
+            Đã chọn <strong>{selectedIds.size}</strong> khách hàng
+          </span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button variant="outline" size="small" onClick={() => setSelectedIds(new Set())}>
+              Bỏ chọn
+            </Button>
+            <Button 
+              variant="primary" 
+              size="small" 
+              onClick={() => setShowBulkDeleteConfirm(true)}
+              style={{ background: tokens.color.error }}
+            >
+              <i className="ri-delete-bin-line" /> Xóa {selectedIds.size} leads
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirm Modal */}
+      {showBulkDeleteConfirm && (
+        <>
+          <div 
+            onClick={() => setShowBulkDeleteConfirm(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.7)',
+              zIndex: 9998,
+            }} 
+          />
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: tokens.color.surface,
+            border: `1px solid ${tokens.color.border}`,
+            borderRadius: 12,
+            padding: 24,
+            maxWidth: 400,
+            width: '90%',
+            zIndex: 9999,
+          }}>
+            <h3 style={{ color: tokens.color.text, margin: '0 0 16px', fontSize: 18 }}>
+              <i className="ri-error-warning-line" style={{ color: tokens.color.error, marginRight: 8 }} />
+              Xác nhận xóa hàng loạt
+            </h3>
+            <p style={{ color: tokens.color.muted, marginBottom: 20 }}>
+              Bạn có chắc muốn xóa <strong style={{ color: tokens.color.error }}>{selectedIds.size}</strong> khách hàng? 
+              Hành động này không thể hoàn tác.
+            </p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowBulkDeleteConfirm(false)}
+                disabled={bulkDeleting}
+              >
+                Hủy
+              </Button>
+              <Button 
+                variant="primary" 
+                onClick={handleBulkDelete}
+                disabled={bulkDeleting}
+                style={{ background: tokens.color.error }}
+              >
+                {bulkDeleting ? (
+                  <><i className="ri-loader-4-line" style={{ animation: 'spin 1s linear infinite' }} /> Đang xóa...</>
+                ) : (
+                  <><i className="ri-delete-bin-line" /> Xóa {selectedIds.size} leads</>
+                )}
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Search & Filters */}
       <ResponsiveStack
         direction={{ mobile: 'column', tablet: 'row', desktop: 'row' }}
         gap={16}
-        style={{ marginBottom: 24 }}
+        style={{ marginBottom: 16 }}
       >
         <div style={{ position: 'relative', flex: 1, minWidth: isMobile ? '100%' : 250 }}>
           <i className="ri-search-line" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: tokens.color.muted }} />
@@ -207,6 +406,80 @@ export function LeadsPage() {
         </div>
       </ResponsiveStack>
 
+      {/* Source Filter - Furniture Quote Focus */}
+      <div style={{ 
+        display: 'flex', 
+        gap: 8, 
+        flexWrap: 'wrap', 
+        marginBottom: 24,
+        padding: 12,
+        background: 'rgba(255,255,255,0.02)',
+        borderRadius: 8,
+        border: `1px solid ${tokens.color.border}`,
+      }}>
+        <span style={{ color: tokens.color.muted, fontSize: 13, display: 'flex', alignItems: 'center', marginRight: 8 }}>
+          <i className="ri-filter-3-line" style={{ marginRight: 4 }} /> Nguồn:
+        </span>
+        <Button
+          variant={filterSource === '' ? 'primary' : 'outline'}
+          size="small"
+          onClick={() => setFilterSource('')}
+        >
+          Tất cả ({leads.length})
+        </Button>
+        <Button
+          variant={filterSource === 'FURNITURE_QUOTE' ? 'primary' : 'outline'}
+          size="small"
+          onClick={() => setFilterSource('FURNITURE_QUOTE')}
+          style={filterSource === 'FURNITURE_QUOTE' ? { background: '#8B5CF6' } : { borderColor: '#8B5CF6', color: '#8B5CF6' }}
+        >
+          <i className="ri-sofa-line" /> Nội thất ({sourceStats.FURNITURE_QUOTE})
+        </Button>
+        <Button
+          variant={filterSource === 'QUOTE_FORM' ? 'primary' : 'outline'}
+          size="small"
+          onClick={() => setFilterSource('QUOTE_FORM')}
+        >
+          <i className="ri-calculator-line" /> Báo giá ({sourceStats.QUOTE_FORM})
+        </Button>
+        <Button
+          variant={filterSource === 'CONTACT_FORM' ? 'primary' : 'outline'}
+          size="small"
+          onClick={() => setFilterSource('CONTACT_FORM')}
+        >
+          <i className="ri-mail-line" /> Liên hệ ({sourceStats.CONTACT_FORM})
+        </Button>
+        
+        {/* Furniture quotation status indicator */}
+        {filterSource === 'FURNITURE_QUOTE' && (
+          <div style={{ 
+            display: 'flex', 
+            gap: 12, 
+            marginLeft: 'auto',
+            alignItems: 'center',
+          }}>
+            <span style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 4, 
+              fontSize: 12,
+              color: tokens.color.success,
+            }}>
+              <i className="ri-checkbox-circle-fill" /> Đã báo giá: {sourceStats.withFurnitureQuotation}
+            </span>
+            <span style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 4, 
+              fontSize: 12,
+              color: tokens.color.warning,
+            }}>
+              <i className="ri-time-line" /> Chưa báo giá: {sourceStats.withoutFurnitureQuotation}
+            </span>
+          </div>
+        )}
+      </div>
+
       {/* Stats */}
       <ResponsiveGrid cols={{ mobile: 2, tablet: 4, desktop: 4 }} gap={{ mobile: 12, tablet: 16, desktop: 16 }} style={{ marginBottom: 24 }}>
         {Object.entries(statusLabels).map(([status, label]) => {
@@ -237,6 +510,10 @@ export function LeadsPage() {
         getRowKey={(lead) => lead.id}
         onRowClick={setSelectedLead}
         renderMobileCard={renderMobileCard}
+        selectable
+        selectedIds={selectedIds}
+        onToggleSelect={toggleSelectOne}
+        onToggleSelectAll={toggleSelectAll}
         actions={(lead) => (
           <Button variant="outline" size="small" onClick={() => setSelectedLead(lead)}>
             {isMobile ? <i className="ri-eye-line" /> : <><i className="ri-eye-line" /> Chi tiết</>}
@@ -275,6 +552,7 @@ export function LeadsPage() {
         onClose={() => setSelectedLead(null)}
         onStatusChange={updateLeadStatus}
         onNotesChange={updateLeadNotes}
+        onDelete={deleteLead}
         furnitureQuotations={furnitureQuotations}
         loadingQuotations={loadingQuotations}
       />

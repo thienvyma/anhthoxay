@@ -39,7 +39,6 @@ export interface UserFormData {
 export interface UserTableProps {
   users: UserAccount[];
   loading: boolean;
-  isMobile: boolean;
   onEdit: (user: UserAccount) => void;
   onDelete: (user: UserAccount) => void;
   onBan: (user: UserAccount) => void;

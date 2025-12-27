@@ -11,8 +11,8 @@ export function QuoteDataDisplay({ quoteData }: QuoteDataDisplayProps) {
   try {
     const data = JSON.parse(quoteData);
     
-    // Check if this is a furniture quotation format (has unitNumber or selectionType)
-    const isFurnitureQuote = data.unitNumber || data.selectionType;
+    // Check if this is a furniture quotation format (has unitNumber)
+    const isFurnitureQuote = data.unitNumber || data.buildingCode;
     
     if (isFurnitureQuote) {
       // Parse items and fees if they are JSON strings
@@ -50,22 +50,14 @@ export function QuoteDataDisplay({ quoteData }: QuoteDataDisplayProps) {
                   <span style={{
                     padding: '2px 8px',
                     borderRadius: 4,
-                    background: data.selectionType === 'COMBO' ? 'rgba(16,185,129,0.2)' : 'rgba(59,130,246,0.2)',
-                    color: data.selectionType === 'COMBO' ? '#10b981' : '#3b82f6',
+                    background: 'rgba(59,130,246,0.2)',
+                    color: '#3b82f6',
                     fontSize: 12,
                   }}>
-                    {data.selectionType === 'COMBO' ? 'Combo' : 'Tùy chọn'}
+                    Tùy chọn ({items.length} sản phẩm)
                   </span>
                 </td>
               </tr>
-              
-              {/* Combo Name if applicable */}
-              {data.comboName && (
-                <tr>
-                  <td style={{ padding: '4px 8px', color: tokens.color.muted }}>Combo:</td>
-                  <td style={{ padding: '4px 8px', color: tokens.color.text }}>{data.comboName}</td>
-                </tr>
-              )}
               
               {/* Items */}
               {items.length > 0 && (

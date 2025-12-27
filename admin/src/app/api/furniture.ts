@@ -1,6 +1,6 @@
 // Furniture APIs - ANH THỢ XÂY Admin Dashboard
 // Furniture Quotation System: Developers, Projects, Buildings, Layouts, ApartmentTypes,
-// Categories, Products, Combos, Fees, Data Import/Export, Quotations
+// Categories, Products, Fees, Data Import/Export, Quotations
 import { API_BASE, apiFetch } from './client';
 import { tokenStorage } from '../store';
 
@@ -85,33 +85,11 @@ export interface FurnitureProduct {
 }
 
 
-export interface FurnitureComboItem {
-  id: string;
-  comboId: string;
-  productId: string;
-  product?: FurnitureProduct;
-  quantity: number;
-}
-
-export interface FurnitureCombo {
-  id: string;
-  name: string;
-  apartmentTypes: string; // JSON array string
-  price: number;
-  imageUrl: string | null;
-  description: string | null;
-  isActive: boolean;
-  items?: FurnitureComboItem[];
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface FurnitureFee {
   id: string;
   name: string;
   type: 'FIXED' | 'PERCENTAGE';
   value: number;
-  applicability: 'COMBO' | 'CUSTOM' | 'BOTH';
   description: string | null;
   isActive: boolean;
   order: number;
@@ -145,9 +123,6 @@ export interface FurnitureQuotation {
   unitNumber: string;
   apartmentType: string;
   layoutImageUrl: string | null;
-  selectionType: 'COMBO' | 'CUSTOM';
-  comboId: string | null;
-  comboName: string | null;
   items: string; // JSON string of FurnitureQuotationItem[]
   basePrice: number;
   fees: string; // JSON string of FurnitureQuotationFee[]
@@ -258,36 +233,10 @@ interface UpdateProductInput {
   isActive?: boolean;
 }
 
-interface ComboItemInput {
-  productId: string;
-  quantity: number;
-}
-
-interface CreateComboInput {
-  name: string;
-  apartmentTypes: string[];
-  price: number;
-  imageUrl?: string;
-  description?: string;
-  isActive?: boolean;
-  items?: ComboItemInput[];
-}
-
-interface UpdateComboInput {
-  name?: string;
-  apartmentTypes?: string[];
-  price?: number;
-  imageUrl?: string | null;
-  description?: string | null;
-  isActive?: boolean;
-  items?: ComboItemInput[];
-}
-
 interface CreateFeeInput {
   name: string;
   type: 'FIXED' | 'PERCENTAGE';
   value: number;
-  applicability: 'COMBO' | 'CUSTOM' | 'BOTH';
   description?: string;
   order?: number;
   isActive?: boolean;
@@ -297,7 +246,6 @@ interface UpdateFeeInput {
   name?: string;
   type?: 'FIXED' | 'PERCENTAGE';
   value?: number;
-  applicability?: 'COMBO' | 'CUSTOM' | 'BOTH';
   description?: string | null;
   order?: number;
   isActive?: boolean;
@@ -486,32 +434,6 @@ export const furnitureProductsApi = {
     apiFetch<{ ok: boolean }>(`/api/admin/furniture/products/${id}`, { method: 'DELETE' }),
 };
 
-// ========== COMBOS API ==========
-/**
- * Furniture Combos API
- * 
- * **Feature: furniture-quotation**
- * **Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6**
- */
-export const furnitureCombosApi = {
-  list: (apartmentType?: string) => {
-    const query = apartmentType ? `?apartmentType=${encodeURIComponent(apartmentType)}` : '';
-    return apiFetch<FurnitureCombo[]>(`/api/admin/furniture/combos${query}`);
-  },
-
-  create: (data: CreateComboInput) =>
-    apiFetch<FurnitureCombo>('/api/admin/furniture/combos', { method: 'POST', body: data }),
-
-  update: (id: string, data: UpdateComboInput) =>
-    apiFetch<FurnitureCombo>(`/api/admin/furniture/combos/${id}`, { method: 'PUT', body: data }),
-
-  delete: (id: string) =>
-    apiFetch<{ ok: boolean }>(`/api/admin/furniture/combos/${id}`, { method: 'DELETE' }),
-
-  duplicate: (id: string) =>
-    apiFetch<FurnitureCombo>(`/api/admin/furniture/combos/${id}/duplicate`, { method: 'POST' }),
-};
-
 // ========== FEES API ==========
 /**
  * Furniture Fees API
@@ -520,10 +442,8 @@ export const furnitureCombosApi = {
  * **Requirements: 4.1, 4.2, 4.3, 4.4**
  */
 export const furnitureFeesApi = {
-  list: (applicability?: 'COMBO' | 'CUSTOM' | 'BOTH') => {
-    const query = applicability ? `?applicability=${applicability}` : '';
-    return apiFetch<FurnitureFee[]>(`/api/admin/furniture/fees${query}`);
-  },
+  list: () =>
+    apiFetch<FurnitureFee[]>('/api/admin/furniture/fees'),
 
   create: (data: CreateFeeInput) =>
     apiFetch<FurnitureFee>('/api/admin/furniture/fees', { method: 'POST', body: data }),
@@ -639,4 +559,124 @@ export const furnitureQuotationsApi = {
     const blob = await response.blob();
     return URL.createObjectURL(blob);
   },
+};
+
+// ========== PDF SETTINGS API ==========
+
+/**
+ * PDF Settings type
+ */
+export interface FurniturePdfSettings {
+  id: string;
+  companyName: string;
+  companyTagline: string;
+  companyLogo: string | null;
+  documentTitle: string;
+  primaryColor: string;
+  textColor: string;
+  mutedColor: string;
+  borderColor: string;
+  // Font sizes
+  companyNameSize: number;
+  documentTitleSize: number;
+  sectionTitleSize: number;
+  bodyTextSize: number;
+  footerTextSize: number;
+  // Section titles
+  apartmentInfoTitle: string;
+  selectionTypeTitle: string;
+  productsTitle: string;
+  priceDetailsTitle: string;
+  contactInfoTitle: string;
+  totalLabel: string;
+  // Footer
+  footerNote: string;
+  footerCopyright: string;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  contactAddress: string | null;
+  contactWebsite: string | null;
+  additionalNotes: string | null;
+  validityDays: number;
+  // Show/hide
+  showLayoutImage: boolean;
+  showItemsTable: boolean;
+  showFeeDetails: boolean;
+  showContactInfo: boolean;
+  showValidityDate: boolean;
+  showQuotationCode: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Input for updating PDF settings
+ */
+export interface UpdatePdfSettingsInput {
+  companyName?: string;
+  companyTagline?: string;
+  companyLogo?: string | null;
+  documentTitle?: string;
+  primaryColor?: string;
+  textColor?: string;
+  mutedColor?: string;
+  borderColor?: string;
+  // Font sizes
+  companyNameSize?: number;
+  documentTitleSize?: number;
+  sectionTitleSize?: number;
+  bodyTextSize?: number;
+  footerTextSize?: number;
+  // Section titles
+  apartmentInfoTitle?: string;
+  selectionTypeTitle?: string;
+  productsTitle?: string;
+  priceDetailsTitle?: string;
+  contactInfoTitle?: string;
+  totalLabel?: string;
+  // Footer
+  footerNote?: string;
+  footerCopyright?: string;
+  contactPhone?: string | null;
+  contactEmail?: string | null;
+  contactAddress?: string | null;
+  contactWebsite?: string | null;
+  additionalNotes?: string | null;
+  validityDays?: number;
+  // Show/hide
+  showLayoutImage?: boolean;
+  showItemsTable?: boolean;
+  showFeeDetails?: boolean;
+  showContactInfo?: boolean;
+  showValidityDate?: boolean;
+  showQuotationCode?: boolean;
+}
+
+/**
+ * Furniture PDF Settings API
+ * 
+ * **Feature: furniture-quotation**
+ */
+export const furniturePdfSettingsApi = {
+  /**
+   * Get PDF settings
+   */
+  get: () => apiFetch<FurniturePdfSettings>('/api/admin/furniture/pdf-settings'),
+
+  /**
+   * Update PDF settings
+   */
+  update: (data: UpdatePdfSettingsInput) =>
+    apiFetch<FurniturePdfSettings>('/api/admin/furniture/pdf-settings', {
+      method: 'PUT',
+      body: data,
+    }),
+
+  /**
+   * Reset PDF settings to defaults
+   */
+  reset: () =>
+    apiFetch<FurniturePdfSettings>('/api/admin/furniture/pdf-settings/reset', {
+      method: 'POST',
+    }),
 };

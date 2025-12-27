@@ -88,11 +88,12 @@ export function ResponsiveTabs({
   const [showRightFade, setShowRightFade] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Find active tab
-  const activeTabData = useMemo(
-    () => tabs.find((t) => t.id === activeTab),
-    [tabs, activeTab]
-  );
+  // Find active tab - fallback to first tab if not found
+  const activeTabData = useMemo(() => {
+    const found = tabs.find((t) => t.id === activeTab);
+    // Fallback to first tab if active tab not found
+    return found || tabs[0];
+  }, [tabs, activeTab]);
 
   // Check scroll position for fade indicators
   const checkScroll = () => {
@@ -127,6 +128,11 @@ export function ResponsiveTabs({
     window.addEventListener('resize', checkScroll);
     return () => window.removeEventListener('resize', checkScroll);
   }, [tabs]);
+
+  // Early return if no tabs or no active tab data
+  if (!tabs.length || !activeTabData) {
+    return null;
+  }
 
   // Render dropdown mode for mobile
   if (isMobile && mobileMode === 'dropdown') {

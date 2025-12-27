@@ -16,7 +16,6 @@ import { ROLE_COLORS, ROLE_LABELS } from '../types';
 export function UserTable({
   users,
   loading,
-  isMobile,
   onEdit,
   onDelete,
   onBan,
@@ -137,84 +136,81 @@ export function UserTable({
     },
   ];
 
-  // Actions renderer
+  // Actions renderer - Inline buttons for PC, optimized layout
   const renderActions = (user: UserAccount) => (
     <div
       style={{
         display: 'flex',
-        gap: 8,
-        justifyContent: isMobile ? 'flex-start' : 'flex-end',
-        flexWrap: 'wrap',
+        gap: 4,
+        justifyContent: 'flex-end',
+        alignItems: 'center',
       }}
     >
       <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
+        whileHover={{ scale: 1.05, background: 'rgba(245, 211, 147, 0.1)' }}
+        whileTap={{ scale: 0.95 }}
         onClick={(e) => {
           e.stopPropagation();
           onEdit(user);
         }}
         title="Chỉnh sửa"
         style={{
-          padding: 8,
-          background: 'rgba(255,255,255,0.05)',
-          border: `1px solid ${tokens.color.border}`,
+          padding: '6px 8px',
+          background: 'transparent',
+          border: 'none',
           borderRadius: tokens.radius.sm,
           color: tokens.color.primary,
           cursor: 'pointer',
-          minWidth: '44px',
-          minHeight: '44px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          fontSize: 16,
         }}
       >
         <i className="ri-edit-line" />
       </motion.button>
       <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
+        whileHover={{ scale: 1.05, background: 'rgba(245, 158, 11, 0.1)' }}
+        whileTap={{ scale: 0.95 }}
         onClick={(e) => {
           e.stopPropagation();
           onBan(user);
         }}
-        title="Ban (thu hồi sessions)"
+        title="Thu hồi tất cả sessions"
         style={{
-          padding: 8,
-          background: 'rgba(255,255,255,0.05)',
-          border: `1px solid ${tokens.color.border}`,
+          padding: '6px 8px',
+          background: 'transparent',
+          border: 'none',
           borderRadius: tokens.radius.sm,
-          color: '#F59E0B',
+          color: tokens.color.warning,
           cursor: 'pointer',
-          minWidth: '44px',
-          minHeight: '44px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          fontSize: 16,
         }}
       >
-        <i className="ri-forbid-line" />
+        <i className="ri-logout-circle-line" />
       </motion.button>
       <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
+        whileHover={{ scale: 1.05, background: 'rgba(239, 68, 68, 0.1)' }}
+        whileTap={{ scale: 0.95 }}
         onClick={(e) => {
           e.stopPropagation();
           onDelete(user);
         }}
-        title="Xóa"
+        title="Xóa tài khoản"
         style={{
-          padding: 8,
-          background: 'rgba(255,255,255,0.05)',
-          border: `1px solid ${tokens.color.border}`,
+          padding: '6px 8px',
+          background: 'transparent',
+          border: 'none',
           borderRadius: tokens.radius.sm,
           color: tokens.color.error,
           cursor: 'pointer',
-          minWidth: '44px',
-          minHeight: '44px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          fontSize: 16,
         }}
       >
         <i className="ri-delete-bin-line" />
