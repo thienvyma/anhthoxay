@@ -1,0 +1,115 @@
+/**
+ * EditUserModal Component
+ * Modal for editing existing user accounts
+ * Requirements: 2.4
+ */
+
+import { tokens } from '@app/shared';
+import { ResponsiveModal } from '../../../../components/responsive';
+import { Button } from '../../../components/Button';
+import { Input } from '../../../components/Input';
+import type { EditUserModalProps, UserRole } from '../types';
+
+export function EditUserModal({
+  isOpen,
+  user,
+  onClose,
+  formData,
+  setFormData,
+  onSubmit,
+  saving,
+  isMobile,
+}: EditUserModalProps) {
+  return (
+    <ResponsiveModal
+      isOpen={isOpen && !!user}
+      onClose={onClose}
+      title="Chỉnh sửa tài khoản"
+      footer={
+        <>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            style={{ width: isMobile ? '100%' : 'auto' }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={() => {
+              const form = document.getElementById('edit-form') as HTMLFormElement;
+              form?.requestSubmit();
+            }}
+            disabled={saving}
+            style={{ width: isMobile ? '100%' : 'auto' }}
+          >
+            {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+          </Button>
+        </>
+      }
+    >
+      <form
+        id="edit-form"
+        onSubmit={onSubmit}
+        style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+      >
+        <div
+          style={{
+            padding: 12,
+            background: 'rgba(255,255,255,0.02)',
+            borderRadius: tokens.radius.md,
+            border: `1px solid ${tokens.color.border}`,
+          }}
+        >
+          <div style={{ color: tokens.color.muted, fontSize: 12, marginBottom: 4 }}>
+            Email
+          </div>
+          <div style={{ color: tokens.color.text, fontWeight: 500 }}>
+            {user?.email}
+          </div>
+        </div>
+        <Input
+          label="Họ tên"
+          value={formData.name}
+          onChange={(v) => setFormData({ ...formData, name: v })}
+          required
+          fullWidth
+        />
+        <div>
+          <label
+            style={{
+              display: 'block',
+              marginBottom: 6,
+              color: tokens.color.text,
+              fontSize: 14,
+              fontWeight: 500,
+            }}
+          >
+            Vai trò
+          </label>
+          <select
+            value={formData.role}
+            onChange={(e) =>
+              setFormData({ ...formData, role: e.target.value as UserRole })
+            }
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              borderRadius: tokens.radius.md,
+              border: `1px solid ${tokens.color.border}`,
+              background: tokens.color.background,
+              color: tokens.color.text,
+              fontSize: 14,
+              minHeight: '44px',
+            }}
+          >
+            <option value="USER">Người dùng</option>
+            <option value="WORKER">Thợ</option>
+            <option value="MANAGER">Quản lý</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+        </div>
+      </form>
+    </ResponsiveModal>
+  );
+}

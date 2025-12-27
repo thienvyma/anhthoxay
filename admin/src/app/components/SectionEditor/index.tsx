@@ -7,7 +7,7 @@ import { TemplatePicker } from '../TemplatePicker';
 import type { SectionEditorProps, SectionKind } from './types';
 import { getDefaultData } from './defaults';
 import { getSectionIcon, getSectionDescription } from './utils';
-import { renderPreview } from './previews';
+import { renderPreview } from './previews/index';
 import { renderFormFields } from './forms';
 
 export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditorProps) {

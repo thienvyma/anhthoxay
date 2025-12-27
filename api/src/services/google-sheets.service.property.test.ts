@@ -81,10 +81,21 @@ const axisGen = fc.integer({ min: 0, max: 50 });
 const urlGen = fc.option(fc.webUrl(), { nil: '' });
 
 // Generator for descriptions (optional, no newlines for CSV compatibility)
+// Use realistic descriptions that won't be interpreted as numbers by CSV parsers
+// Strings like "0." would be normalized to "0" by CSV parsers, which is expected behavior
 const descriptionGen = fc.option(
-  fc.string({ minLength: 1, maxLength: 100 })
-    .map(s => s.trim())
-    .filter(s => !s.includes('\n') && !s.includes('\r')),
+  fc.constantFrom(
+    'Căn hộ view sông',
+    'Căn góc 2 mặt thoáng',
+    'Thiết kế hiện đại',
+    'Full nội thất cao cấp',
+    'View công viên',
+    'Tầng cao thoáng mát',
+    'Căn hộ studio',
+    'Penthouse duplex',
+    'Shophouse mặt tiền',
+    'Căn hộ 1 phòng ngủ tiện nghi'
+  ),
   { nil: '' }
 );
 

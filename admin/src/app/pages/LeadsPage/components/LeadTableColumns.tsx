@@ -1,0 +1,102 @@
+import { tokens } from '@app/shared';
+import { TableColumn } from '../../../../components/responsive/ResponsiveTable';
+import { statusColors, statusLabels } from '../types';
+import type { CustomerLead } from '../types';
+
+/**
+ * getLeadTableColumns - Returns table column definitions for leads
+ */
+export function getLeadTableColumns(): TableColumn<CustomerLead>[] {
+  return [
+    {
+      key: 'name',
+      header: 'Khách hàng',
+      priority: 1,
+      render: (_, row) => (
+        <div>
+          <div style={{ color: tokens.color.text, fontWeight: 500 }}>{row.name}</div>
+          {row.quoteData && (
+            <span style={{ fontSize: 11, color: tokens.color.primary }}>
+              <i className="ri-calculator-line" /> Có báo giá
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'phone',
+      header: 'Liên hệ',
+      priority: 2,
+      render: (_, row) => (
+        <div>
+          <div style={{ color: tokens.color.text }}>{row.phone}</div>
+          {row.email && <div style={{ color: tokens.color.muted, fontSize: 13 }}>{row.email}</div>}
+        </div>
+      ),
+    },
+    {
+      key: 'content',
+      header: 'Nội dung',
+      hideOnMobile: true,
+      render: (value) => (
+        <div style={{ 
+          color: tokens.color.muted, 
+          fontSize: 13, 
+          overflow: 'hidden', 
+          textOverflow: 'ellipsis', 
+          whiteSpace: 'nowrap',
+          maxWidth: 200,
+        }}>
+          {String(value)}
+        </div>
+      ),
+    },
+    {
+      key: 'source',
+      header: 'Nguồn',
+      hideOnMobile: true,
+      render: (value) => (
+        <span style={{
+          padding: '4px 8px',
+          borderRadius: 6,
+          background: 'rgba(255,255,255,0.05)',
+          color: tokens.color.muted,
+          fontSize: 12,
+        }}>
+          {String(value)}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Trạng thái',
+      priority: 3,
+      render: (value) => {
+        const status = String(value);
+        const colors = statusColors[status];
+        return (
+          <span style={{
+            padding: '4px 12px',
+            borderRadius: 20,
+            background: colors?.bg || 'rgba(255,255,255,0.1)',
+            color: colors?.text || tokens.color.text,
+            fontSize: 13,
+            fontWeight: 500,
+          }}>
+            {statusLabels[status] || status}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'createdAt',
+      header: 'Ngày tạo',
+      hideOnMobile: true,
+      render: (value) => (
+        <span style={{ color: tokens.color.muted, fontSize: 13 }}>
+          {new Date(String(value)).toLocaleDateString('vi-VN')}
+        </span>
+      ),
+    },
+  ];
+}
