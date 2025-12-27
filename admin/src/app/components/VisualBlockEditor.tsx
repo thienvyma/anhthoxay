@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { tokens } from '@app/shared';
 import { Button } from './Button';
@@ -58,90 +58,153 @@ function getDefaultBlockData(type: BlockType): Record<string, unknown> {
   }
 }
 
+// Parse value (JSON blocks or convert from markdown) - moved outside component
+function parseValue(val: string): Block[] {
+  if (!val) return [];
+  try {
+    const parsed = JSON.parse(val);
+    if (Array.isArray(parsed)) return parsed;
+  } catch {
+    // Convert markdown to blocks
+    return markdownToBlocks(val);
+  }
+  return [];
+}
+
+// Convert markdown to blocks - moved outside component
+function markdownToBlocks(md: string): Block[] {
+  const lines = md.split('\n');
+  const result: Block[] = [];
+  let currentParagraph = '';
+
+  for (const line of lines) {
+    if (line.startsWith('# ')) {
+      if (currentParagraph) {
+        result.push({
+          id: generateId(),
+          type: 'paragraph',
+          data: { text: currentParagraph.trim() },
+        });
+        currentParagraph = '';
+      }
+      result.push({
+        id: generateId(),
+        type: 'heading',
+        data: { text: line.slice(2), level: 1 },
+      });
+    } else if (line.startsWith('## ')) {
+      if (currentParagraph) {
+        result.push({
+          id: generateId(),
+          type: 'paragraph',
+          data: { text: currentParagraph.trim() },
+        });
+        currentParagraph = '';
+      }
+      result.push({
+        id: generateId(),
+        type: 'heading',
+        data: { text: line.slice(3), level: 2 },
+      });
+    } else if (line.startsWith('### ')) {
+      if (currentParagraph) {
+        result.push({
+          id: generateId(),
+          type: 'paragraph',
+          data: { text: currentParagraph.trim() },
+        });
+        currentParagraph = '';
+      }
+      result.push({
+        id: generateId(),
+        type: 'heading',
+        data: { text: line.slice(4), level: 3 },
+      });
+    } else if (line.startsWith('- ') || line.startsWith('* ')) {
+      if (currentParagraph) {
+        result.push({
+          id: generateId(),
+          type: 'paragraph',
+          data: { text: currentParagraph.trim() },
+        });
+        currentParagraph = '';
+      }
+      const items = [line.slice(2)];
+      result.push({ id: generateId(), type: 'list', data: { items, ordered: false } });
+    } else if (line.startsWith('> ')) {
+      if (currentParagraph) {
+        result.push({
+          id: generateId(),
+          type: 'paragraph',
+          data: { text: currentParagraph.trim() },
+        });
+        currentParagraph = '';
+      }
+      result.push({
+        id: generateId(),
+        type: 'quote',
+        data: { text: line.slice(2), author: '' },
+      });
+    } else if (line.trim() === '---') {
+      if (currentParagraph) {
+        result.push({
+          id: generateId(),
+          type: 'paragraph',
+          data: { text: currentParagraph.trim() },
+        });
+        currentParagraph = '';
+      }
+      result.push({ id: generateId(), type: 'divider', data: { style: 'solid' } });
+    } else if (line.trim()) {
+      currentParagraph += (currentParagraph ? '\n' : '') + line;
+    } else if (currentParagraph) {
+      result.push({
+        id: generateId(),
+        type: 'paragraph',
+        data: { text: currentParagraph.trim() },
+      });
+      currentParagraph = '';
+    }
+  }
+
+  if (currentParagraph) {
+    result.push({
+      id: generateId(),
+      type: 'paragraph',
+      data: { text: currentParagraph.trim() },
+    });
+  }
+
+  return result.length > 0
+    ? result
+    : [{ id: generateId(), type: 'paragraph', data: { text: '' } }];
+}
+
 export function VisualBlockEditor({ value, onChange, label }: VisualBlockEditorProps) {
   const [blocks, setBlocks] = useState<Block[]>(() => parseValue(value));
   const [showBlockPicker, setShowBlockPicker] = useState(false);
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'visual' | 'preview'>('visual');
 
-  // Parse initial value (JSON blocks or convert from markdown)
-  function parseValue(val: string): Block[] {
-    if (!val) return [];
-    try {
-      const parsed = JSON.parse(val);
-      if (Array.isArray(parsed)) return parsed;
-    } catch {
-      // Convert markdown to blocks
-      return markdownToBlocks(val);
+  // Sync blocks when value prop changes (e.g., when loading section data)
+  useEffect(() => {
+    const newBlocks = parseValue(value);
+    // Only update if the parsed content is different
+    const currentJson = JSON.stringify(blocks);
+    const newJson = JSON.stringify(newBlocks);
+    if (currentJson !== newJson) {
+      setBlocks(newBlocks);
     }
-    return [];
-  }
-
-  // Convert markdown to blocks
-  function markdownToBlocks(md: string): Block[] {
-    const lines = md.split('\n');
-    const result: Block[] = [];
-    let currentParagraph = '';
-
-    for (const line of lines) {
-      if (line.startsWith('# ')) {
-        if (currentParagraph) {
-          result.push({ id: generateId(), type: 'paragraph', data: { text: currentParagraph.trim() } });
-          currentParagraph = '';
-        }
-        result.push({ id: generateId(), type: 'heading', data: { text: line.slice(2), level: 1 } });
-      } else if (line.startsWith('## ')) {
-        if (currentParagraph) {
-          result.push({ id: generateId(), type: 'paragraph', data: { text: currentParagraph.trim() } });
-          currentParagraph = '';
-        }
-        result.push({ id: generateId(), type: 'heading', data: { text: line.slice(3), level: 2 } });
-      } else if (line.startsWith('### ')) {
-        if (currentParagraph) {
-          result.push({ id: generateId(), type: 'paragraph', data: { text: currentParagraph.trim() } });
-          currentParagraph = '';
-        }
-        result.push({ id: generateId(), type: 'heading', data: { text: line.slice(4), level: 3 } });
-      } else if (line.startsWith('- ') || line.startsWith('* ')) {
-        if (currentParagraph) {
-          result.push({ id: generateId(), type: 'paragraph', data: { text: currentParagraph.trim() } });
-          currentParagraph = '';
-        }
-        // Collect list items
-        const items = [line.slice(2)];
-        result.push({ id: generateId(), type: 'list', data: { items, ordered: false } });
-      } else if (line.startsWith('> ')) {
-        if (currentParagraph) {
-          result.push({ id: generateId(), type: 'paragraph', data: { text: currentParagraph.trim() } });
-          currentParagraph = '';
-        }
-        result.push({ id: generateId(), type: 'quote', data: { text: line.slice(2), author: '' } });
-      } else if (line.trim() === '---') {
-        if (currentParagraph) {
-          result.push({ id: generateId(), type: 'paragraph', data: { text: currentParagraph.trim() } });
-          currentParagraph = '';
-        }
-        result.push({ id: generateId(), type: 'divider', data: { style: 'solid' } });
-      } else if (line.trim()) {
-        currentParagraph += (currentParagraph ? '\n' : '') + line;
-      } else if (currentParagraph) {
-        result.push({ id: generateId(), type: 'paragraph', data: { text: currentParagraph.trim() } });
-        currentParagraph = '';
-      }
-    }
-
-    if (currentParagraph) {
-      result.push({ id: generateId(), type: 'paragraph', data: { text: currentParagraph.trim() } });
-    }
-
-    return result.length > 0 ? result : [{ id: generateId(), type: 'paragraph', data: { text: '' } }];
-  }
+  }, [value]);
 
   // Convert blocks to output (JSON for storage, can be rendered as HTML on frontend)
-  const saveBlocks = useCallback((newBlocks: Block[]) => {
-    setBlocks(newBlocks);
-    onChange(JSON.stringify(newBlocks));
-  }, [onChange]);
+  const saveBlocks = useCallback(
+    (newBlocks: Block[]) => {
+      setBlocks(newBlocks);
+      onChange(JSON.stringify(newBlocks));
+    },
+    [onChange]
+  );
 
   const addBlock = (type: BlockType, afterId?: string) => {
     const newBlock: Block = {

@@ -162,7 +162,6 @@ export function LayoutTab({
   useEffect(() => {
     settingsApi.get('mobileMenu')
       .then(data => {
-        console.log('[Admin] Loaded mobile menu config from API:', data);
         if (data?.value) {
           const loadedConfig = data.value as MobileMenuConfig;
           // Ensure all items have highlight field (for backward compatibility)
@@ -178,13 +177,13 @@ export function LayoutTab({
         } else {
           // Save default mobile menu config to database
           settingsApi.update('mobileMenu', { value: defaultMobileMenuConfig })
-            .catch((e) => console.warn('Failed to save default mobile menu config:', e));
+            .catch(() => { /* Silently fail */ });
         }
       })
       .catch(() => {
         // Save default mobile menu config to database on error
         settingsApi.update('mobileMenu', { value: defaultMobileMenuConfig })
-          .catch((e) => console.warn('Failed to save default mobile menu config:', e));
+          .catch(() => { /* Silently fail */ });
       });
   }, []);
 
@@ -311,8 +310,6 @@ export function LayoutTab({
   const handleSaveMobileMenu = useCallback(async () => {
     try {
       setSavingMobile(true);
-      // Debug: log the config being saved
-      console.log('[Admin] Saving mobile menu config:', JSON.stringify(mobileMenuConfig, null, 2));
       // Save to settings API - only send { value: ... }
       await settingsApi.update('mobileMenu', { value: mobileMenuConfig });
       onShowMessage('✅ Mobile Menu đã được lưu!');

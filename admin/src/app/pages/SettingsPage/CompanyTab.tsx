@@ -42,22 +42,17 @@ export function CompanyTab({ settings, onChange, onShowMessage, onError }: Compa
   const handleBackgroundUpload = useCallback(async (file: File) => {
     try {
       setUploadingBg(true);
-      console.log('📤 Uploading background image...');
-      const result = await mediaApi.upload(file);
-      console.log('✅ Media upload success:', result);
+      const result = await mediaApi.uploadFile(file);
 
       const updatedSettings = { ...settings, backgroundImage: result.url };
-      console.log('🔄 Updating settings with:', updatedSettings);
       onChange(updatedSettings);
 
       // Save immediately
-      console.log('💾 Saving to API...');
       await settingsApi.update('company', { value: updatedSettings });
-      console.log('✅ Settings saved successfully');
 
       onShowMessage('✅ Hình nền đã được cập nhật!');
     } catch (error) {
-      console.error('❌ Error uploading background:', error);
+      console.error('Error uploading background:', error);
       onError('Upload hình nền thất bại. Vui lòng thử lại.');
     } finally {
       setUploadingBg(false);

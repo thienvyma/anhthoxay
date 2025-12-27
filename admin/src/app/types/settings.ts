@@ -97,6 +97,7 @@ export type RouteType =
   | 'settings'
   | 'leads'
   | 'pricing-config'
+  | 'furniture'
   | 'users'
   | 'contractors'
   | 'regions'
@@ -109,5 +110,4 @@ export type RouteType =
   | 'notification-templates'
   | 'chat'
   | 'bidding'
-  | 'bidding-settings'
-  | 'interior';
+  | 'bidding-settings';

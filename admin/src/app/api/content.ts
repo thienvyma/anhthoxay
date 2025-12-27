@@ -55,40 +55,30 @@ export const sectionsApi = {
 };
 
 // ========== MEDIA API ==========
-interface DynamicCategory {
-  label: string;
-  icon: string;
-  count: number;
-}
-
-interface MediaUsageResponse {
-  usage: Record<string, { usedIn: string[]; count: number }>;
-  categories: Record<string, DynamicCategory>; // Dynamic categories from interior/pricing
-  summary: {
-    total: number;
-    blog: number;
-    sections: number;
-    unused: number;
-  };
-}
-
-interface MediaSyncResponse {
-  message: string;
-  totalFound: number;
-  alreadyExists: number;
-  created: number;
+interface UploadFileResponse {
+  url: string;
+  mimeType: string;
+  width?: number | null;
+  height?: number | null;
+  size: number;
 }
 
 export const mediaApi = {
-  list: () =>
-    apiFetch<MediaAsset[]>('/media'),
+  list: () => apiFetch<MediaAsset[]>('/media'),
 
+  /**
+   * Upload a file to gallery (creates MediaAsset record)
+   * Use this for MediaPage uploads only
+   */
   upload: async (formDataOrFile: FormData | File) => {
-    const formData = formDataOrFile instanceof FormData ? formDataOrFile : (() => {
-      const fd = new FormData();
-      fd.append('file', formDataOrFile);
-      return fd;
-    })();
+    const formData =
+      formDataOrFile instanceof FormData
+        ? formDataOrFile
+        : (() => {
+            const fd = new FormData();
+            fd.append('file', formDataOrFile);
+            return fd;
+          })();
 
     const headers: HeadersInit = {};
     const accessToken = tokenStorage.getAccessToken();
@@ -108,24 +98,61 @@ export const mediaApi = {
     }
 
     const json = await response.json();
-    // Unwrap standardized response format: { success: true, data: MediaAsset }
     return (json.data || json) as MediaAsset;
   },
 
-  delete: (id: string) =>
-    apiFetch<{ ok: boolean }>(`/media/${id}`, { method: 'DELETE' }),
+  /**
+   * Upload file only (NO MediaAsset record)
+   * Use this for furniture, materials, blog images, etc.
+   */
+  uploadFile: async (formDataOrFile: FormData | File) => {
+    const formData =
+      formDataOrFile instanceof FormData
+        ? formDataOrFile
+        : (() => {
+            const fd = new FormData();
+            fd.append('file', formDataOrFile);
+            return fd;
+          })();
 
-  // Get media usage across the system
-  getUsage: () =>
-    apiFetch<MediaUsageResponse>('/media/usage'),
+    const headers: HeadersInit = {};
+    const accessToken = tokenStorage.getAccessToken();
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
 
-  // Sync media - scan all images in DB and create MediaAsset if not exists
-  sync: () =>
-    apiFetch<MediaSyncResponse>('/media/sync', { method: 'POST' }),
+    const response = await fetch(`${API_BASE}/media/upload-file`, {
+      method: 'POST',
+      body: formData,
+      headers,
+    });
 
-  // Update media metadata (alt, caption, tags)
-  updateMetadata: (id: string, data: { alt?: string; caption?: string; tags?: string }) =>
-    apiFetch<MediaAsset>(`/media/${id}`, { method: 'PUT', body: data }),
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
+      throw new Error(errorData.error || errorData.details || 'Upload failed');
+    }
+
+    const json = await response.json();
+    return (json.data || json) as UploadFileResponse;
+  },
+
+  delete: (id: string) => apiFetch<{ ok: boolean }>(`/media/${id}`, { method: 'DELETE' }),
+
+  // Update media metadata (alt, caption, tags, isFeatured)
+  updateMetadata: (
+    id: string,
+    data: { alt?: string; caption?: string; tags?: string; isFeatured?: boolean; isActive?: boolean }
+  ) => apiFetch<MediaAsset>(`/media/${id}`, { method: 'PUT', body: data }),
+
+  // Get featured media for slideshow (public)
+  getFeatured: () => apiFetch<MediaAsset[]>('/media/featured'),
+
+  // Get gallery with pagination (public)
+  getGallery: (page = 1, limit = 12) =>
+    apiFetch<{
+      items: MediaAsset[];
+      pagination: { page: number; limit: number; total: number; totalPages: number };
+    }>(`/media/gallery?page=${page}&limit=${limit}`),
 };
 
 // ========== BLOG CATEGORIES API ==========

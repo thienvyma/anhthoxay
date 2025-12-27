@@ -207,23 +207,6 @@ const sectionTypes: Array<{
     color: '#f5d393',
     example: 'Hiển thị trên mọi trang',
   },
-  // Interior
-  {
-    type: 'INTERIOR_QUOTE',
-    icon: 'ri-home-smile-line',
-    label: 'Báo Giá Nội Thất (Wizard)',
-    description: 'Wizard tương tác để khách chọn căn hộ và gói nội thất',
-    color: '#10b981',
-    example: 'Trang /noi-that',
-  },
-  {
-    type: 'INTERIOR_PRICING_TABLE',
-    icon: 'ri-price-tag-3-line',
-    label: 'Bảng Báo Giá Nội Thất',
-    description: 'Bảng giá các gói nội thất với tiêu đề và mô tả',
-    color: '#8b5cf6',
-    example: 'Trang chủ, landing page',
-  },
   // Marketplace
   {
     type: 'MARKETPLACE',
@@ -232,6 +215,40 @@ const sectionTypes: Array<{
     description: 'Hiển thị công trình đang tìm nhà thầu (OPEN status)',
     color: '#06b6d4',
     example: 'Trang chủ, thu hút nhà thầu',
+  },
+  // Media
+  {
+    type: 'FEATURED_SLIDESHOW',
+    icon: 'ri-slideshow-3-line',
+    label: 'Slideshow Nổi Bật',
+    description: 'Hiển thị các hình ảnh được đánh dấu nổi bật dạng slideshow',
+    color: '#ec4899',
+    example: 'Trang chủ, giới thiệu',
+  },
+  {
+    type: 'MEDIA_GALLERY',
+    icon: 'ri-gallery-line',
+    label: 'Thư Viện Ảnh',
+    description: 'Hiển thị toàn bộ ảnh với phân trang và lightbox',
+    color: '#8b5cf6',
+    example: 'Trang gallery, portfolio',
+  },
+  {
+    type: 'VIDEO_SHOWCASE',
+    icon: 'ri-video-line',
+    label: 'Video Showcase',
+    description: 'Hiển thị video tự động chạy (upload hoặc link YouTube/Vimeo)',
+    color: '#ef4444',
+    example: 'Giới thiệu công ty, dự án',
+  },
+  // Furniture Quotation
+  {
+    type: 'FURNITURE_QUOTE',
+    icon: 'ri-sofa-line',
+    label: 'Báo Giá Nội Thất',
+    description: 'Quy trình chọn căn hộ và báo giá nội thất step-by-step',
+    color: '#8b5cf6',
+    example: 'Trang báo giá nội thất',
   },
 ];
 

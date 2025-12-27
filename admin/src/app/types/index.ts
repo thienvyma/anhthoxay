@@ -12,6 +12,3 @@ export * from './content';
 
 // Settings-related types (Settings, BiddingSettings, ServiceFee)
 export * from './settings';
-
-// Interior-related types (Developer, Development, Building, Layout, Package, Quote)
-export * from './interior';

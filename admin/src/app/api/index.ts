@@ -58,40 +58,6 @@ export {
 } from './communication';
 export type { NotificationTemplate, RenderedTemplate } from './communication';
 
-// Interior APIs
-export {
-  interiorDevelopersApi,
-  interiorDevelopmentsApi,
-  interiorBuildingsApi,
-  interiorBuildingUnitsApi,
-  interiorLayoutsApi,
-  interiorPackagesApi,
-  interiorSurchargesApi,
-  interiorSettingsApi,
-  interiorRoomTypesApi,
-  interiorFurnitureCategoriesApi,
-  interiorFurnitureItemsApi,
-  interiorQuotesApi,
-} from './interior';
-
-// Interior Sync APIs
-export { interiorSyncApi } from './interior-sync';
-export type {
-  SyncError,
-  SheetSyncResult,
-  PullResult,
-  PushResult,
-  ChangeType,
-  PreviewRow,
-  PreviewResult,
-  SyncStatus,
-  SyncDirection,
-  SyncLogStatus,
-  SyncLogEntry,
-  SyncLogsResponse,
-  SheetType,
-} from './interior-sync';
-
 // Dashboard APIs
 export { dashboardApi } from './dashboard';
 export type {
@@ -99,7 +65,6 @@ export type {
   ProjectsStats,
   BidsStats,
   ContractorsStats,
-  InteriorQuotesStats,
   BlogPostsStats,
   UsersStats,
   MediaStats,
@@ -111,6 +76,36 @@ export type {
   ActivityType,
   ActivityItem,
 } from './dashboard';
+
+// Furniture APIs
+export {
+  furnitureDevelopersApi,
+  furnitureProjectsApi,
+  furnitureBuildingsApi,
+  furnitureLayoutsApi,
+  furnitureApartmentTypesApi,
+  furnitureCategoriesApi,
+  furnitureProductsApi,
+  furnitureCombosApi,
+  furnitureFeesApi,
+  furnitureDataApi,
+  furnitureQuotationsApi,
+} from './furniture';
+export type {
+  FurnitureDeveloper,
+  FurnitureProject,
+  FurnitureBuilding,
+  FurnitureLayout,
+  FurnitureApartmentType,
+  FurnitureCategory,
+  FurnitureProduct,
+  FurnitureCombo,
+  FurnitureComboItem,
+  FurnitureFee,
+  FurnitureQuotation,
+  FurnitureQuotationItem,
+  FurnitureQuotationFee,
+} from './furniture';
 
 // Backward compatible combined api export
 export const api = {

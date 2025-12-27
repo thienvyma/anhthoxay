@@ -25,7 +25,7 @@ import { NotificationTemplatesPage } from './pages/NotificationTemplatesPage';
 import { ChatPage } from './pages/ChatPage';
 import { BiddingManagementPage } from './pages/BiddingManagementPage';
 import { BiddingSettingsPage } from './pages/BiddingSettingsPage';
-import { InteriorPage } from './pages/InteriorPage';
+import { FurniturePage } from './pages/FurniturePage';
 import { useUser, store, tokenStorage } from './store';
 import { authApi } from './api';
 import type { RouteType } from './types'
@@ -40,16 +40,8 @@ function AppContent() {
 	useEffect(() => {
     // Check if user is already logged in (has valid token)
     const accessToken = tokenStorage.getAccessToken();
-    const refreshToken = tokenStorage.getRefreshToken();
-    
-    console.log('🔐 Auth check on mount:', {
-      hasAccessToken: !!accessToken,
-      hasRefreshToken: !!refreshToken,
-      accessTokenPreview: accessToken ? accessToken.substring(0, 20) + '...' : null,
-    });
     
     if (!accessToken) {
-      console.log('🔐 No access token found, redirecting to login');
       setLoading(false);
       return;
     }
@@ -61,7 +53,6 @@ function AppContent() {
       .me()
       .then((userData) => {
         if (abortController.signal.aborted) return;
-        console.log('🔐 Auth check successful:', userData);
         store.setUser(userData as Parameters<typeof store.setUser>[0]);
       })
       .catch((error) => {
@@ -70,9 +61,7 @@ function AppContent() {
         // Don't log network errors as they're expected when server is starting
         const errorMessage = (error as Error).message || '';
         if (!errorMessage.includes('Failed to fetch') && !errorMessage.includes('NetworkError')) {
-          console.error('🔐 Auth check failed:', error);
-        } else {
-          console.log('🔐 Auth check: Server not reachable, clearing tokens');
+          console.error('Auth check failed:', error);
         }
         tokenStorage.clearTokens();
         store.setUser(null);
@@ -175,7 +164,7 @@ function AppContent() {
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/bidding" element={<BiddingManagementPage />} />
               <Route path="/bidding-settings" element={<BiddingSettingsPage />} />
-              <Route path="/interior" element={<InteriorPage />} />
+              <Route path="/furniture" element={<FurniturePage />} />
               <Route path="/pricing-config" element={<PricingConfigPage />} />
               <Route path="/media" element={<MediaPage />} />
               <Route path="/preview" element={<LivePreviewPage />} />

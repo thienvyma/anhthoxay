@@ -2,7 +2,9 @@
 	"dependencies": {
 		"@hono/node-server": "^1.19.5",
 		"@prisma/client": "^5.22.0",
+		"@types/pdfkit": "^0.17.4",
 		"hono": "^4.9.10",
+		"pdfkit": "^0.17.2",
 		"sharp": "^0.34.4"
 	}
 }

@@ -49,13 +49,6 @@ const QUICK_ACTIONS: QuickActionConfig[] = [
     color: '#8b5cf6',
   },
   {
-    key: 'interior-config',
-    icon: 'ri-home-smile-line',
-    label: 'Cấu hình nội thất',
-    route: '/interior',
-    color: '#10b981',
-  },
-  {
     key: 'write-blog',
     icon: 'ri-quill-pen-line',
     label: 'Viết bài blog',
@@ -68,6 +61,13 @@ const QUICK_ACTIONS: QuickActionConfig[] = [
     label: 'Quản lý media',
     route: '/media',
     color: '#84cc16',
+  },
+  {
+    key: 'manage-leads',
+    icon: 'ri-contacts-book-line',
+    label: 'Quản lý khách hàng',
+    route: '/leads',
+    color: tokens.color.primary,
   },
 ];
 

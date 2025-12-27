@@ -11,6 +11,8 @@ interface ImageDropzoneProps {
   onPickExisting?: () => void;
   label?: string;
   height?: number;
+  /** Use gallery upload (creates MediaAsset). Default: false (uses uploadFile) */
+  useGalleryUpload?: boolean;
 }
 
 export type { ImageDropzoneProps };
@@ -67,7 +69,7 @@ async function processImage(file: File, maxWidth = 1920, maxHeight = 1080, quali
   });
 }
 
-export function ImageDropzone({ value, onChange, onRemove, label, height = 200 }: ImageDropzoneProps) {
+export function ImageDropzone({ value, onChange, onRemove, label, height = 200, useGalleryUpload = false }: ImageDropzoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -108,7 +110,6 @@ export function ImageDropzone({ value, onChange, onRemove, label, height = 200 }
 
   const uploadFile = async (file: File) => {
     try {
-      console.log('[ImageDropzone] Starting upload:', file.name);
       setIsUploading(true);
       setErrorMessage(null);
       setUploadProgress(0);
@@ -131,18 +132,19 @@ export function ImageDropzone({ value, onChange, onRemove, label, height = 200 }
       formData.append('file', processedFile);
 
       setUploadProgress(80);
-      const response = await mediaApi.upload(formData);
+      // Use gallery upload (creates MediaAsset) or file upload (no MediaAsset)
+      const response = useGalleryUpload 
+        ? await mediaApi.upload(formData)
+        : await mediaApi.uploadFile(formData);
       setUploadProgress(100);
       
-      console.log('[ImageDropzone] Upload complete:', response.url);
       onChange(response.url);
     } catch (error) {
-      console.error('[ImageDropzone] Failed to upload image:', error);
+      console.error('Failed to upload image:', error);
       const errorMsg = error instanceof Error ? error.message : 'Failed to upload image';
       setErrorMessage(errorMsg);
       setTimeout(() => setErrorMessage(null), 5000);
     } finally {
-      console.log('[ImageDropzone] Cleanup: setIsUploading(false)');
       setIsUploading(false);
       setUploadProgress(0);
     }
@@ -156,20 +158,13 @@ export function ImageDropzone({ value, onChange, onRemove, label, height = 200 }
 
   // Upload overlay component (rendered via Portal)
   const uploadOverlay = (
-    <AnimatePresence
-      mode="wait"
-      onExitComplete={() => {
-        console.log('[ImageDropzone] Upload overlay exit animation complete');
-      }}
-    >
+    <AnimatePresence mode="wait">
       {isUploading && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          onAnimationStart={() => console.log('[ImageDropzone] Upload overlay appearing')}
-          onAnimationComplete={() => console.log('[ImageDropzone] Upload overlay animation complete')}
           onClick={(e) => e.stopPropagation()}
           style={{
             position: 'fixed',

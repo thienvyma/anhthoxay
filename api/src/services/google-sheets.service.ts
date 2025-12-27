@@ -510,6 +510,233 @@ export class GoogleSheetsService {
       throw new Error(`Failed to write to sheet "${sheetName}": ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
+
+  // ============================================
+  // FURNITURE SYNC METHODS
+  // _Requirements: 9.1, 9.2, 9.3, 9.4_
+  // ============================================
+
+  /**
+   * Sync furniture data from Google Sheets (Pull)
+   * Reads 3 tabs: DuAn, Layout, ApartmentType
+   * 
+   * @param spreadsheetId - The Google Spreadsheet ID
+   * @param furnitureService - FurnitureService instance for import
+   * @returns Import result with counts
+   */
+  async syncFurniturePull(
+    spreadsheetId: string,
+    furnitureService: { importFromCSV: (files: { duAn: string; layouts: string; apartmentTypes: string }) => Promise<{ developers: number; projects: number; buildings: number; layouts: number; apartmentTypes: number }> }
+  ): Promise<{
+    success: boolean;
+    counts?: { developers: number; projects: number; buildings: number; layouts: number; apartmentTypes: number };
+    error?: string;
+  }> {
+    try {
+      // Read data from 3 tabs
+      const duAnData = await this.readSheet(spreadsheetId, 'DuAn');
+      const layoutData = await this.readSheet(spreadsheetId, 'Layout');
+      const apartmentTypeData = await this.readSheet(spreadsheetId, 'ApartmentType');
+
+      // Convert sheet data to CSV strings
+      const duAnCSV = this.sheetDataToCSV(duAnData);
+      const layoutsCSV = this.sheetDataToCSV(layoutData);
+      const apartmentTypesCSV = this.sheetDataToCSV(apartmentTypeData);
+
+      // Import using furniture service
+      const counts = await furnitureService.importFromCSV({
+        duAn: duAnCSV,
+        layouts: layoutsCSV,
+        apartmentTypes: apartmentTypesCSV,
+      });
+
+      // Update last sync time
+      await prisma.integration.update({
+        where: { type: 'google_sheets' },
+        data: { lastSyncAt: new Date(), errorCount: 0, lastError: null },
+      });
+
+      return { success: true, counts };
+    } catch (error) {
+      console.error('Furniture sync pull error:', error);
+      
+      // Update error count
+      await prisma.integration.update({
+        where: { type: 'google_sheets' },
+        data: {
+          errorCount: { increment: 1 },
+          lastError: error instanceof Error ? error.message : 'Unknown error',
+        },
+      }).catch(() => {
+        // Ignore update errors
+      });
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to sync from Google Sheets',
+      };
+    }
+  }
+
+  /**
+   * Sync furniture data to Google Sheets (Push)
+   * Writes to 3 tabs: DuAn, Layout, ApartmentType
+   * 
+   * @param spreadsheetId - The Google Spreadsheet ID
+   * @param furnitureService - FurnitureService instance for export
+   * @returns Push result with counts
+   */
+  async syncFurniturePush(
+    spreadsheetId: string,
+    furnitureService: { exportToCSV: () => Promise<{ duAn: string; layouts: string; apartmentTypes: string }> }
+  ): Promise<{
+    success: boolean;
+    counts?: { duAn: number; layouts: number; apartmentTypes: number };
+    error?: string;
+  }> {
+    try {
+      // Export data from furniture service
+      const csvData = await furnitureService.exportToCSV();
+
+      // Convert CSV strings to sheet data
+      const duAnSheetData = this.csvToSheetData(csvData.duAn);
+      const layoutSheetData = this.csvToSheetData(csvData.layouts);
+      const apartmentTypeSheetData = this.csvToSheetData(csvData.apartmentTypes);
+
+      // Write to 3 tabs
+      const duAnRows = await this.writeSheet(spreadsheetId, 'DuAn', duAnSheetData);
+      const layoutRows = await this.writeSheet(spreadsheetId, 'Layout', layoutSheetData);
+      const apartmentTypeRows = await this.writeSheet(spreadsheetId, 'ApartmentType', apartmentTypeSheetData);
+
+      // Update last sync time
+      await prisma.integration.update({
+        where: { type: 'google_sheets' },
+        data: { lastSyncAt: new Date(), errorCount: 0, lastError: null },
+      });
+
+      return {
+        success: true,
+        counts: {
+          duAn: duAnRows,
+          layouts: layoutRows,
+          apartmentTypes: apartmentTypeRows,
+        },
+      };
+    } catch (error) {
+      console.error('Furniture sync push error:', error);
+
+      // Update error count
+      await prisma.integration.update({
+        where: { type: 'google_sheets' },
+        data: {
+          errorCount: { increment: 1 },
+          lastError: error instanceof Error ? error.message : 'Unknown error',
+        },
+      }).catch(() => {
+        // Ignore update errors
+      });
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to sync to Google Sheets',
+      };
+    }
+  }
+
+  /**
+   * Convert sheet data (2D array) to CSV string
+   */
+  private sheetDataToCSV(data: (string | number | null)[][] | null): string {
+    if (!data || data.length === 0) {
+      return '';
+    }
+
+    return data
+      .map((row) =>
+        row
+          .map((cell) => {
+            const value = cell === null ? '' : String(cell);
+            // Quote values containing commas, quotes, or newlines
+            if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+              return `"${value.replace(/"/g, '""')}"`;
+            }
+            return value;
+          })
+          .join(',')
+      )
+      .join('\n');
+  }
+
+  /**
+   * Convert CSV string to sheet data (2D array)
+   */
+  private csvToSheetData(csv: string): (string | number | null)[][] {
+    if (!csv || csv.trim().length === 0) {
+      return [];
+    }
+
+    const lines = csv.split(/\r?\n/).filter((line) => line.trim().length > 0);
+    return lines.map((line) => this.parseCSVLineForSheet(line));
+  }
+
+  /**
+   * Parse a single CSV line for sheet data
+   */
+  private parseCSVLineForSheet(line: string): (string | number | null)[] {
+    const result: (string | number | null)[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const nextChar = line[i + 1];
+
+      if (inQuotes) {
+        if (char === '"' && nextChar === '"') {
+          // Escaped quote
+          current += '"';
+          i++; // Skip next quote
+        } else if (char === '"') {
+          // End of quoted value
+          inQuotes = false;
+        } else {
+          current += char;
+        }
+      } else {
+        if (char === '"') {
+          // Start of quoted value
+          inQuotes = true;
+        } else if (char === ',') {
+          // End of field
+          result.push(this.parseSheetValue(current));
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+    }
+
+    // Add last field
+    result.push(this.parseSheetValue(current));
+
+    return result;
+  }
+
+  /**
+   * Parse a value for sheet data (convert to number if possible)
+   */
+  private parseSheetValue(value: string): string | number | null {
+    const trimmed = value.trim();
+    if (trimmed === '') {
+      return null;
+    }
+    // Try to parse as number
+    const num = Number(trimmed);
+    if (!isNaN(num) && trimmed !== '') {
+      return num;
+    }
+    return trimmed;
+  }
 }
 
 // Singleton instance

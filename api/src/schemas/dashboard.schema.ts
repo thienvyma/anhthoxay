@@ -59,14 +59,6 @@ export const contractorsStatsSchema = z.object({
 });
 
 /**
- * Schema for interior quotes statistics
- */
-export const interiorQuotesStatsSchema = z.object({
-  total: z.number().int().nonnegative(),
-  thisMonth: z.number().int().nonnegative(),
-});
-
-/**
  * Schema for blog posts statistics
  */
 export const blogPostsStatsSchema = z.object({
@@ -149,7 +141,6 @@ export const dashboardStatsResponseSchema = z.object({
   projects: projectsStatsSchema,
   bids: bidsStatsSchema,
   contractors: contractorsStatsSchema,
-  interiorQuotes: interiorQuotesStatsSchema,
   blogPosts: blogPostsStatsSchema,
   users: usersStatsSchema,
   media: mediaStatsSchema,
@@ -168,7 +159,6 @@ export const activityTypeSchema = z.enum([
   'PROJECT',
   'BID',
   'CONTRACTOR',
-  'INTERIOR_QUOTE',
 ]);
 
 /**
@@ -203,7 +193,6 @@ export type LeadsStats = z.infer<typeof leadsStatsSchema>;
 export type ProjectsStats = z.infer<typeof projectsStatsSchema>;
 export type BidsStats = z.infer<typeof bidsStatsSchema>;
 export type ContractorsStats = z.infer<typeof contractorsStatsSchema>;
-export type InteriorQuotesStats = z.infer<typeof interiorQuotesStatsSchema>;
 export type BlogPostsStats = z.infer<typeof blogPostsStatsSchema>;
 export type UsersStats = z.infer<typeof usersStatsSchema>;
 export type MediaStats = z.infer<typeof mediaStatsSchema>;

@@ -25,7 +25,6 @@ const BlogPage = lazy(() => import('./pages/BlogPage').then(m => ({ default: m.B
 const BlogDetailPage = lazy(() => import('./pages/BlogDetailPage').then(m => ({ default: m.BlogDetailPage })));
 const DynamicPage = lazy(() => import('./pages/DynamicPage').then(m => ({ default: m.DynamicPage })));
 const UnsubscribePage = lazy(() => import('./pages/UnsubscribePage').then(m => ({ default: m.UnsubscribePage })));
-const InteriorQuotePage = lazy(() => import('./pages/InteriorQuotePage').then(m => ({ default: m.InteriorQuotePage })));
 
 // Create QueryClient instance for API caching
 const queryClient = new QueryClient({
@@ -76,7 +75,6 @@ function AppContent() {
     } else {
       // Clear localStorage when page data is loaded (DB is source of truth now)
       if (localStorage.getItem('headerConfig') || localStorage.getItem('footerConfig')) {
-        console.log('🗑️ Clearing old localStorage configs - using database now');
         localStorage.removeItem('headerConfig');
         localStorage.removeItem('footerConfig');
         setHeaderConfigFromSettings(null);
@@ -89,39 +87,32 @@ function AppContent() {
   useEffect(() => {
     fetch(`${API_URL}/settings/company`)
       .then((res) => {
-        console.log('📡 Settings API response status:', res.status);
         return res.json();
       })
       .then((json) => {
-        console.log('📦 Settings API raw response:', json);
         // Unwrap standardized response format { success: true, data: T }
         const data = json.data || json;
         const settings = data.value || data; // Handle both {key, value} and direct object
-        console.log('🔧 Parsed settings:', settings);
         
         if (settings.backgroundImage && settings.backgroundImage.trim()) {
           const bgUrl = resolveMediaUrl(settings.backgroundImage);
-          console.log('🖼️ Background URL:', bgUrl);
           
           // Validate image exists before setting
           const img = new Image();
           img.onload = () => {
-            console.log('✅ Background image loaded successfully');
             setBackgroundImage(bgUrl);
           };
           img.onerror = () => {
-            console.warn('⚠️ Background image not found, using default:', settings.backgroundImage);
             setBackgroundImage(null); // Fallback to default
           };
           img.src = bgUrl;
         } else {
-          console.log('ℹ️ No background image set, using default');
           // Clear background image if it was deleted or is empty
           setBackgroundImage(null);
         }
       })
-      .catch((err) => {
-        console.error('❌ Failed to load company settings:', err);
+      .catch(() => {
+        // Silently fail - use default background
       });
   }, []);
 
@@ -297,8 +288,9 @@ function AppContent() {
             width: 60,
             height: 60,
             borderRadius: '50%',
-            border: `4px solid ${tokens.color.border}`,
-            borderTopColor: tokens.color.primary,
+            borderWidth: '4px',
+            borderStyle: 'solid',
+            borderColor: `${tokens.color.border} ${tokens.color.border} ${tokens.color.border} ${tokens.color.primary}`,
           }}
         />
       </div>
@@ -403,8 +395,9 @@ function AppContent() {
                     width: 40,
                     height: 40,
                     borderRadius: '50%',
-                    border: `3px solid ${tokens.color.border}`,
-                    borderTopColor: tokens.color.primary,
+                    borderWidth: '3px',
+                    borderStyle: 'solid',
+                    borderColor: `${tokens.color.border} ${tokens.color.border} ${tokens.color.border} ${tokens.color.primary}`,
                   }}
                 />
               </div>
@@ -420,8 +413,6 @@ function AppContent() {
               <Route path="/blog/:slug" element={<BlogDetailPage />} />
               {/* Unsubscribe page - email notification management */}
               <Route path="/unsubscribe" element={<UnsubscribePage />} />
-              {/* Interior Quote page - furniture quote wizard */}
-              <Route path="/noi-that" element={<InteriorQuotePage />} />
               {/* Dynamic page route - loads any page from database by slug */}
               <Route path="/:slug" element={<DynamicPage />} />
               {/* 404 fallback */}

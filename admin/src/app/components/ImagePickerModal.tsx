@@ -134,11 +134,7 @@ export function ImagePickerModal({ onSelect, onCancel, onClose, currentUrl }: Im
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={(e) => {
-          console.log('[ImagePickerModal] Backdrop clicked:', { 
-            isDirectClick: e.target === e.currentTarget 
-          });
           if (e.target === e.currentTarget) {
-            console.log('[ImagePickerModal] Closing modal');
             handleCancel();
           }
         }}
@@ -163,7 +159,6 @@ export function ImagePickerModal({ onSelect, onCancel, onClose, currentUrl }: Im
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           onClick={(e) => {
-            console.log('[ImagePickerModal] Modal content clicked, stopping propagation');
             e.stopPropagation();
           }}
           style={{
@@ -206,7 +201,6 @@ export function ImagePickerModal({ onSelect, onCancel, onClose, currentUrl }: Im
             whileTap={{ scale: 0.9 }}
             onClick={(e) => {
               e.stopPropagation();
-              console.log('[ImagePickerModal] X button clicked');
               handleCancel();
             }}
             style={{
@@ -248,7 +242,6 @@ export function ImagePickerModal({ onSelect, onCancel, onClose, currentUrl }: Im
                 whileTap={{ scale: 0.95 }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('[ImagePickerModal] Filter clicked:', f);
                   setFilter(f);
                 }}
                 style={{
@@ -281,10 +274,7 @@ export function ImagePickerModal({ onSelect, onCancel, onClose, currentUrl }: Im
               type="file"
               multiple
               accept="image/*"
-              onChange={(e) => {
-                console.log('[ImagePickerModal] File input changed, files:', e.target.files?.length);
-                handleUpload(e);
-              }}
+              onChange={handleUpload}
               style={{ display: 'none' }}
               disabled={uploading}
             />
@@ -338,7 +328,6 @@ export function ImagePickerModal({ onSelect, onCancel, onClose, currentUrl }: Im
                   whileHover={{ scale: 1.05 }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    console.log('[ImagePickerModal] Image clicked:', item.url);
                     setSelectedUrl(item.url);
                   }}
                   style={{

@@ -119,8 +119,8 @@ export function BlogDetailPage() {
       <div style={{ minHeight: '100vh', background: '#0b0c0f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ ...glassCardStyle, padding: '48px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px' }}>
           <div style={{ position: 'relative', width: '64px', height: '64px' }}>
-            <div style={{ position: 'absolute', inset: 0, border: `4px solid ${tokens.color.primary}33`, borderRadius: '50%' }} />
-            <div style={{ position: 'absolute', inset: 0, border: '4px solid transparent', borderTopColor: tokens.color.primary, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <div style={{ position: 'absolute', inset: 0, borderWidth: '4px', borderStyle: 'solid', borderColor: `${tokens.color.primary}33`, borderRadius: '50%' }} />
+            <div style={{ position: 'absolute', inset: 0, borderWidth: '4px', borderStyle: 'solid', borderColor: `transparent transparent transparent ${tokens.color.primary}`, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
           </div>
           <div style={{ textAlign: 'center' }}>
             <p style={{ fontSize: '16px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Đang tải bài viết...</p>

@@ -556,7 +556,7 @@ function PostEditorModal({ editingPost, formData, categories, onTitleChange, onF
                 placeholder="Viết nội dung bài viết..."
                 minHeight={300}
                 onImageUpload={async (file) => {
-                  const result = await mediaApi.upload(file);
+                  const result = await mediaApi.uploadFile(file);
                   return result.url;
                 }}
               />

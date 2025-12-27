@@ -67,14 +67,6 @@ const STAT_CARDS: StatCardConfig[] = [
     getPendingCount: (s) => s.contractors.pending,
   },
   {
-    key: 'interiorQuotes',
-    icon: 'ri-home-smile-line',
-    label: 'Báo giá nội thất',
-    color: '#10b981',
-    route: '/interior',
-    getValue: (s) => s.interiorQuotes.total,
-  },
-  {
     key: 'blogPosts',
     icon: 'ri-quill-pen-line',
     label: 'Bài viết',

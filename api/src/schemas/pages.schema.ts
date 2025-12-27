@@ -61,6 +61,7 @@ export const sectionKinds = [
   'SERVICES',
   'QUOTE_FORM',
   'ABOUT',
+  'FURNITURE_QUOTE',
 ] as const;
 
 /**

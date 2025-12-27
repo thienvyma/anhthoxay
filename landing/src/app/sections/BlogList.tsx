@@ -158,8 +158,9 @@ export function BlogList({ data }: { data: BlogListData }) {
           <div style={{
             width: 48,
             height: 48,
-            border: '3px solid rgba(245,211,147,0.2)',
-            borderTopColor: '#F5D393',
+            borderWidth: '3px',
+            borderStyle: 'solid',
+            borderColor: 'rgba(245,211,147,0.2) rgba(245,211,147,0.2) rgba(245,211,147,0.2) #F5D393',
             borderRadius: '50%',
             margin: '0 auto 16px',
             animation: 'spin 0.8s linear infinite'

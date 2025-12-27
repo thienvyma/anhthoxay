@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react';
 import type { Section } from '../types';
 import { tokens } from '@app/shared';
-import { SimpleMarkdown } from '../utils/simpleMarkdown'; // Lightweight for RICH_TEXT
 
 // Lazy load all sections for better performance
 const EnhancedHero = lazy(() => import('./EnhancedHero').then(m => ({ default: m.EnhancedHero })));
@@ -20,10 +19,12 @@ const CallToAction = lazy(() => import('./CallToAction').then(m => ({ default: m
 const BlogList = lazy(() => import('./BlogList').then(m => ({ default: m.BlogList })));
 const QuoteFormSection = lazy(() => import('./QuoteFormSection').then(m => ({ default: m.QuoteFormSection })));
 const QuoteCalculatorSection = lazy(() => import('./QuoteCalculatorSection').then(m => ({ default: m.QuoteCalculatorSection })));
-const InteriorQuoteSection = lazy(() => import('./InteriorQuoteSection').then(m => ({ default: m.InteriorQuoteSection })));
-const InteriorPricingTable = lazy(() => import('./InteriorPricingTable').then(m => ({ default: m.InteriorPricingTable })));
-const InteriorWizardSection = lazy(() => import('./InteriorWizardSection').then(m => ({ default: m.InteriorWizardSection })));
 const MarketplaceSection = lazy(() => import('./MarketplaceSection').then(m => ({ default: m.MarketplaceSection })));
+const FeaturedSlideshow = lazy(() => import('./FeaturedSlideshow').then(m => ({ default: m.FeaturedSlideshow })));
+const MediaGallery = lazy(() => import('./MediaGallery').then(m => ({ default: m.MediaGallery })));
+const RichTextSection = lazy(() => import('./RichTextSection').then(m => ({ default: m.RichTextSection })));
+const VideoShowcase = lazy(() => import('./VideoShowcase').then(m => ({ default: m.VideoShowcase })));
+const FurnitureQuoteSection = lazy(() => import('./FurnitureQuote').then(m => ({ default: m.FurnitureQuoteSection })));
 
 // Loading fallback component
 const SectionLoader = () => (
@@ -34,14 +35,7 @@ const SectionLoader = () => (
     minHeight: 200,
     opacity: 0.5,
   }}>
-    <div style={{
-      width: 32,
-      height: 32,
-      borderRadius: '50%',
-      border: `3px solid ${tokens.color.border}`,
-      borderTopColor: tokens.color.primary,
-      animation: 'spin 0.8s linear infinite',
-    }} />
+    <div className="spinner-primary-sm" />
   </div>
 );
 
@@ -194,27 +188,6 @@ export function renderSection(section: Section) {
         </Suspense>
       );
 
-    case 'INTERIOR_QUOTE':
-      return (
-        <Suspense key={section.id} fallback={<SectionLoader />}>
-          <InteriorQuoteSection data={data} />
-        </Suspense>
-      );
-
-    case 'INTERIOR_PRICING_TABLE':
-      return (
-        <Suspense key={section.id} fallback={<SectionLoader />}>
-          <InteriorPricingTable data={data} />
-        </Suspense>
-      );
-
-    case 'INTERIOR_WIZARD':
-      return (
-        <Suspense key={section.id} fallback={<SectionLoader />}>
-          <InteriorWizardSection data={data} />
-        </Suspense>
-      );
-
     case 'MARKETPLACE':
       return (
         <Suspense key={section.id} fallback={<SectionLoader />}>
@@ -222,153 +195,32 @@ export function renderSection(section: Section) {
         </Suspense>
       );
 
+    case 'FEATURED_SLIDESHOW':
+      return (
+        <Suspense key={section.id} fallback={<SectionLoader />}>
+          <FeaturedSlideshow data={data} />
+        </Suspense>
+      );
+
+    case 'MEDIA_GALLERY':
+      return (
+        <Suspense key={section.id} fallback={<SectionLoader />}>
+          <MediaGallery data={data} />
+        </Suspense>
+      );
+
     case 'RICH_TEXT':
       return (
-        <section 
-          key={section.id}
-          style={{
-            maxWidth: 1200,
-            margin: '80px auto',
-            padding: '0 24px',
-          }}
-        >
-          <div
-            style={{
-              background: 'linear-gradient(135deg, rgba(26, 27, 30, 0.6) 0%, rgba(19, 19, 22, 0.4) 100%)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(245, 211, 147, 0.1)',
-              borderRadius: 16,
-              padding: '48px 40px',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
-            }}
-            className="rich-text-content"
-          >
-            <div
-              style={{
-                lineHeight: 1.8,
-                color: 'rgba(255,255,255,0.85)',
-                fontSize: 16,
-              }}
-            >
-              {/* Support both 'html' (raw HTML) and 'content' (markdown) */}
-              {data.html ? (
-                <div dangerouslySetInnerHTML={{ __html: data.html }} />
-              ) : (
-                <SimpleMarkdown>{data.content || ''}</SimpleMarkdown>
-              )}
-            </div>
-          </div>
+        <Suspense key={section.id} fallback={<SectionLoader />}>
+          <RichTextSection data={data} />
+        </Suspense>
+      );
 
-          <style>{`
-            .rich-text-content h1,
-            .rich-text-content h2,
-            .rich-text-content h3,
-            .rich-text-content h4 {
-              font-family: 'Playfair Display', serif;
-              color: ${tokens.color.primary};
-              font-weight: 700;
-              margin-top: 32px;
-              margin-bottom: 16px;
-              line-height: 1.3;
-            }
-
-            .rich-text-content h1 { font-size: 36px; }
-            .rich-text-content h2 { font-size: 28px; }
-            .rich-text-content h3 { font-size: 22px; }
-            .rich-text-content h4 { font-size: 18px; }
-
-            .rich-text-content h1:first-child,
-            .rich-text-content h2:first-child,
-            .rich-text-content h3:first-child,
-            .rich-text-content h4:first-child {
-              margin-top: 0;
-            }
-
-            .rich-text-content p {
-              margin-bottom: 20px;
-              line-height: 1.8;
-            }
-
-            .rich-text-content ul,
-            .rich-text-content ol {
-              margin: 20px 0;
-              padding-left: 24px;
-            }
-
-            .rich-text-content li {
-              margin-bottom: 12px;
-              line-height: 1.7;
-            }
-
-            .rich-text-content li strong {
-              color: ${tokens.color.primary};
-              font-weight: 600;
-            }
-
-            .rich-text-content a {
-              color: ${tokens.color.primary};
-              text-decoration: none;
-              border-bottom: 1px solid rgba(245, 211, 147, 0.3);
-              transition: all 0.3s ease;
-            }
-
-            .rich-text-content a:hover {
-              border-bottom-color: ${tokens.color.primary};
-            }
-
-            .rich-text-content blockquote {
-              border-left: 4px solid ${tokens.color.primary};
-              padding-left: 20px;
-              margin: 24px 0;
-              font-style: italic;
-              color: rgba(255,255,255,0.7);
-            }
-
-            .rich-text-content code {
-              background: rgba(0,0,0,0.3);
-              padding: 2px 8px;
-              border-radius: 4px;
-              font-family: 'Courier New', monospace;
-              font-size: 14px;
-              color: ${tokens.color.primary};
-            }
-
-            .rich-text-content pre {
-              background: rgba(0,0,0,0.5);
-              padding: 20px;
-              border-radius: 8px;
-              overflow-x: auto;
-              margin: 24px 0;
-            }
-
-            .rich-text-content pre code {
-              background: none;
-              padding: 0;
-            }
-
-            .rich-text-content img {
-              max-width: 100%;
-              height: auto;
-              border-radius: 12px;
-              margin: 24px 0;
-              box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-            }
-
-            .rich-text-content hr {
-              border: none;
-              height: 1px;
-              background: linear-gradient(90deg, transparent, rgba(245, 211, 147, 0.3), transparent);
-              margin: 40px 0;
-            }
-
-            @media (max-width: 768px) {
-              .rich-text-content h1 { font-size: 28px; }
-              .rich-text-content h2 { font-size: 24px; }
-              .rich-text-content h3 { font-size: 20px; }
-              .rich-text-content h4 { font-size: 16px; }
-            }
-          `}</style>
-        </section>
+    case 'VIDEO_SHOWCASE':
+      return (
+        <Suspense key={section.id} fallback={<SectionLoader />}>
+          <VideoShowcase data={data} />
+        </Suspense>
       );
 
     case 'BANNER':
@@ -397,6 +249,13 @@ export function renderSection(section: Section) {
             data.text
           )}
         </div>
+      );
+
+    case 'FURNITURE_QUOTE':
+      return (
+        <Suspense key={section.id} fallback={<SectionLoader />}>
+          <FurnitureQuoteSection data={data} />
+        </Suspense>
       );
 
     default:

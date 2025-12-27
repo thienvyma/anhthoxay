@@ -489,7 +489,7 @@ export const QuoteCalculatorSection = memo(function QuoteCalculatorSection({ dat
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          style={{ width: 50, height: 50, borderRadius: '50%', border: `3px solid ${tokens.color.border}`, borderTopColor: tokens.color.primary }}
+          style={{ width: 50, height: 50, borderRadius: '50%', borderWidth: '3px', borderStyle: 'solid', borderColor: `${tokens.color.border} ${tokens.color.border} ${tokens.color.border} ${tokens.color.primary}` }}
         />
       </section>
     );

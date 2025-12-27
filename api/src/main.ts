@@ -61,9 +61,8 @@ import { createPublicRankingRoutes, createAdminRankingRoutes } from './routes/ra
 import { createPublicReportRoutes, createAdminReportRoutes } from './routes/report.routes';
 import { createSavedProjectRoutes } from './routes/saved-project.routes';
 import { createActivityRoutes } from './routes/activity.routes';
-import { createInteriorRoutes, createAdminInteriorRoutes } from './routes/interior.routes';
-import { createAdminInteriorSyncRoutes } from './routes/interior-sync.routes';
 import { createAdminDashboardRoutes } from './routes/dashboard.routes';
+import { createFurniturePublicRoutes, createFurnitureAdminRoutes } from './routes/furniture.routes';
 
 // Service imports
 import { AuthService } from './services/auth.service';
@@ -149,14 +148,10 @@ app.use('*', async (c, next) => {
 });
 
 // Rate limiting
-// TODO: [TESTING] Tạm thời tăng limits để test. Production cần giảm về:
-// - /api/auth/login: max: 20
-// - /leads: max: 30
-// - global: max: 200
 const isDev = process.env.NODE_ENV !== 'production';
-app.use('/api/auth/login', rateLimit({ windowMs: 1 * 60 * 1000, max: isDev ? 1000 : 20 }));
-app.use('/leads', rateLimit({ windowMs: 60 * 1000, max: isDev ? 1000 : 30 }));
-app.use('*', rateLimit({ windowMs: 60 * 1000, max: isDev ? 1000 : 200 }));
+app.use('/api/auth/login', rateLimit({ windowMs: 1 * 60 * 1000, max: isDev ? 100 : 20 }));
+app.use('/leads', rateLimit({ windowMs: 60 * 1000, max: isDev ? 100 : 30 }));
+app.use('*', rateLimit({ windowMs: 60 * 1000, max: isDev ? 500 : 200 }));
 
 // ============================================
 // HEALTH CHECK & ROOT
@@ -281,15 +276,12 @@ app.route('/api/contractor/saved-projects', createSavedProjectRoutes(prisma));
 // Activity routes (Phase 6) - Requirements: 23.1-23.4
 app.route('/api/user/activity', createActivityRoutes(prisma));
 
-// Interior Quote routes - Requirements: 18.1, 18.2
-app.route('/api/interior', createInteriorRoutes(prisma));
-app.route('/api/admin/interior', createAdminInteriorRoutes(prisma));
-
-// Interior Sync routes - Feature: interior-sheet-sync
-app.route('/api/admin/interior/sync', createAdminInteriorSyncRoutes(prisma));
-
 // Dashboard routes - Feature: admin-dashboard-enhancement
 app.route('/api/admin/dashboard', createAdminDashboardRoutes(prisma));
+
+// Furniture routes - Feature: furniture-quotation
+app.route('/api/furniture', createFurniturePublicRoutes(prisma));
+app.route('/api/admin/furniture', createFurnitureAdminRoutes(prisma));
 
 // ============================================
 // GLOBAL ERROR HANDLER

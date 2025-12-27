@@ -35,7 +35,7 @@ export function PromoTab({ settings, onChange, onShowMessage, onError }: PromoTa
   const handleImageUpload = useCallback(async (file: File) => {
     try {
       setUploadingImage(true);
-      const result = await mediaApi.upload(file);
+      const result = await mediaApi.uploadFile(file);
 
       onChange({
         ...settings,

@@ -53,14 +53,6 @@ export interface ContractorsStats {
 }
 
 /**
- * Interior quotes statistics
- */
-export interface InteriorQuotesStats {
-  total: number;
-  thisMonth: number;
-}
-
-/**
  * Blog posts statistics
  */
 export interface BlogPostsStats {
@@ -135,7 +127,6 @@ export interface DashboardStats {
   projects: ProjectsStats;
   bids: BidsStats;
   contractors: ContractorsStats;
-  interiorQuotes: InteriorQuotesStats;
   blogPosts: BlogPostsStats;
   users: UsersStats;
   media: MediaStats;
@@ -145,7 +136,7 @@ export interface DashboardStats {
 /**
  * Activity item types
  */
-export type ActivityType = 'LEAD' | 'PROJECT' | 'BID' | 'CONTRACTOR' | 'INTERIOR_QUOTE';
+export type ActivityType = 'LEAD' | 'PROJECT' | 'BID' | 'CONTRACTOR';
 
 /**
  * Activity feed item

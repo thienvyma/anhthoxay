@@ -42,6 +42,8 @@ const CORE_BUSINESS_SERVICES = [
   // Phase 4: Communication (notification-channel, notification-template)
   'notification-channel.service.ts',
   'notification-template.service.ts',
+  // Furniture Quotation System
+  'furniture.service.ts',
 ];
 
 /**
@@ -85,6 +87,7 @@ const UTILITY_SERVICES = [
   'media.service.ts',
   'milestone.service.ts',
   'pages.service.ts',
+  'pdf.service.ts', // PDF generation utility for furniture quotations
   'pricing.service.ts',
   'quote.service.ts',
   'ranking-job.service.ts',

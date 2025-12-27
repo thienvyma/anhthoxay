@@ -28,12 +28,13 @@ export type SectionKind =
   | 'CORE_VALUES'
   | 'QUOTE_FORM'
   | 'QUOTE_CALCULATOR'
-  | 'INTERIOR_QUOTE'
-  | 'INTERIOR_PRICING_TABLE'
-  | 'INTERIOR_WIZARD'
   | 'MARKETPLACE'
+  | 'FEATURED_SLIDESHOW'
+  | 'MEDIA_GALLERY'
+  | 'VIDEO_SHOWCASE'
   | 'ABOUT'
   | 'FAQ'
+  | 'FURNITURE_QUOTE'
   // Legacy sections (kept for backward compatibility, not shown in UI)
   | 'GALLERY'
   | 'GALLERY_SLIDESHOW'
@@ -346,6 +347,30 @@ export interface FooterSocialData {
     url: string;
   }>;
   layout?: 'horizontal' | 'circular';
+}
+
+/**
+ * Furniture quote form field configuration
+ */
+export interface FurnitureQuoteFormField {
+  _id: string;
+  name: string;
+  label: string;
+  type: 'text' | 'textarea' | 'phone' | 'email' | 'select';
+  placeholder?: string;
+  required: boolean;
+  options?: string; // Comma-separated options for select type
+}
+
+/**
+ * Furniture quote section data
+ */
+export interface FurnitureQuoteData {
+  title?: string;
+  subtitle?: string;
+  formFields: FurnitureQuoteFormField[];
+  buttonText?: string;
+  successMessage?: string;
 }
 
 // ========== PRICING TYPES ==========

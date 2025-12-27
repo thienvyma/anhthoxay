@@ -69,8 +69,9 @@ export function RelatedPosts({
             width: '32px',
             height: '32px',
             margin: '0 auto',
-            border: '2px solid rgba(245,211,147,0.2)',
-            borderTopColor: '#f5d393',
+            borderWidth: '2px',
+            borderStyle: 'solid',
+            borderColor: 'rgba(245,211,147,0.2) rgba(245,211,147,0.2) rgba(245,211,147,0.2) #f5d393',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite'
           }} />

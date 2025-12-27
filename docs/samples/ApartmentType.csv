@@ -1,0 +1,13 @@
+MaToaNha,ApartmentType,Ảnh ,Mô tả
+LBV A,1pn ,https://example.com/s101-1pn-layout.jpg,Căn hộ 1PN 50m² - Không gian sống tiện nghi với 1 phòng ngủ riêng biệt
+LBV A,2pn ,https://example.com/s101-2pn-layout.jpg,Căn hộ 2PN 70m² - Lý tưởng cho gia đình nhỏ với 2 phòng ngủ và 2 phòng tắm
+LBV A,3pn,https://example.com/s101-3pn-layout.jpg,Căn hộ 3PN 95m² - Không gian rộng rãi cho gia đình đông người
+LBV A,1pn+,https://example.com/s101-studio-layout.jpg,"Căn hộ Studio 35m² - Thiết kế thông minh, phù hợp cho người độc thân hoặc cặp đôi trẻ"
+LBV A,penhouse,https://example.com/s101-1pn-layout.jpg,Căn hộ 1PN 50m² - Không gian sống tiện nghi với 1 phòng ngủ riêng biệt
+LBV A,shophouse,https://example.com/s101-2pn-layout.jpg,Căn hộ 2PN 70m² - Lý tưởng cho gia đình nhỏ với 2 phòng ngủ và 2 phòng tắm
+LBV B,1pn ,https://example.com/s101-3pn-layout.jpg,Căn hộ 3PN 95m² - Không gian rộng rãi cho gia đình đông người
+LBV B,2pn ,https://example.com/s101-studio-layout.jpg,"Căn hộ Studio 35m² - Thiết kế thông minh, phù hợp cho người độc thân hoặc cặp đôi trẻ"
+LBV B,3pn,https://example.com/s101-1pn-layout.jpg,Căn hộ 1PN 50m² - Không gian sống tiện nghi với 1 phòng ngủ riêng biệt
+LBV B,1pn+,https://example.com/s101-2pn-layout.jpg,Căn hộ 2PN 70m² - Lý tưởng cho gia đình nhỏ với 2 phòng ngủ và 2 phòng tắm
+LBV B,penhouse,https://example.com/s101-3pn-layout.jpg,Căn hộ 3PN 95m² - Không gian rộng rãi cho gia đình đông người
+LBV B,shophouse,https://example.com/s101-studio-layout.jpg,"Căn hộ Studio 35m² - Thiết kế thông minh, phù hợp cho người độc thân hoặc cặp đôi trẻ"

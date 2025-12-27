@@ -594,110 +594,29 @@ export function renderFormFields(
         </div>
       );
 
-    case 'INTERIOR_QUOTE':
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <InfoBanner icon="ri-home-smile-line" color="#10B981" title="Báo Giá Nội Thất (Legacy)" description="Section cũ - khuyến nghị dùng INTERIOR_WIZARD thay thế." />
-          <Input label="Tiêu đề" value={data.title || ''} onChange={(v) => updateField('title', v)} placeholder="Báo Giá Nội Thất" fullWidth />
-          <TextArea label="Mô tả" value={data.subtitle || ''} onChange={(v) => updateField('subtitle', v)} placeholder="Chọn căn hộ và gói nội thất để nhận báo giá chi tiết ngay lập tức" fullWidth />
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-            <input type="checkbox" checked={data.showHeader !== false} onChange={(e) => updateField('showHeader', e.target.checked)} />
-            <span style={{ color: tokens.color.text, fontSize: 13 }}>Hiển thị tiêu đề và mô tả</span>
-          </label>
-        </div>
-      );
-
-    case 'INTERIOR_WIZARD':
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <InfoBanner 
-            icon="ri-home-smile-line" 
-            color="#10B981" 
-            title="Báo Giá Nội Thất (Wizard)" 
-            description="Wizard 7 bước để khách hàng chọn căn hộ và gói nội thất. Dữ liệu được lấy từ module Nội Thất trong Admin." 
-          />
-          
-          {/* Header Configuration */}
-          <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: tokens.radius.md, padding: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <i className="ri-layout-top-line" style={{ fontSize: 18, color: '#10B981' }} />
-              <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>Tiêu đề Section</label>
-            </div>
-            
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 16 }}>
-              <input type="checkbox" checked={data.showHeader !== false} onChange={(e) => updateField('showHeader', e.target.checked)} />
-              <span style={{ color: tokens.color.text, fontSize: 13 }}>Hiển thị tiêu đề và mô tả</span>
-            </label>
-            
-            <Input label="Tiêu đề" value={data.title || ''} onChange={(v) => updateField('title', v)} placeholder="Báo Giá Nội Thất" fullWidth />
-            <div style={{ marginTop: 12 }}>
-              <TextArea label="Mô tả" value={data.subtitle || ''} onChange={(v) => updateField('subtitle', v)} placeholder="Chọn căn hộ và gói nội thất để nhận báo giá chi tiết ngay lập tức" fullWidth />
-            </div>
-            <div style={{ marginTop: 12 }}>
-              <IconPicker label="Icon tiêu đề" value={data.headerIcon || 'ri-home-smile-fill'} onChange={(v) => updateField('headerIcon', v)} />
-            </div>
-          </div>
-          
-          {/* Layout Options */}
-          <div style={{ background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: tokens.radius.md, padding: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <i className="ri-settings-3-line" style={{ fontSize: 18, color: '#3B82F6' }} />
-              <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>Tùy chọn hiển thị</label>
-            </div>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: 6, color: tokens.color.text, fontSize: 13, fontWeight: 500 }}>Kiểu nền</label>
-                <select
-                  value={data.backgroundStyle || 'default'}
-                  onChange={(e) => updateField('backgroundStyle', e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: tokens.radius.md,
-                    border: `1px solid ${tokens.color.border}`,
-                    background: tokens.color.surface,
-                    color: tokens.color.text,
-                    fontSize: 14,
-                  }}
-                >
-                  <option value="default">Mặc định</option>
-                  <option value="glass">Glass effect</option>
-                  <option value="gradient">Gradient</option>
-                </select>
-              </div>
-              <Input 
-                label="Chiều rộng tối đa (px)" 
-                type="number" 
-                value={data.maxWidth || 1200} 
-                onChange={(v) => updateField('maxWidth', parseInt(v) || 1200)} 
-                fullWidth 
-              />
-            </div>
-          </div>
-          
-          {/* Data Source Info */}
-          <div style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: tokens.radius.md, padding: 16, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-            <i className="ri-database-2-line" style={{ fontSize: 20, color: '#F59E0B', marginTop: 2 }} />
-            <div>
-              <p style={{ color: tokens.color.text, fontSize: 14, margin: 0, fontWeight: 500, marginBottom: 4 }}>Dữ liệu từ Module Nội Thất</p>
-              <p style={{ color: tokens.color.muted, fontSize: 13, margin: 0, lineHeight: 1.5 }}>
-                Wizard sẽ tự động lấy dữ liệu Chủ đầu tư, Dự án, Tòa nhà, Căn hộ, Mặt bằng và Gói nội thất từ module Nội Thất. 
-                Quản lý dữ liệu tại <strong>Admin → Nội Thất</strong>.
-              </p>
-            </div>
-          </div>
-        </div>
-      );
-
-    case 'INTERIOR_PRICING_TABLE':
-      return (
-        <InteriorPricingTableForm data={data} updateField={updateField} addArrayItem={addArrayItem} removeArrayItem={removeArrayItem} />
-      );
-
     case 'MARKETPLACE':
       return (
         <MarketplaceForm data={data} updateField={updateField} />
+      );
+
+    case 'FEATURED_SLIDESHOW':
+      return (
+        <FeaturedSlideshowForm data={data} updateField={updateField} />
+      );
+
+    case 'MEDIA_GALLERY':
+      return (
+        <MediaGalleryForm data={data} updateField={updateField} />
+      );
+
+    case 'VIDEO_SHOWCASE':
+      return (
+        <VideoShowcaseForm data={data} updateField={updateField} />
+      );
+
+    case 'FURNITURE_QUOTE':
+      return (
+        <FurnitureQuoteForm data={data} updateField={updateField} addArrayItem={addArrayItem} removeArrayItem={removeArrayItem} />
       );
 
     default:
@@ -1000,364 +919,6 @@ function RichTextSectionForm({ data, updateField }: { data: DataRecord; updateFi
   );
 }
 
-// Interior Pricing Table Form
-function InteriorPricingTableForm({
-  data,
-  updateField,
-  addArrayItem,
-  removeArrayItem,
-}: {
-  data: DataRecord;
-  updateField: UpdateFieldFn;
-  addArrayItem: AddArrayItemFn;
-  removeArrayItem: RemoveArrayItemFn;
-}) {
-  const [dataSource, setDataSource] = useState<'static' | 'api'>(data.fetchFromApi ? 'api' : 'static');
-
-  const handleDataSourceChange = (source: 'static' | 'api') => {
-    setDataSource(source);
-    updateField('fetchFromApi', source === 'api');
-  };
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <InfoBanner
-        icon="ri-price-tag-3-line"
-        color="#8B5CF6"
-        title="Bảng Báo Giá Nội Thất"
-        description="Hiển thị bảng giá các gói nội thất với tiêu đề, mô tả và danh sách gói."
-      />
-
-      {/* Header */}
-      <Input
-        label="Tiêu đề"
-        value={data.title || ''}
-        onChange={(v) => updateField('title', v)}
-        placeholder="Bảng Báo Giá Nội Thất"
-        fullWidth
-      />
-      <TextArea
-        label="Mô tả ngắn"
-        value={data.subtitle || ''}
-        onChange={(v) => updateField('subtitle', v)}
-        placeholder="Chọn gói nội thất phù hợp với nhu cầu và ngân sách của bạn"
-        fullWidth
-      />
-      <TextArea
-        label="Mô tả chi tiết (tùy chọn)"
-        value={data.description || ''}
-        onChange={(v) => updateField('description', v)}
-        placeholder="Mô tả thêm về các gói nội thất..."
-        rows={3}
-        fullWidth
-      />
-
-      {/* Data Source Toggle */}
-      <div
-        style={{
-          background: 'rgba(139, 92, 246, 0.05)',
-          border: '1px solid rgba(139, 92, 246, 0.2)',
-          borderRadius: tokens.radius.md,
-          padding: 16,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-          <i className="ri-database-2-line" style={{ fontSize: 18, color: '#8B5CF6' }} />
-          <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>
-            Nguồn dữ liệu
-          </label>
-        </div>
-
-        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              cursor: 'pointer',
-              padding: '10px 16px',
-              background: dataSource === 'static' ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
-              border: `1px solid ${dataSource === 'static' ? '#8B5CF6' : tokens.color.border}`,
-              borderRadius: tokens.radius.md,
-              flex: 1,
-            }}
-          >
-            <input
-              type="radio"
-              checked={dataSource === 'static'}
-              onChange={() => handleDataSourceChange('static')}
-            />
-            <div>
-              <span style={{ color: tokens.color.text, fontSize: 13, fontWeight: 500, display: 'block' }}>
-                Nhập thủ công
-              </span>
-              <span style={{ color: tokens.color.muted, fontSize: 11 }}>Tự định nghĩa các gói</span>
-            </div>
-          </label>
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              cursor: 'pointer',
-              padding: '10px 16px',
-              background: dataSource === 'api' ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
-              border: `1px solid ${dataSource === 'api' ? '#8B5CF6' : tokens.color.border}`,
-              borderRadius: tokens.radius.md,
-              flex: 1,
-            }}
-          >
-            <input
-              type="radio"
-              checked={dataSource === 'api'}
-              onChange={() => handleDataSourceChange('api')}
-            />
-            <div>
-              <span style={{ color: tokens.color.text, fontSize: 13, fontWeight: 500, display: 'block' }}>
-                Từ hệ thống
-              </span>
-              <span style={{ color: tokens.color.muted, fontSize: 11 }}>Lấy từ Interior Module</span>
-            </div>
-          </label>
-        </div>
-
-        {dataSource === 'api' && (
-          <Input
-            label="Layout ID (tùy chọn - để trống sẽ lấy gói nổi bật)"
-            value={data.layoutId || ''}
-            onChange={(v) => updateField('layoutId', v)}
-            placeholder="Nhập Layout ID để lọc theo layout cụ thể"
-            fullWidth
-          />
-        )}
-      </div>
-
-      {/* Static Tiers */}
-      {dataSource === 'static' && (
-        <ArraySection
-          label={`Gói báo giá (${data.tiers?.length || 0})`}
-          items={data.tiers || []}
-          onAdd={() =>
-            addArrayItem('tiers', {
-              _id: generateUniqueId(),
-              name: 'Gói mới',
-              tier: 'BASIC',
-              price: 0,
-              description: '',
-              features: [],
-              isPopular: false,
-            })
-          }
-          onRemove={(idx) => removeArrayItem('tiers', idx)}
-          renderItem={(item, idx) => (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
-                <Input
-                  label="Tên gói"
-                  value={item.name || ''}
-                  onChange={(v) => updateField(`tiers.${idx}.name`, v)}
-                  placeholder="Gói Cơ Bản"
-                  fullWidth
-                />
-                <div>
-                  <label
-                    style={{
-                      display: 'block',
-                      marginBottom: 6,
-                      color: tokens.color.text,
-                      fontSize: 13,
-                      fontWeight: 500,
-                    }}
-                  >
-                    Cấp độ
-                  </label>
-                  <select
-                    value={item.tier || 'BASIC'}
-                    onChange={(e) => updateField(`tiers.${idx}.tier`, e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      borderRadius: tokens.radius.md,
-                      border: `1px solid ${tokens.color.border}`,
-                      background: tokens.color.surface,
-                      color: tokens.color.text,
-                      fontSize: 14,
-                    }}
-                  >
-                    <option value="BASIC">Cơ bản</option>
-                    <option value="STANDARD">Tiêu chuẩn</option>
-                    <option value="PREMIUM">Cao cấp</option>
-                    <option value="LUXURY">Sang trọng</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <Input
-                  label="Giá (VNĐ)"
-                  type="number"
-                  value={item.price || 0}
-                  onChange={(v) => updateField(`tiers.${idx}.price`, parseInt(v) || 0)}
-                  fullWidth
-                />
-                <Input
-                  label="Nhãn giá (tùy chọn)"
-                  value={item.priceLabel || ''}
-                  onChange={(v) => updateField(`tiers.${idx}.priceLabel`, v)}
-                  placeholder="/căn hộ"
-                  fullWidth
-                />
-              </div>
-
-              <TextArea
-                label="Mô tả"
-                value={item.description || ''}
-                onChange={(v) => updateField(`tiers.${idx}.description`, v)}
-                placeholder="Mô tả ngắn về gói..."
-                rows={2}
-                fullWidth
-              />
-
-              <Input
-                label="Tính năng (phân cách bằng dấu phẩy)"
-                value={Array.isArray(item.features) ? item.features.join(', ') : item.features || ''}
-                onChange={(v) =>
-                  updateField(
-                    `tiers.${idx}.features`,
-                    v
-                      .split(',')
-                      .map((s: string) => s.trim())
-                      .filter(Boolean)
-                  )
-                }
-                placeholder="Sofa, Bàn ăn, Giường ngủ, Tủ quần áo"
-                fullWidth
-              />
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <Input
-                  label="Text nút CTA"
-                  value={item.ctaText || ''}
-                  onChange={(v) => updateField(`tiers.${idx}.ctaText`, v)}
-                  placeholder="Liên hệ tư vấn"
-                  fullWidth
-                />
-                <Input
-                  label="Link CTA"
-                  value={item.ctaLink || ''}
-                  onChange={(v) => updateField(`tiers.${idx}.ctaLink`, v)}
-                  placeholder="/noi-that"
-                  fullWidth
-                />
-              </div>
-
-              <ImageSection
-                label="Hình ảnh (tùy chọn)"
-                value={item.thumbnail || ''}
-                onChange={(url) => updateField(`tiers.${idx}.thumbnail`, url)}
-              />
-
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={item.isPopular || false}
-                  onChange={(e) => updateField(`tiers.${idx}.isPopular`, e.target.checked)}
-                />
-                <span style={{ color: tokens.color.text, fontSize: 13 }}>Đánh dấu là gói phổ biến</span>
-              </label>
-            </div>
-          )}
-        />
-      )}
-
-      {/* Display Options */}
-      <div
-        style={{
-          background: 'rgba(59, 130, 246, 0.05)',
-          border: '1px solid rgba(59, 130, 246, 0.2)',
-          borderRadius: tokens.radius.md,
-          padding: 16,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-          <i className="ri-settings-3-line" style={{ fontSize: 18, color: '#3B82F6' }} />
-          <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>
-            Tùy chọn hiển thị
-          </label>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <div>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: 6,
-                color: tokens.color.text,
-                fontSize: 13,
-                fontWeight: 500,
-              }}
-            >
-              Số cột
-            </label>
-            <select
-              value={data.columns || 3}
-              onChange={(e) => updateField('columns', parseInt(e.target.value))}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: tokens.radius.md,
-                border: `1px solid ${tokens.color.border}`,
-                background: tokens.color.surface,
-                color: tokens.color.text,
-                fontSize: 14,
-              }}
-            >
-              <option value={2}>2 cột</option>
-              <option value={3}>3 cột</option>
-              <option value={4}>4 cột</option>
-            </select>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={data.showFeatures !== false}
-                onChange={(e) => updateField('showFeatures', e.target.checked)}
-              />
-              <span style={{ color: tokens.color.text, fontSize: 13 }}>Hiển thị tính năng</span>
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={data.showCta !== false}
-                onChange={(e) => updateField('showCta', e.target.checked)}
-              />
-              <span style={{ color: tokens.color.text, fontSize: 13 }}>Hiển thị nút CTA</span>
-            </label>
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
-          <Input
-            label="Text CTA mặc định"
-            value={data.ctaText || ''}
-            onChange={(v) => updateField('ctaText', v)}
-            placeholder="Liên hệ tư vấn"
-            fullWidth
-          />
-          <Input
-            label="Link CTA mặc định"
-            value={data.ctaLink || ''}
-            onChange={(v) => updateField('ctaLink', v)}
-            placeholder="/noi-that"
-            fullWidth
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // Marketplace Section Form
 function MarketplaceForm({ data, updateField }: { data: DataRecord; updateField: UpdateFieldFn }) {
   return (
@@ -1488,6 +1049,902 @@ function MarketplaceForm({ data, updateField }: { data: DataRecord; updateField:
             placeholder="/portal/auth/register?type=contractor"
             fullWidth
           />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Featured Slideshow Section Form
+function FeaturedSlideshowForm({ data, updateField }: { data: DataRecord; updateField: UpdateFieldFn }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <InfoBanner
+        icon="ri-slideshow-3-line"
+        color="#ec4899"
+        title="Slideshow Nổi Bật"
+        description="Hiển thị các hình ảnh được đánh dấu nổi bật trong Media Library dạng slideshow tự động."
+      />
+
+      {/* Header */}
+      <div
+        style={{
+          background: 'rgba(236, 72, 153, 0.05)',
+          border: '1px solid rgba(236, 72, 153, 0.2)',
+          borderRadius: tokens.radius.md,
+          padding: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <i className="ri-text" style={{ fontSize: 18, color: '#ec4899' }} />
+          <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>
+            Tiêu đề & Mô tả
+          </label>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Input
+            label="Tiêu đề (tùy chọn)"
+            value={data.title || ''}
+            onChange={(v) => updateField('title', v)}
+            placeholder="Hình ảnh nổi bật"
+            fullWidth
+          />
+          <TextArea
+            label="Mô tả (tùy chọn)"
+            value={data.subtitle || ''}
+            onChange={(v) => updateField('subtitle', v)}
+            placeholder="Những khoảnh khắc đáng nhớ"
+            rows={2}
+            fullWidth
+          />
+        </div>
+      </div>
+
+      {/* Slideshow Options */}
+      <div
+        style={{
+          background: 'rgba(59, 130, 246, 0.05)',
+          border: '1px solid rgba(59, 130, 246, 0.2)',
+          borderRadius: tokens.radius.md,
+          padding: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <i className="ri-settings-3-line" style={{ fontSize: 18, color: '#3B82F6' }} />
+          <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>
+            Tùy chọn Slideshow
+          </label>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={data.autoplay !== false}
+              onChange={(e) => updateField('autoplay', e.target.checked)}
+            />
+            <span style={{ color: tokens.color.text, fontSize: 13 }}>Tự động chuyển slide</span>
+          </label>
+
+          {data.autoplay !== false && (
+            <Input
+              label="Thời gian chuyển slide (ms)"
+              type="number"
+              value={data.autoplayDelay || 5000}
+              onChange={(v) => updateField('autoplayDelay', parseInt(v) || 5000)}
+              fullWidth
+            />
+          )}
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={data.showNavigation !== false}
+              onChange={(e) => updateField('showNavigation', e.target.checked)}
+            />
+            <span style={{ color: tokens.color.text, fontSize: 13 }}>Hiển thị nút điều hướng (trái/phải)</span>
+          </label>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={data.showPagination !== false}
+              onChange={(e) => updateField('showPagination', e.target.checked)}
+            />
+            <span style={{ color: tokens.color.text, fontSize: 13 }}>Hiển thị chấm phân trang</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Info */}
+      <div
+        style={{
+          background: 'rgba(245, 211, 147, 0.05)',
+          border: '1px solid rgba(245, 211, 147, 0.2)',
+          borderRadius: tokens.radius.md,
+          padding: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <i className="ri-information-line" style={{ fontSize: 18, color: tokens.color.primary }} />
+          <p style={{ color: tokens.color.muted, fontSize: 13, margin: 0 }}>
+            Hình ảnh được lấy từ Media Library với trạng thái "Nổi bật". Vào Media Library để đánh dấu ảnh nổi bật.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Media Gallery Section Form
+function MediaGalleryForm({ data, updateField }: { data: DataRecord; updateField: UpdateFieldFn }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <InfoBanner
+        icon="ri-gallery-line"
+        color="#8b5cf6"
+        title="Thư Viện Ảnh"
+        description="Hiển thị toàn bộ ảnh trong Media Library với phân trang và lightbox xem chi tiết."
+      />
+
+      {/* Header */}
+      <div
+        style={{
+          background: 'rgba(139, 92, 246, 0.05)',
+          border: '1px solid rgba(139, 92, 246, 0.2)',
+          borderRadius: tokens.radius.md,
+          padding: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <i className="ri-text" style={{ fontSize: 18, color: '#8b5cf6' }} />
+          <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>
+            Tiêu đề & Mô tả
+          </label>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Input
+            label="Tiêu đề (tùy chọn)"
+            value={data.title || ''}
+            onChange={(v) => updateField('title', v)}
+            placeholder="Thư viện ảnh"
+            fullWidth
+          />
+          <TextArea
+            label="Mô tả (tùy chọn)"
+            value={data.subtitle || ''}
+            onChange={(v) => updateField('subtitle', v)}
+            placeholder="Khám phá bộ sưu tập hình ảnh của chúng tôi"
+            rows={2}
+            fullWidth
+          />
+        </div>
+      </div>
+
+      {/* Display Options */}
+      <div
+        style={{
+          background: 'rgba(59, 130, 246, 0.05)',
+          border: '1px solid rgba(59, 130, 246, 0.2)',
+          borderRadius: tokens.radius.md,
+          padding: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <i className="ri-settings-3-line" style={{ fontSize: 18, color: '#3B82F6' }} />
+          <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>
+            Tùy chọn hiển thị
+          </label>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: 6, color: tokens.color.text, fontSize: 13, fontWeight: 500 }}>
+              Số cột
+            </label>
+            <select
+              value={data.columns || 3}
+              onChange={(e) => updateField('columns', parseInt(e.target.value))}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: tokens.radius.md,
+                border: `1px solid ${tokens.color.border}`,
+                background: tokens.color.surface,
+                color: tokens.color.text,
+                fontSize: 14,
+              }}
+            >
+              <option value={2}>2 cột</option>
+              <option value={3}>3 cột</option>
+              <option value={4}>4 cột</option>
+            </select>
+          </div>
+          <Input
+            label="Số ảnh mỗi trang"
+            type="number"
+            value={data.itemsPerPage || 12}
+            onChange={(v) => updateField('itemsPerPage', parseInt(v) || 12)}
+            fullWidth
+          />
+        </div>
+
+        <div style={{ marginTop: 16 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={data.showCaptions !== false}
+              onChange={(e) => updateField('showCaptions', e.target.checked)}
+            />
+            <span style={{ color: tokens.color.text, fontSize: 13 }}>Hiển thị caption ảnh</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Info */}
+      <div
+        style={{
+          background: 'rgba(245, 211, 147, 0.05)',
+          border: '1px solid rgba(245, 211, 147, 0.2)',
+          borderRadius: tokens.radius.md,
+          padding: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <i className="ri-information-line" style={{ fontSize: 18, color: tokens.color.primary }} />
+          <p style={{ color: tokens.color.muted, fontSize: 13, margin: 0 }}>
+            Hình ảnh được lấy từ Media Library. Vào Media Library để upload và quản lý ảnh.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Video Showcase Form
+function VideoShowcaseForm({
+  data,
+  updateField,
+}: {
+  data: DataRecord;
+  updateField: UpdateFieldFn;
+}) {
+  const videoSource = data.videoSource || 'url';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <InfoBanner
+        icon="ri-video-line"
+        color="#EF4444"
+        title="Video Showcase"
+        description="Hiển thị video tự động chạy. Hỗ trợ upload file hoặc link YouTube/Vimeo."
+      />
+
+      {/* Header */}
+      <Input
+        label="Tiêu đề (tùy chọn)"
+        value={data.title || ''}
+        onChange={(v) => updateField('title', v)}
+        placeholder="Video Giới Thiệu"
+        fullWidth
+      />
+      <TextArea
+        label="Mô tả (tùy chọn)"
+        value={data.subtitle || ''}
+        onChange={(v) => updateField('subtitle', v)}
+        placeholder="Khám phá quy trình làm việc chuyên nghiệp của chúng tôi"
+        fullWidth
+      />
+
+      {/* Video Source Toggle */}
+      <div
+        style={{
+          background: 'rgba(239, 68, 68, 0.05)',
+          border: '1px solid rgba(239, 68, 68, 0.2)',
+          borderRadius: tokens.radius.md,
+          padding: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <i className="ri-film-line" style={{ fontSize: 18, color: '#EF4444' }} />
+          <label
+            style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}
+          >
+            Nguồn Video
+          </label>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <button
+            type="button"
+            onClick={() => updateField('videoSource', 'url')}
+            style={{
+              padding: '8px 16px',
+              fontSize: 13,
+              fontWeight: 500,
+              background: videoSource === 'url' ? '#EF4444' : 'rgba(255,255,255,0.05)',
+              color: videoSource === 'url' ? '#fff' : tokens.color.muted,
+              border: `1px solid ${videoSource === 'url' ? '#EF4444' : tokens.color.border}`,
+              borderRadius: tokens.radius.sm,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <i className="ri-link" />
+            Link URL
+          </button>
+          <button
+            type="button"
+            onClick={() => updateField('videoSource', 'youtube')}
+            style={{
+              padding: '8px 16px',
+              fontSize: 13,
+              fontWeight: 500,
+              background: videoSource === 'youtube' ? '#EF4444' : 'rgba(255,255,255,0.05)',
+              color: videoSource === 'youtube' ? '#fff' : tokens.color.muted,
+              border: `1px solid ${videoSource === 'youtube' ? '#EF4444' : tokens.color.border}`,
+              borderRadius: tokens.radius.sm,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <i className="ri-youtube-fill" />
+            YouTube
+          </button>
+          <button
+            type="button"
+            onClick={() => updateField('videoSource', 'vimeo')}
+            style={{
+              padding: '8px 16px',
+              fontSize: 13,
+              fontWeight: 500,
+              background: videoSource === 'vimeo' ? '#EF4444' : 'rgba(255,255,255,0.05)',
+              color: videoSource === 'vimeo' ? '#fff' : tokens.color.muted,
+              border: `1px solid ${videoSource === 'vimeo' ? '#EF4444' : tokens.color.border}`,
+              borderRadius: tokens.radius.sm,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <i className="ri-vimeo-fill" />
+            Vimeo
+          </button>
+          <button
+            type="button"
+            onClick={() => updateField('videoSource', 'upload')}
+            style={{
+              padding: '8px 16px',
+              fontSize: 13,
+              fontWeight: 500,
+              background: videoSource === 'upload' ? '#EF4444' : 'rgba(255,255,255,0.05)',
+              color: videoSource === 'upload' ? '#fff' : tokens.color.muted,
+              border: `1px solid ${videoSource === 'upload' ? '#EF4444' : tokens.color.border}`,
+              borderRadius: tokens.radius.sm,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <i className="ri-upload-cloud-line" />
+            Upload
+          </button>
+        </div>
+
+        {/* URL Input */}
+        {videoSource === 'url' && (
+          <Input
+            label="URL Video (MP4, WebM)"
+            value={data.videoUrl || ''}
+            onChange={(v) => updateField('videoUrl', v)}
+            placeholder="https://example.com/video.mp4"
+            fullWidth
+          />
+        )}
+
+        {/* YouTube Input */}
+        {videoSource === 'youtube' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <Input
+              label="YouTube URL hoặc Video ID"
+              value={data.youtubeId || ''}
+              onChange={(v) => updateField('youtubeId', v)}
+              placeholder="https://youtube.com/watch?v=xxxxx hoặc xxxxx"
+              fullWidth
+            />
+            <p style={{ color: tokens.color.muted, fontSize: 12, margin: 0 }}>
+              Hỗ trợ: youtube.com/watch?v=ID, youtu.be/ID, hoặc chỉ Video ID
+            </p>
+          </div>
+        )}
+
+        {/* Vimeo Input */}
+        {videoSource === 'vimeo' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <Input
+              label="Vimeo URL hoặc Video ID"
+              value={data.vimeoId || ''}
+              onChange={(v) => updateField('vimeoId', v)}
+              placeholder="https://vimeo.com/xxxxx hoặc xxxxx"
+              fullWidth
+            />
+            <p style={{ color: tokens.color.muted, fontSize: 12, margin: 0 }}>
+              Hỗ trợ: vimeo.com/ID hoặc chỉ Video ID
+            </p>
+          </div>
+        )}
+
+        {/* Upload */}
+        {videoSource === 'upload' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <Input
+              label="URL Video đã upload"
+              value={data.videoUrl || ''}
+              onChange={(v) => updateField('videoUrl', v)}
+              placeholder="Paste URL video sau khi upload"
+              fullWidth
+            />
+            <p style={{ color: tokens.color.muted, fontSize: 12, margin: 0 }}>
+              Upload video lên hosting của bạn và paste URL vào đây. Hỗ trợ MP4, WebM.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Thumbnail */}
+      <ImageSection
+        label="Thumbnail (hiển thị trước khi video load)"
+        value={data.thumbnail}
+        onChange={(url) => updateField('thumbnail', url)}
+      />
+
+      {/* Playback Options */}
+      <div
+        style={{
+          background: 'rgba(255,255,255,0.02)',
+          border: `1px solid ${tokens.color.border}`,
+          borderRadius: tokens.radius.md,
+          padding: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <i className="ri-settings-3-line" style={{ fontSize: 18, color: tokens.color.primary }} />
+          <label
+            style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}
+          >
+            Tùy chọn phát
+          </label>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={data.autoplay !== false}
+              onChange={(e) => updateField('autoplay', e.target.checked)}
+            />
+            <span style={{ color: tokens.color.text, fontSize: 13 }}>Tự động phát</span>
+          </label>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={data.loop !== false}
+              onChange={(e) => updateField('loop', e.target.checked)}
+            />
+            <span style={{ color: tokens.color.text, fontSize: 13 }}>Lặp lại</span>
+          </label>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={data.muted !== false}
+              onChange={(e) => updateField('muted', e.target.checked)}
+            />
+            <span style={{ color: tokens.color.text, fontSize: 13 }}>
+              Tắt tiếng (bắt buộc cho autoplay)
+            </span>
+          </label>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={data.showControls === true}
+              onChange={(e) => updateField('showControls', e.target.checked)}
+            />
+            <span style={{ color: tokens.color.text, fontSize: 13 }}>Hiển thị controls</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Layout Options */}
+      <div
+        style={{
+          background: 'rgba(255,255,255,0.02)',
+          border: `1px solid ${tokens.color.border}`,
+          borderRadius: tokens.radius.md,
+          padding: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <i className="ri-layout-line" style={{ fontSize: 18, color: tokens.color.primary }} />
+          <label
+            style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}
+          >
+            Bố cục
+          </label>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: 6,
+                color: tokens.color.text,
+                fontSize: 13,
+                fontWeight: 500,
+              }}
+            >
+              Tỷ lệ khung hình
+            </label>
+            <select
+              value={data.aspectRatio || '16:9'}
+              onChange={(e) => updateField('aspectRatio', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: tokens.radius.md,
+                border: `1px solid ${tokens.color.border}`,
+                background: tokens.color.surface,
+                color: tokens.color.text,
+                fontSize: 14,
+              }}
+            >
+              <option value="16:9">16:9 (Widescreen)</option>
+              <option value="4:3">4:3 (Standard)</option>
+              <option value="1:1">1:1 (Square)</option>
+              <option value="9:16">9:16 (Portrait)</option>
+              <option value="21:9">21:9 (Cinematic)</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: 6,
+                color: tokens.color.text,
+                fontSize: 13,
+                fontWeight: 500,
+              }}
+            >
+              Chiều rộng tối đa
+            </label>
+            <select
+              value={data.maxWidth || 'default'}
+              onChange={(e) => updateField('maxWidth', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: tokens.radius.md,
+                border: `1px solid ${tokens.color.border}`,
+                background: tokens.color.surface,
+                color: tokens.color.text,
+                fontSize: 14,
+              }}
+            >
+              <option value="narrow">Hẹp (800px)</option>
+              <option value="default">Mặc định (1000px)</option>
+              <option value="wide">Rộng (1200px)</option>
+              <option value="full">Toàn màn hình</option>
+            </select>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 12 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={data.roundedCorners !== false}
+              onChange={(e) => updateField('roundedCorners', e.target.checked)}
+            />
+            <span style={{ color: tokens.color.text, fontSize: 13 }}>Bo góc video</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Overlay Text */}
+      <div
+        style={{
+          background: 'rgba(255,255,255,0.02)',
+          border: `1px solid ${tokens.color.border}`,
+          borderRadius: tokens.radius.md,
+          padding: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <i className="ri-text" style={{ fontSize: 18, color: tokens.color.primary }} />
+          <label
+            style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}
+          >
+            Overlay Text (tùy chọn)
+          </label>
+        </div>
+
+        <Input
+          label="Text hiển thị trên video"
+          value={data.overlayText || ''}
+          onChange={(v) => updateField('overlayText', v)}
+          placeholder="Chất lượng - Uy tín - Tận tâm"
+          fullWidth
+        />
+
+        <div style={{ marginTop: 12 }}>
+          <label
+            style={{
+              display: 'block',
+              marginBottom: 6,
+              color: tokens.color.text,
+              fontSize: 13,
+              fontWeight: 500,
+            }}
+          >
+            Vị trí overlay
+          </label>
+          <select
+            value={data.overlayPosition || 'center'}
+            onChange={(e) => updateField('overlayPosition', e.target.value)}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              borderRadius: tokens.radius.md,
+              border: `1px solid ${tokens.color.border}`,
+              background: tokens.color.surface,
+              color: tokens.color.text,
+              fontSize: 14,
+            }}
+          >
+            <option value="top">Trên</option>
+            <option value="center">Giữa</option>
+            <option value="bottom">Dưới</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// Furniture Quote Section Form
+function FurnitureQuoteForm({
+  data,
+  updateField,
+  addArrayItem,
+  removeArrayItem,
+}: {
+  data: DataRecord;
+  updateField: UpdateFieldFn;
+  addArrayItem: AddArrayItemFn;
+  removeArrayItem: RemoveArrayItemFn;
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <InfoBanner
+        icon="ri-sofa-line"
+        color="#8b5cf6"
+        title="Báo Giá Nội Thất"
+        description="Quy trình step-by-step để khách hàng chọn căn hộ và nhận báo giá nội thất (combo hoặc custom)."
+      />
+
+      {/* Header */}
+      <div
+        style={{
+          background: 'rgba(139, 92, 246, 0.05)',
+          border: '1px solid rgba(139, 92, 246, 0.2)',
+          borderRadius: tokens.radius.md,
+          padding: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <i className="ri-text" style={{ fontSize: 18, color: '#8b5cf6' }} />
+          <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>
+            Tiêu đề & Mô tả
+          </label>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Input
+            label="Tiêu đề"
+            value={data.title || ''}
+            onChange={(v) => updateField('title', v)}
+            placeholder="Báo Giá Nội Thất"
+            fullWidth
+          />
+          <TextArea
+            label="Mô tả"
+            value={data.subtitle || ''}
+            onChange={(v) => updateField('subtitle', v)}
+            placeholder="Chọn căn hộ và nhận báo giá nội thất phù hợp"
+            rows={2}
+            fullWidth
+          />
+        </div>
+      </div>
+
+      {/* Form Fields Configuration */}
+      <div
+        style={{
+          background: 'rgba(59, 130, 246, 0.05)',
+          border: '1px solid rgba(59, 130, 246, 0.2)',
+          borderRadius: tokens.radius.md,
+          padding: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <i className="ri-list-settings-line" style={{ fontSize: 18, color: '#3B82F6' }} />
+          <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>
+            Cấu hình Form Thu Lead
+          </label>
+        </div>
+        <p style={{ color: tokens.color.muted, fontSize: 13, margin: '0 0 16px', lineHeight: 1.5 }}>
+          Cấu hình các trường thông tin khách hàng cần thu thập trước khi chọn nội thất.
+        </p>
+
+        <ArraySection
+          label={`Trường dữ liệu (${data.formFields?.length || 0})`}
+          items={data.formFields || []}
+          onAdd={() =>
+            addArrayItem('formFields', {
+              _id: generateUniqueId(),
+              name: 'custom_field',
+              label: 'Trường mới',
+              type: 'text',
+              placeholder: '',
+              required: false,
+            })
+          }
+          onRemove={(idx) => removeArrayItem('formFields', idx)}
+          renderItem={(item, idx) => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Input
+                  label="Tên field (key)"
+                  value={item.name || ''}
+                  onChange={(v) => updateField(`formFields.${idx}.name`, v)}
+                  placeholder="phone"
+                  fullWidth
+                />
+                <Input
+                  label="Nhãn hiển thị"
+                  value={item.label || ''}
+                  onChange={(v) => updateField(`formFields.${idx}.label`, v)}
+                  placeholder="Số điện thoại"
+                  fullWidth
+                />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label
+                    style={{
+                      display: 'block',
+                      marginBottom: 6,
+                      color: tokens.color.text,
+                      fontSize: 13,
+                      fontWeight: 500,
+                    }}
+                  >
+                    Loại trường
+                  </label>
+                  <select
+                    value={item.type || 'text'}
+                    onChange={(e) => updateField(`formFields.${idx}.type`, e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: tokens.radius.md,
+                      border: `1px solid ${tokens.color.border}`,
+                      background: tokens.color.surface,
+                      color: tokens.color.text,
+                      fontSize: 14,
+                    }}
+                  >
+                    <option value="text">Text</option>
+                    <option value="textarea">Textarea</option>
+                    <option value="phone">Điện thoại</option>
+                    <option value="email">Email</option>
+                    <option value="select">Dropdown</option>
+                  </select>
+                </div>
+                <Input
+                  label="Placeholder"
+                  value={item.placeholder || ''}
+                  onChange={(v) => updateField(`formFields.${idx}.placeholder`, v)}
+                  placeholder="Nhập số điện thoại"
+                  fullWidth
+                />
+              </div>
+              {item.type === 'select' && (
+                <Input
+                  label="Các lựa chọn (phân cách bằng dấu phẩy)"
+                  value={item.options || ''}
+                  onChange={(v) => updateField(`formFields.${idx}.options`, v)}
+                  placeholder="Lựa chọn 1, Lựa chọn 2, Lựa chọn 3"
+                  fullWidth
+                />
+              )}
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={item.required || false}
+                  onChange={(e) => updateField(`formFields.${idx}.required`, e.target.checked)}
+                />
+                <span style={{ color: tokens.color.text, fontSize: 13 }}>Bắt buộc</span>
+              </label>
+            </div>
+          )}
+        />
+      </div>
+
+      {/* Button & Messages */}
+      <div
+        style={{
+          background: 'rgba(245, 211, 147, 0.05)',
+          border: '1px solid rgba(245, 211, 147, 0.2)',
+          borderRadius: tokens.radius.md,
+          padding: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <i className="ri-cursor-line" style={{ fontSize: 18, color: tokens.color.primary }} />
+          <label style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600, margin: 0 }}>
+            Nút & Thông báo
+          </label>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Input
+            label="Text nút tiếp tục"
+            value={data.buttonText || ''}
+            onChange={(v) => updateField('buttonText', v)}
+            placeholder="Tiếp tục"
+            fullWidth
+          />
+          <Input
+            label="Thông báo thành công"
+            value={data.successMessage || ''}
+            onChange={(v) => updateField('successMessage', v)}
+            placeholder="Cảm ơn bạn! Chúng tôi sẽ liên hệ sớm."
+            fullWidth
+          />
+        </div>
+      </div>
+
+      {/* Info */}
+      <div
+        style={{
+          background: 'rgba(16, 185, 129, 0.1)',
+          border: '1px solid rgba(16, 185, 129, 0.3)',
+          borderRadius: tokens.radius.md,
+          padding: 16,
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 12,
+        }}
+      >
+        <i className="ri-information-line" style={{ fontSize: 20, color: '#10B981', marginTop: 2 }} />
+        <div>
+          <p style={{ color: tokens.color.text, fontSize: 14, margin: 0, fontWeight: 500, marginBottom: 4 }}>
+            Dữ liệu nội thất được quản lý riêng
+          </p>
+          <p style={{ color: tokens.color.muted, fontSize: 13, margin: 0, lineHeight: 1.5 }}>
+            Dữ liệu dự án, căn hộ, sản phẩm nội thất và combo được quản lý trong trang{' '}
+            <strong>Nội thất</strong> của Admin panel. Section này sẽ tự động lấy dữ liệu từ đó.
+          </p>
         </div>
       </div>
     </div>

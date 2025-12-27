@@ -531,3 +531,84 @@ export {
   type ListSavedProjectsQuery,
   type SavedProjectResponse,
 } from './saved-project.schema';
+
+// ============================================
+// FURNITURE SCHEMAS
+// ============================================
+export {
+  // Developer schemas
+  createDeveloperSchema,
+  updateDeveloperSchema,
+  // Project schemas
+  createProjectSchema,
+  updateProjectSchema,
+  // Building schemas
+  createBuildingSchema,
+  updateBuildingSchema,
+  // Layout schemas
+  createLayoutSchema,
+  updateLayoutSchema,
+  // Apartment Type schemas
+  createApartmentTypeSchema,
+  updateApartmentTypeSchema,
+  // Category schemas
+  createCategorySchema,
+  updateCategorySchema,
+  // Product schemas
+  createProductSchema,
+  updateProductSchema,
+  // Combo schemas
+  comboItemSchema,
+  createComboSchema,
+  updateComboSchema,
+  // Fee schemas
+  feeTypeEnum as furnitureFeeTypeEnum,
+  feeApplicabilityEnum,
+  createFeeSchema as createFurnitureFeeSchema,
+  updateFeeSchema as updateFurnitureFeeSchema,
+  // Quotation schemas
+  selectionTypeEnum,
+  quotationItemSchema,
+  createQuotationSchema,
+  // Query schemas
+  queryProjectsSchema,
+  queryBuildingsSchema,
+  queryLayoutsSchema,
+  queryLayoutByAxisSchema,
+  queryApartmentTypesSchema,
+  queryProductsSchema,
+  queryCombosSchema,
+  queryFeesSchema,
+  queryQuotationsSchema,
+  // Types
+  type CreateDeveloperInput,
+  type UpdateDeveloperInput,
+  type CreateProjectInput as CreateFurnitureProjectInput,
+  type UpdateProjectInput as UpdateFurnitureProjectInput,
+  type CreateBuildingInput,
+  type UpdateBuildingInput,
+  type CreateLayoutInput,
+  type UpdateLayoutInput,
+  type CreateApartmentTypeInput,
+  type UpdateApartmentTypeInput,
+  type CreateCategoryInput,
+  type UpdateCategoryInput,
+  type CreateProductInput,
+  type UpdateProductInput,
+  type ComboItemInput,
+  type CreateComboInput,
+  type UpdateComboInput,
+  type CreateFeeInput as CreateFurnitureFeeInput,
+  type UpdateFeeInput as UpdateFurnitureFeeInput,
+  type QuotationItemInput,
+  type CreateQuotationInput,
+  type QueryProjectsInput,
+  type QueryBuildingsInput,
+  type QueryLayoutsInput,
+  type QueryLayoutByAxisInput,
+  type QueryApartmentTypesInput,
+  type QueryProductsInput,
+  type QueryCombosInput,
+  type QueryFeesInput,
+  type QueryQuotationsInput,
+} from './furniture.schema';

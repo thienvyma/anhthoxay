@@ -209,32 +209,6 @@ export function getDefaultData(sectionKind: SectionKind): Record<string, unknown
           { _id: generateUniqueId(), icon: 'ri-drop-line', title: 'Chống Thấm', description: 'Xử lý chống thấm, chống dột hiệu quả' },
         ],
       };
-    case 'INTERIOR_WIZARD':
-      return {
-        title: 'Báo Giá Nội Thất',
-        subtitle: 'Chọn căn hộ và gói nội thất để nhận báo giá chi tiết ngay lập tức',
-        showHeader: true,
-        maxWidth: 1200,
-        backgroundStyle: 'default',
-        headerIcon: 'ri-home-smile-fill',
-      };
-    case 'INTERIOR_QUOTE':
-      return {
-        title: 'Báo Giá Nội Thất',
-        subtitle: 'Chọn căn hộ và gói nội thất để nhận báo giá chi tiết ngay lập tức',
-        showHeader: true,
-      };
-    case 'INTERIOR_PRICING_TABLE':
-      return {
-        title: 'Bảng Báo Giá Nội Thất',
-        subtitle: 'Chọn gói nội thất phù hợp với nhu cầu và ngân sách của bạn',
-        fetchFromApi: true,
-        showFeatures: true,
-        showCta: true,
-        ctaText: 'Liên hệ tư vấn',
-        ctaLink: '/noi-that',
-        columns: 3,
-      };
     case 'MARKETPLACE':
       return {
         title: 'Công trình đang tìm nhà thầu',
@@ -245,6 +219,18 @@ export function getDefaultData(sectionKind: SectionKind): Record<string, unknown
         ctaLink: '/portal/marketplace',
         registerText: 'Đăng ký làm nhà thầu',
         registerLink: '/portal/auth/register?type=contractor',
+      };
+    case 'FURNITURE_QUOTE':
+      return {
+        title: 'Báo Giá Nội Thất',
+        subtitle: 'Chọn căn hộ và nhận báo giá nội thất phù hợp',
+        formFields: [
+          { _id: generateUniqueId(), name: 'name', type: 'text', label: 'Họ và tên', required: true, placeholder: 'Nhập họ và tên' },
+          { _id: generateUniqueId(), name: 'phone', type: 'phone', label: 'Số điện thoại', required: true, placeholder: 'Nhập số điện thoại' },
+          { _id: generateUniqueId(), name: 'email', type: 'email', label: 'Email', required: false, placeholder: 'Nhập email (không bắt buộc)' },
+        ],
+        buttonText: 'Tiếp tục',
+        successMessage: 'Cảm ơn bạn! Chúng tôi sẽ liên hệ sớm.',
       };
     default:
       return {};

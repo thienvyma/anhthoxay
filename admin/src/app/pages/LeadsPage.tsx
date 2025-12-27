@@ -3,6 +3,7 @@ import { tokens } from '@app/shared';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { leadsApi } from '../api';
+import { furnitureQuotationsApi } from '../api/furniture';
 import { ResponsiveTable, TableColumn } from '../../components/responsive/ResponsiveTable';
 import { ResponsiveGrid } from '../../components/responsive/ResponsiveGrid';
 import { ResponsiveModal } from '../../components/responsive/ResponsiveModal';
@@ -34,12 +35,132 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-// QuoteData display component
+// QuoteData display component - supports both pricing quote and furniture quotation formats
 function QuoteDataDisplay({ quoteData }: { quoteData: string | null }) {
   if (!quoteData) return null;
   
   try {
     const data = JSON.parse(quoteData);
+    
+    // Check if this is a furniture quotation format (has unitNumber or selectionType)
+    const isFurnitureQuote = data.unitNumber || data.selectionType;
+    
+    if (isFurnitureQuote) {
+      // Parse items and fees if they are JSON strings
+      const items = typeof data.items === 'string' ? JSON.parse(data.items) : (data.items || []);
+      const fees = typeof data.fees === 'string' ? JSON.parse(data.fees) : (data.fees || []);
+      
+      return (
+        <div style={{ marginTop: 8 }}>
+          {/* Apartment Info */}
+          <div style={{ 
+            marginBottom: 12, 
+            padding: '8px 12px', 
+            background: 'rgba(245,211,147,0.1)', 
+            borderRadius: 6,
+            borderLeft: `3px solid ${tokens.color.primary}`,
+          }}>
+            <div style={{ fontSize: 11, color: tokens.color.muted, marginBottom: 4 }}>Thông tin căn hộ</div>
+            <div style={{ color: tokens.color.text, fontWeight: 500 }}>
+              {data.unitNumber || `${data.buildingCode}.${String(data.floor).padStart(2, '0')}${String(data.axis).padStart(2, '0')}`}
+            </div>
+            <div style={{ fontSize: 12, color: tokens.color.muted, marginTop: 2 }}>
+              {data.developerName} • {data.projectName} • {data.buildingName}
+            </div>
+            <div style={{ fontSize: 12, color: tokens.color.muted }}>
+              Loại căn hộ: <span style={{ color: tokens.color.text }}>{data.apartmentType}</span>
+            </div>
+          </div>
+          
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <tbody>
+              {/* Selection Type */}
+              <tr>
+                <td style={{ padding: '4px 8px', color: tokens.color.muted }}>Loại chọn:</td>
+                <td style={{ padding: '4px 8px', color: tokens.color.text }}>
+                  <span style={{
+                    padding: '2px 8px',
+                    borderRadius: 4,
+                    background: data.selectionType === 'COMBO' ? 'rgba(16,185,129,0.2)' : 'rgba(59,130,246,0.2)',
+                    color: data.selectionType === 'COMBO' ? '#10b981' : '#3b82f6',
+                    fontSize: 12,
+                  }}>
+                    {data.selectionType === 'COMBO' ? 'Combo' : 'Tùy chọn'}
+                  </span>
+                </td>
+              </tr>
+              
+              {/* Combo Name if applicable */}
+              {data.comboName && (
+                <tr>
+                  <td style={{ padding: '4px 8px', color: tokens.color.muted }}>Combo:</td>
+                  <td style={{ padding: '4px 8px', color: tokens.color.text }}>{data.comboName}</td>
+                </tr>
+              )}
+              
+              {/* Items */}
+              {items.length > 0 && (
+                <tr>
+                  <td colSpan={2} style={{ padding: '8px', paddingTop: 12 }}>
+                    <div style={{ fontSize: 11, color: tokens.color.muted, marginBottom: 6 }}>Sản phẩm đã chọn:</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {items.map((item: { name: string; price: number; quantity: number }, idx: number) => (
+                        <div key={idx} style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center',
+                          padding: '4px 8px',
+                          background: 'rgba(0,0,0,0.2)',
+                          borderRadius: 4,
+                          fontSize: 12,
+                        }}>
+                          <span style={{ color: tokens.color.text }}>
+                            {item.name} {item.quantity > 1 && <span style={{ color: tokens.color.muted }}>x{item.quantity}</span>}
+                          </span>
+                          <span style={{ color: tokens.color.muted }}>
+                            {new Intl.NumberFormat('vi-VN').format(item.price * item.quantity)} VNĐ
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              )}
+              
+              {/* Base Price */}
+              <tr>
+                <td style={{ padding: '4px 8px', color: tokens.color.muted }}>Giá cơ bản:</td>
+                <td style={{ padding: '4px 8px', color: tokens.color.text }}>
+                  {new Intl.NumberFormat('vi-VN').format(data.basePrice)} VNĐ
+                </td>
+              </tr>
+              
+              {/* Fees */}
+              {fees.length > 0 && fees.map((fee: { name: string; type: string; value: number; amount: number }, idx: number) => (
+                <tr key={idx}>
+                  <td style={{ padding: '4px 8px', color: tokens.color.muted }}>
+                    {fee.name} {fee.type === 'PERCENTAGE' && `(${fee.value}%)`}:
+                  </td>
+                  <td style={{ padding: '4px 8px', color: tokens.color.text }}>
+                    {new Intl.NumberFormat('vi-VN').format(fee.amount)} VNĐ
+                  </td>
+                </tr>
+              ))}
+              
+              {/* Total */}
+              <tr style={{ borderTop: `1px solid ${tokens.color.border}` }}>
+                <td style={{ padding: '8px', color: tokens.color.primary, fontWeight: 600 }}>Tổng cộng:</td>
+                <td style={{ padding: '8px', color: tokens.color.primary, fontWeight: 600 }}>
+                  {new Intl.NumberFormat('vi-VN').format(data.totalPrice)} VNĐ
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    
+    // Original pricing quote format
     return (
       <div style={{ marginTop: 8 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -209,6 +330,298 @@ function StatusHistory({ history }: { history: string | null }) {
   }
 }
 
+// Furniture Quotation History component
+// Displays list of furniture quotations for a lead
+// Requirements: 8.1, 8.3, 11.3
+interface FurnitureQuotation {
+  id: string;
+  leadId: string;
+  developerName: string;
+  projectName: string;
+  buildingName: string;
+  buildingCode: string;
+  floor: number;
+  axis: number;
+  unitNumber: string;
+  apartmentType: string;
+  layoutImageUrl: string | null;
+  selectionType: 'COMBO' | 'CUSTOM';
+  comboId: string | null;
+  comboName: string | null;
+  items: string;
+  basePrice: number;
+  fees: string;
+  totalPrice: number;
+  createdAt: string;
+}
+
+function FurnitureQuotationHistory({ 
+  quotations, 
+  loading 
+}: { 
+  quotations: FurnitureQuotation[]; 
+  loading: boolean;
+}) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [exportingPdfId, setExportingPdfId] = useState<string | null>(null);
+  
+  // Handle PDF export
+  const handleExportPdf = async (quotationId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation(); // Prevent expanding/collapsing
+    setExportingPdfId(quotationId);
+    try {
+      const blobUrl = await furnitureQuotationsApi.exportPdf(quotationId);
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `bao-gia-${quotationId.slice(-8)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      // Clean up blob URL
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      alert('Không thể xuất PDF. Vui lòng thử lại.');
+    } finally {
+      setExportingPdfId(null);
+    }
+  };
+  
+  if (loading) {
+    return (
+      <div style={{ marginTop: 16 }}>
+        <label style={{ color: tokens.color.muted, fontSize: 13, marginBottom: 8, display: 'block' }}>
+          <i className="ri-sofa-line" style={{ marginRight: 4 }} />
+          Lịch sử báo giá nội thất
+        </label>
+        <div style={{ 
+          padding: 20, 
+          textAlign: 'center', 
+          color: tokens.color.muted,
+          background: 'rgba(0,0,0,0.2)',
+          borderRadius: 8,
+        }}>
+          <i className="ri-loader-4-line" style={{ animation: 'spin 1s linear infinite' }} /> Đang tải...
+        </div>
+      </div>
+    );
+  }
+  
+  if (quotations.length === 0) {
+    return null;
+  }
+  
+  return (
+    <div style={{ marginTop: 16 }}>
+      <label style={{ color: tokens.color.muted, fontSize: 13, marginBottom: 8, display: 'block' }}>
+        <i className="ri-sofa-line" style={{ marginRight: 4 }} />
+        Lịch sử báo giá nội thất ({quotations.length})
+      </label>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {quotations.map((quotation) => {
+          const isExpanded = expandedId === quotation.id;
+          const items = typeof quotation.items === 'string' ? JSON.parse(quotation.items) : (quotation.items || []);
+          const fees = typeof quotation.fees === 'string' ? JSON.parse(quotation.fees) : (quotation.fees || []);
+          const isExporting = exportingPdfId === quotation.id;
+          
+          return (
+            <div 
+              key={quotation.id}
+              style={{
+                background: 'rgba(0,0,0,0.2)',
+                borderRadius: 8,
+                overflow: 'hidden',
+              }}
+            >
+              {/* Summary Row - Clickable */}
+              <div 
+                onClick={() => setExpandedId(isExpanded ? null : quotation.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '12px 16px',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                {/* Date */}
+                <div style={{ 
+                  minWidth: 80, 
+                  fontSize: 12, 
+                  color: tokens.color.muted,
+                }}>
+                  {new Date(quotation.createdAt).toLocaleDateString('vi-VN')}
+                </div>
+                
+                {/* Unit Number */}
+                <div style={{ 
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}>
+                  <span style={{ 
+                    fontWeight: 500, 
+                    color: tokens.color.text,
+                    fontSize: 14,
+                  }}>
+                    {quotation.unitNumber}
+                  </span>
+                  <span style={{ 
+                    fontSize: 12, 
+                    color: tokens.color.muted,
+                  }}>
+                    ({quotation.apartmentType})
+                  </span>
+                </div>
+                
+                {/* Selection Type Badge */}
+                <span style={{
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  background: quotation.selectionType === 'COMBO' ? 'rgba(16,185,129,0.2)' : 'rgba(59,130,246,0.2)',
+                  color: quotation.selectionType === 'COMBO' ? '#10b981' : '#3b82f6',
+                  fontSize: 11,
+                  fontWeight: 500,
+                }}>
+                  {quotation.selectionType === 'COMBO' ? 'Combo' : 'Tùy chọn'}
+                </span>
+                
+                {/* Total Price */}
+                <div style={{ 
+                  fontWeight: 600, 
+                  color: tokens.color.primary,
+                  fontSize: 14,
+                  minWidth: 120,
+                  textAlign: 'right',
+                }}>
+                  {new Intl.NumberFormat('vi-VN').format(quotation.totalPrice)} VNĐ
+                </div>
+                
+                {/* Expand Icon */}
+                <i 
+                  className={isExpanded ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} 
+                  style={{ color: tokens.color.muted, fontSize: 18 }}
+                />
+              </div>
+              
+              {/* Expanded Details */}
+              {isExpanded && (
+                <div style={{ 
+                  padding: '0 16px 16px',
+                  borderTop: `1px solid ${tokens.color.border}`,
+                }}>
+                  {/* Apartment Info */}
+                  <div style={{ 
+                    marginTop: 12, 
+                    padding: '8px 12px', 
+                    background: 'rgba(245,211,147,0.1)', 
+                    borderRadius: 6,
+                    borderLeft: `3px solid ${tokens.color.primary}`,
+                  }}>
+                    <div style={{ fontSize: 11, color: tokens.color.muted, marginBottom: 4 }}>Thông tin căn hộ</div>
+                    <div style={{ color: tokens.color.text, fontWeight: 500 }}>
+                      {quotation.unitNumber}
+                    </div>
+                    <div style={{ fontSize: 12, color: tokens.color.muted, marginTop: 2 }}>
+                      {quotation.developerName} • {quotation.projectName} • {quotation.buildingName}
+                    </div>
+                  </div>
+                  
+                  {/* Combo Name if applicable */}
+                  {quotation.comboName && (
+                    <div style={{ marginTop: 12, fontSize: 13 }}>
+                      <span style={{ color: tokens.color.muted }}>Combo: </span>
+                      <span style={{ color: tokens.color.text }}>{quotation.comboName}</span>
+                    </div>
+                  )}
+                  
+                  {/* Items */}
+                  {items.length > 0 && (
+                    <div style={{ marginTop: 12 }}>
+                      <div style={{ fontSize: 11, color: tokens.color.muted, marginBottom: 6 }}>Sản phẩm đã chọn:</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {items.map((item: { name: string; price: number; quantity: number }, idx: number) => (
+                          <div key={idx} style={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center',
+                            padding: '4px 8px',
+                            background: 'rgba(0,0,0,0.2)',
+                            borderRadius: 4,
+                            fontSize: 12,
+                          }}>
+                            <span style={{ color: tokens.color.text }}>
+                              {item.name} {item.quantity > 1 && <span style={{ color: tokens.color.muted }}>x{item.quantity}</span>}
+                            </span>
+                            <span style={{ color: tokens.color.muted }}>
+                              {new Intl.NumberFormat('vi-VN').format(item.price * item.quantity)} VNĐ
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Price Breakdown */}
+                  <div style={{ marginTop: 12 }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                      <tbody>
+                        <tr>
+                          <td style={{ padding: '4px 0', color: tokens.color.muted }}>Giá cơ bản:</td>
+                          <td style={{ padding: '4px 0', color: tokens.color.text, textAlign: 'right' }}>
+                            {new Intl.NumberFormat('vi-VN').format(quotation.basePrice)} VNĐ
+                          </td>
+                        </tr>
+                        {fees.map((fee: { name: string; type: string; value: number; amount: number }, idx: number) => (
+                          <tr key={idx}>
+                            <td style={{ padding: '4px 0', color: tokens.color.muted }}>
+                              {fee.name} {fee.type === 'PERCENTAGE' && `(${fee.value}%)`}:
+                            </td>
+                            <td style={{ padding: '4px 0', color: tokens.color.text, textAlign: 'right' }}>
+                              {new Intl.NumberFormat('vi-VN').format(fee.amount)} VNĐ
+                            </td>
+                          </tr>
+                        ))}
+                        <tr style={{ borderTop: `1px solid ${tokens.color.border}` }}>
+                          <td style={{ padding: '8px 0', color: tokens.color.primary, fontWeight: 600 }}>Tổng cộng:</td>
+                          <td style={{ padding: '8px 0', color: tokens.color.primary, fontWeight: 600, textAlign: 'right' }}>
+                            {new Intl.NumberFormat('vi-VN').format(quotation.totalPrice)} VNĐ
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  {/* Export PDF Button */}
+                  <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                      variant="outline"
+                      size="small"
+                      icon={isExporting ? 'ri-loader-4-line' : 'ri-file-pdf-line'}
+                      onClick={(e) => handleExportPdf(quotation.id, e)}
+                      disabled={isExporting}
+                      style={{ 
+                        opacity: isExporting ? 0.7 : 1,
+                      }}
+                    >
+                      {isExporting ? 'Đang xuất...' : 'Xuất PDF'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function LeadsPage() {
   const { isMobile } = useResponsive();
   const [leads, setLeads] = useState<CustomerLead[]>([]);
@@ -220,6 +633,10 @@ export function LeadsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [exporting, setExporting] = useState(false);
+  
+  // Furniture quotation history state
+  const [furnitureQuotations, setFurnitureQuotations] = useState<FurnitureQuotation[]>([]);
+  const [loadingQuotations, setLoadingQuotations] = useState(false);
   
   const debouncedSearch = useDebounce(searchQuery, 300);
 
@@ -250,6 +667,22 @@ export function LeadsPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearch, filterStatus]);
+
+  // Fetch furniture quotations when a lead is selected
+  useEffect(() => {
+    if (selectedLead) {
+      setLoadingQuotations(true);
+      furnitureQuotationsApi.list(selectedLead.id)
+        .then(setFurnitureQuotations)
+        .catch((error) => {
+          console.error('Failed to fetch furniture quotations:', error);
+          setFurnitureQuotations([]);
+        })
+        .finally(() => setLoadingQuotations(false));
+    } else {
+      setFurnitureQuotations([]);
+    }
+  }, [selectedLead]);
 
   const updateLeadStatus = async (id: string, status: string) => {
     try {
@@ -761,6 +1194,12 @@ export function LeadsPage() {
 
             {/* Status History */}
             <StatusHistory history={selectedLead.statusHistory} />
+            
+            {/* Furniture Quotation History */}
+            <FurnitureQuotationHistory 
+              quotations={furnitureQuotations} 
+              loading={loadingQuotations} 
+            />
           </div>
         )}
       </ResponsiveModal>

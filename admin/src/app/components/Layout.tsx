@@ -24,6 +24,11 @@ interface LayoutProps {
 const SIDEBAR_WIDTH = 260;
 const SIDEBAR_COLLAPSED_WIDTH = 80;
 
+// Menu item types
+type MenuItem = 
+  | { type: 'item'; route: RouteType; icon: string; label: string }
+  | { type: 'dropdown'; icon: string; label: string; badge?: string; children: Array<{ route: RouteType; icon: string; label: string }> };
+
 export function Layout({
   children,
   currentRoute,
@@ -34,6 +39,7 @@ export function Layout({
 }: LayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const { isMobile, isTablet, breakpoint } = useResponsive();
 
   // Close mobile menu when navigating
@@ -45,27 +51,47 @@ export function Layout({
     [onNavigate]
   );
 
-  const menuItems: Array<{ route: RouteType; icon: string; label: string }> = [
-    { route: 'dashboard', icon: 'ri-dashboard-3-line', label: 'Dashboard' },
-    { route: 'pages', icon: 'ri-pages-line', label: 'Pages & Sections' },
-    { route: 'preview', icon: 'ri-tv-line', label: 'Live Preview' },
-    { route: 'leads', icon: 'ri-contacts-book-line', label: 'Khách hàng' },
-    { route: 'bidding', icon: 'ri-auction-line', label: 'Quản lý Đấu thầu' },
-    { route: 'bidding-settings', icon: 'ri-settings-4-line', label: 'Cài đặt Đấu thầu' },
-    { route: 'contractors', icon: 'ri-building-2-line', label: 'Quản lý Nhà thầu' },
-    { route: 'interior', icon: 'ri-home-smile-line', label: 'Cấu hình nội thất' },
-    { route: 'pricing-config', icon: 'ri-calculator-line', label: 'Cấu hình báo giá' },
-    { route: 'media', icon: 'ri-gallery-line', label: 'Media & Gallery' },
-    { route: 'blog-manager', icon: 'ri-quill-pen-line', label: 'Blog Manager' },
-    { route: 'users', icon: 'ri-user-settings-line', label: 'Quản lý tài khoản' },
-    { route: 'settings', icon: 'ri-settings-3-line', label: 'Settings' },
+  // Toggle dropdown
+  const toggleDropdown = useCallback((label: string) => {
+    setOpenDropdown(prev => prev === label ? null : label);
+  }, []);
+
+  const menuItems: MenuItem[] = [
+    // Main features - đang sử dụng
+    { type: 'item', route: 'dashboard', icon: 'ri-dashboard-3-line', label: 'Dashboard' },
+    { type: 'item', route: 'pages', icon: 'ri-pages-line', label: 'Pages & Sections' },
+    { type: 'item', route: 'preview', icon: 'ri-tv-line', label: 'Live Preview' },
+    { type: 'item', route: 'media', icon: 'ri-gallery-line', label: 'Media Library' },
+    { type: 'item', route: 'blog-manager', icon: 'ri-quill-pen-line', label: 'Blog Manager' },
+    { type: 'item', route: 'leads', icon: 'ri-contacts-book-line', label: 'Khách hàng' },
+    { type: 'item', route: 'furniture', icon: 'ri-sofa-line', label: 'Nội thất' },
+    { type: 'item', route: 'users', icon: 'ri-user-settings-line', label: 'Quản lý tài khoản' },
+    // Coming Soon - chưa sử dụng
+    { 
+      type: 'dropdown', 
+      icon: 'ri-rocket-line', 
+      label: 'Coming Soon',
+      badge: 'Soon',
+      children: [
+        { route: 'pricing-config', icon: 'ri-calculator-line', label: 'Cấu hình báo giá' },
+        { route: 'bidding', icon: 'ri-auction-line', label: 'Quản lý Đấu thầu' },
+        { route: 'bidding-settings', icon: 'ri-settings-4-line', label: 'Cài đặt Đấu thầu' },
+        { route: 'contractors', icon: 'ri-building-2-line', label: 'Quản lý Nhà thầu' },
+      ]
+    },
+    { type: 'item', route: 'settings', icon: 'ri-settings-3-line', label: 'Settings' },
   ];
 
   // Calculate sidebar width based on state
   const sidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
 
-  // Render menu item
-  const renderMenuItem = (
+  // Check if any child route is active
+  const isChildActive = (children: Array<{ route: RouteType }>) => {
+    return children.some(child => currentRoute === child.route);
+  };
+
+  // Render single menu item
+  const renderSingleItem = (
     item: { route: RouteType; icon: string; label: string },
     collapsed: boolean
   ) => {
@@ -105,6 +131,168 @@ export function Layout({
         {!collapsed && <span>{item.label}</span>}
       </motion.button>
     );
+  };
+
+  // Render dropdown menu item
+  const renderDropdownItem = (
+    item: { icon: string; label: string; badge?: string; children: Array<{ route: RouteType; icon: string; label: string }> },
+    collapsed: boolean
+  ) => {
+    const isOpen = openDropdown === item.label;
+    const hasActiveChild = isChildActive(item.children);
+
+    if (collapsed) {
+      // In collapsed mode, show as single button with tooltip
+      return (
+        <motion.button
+          key={item.label}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => toggleDropdown(item.label)}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '12px',
+            marginBottom: 4,
+            background: hasActiveChild
+              ? `linear-gradient(90deg, ${tokens.color.warning}15, transparent)`
+              : 'transparent',
+            border: 'none',
+            borderLeft: hasActiveChild
+              ? `3px solid ${tokens.color.warning}`
+              : '3px solid transparent',
+            borderRadius: tokens.radius.md,
+            color: hasActiveChild ? tokens.color.warning : tokens.color.muted,
+            cursor: 'pointer',
+            fontSize: 20,
+            minHeight: '44px',
+            position: 'relative',
+          }}
+          title={item.label}
+        >
+          <i className={item.icon} />
+          {item.badge && (
+            <span style={{
+              position: 'absolute',
+              top: 6,
+              right: 6,
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: tokens.color.warning,
+            }} />
+          )}
+        </motion.button>
+      );
+    }
+
+    return (
+      <div key={item.label} style={{ marginBottom: 4 }}>
+        <motion.button
+          whileHover={{ scale: 1.02, x: 4 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => toggleDropdown(item.label)}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '12px 16px',
+            background: hasActiveChild
+              ? `linear-gradient(90deg, ${tokens.color.warning}15, transparent)`
+              : 'transparent',
+            border: 'none',
+            borderLeft: hasActiveChild
+              ? `3px solid ${tokens.color.warning}`
+              : '3px solid transparent',
+            borderRadius: tokens.radius.md,
+            color: hasActiveChild ? tokens.color.warning : tokens.color.muted,
+            cursor: 'pointer',
+            fontSize: 15,
+            fontWeight: hasActiveChild ? 600 : 400,
+            transition: 'all 0.2s',
+            minHeight: '44px',
+          }}
+        >
+          <i className={item.icon} style={{ fontSize: 20 }} />
+          <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
+          {item.badge && (
+            <span style={{
+              padding: '2px 8px',
+              borderRadius: tokens.radius.sm,
+              background: `${tokens.color.warning}20`,
+              color: tokens.color.warning,
+              fontSize: 10,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+            }}>
+              {item.badge}
+            </span>
+          )}
+          <motion.i
+            className="ri-arrow-down-s-line"
+            animate={{ rotate: isOpen ? 180 : 0 }}
+            style={{ fontSize: 18 }}
+          />
+        </motion.button>
+
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              style={{ overflow: 'hidden', paddingLeft: 16 }}
+            >
+              {item.children.map(child => {
+                const isActive = currentRoute === child.route;
+                return (
+                  <motion.button
+                    key={child.route}
+                    whileHover={{ x: 4 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleNavigate(child.route)}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '10px 12px',
+                      marginTop: 4,
+                      background: isActive
+                        ? `${tokens.color.primary}10`
+                        : 'transparent',
+                      border: 'none',
+                      borderRadius: tokens.radius.sm,
+                      color: isActive ? tokens.color.primary : tokens.color.muted,
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      fontWeight: isActive ? 500 : 400,
+                      transition: 'all 0.2s',
+                      minHeight: '40px',
+                    }}
+                  >
+                    <i className={child.icon} style={{ fontSize: 16 }} />
+                    <span>{child.label}</span>
+                  </motion.button>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
+
+  // Render menu item (handles both types)
+  const renderMenuItem = (item: MenuItem, collapsed: boolean) => {
+    if (item.type === 'dropdown') {
+      return renderDropdownItem(item, collapsed);
+    }
+    return renderSingleItem(item, collapsed);
   };
 
   // Render user info section
@@ -488,8 +676,19 @@ export function Layout({
                 whiteSpace: 'nowrap',
               }}
             >
-              {menuItems.find((item) => item.route === currentRoute)?.label ||
-                'Dashboard'}
+              {(() => {
+                // Find label from menu items (including dropdown children)
+                for (const item of menuItems) {
+                  if (item.type === 'item' && item.route === currentRoute) {
+                    return item.label;
+                  }
+                  if (item.type === 'dropdown') {
+                    const child = item.children.find(c => c.route === currentRoute);
+                    if (child) return child.label;
+                  }
+                }
+                return 'Dashboard';
+              })()}
               {currentRoute === 'sections' && currentPageSlug && !isMobile && (
                 <span
                   style={{

@@ -1,8 +1,6 @@
-// Media Page - Main Component
 /**
- * Media Page - Media library management with responsive layout
- *
- * Requirements: 7.1, 7.2, 7.3, 7.4, 7.5
+ * Media Library Page
+ * Upload and manage images, mark as featured for slideshow
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -12,41 +10,30 @@ import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { mediaApi } from '../../api';
 import { MediaAsset } from '../../types';
-import { OptimizedImage } from '../../components/OptimizedImage';
 import { useToast } from '../../components/Toast';
-import { ResponsiveGrid, ResponsiveStack } from '../../../components/responsive';
+import { ResponsiveGrid, ResponsiveStack, ResponsiveModal } from '../../../components/responsive';
 import { useResponsive } from '../../../hooks/useResponsive';
-
-import { MediaCard } from './MediaCard';
-import { EditMediaModal } from './EditMediaModal';
-import { FilterTabs } from './FilterTabs';
-import { UsageBadges } from './UsageBadges';
-import type { MediaUsageInfo, DynamicCategory, EditMediaFormData } from './types';
 
 export function MediaPage() {
   const toast = useToast();
   const { isMobile } = useResponsive();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // State
   const [uploading, setUploading] = useState(false);
-  const [syncing, setSyncing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [mediaFiles, setMediaFiles] = useState<MediaAsset[]>([]);
   const [selectedFile, setSelectedFile] = useState<MediaAsset | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<MediaAsset | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [filter, setFilter] = useState<string>('all');
-  const [editFormData, setEditFormData] = useState<EditMediaFormData>({ alt: '', tags: '' });
-  const [mediaUsage, setMediaUsage] = useState<Record<string, MediaUsageInfo>>({});
-  const [dynamicCategories, setDynamicCategories] = useState<Record<string, DynamicCategory>>({});
-  const [usageSummary, setUsageSummary] = useState({ total: 0, blog: 0, sections: 0, unused: 0 });
+  const [filter, setFilter] = useState<'all' | 'featured' | 'normal'>('all');
 
   // Load data
   useEffect(() => {
     loadMedia();
-    loadMediaUsage();
   }, []);
 
   const loadMedia = async () => {
@@ -54,131 +41,117 @@ export function MediaPage() {
       setLoading(true);
       const data = await mediaApi.list();
       setMediaFiles(data);
-    } catch (error) {
-      console.error('Failed to load media:', error);
+    } catch {
+      toast.error('Không thể tải danh sách media');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadMediaUsage = async () => {
-    try {
-      const data = await mediaApi.getUsage();
-      setMediaUsage(data.usage || {});
-      setUsageSummary({
-        total: data.summary?.total || 0,
-        blog: data.summary?.blog || 0,
-        sections: data.summary?.sections || 0,
-        unused: data.summary?.unused || 0,
-      });
-      setDynamicCategories(data.categories || {});
-    } catch (error) {
-      console.error('Failed to load media usage:', error);
-    }
-  };
-
-  // Handlers
-  const handleSyncMedia = async () => {
-    setSyncing(true);
-    try {
-      const data = await mediaApi.sync();
-      toast.success(data.message || 'Đồng bộ thành công!');
-      await loadMedia();
-      await loadMediaUsage();
-    } catch (error) {
-      toast.error('Lỗi: ' + (error as Error).message);
-    } finally {
-      setSyncing(false);
-    }
-  };
-
+  // Handle file upload
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setUploading(true);
     try {
-      const uploadPromises = Array.from(files).map(file => mediaApi.upload(file));
+      const uploadPromises = Array.from(files).map((file) => mediaApi.upload(file));
       const results = await Promise.all(uploadPromises);
       setMediaFiles((prev) => [...results, ...prev]);
-      toast.success(`${results.length} file(s) uploaded!`);
-      loadMediaUsage();
+      toast.success(`Đã upload ${results.length} file!`);
     } catch (error) {
-      toast.error('Upload failed: ' + (error as Error).message);
+      toast.error('Upload thất bại: ' + (error as Error).message);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Xóa file này? Hành động không thể hoàn tác!')) return;
+  // Handle delete - show confirm modal
+  const handleDeleteClick = useCallback((file: MediaAsset) => {
+    setFileToDelete(file);
+    setShowDeleteModal(true);
+  }, []);
+
+  // Confirm delete
+  const handleConfirmDelete = async () => {
+    if (!fileToDelete) return;
+    setDeleting(true);
     try {
-      await mediaApi.delete(id);
-      setMediaFiles((prev) => prev.filter((f) => f.id !== id));
+      await mediaApi.delete(fileToDelete.id);
+      setMediaFiles((prev) => prev.filter((f) => f.id !== fileToDelete.id));
       toast.success('Đã xóa!');
-      loadMediaUsage();
-    } catch (error) {
-      toast.error('Delete failed: ' + (error as Error).message);
+      setShowDeleteModal(false);
+      setFileToDelete(null);
+    } catch {
+      toast.error('Không thể xóa file');
+    } finally {
+      setDeleting(false);
     }
   };
 
+  // Handle toggle featured
+  const handleToggleFeatured = async (file: MediaAsset) => {
+    try {
+      const updated = await mediaApi.updateMetadata(file.id, {
+        isFeatured: !file.isFeatured,
+      });
+      setMediaFiles((prev) => prev.map((f) => (f.id === file.id ? { ...f, ...updated } : f)));
+      toast.success(updated.isFeatured ? 'Đã đánh dấu Featured' : 'Đã bỏ Featured');
+    } catch {
+      toast.error('Không thể cập nhật');
+    }
+  };
+
+  // Handle edit click
   const handleEditClick = useCallback((file: MediaAsset) => {
     setSelectedFile(file);
-    setEditFormData({ alt: file.alt || '', tags: file.tags || '' });
     setShowEditModal(true);
   }, []);
 
-  const handleSaveEdit = useCallback(async () => {
-    if (!selectedFile) return;
-    try {
-      const updated = await mediaApi.updateMetadata(selectedFile.id, editFormData);
-      setMediaFiles((prev) => prev.map((f) => f.id === selectedFile.id ? { ...f, ...updated } : f));
-      setShowEditModal(false);
-      setSelectedFile(null);
-      toast.success('Saved!');
-    } catch (error) {
-      toast.error('Save failed: ' + (error as Error).message);
-    }
-  }, [selectedFile, editFormData, toast]);
+  // Handle save edit
+  const handleSaveEdit = useCallback(
+    async (data: { alt?: string; caption?: string; tags?: string }) => {
+      if (!selectedFile) return;
+      try {
+        const updated = await mediaApi.updateMetadata(selectedFile.id, data);
+        setMediaFiles((prev) => prev.map((f) => (f.id === selectedFile.id ? { ...f, ...updated } : f)));
+        setShowEditModal(false);
+        setSelectedFile(null);
+        toast.success('Đã lưu!');
+      } catch {
+        toast.error('Không thể lưu');
+      }
+    },
+    [selectedFile, toast]
+  );
 
-  const copyToClipboard = useCallback((url: string) => {
-    navigator.clipboard.writeText(resolveMediaUrl(url));
-    toast.info('URL copied!');
-  }, [toast]);
-
-  const getUsageInfo = useCallback((fileId: string): MediaUsageInfo => {
-    return mediaUsage[fileId] || { usedIn: [], count: 0 };
-  }, [mediaUsage]);
+  // Copy URL
+  const copyToClipboard = useCallback(
+    (url: string) => {
+      navigator.clipboard.writeText(resolveMediaUrl(url));
+      toast.info('Đã copy URL!');
+    },
+    [toast]
+  );
 
   // Filtering
-  const filteredFiles = mediaFiles.filter(file => {
-    const matchesSearch = 
+  const filteredFiles = mediaFiles.filter((file) => {
+    const matchesSearch =
       (file.alt?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
       (file.tags?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
       file.url.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     if (!matchesSearch) return false;
     if (filter === 'all') return true;
-    
-    const usage = mediaUsage[file.id];
-    if (!usage) return filter === 'unused';
-    if (filter === 'unused') return usage.count === 0;
-    
-    // Check if filter matches any usedIn (base or dynamic)
-    return usage.usedIn.includes(filter);
+    if (filter === 'featured') return file.isFeatured;
+    if (filter === 'normal') return !file.isFeatured;
+    return true;
   });
 
-  const sortedFiles = [...filteredFiles].sort((a, b) => 
-    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  const sortedFiles = [...filteredFiles].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
-  const totalSize = mediaFiles.reduce((acc, file) => acc + (file.size || 0), 0);
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-  };
+  const featuredCount = mediaFiles.filter((f) => f.isFeatured).length;
 
   // Loading state
   if (loading) {
@@ -190,7 +163,7 @@ export function MediaPage() {
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
           style={{ fontSize: 48, display: 'block', marginBottom: 16, color: tokens.color.primary }}
         />
-        <p style={{ color: tokens.color.muted }}>Đang tải thư viện...</p>
+        <p style={{ color: tokens.color.muted }}>Đang tải...</p>
       </div>
     );
   }
@@ -205,18 +178,16 @@ export function MediaPage() {
           marginBottom: isMobile ? 20 : 32,
           background: 'rgba(12,12,16,0.7)',
           backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255,255,255,0.08)',
+          border: `1px solid ${tokens.color.border}`,
           borderRadius: isMobile ? '16px' : '24px',
           padding: isMobile ? '16px' : '24px 28px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
         }}
       >
-        {/* Title Row */}
         <ResponsiveStack
           direction={{ mobile: 'column', tablet: 'row', desktop: 'row' }}
           align={isMobile ? 'stretch' : 'center'}
           justify="between"
-          gap={isMobile ? 16 : 0}
+          gap={16}
           style={{ marginBottom: 20 }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 16 }}>
@@ -237,23 +208,25 @@ export function MediaPage() {
               <i className="ri-gallery-line" />
             </motion.div>
             <div>
-              <h1 style={{
-                fontSize: isMobile ? 22 : 28,
-                fontWeight: 700,
-                color: tokens.color.text,
-                margin: 0,
-                background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}>
+              <h1
+                style={{
+                  fontSize: isMobile ? 22 : 28,
+                  fontWeight: 700,
+                  color: tokens.color.text,
+                  margin: 0,
+                  background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
                 Media Library
               </h1>
               <p style={{ color: tokens.color.muted, fontSize: isMobile ? 12 : 14, margin: '2px 0 0 0' }}>
-                {usageSummary.total} files • {formatBytes(totalSize)}
+                {mediaFiles.length} files • {featuredCount} featured
               </p>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 10, width: isMobile ? '100%' : 'auto' }}>
+          <div style={{ display: 'flex', gap: 10 }}>
             <input
               ref={fileInputRef}
               type="file"
@@ -262,21 +235,11 @@ export function MediaPage() {
               onChange={(e) => handleFileUpload(e.target.files)}
               style={{ display: 'none' }}
             />
-            <Button 
-              variant="secondary" 
-              icon="ri-refresh-line" 
-              onClick={handleSyncMedia} 
-              loading={syncing}
-              style={isMobile ? { flex: 1 } : undefined}
-            >
-              {isMobile ? '' : 'Sync'}
-            </Button>
-            <Button 
-              variant="primary" 
-              icon="ri-upload-cloud-line" 
-              onClick={() => fileInputRef.current?.click()} 
+            <Button
+              variant="primary"
+              icon="ri-upload-cloud-line"
+              onClick={() => fileInputRef.current?.click()}
               loading={uploading}
-              style={isMobile ? { flex: 1 } : undefined}
             >
               Upload
             </Button>
@@ -299,138 +262,155 @@ export function MediaPage() {
             />
           </div>
 
-          <div style={{ 
-            display: 'flex', 
-            gap: 12, 
-            alignItems: 'center', 
-            flexWrap: 'wrap',
-            overflowX: isMobile ? 'auto' : undefined,
-            paddingBottom: isMobile ? 4 : 0,
-          }}>
-            <FilterTabs
-              filter={filter}
-              setFilter={setFilter}
-              dynamicCategories={dynamicCategories}
-              usageSummary={usageSummary}
-            />
-
-            {/* View Mode */}
-            <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: 3 }}>
-              {(['grid', 'list'] as const).map((mode) => (
-                <motion.button
-                  key={mode}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setViewMode(mode)}
-                  style={{
-                    padding: '6px 12px',
-                    background: viewMode === mode ? `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})` : 'transparent',
-                    border: 'none',
-                    borderRadius: '6px',
-                    color: viewMode === mode ? '#0b0c0f' : tokens.color.muted,
-                    cursor: 'pointer',
-                    fontSize: 16,
-                    minWidth: '44px',
-                    minHeight: '44px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <i className={mode === 'grid' ? 'ri-grid-line' : 'ri-list-check'} />
-                </motion.button>
-              ))}
-            </div>
+          {/* Filter Tabs */}
+          <div
+            style={{
+              display: 'flex',
+              gap: 4,
+              background: 'rgba(255,255,255,0.05)',
+              borderRadius: tokens.radius.md,
+              padding: 4,
+            }}
+          >
+            {[
+              { value: 'all', label: 'Tất cả', icon: 'ri-image-line' },
+              { value: 'featured', label: 'Featured', icon: 'ri-star-line' },
+              { value: 'normal', label: 'Thường', icon: 'ri-image-2-line' },
+            ].map((tab) => (
+              <motion.button
+                key={tab.value}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setFilter(tab.value as typeof filter)}
+                style={{
+                  padding: '8px 16px',
+                  background:
+                    filter === tab.value
+                      ? `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`
+                      : 'transparent',
+                  border: 'none',
+                  borderRadius: tokens.radius.sm,
+                  color: filter === tab.value ? '#0b0c0f' : tokens.color.muted,
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: filter === tab.value ? 600 : 400,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <i className={tab.icon} />
+                {!isMobile && tab.label}
+              </motion.button>
+            ))}
           </div>
         </ResponsiveStack>
       </motion.div>
 
+      {/* Info Banner */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{
+          marginBottom: 20,
+          padding: '12px 16px',
+          background: `${tokens.color.info}15`,
+          border: `1px solid ${tokens.color.info}30`,
+          borderRadius: tokens.radius.md,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
+        <i className="ri-information-line" style={{ color: tokens.color.info, fontSize: 20 }} />
+        <span style={{ color: tokens.color.text, fontSize: 13 }}>
+          <strong>Landing Gallery Only</strong> - Trang này chỉ quản lý ảnh cho Gallery và Slideshow trên Landing Page.
+          Đánh dấu <strong>Featured</strong> để hiển thị trong Slideshow.
+          Ảnh cho Furniture, Materials, Blog được quản lý riêng trong từng module.
+        </span>
+      </motion.div>
+
       {/* Content */}
       {sortedFiles.length === 0 ? (
-        <EmptyState 
-          searchQuery={searchQuery} 
-          filter={filter} 
-          dynamicCategories={dynamicCategories}
-          onUpload={() => fileInputRef.current?.click()} 
-        />
-      ) : viewMode === 'grid' ? (
-        <ResponsiveGrid
-          cols={{ mobile: 2, tablet: 3, desktop: 4 }}
-          gap={{ mobile: 12, tablet: 16, desktop: 16 }}
-        >
+        <EmptyState searchQuery={searchQuery} filter={filter} onUpload={() => fileInputRef.current?.click()} />
+      ) : (
+        <ResponsiveGrid cols={{ mobile: 2, tablet: 3, desktop: 4 }} gap={{ mobile: 12, tablet: 16, desktop: 16 }}>
           {sortedFiles.map((file, index) => (
             <MediaCard
               key={file.id}
               file={file}
               index={index}
-              usageInfo={getUsageInfo(file.id)}
-              dynamicCategories={dynamicCategories}
               onEdit={handleEditClick}
-              onDelete={handleDelete}
+              onDelete={handleDeleteClick}
+              onToggleFeatured={handleToggleFeatured}
               onCopy={copyToClipboard}
             />
           ))}
         </ResponsiveGrid>
-      ) : (
-        <ListView 
-          files={sortedFiles} 
-          getUsageInfo={getUsageInfo}
-          dynamicCategories={dynamicCategories}
-          onEdit={handleEditClick}
-          onDelete={handleDelete}
-          onCopy={copyToClipboard}
-        />
       )}
 
       {/* Edit Modal */}
       {showEditModal && selectedFile && (
         <EditMediaModal
           file={selectedFile}
-          formData={editFormData}
-          onFormChange={setEditFormData}
           onSave={handleSaveEdit}
-          onClose={() => { setShowEditModal(false); setSelectedFile(null); }}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedFile(null);
+          }}
+        />
+      )}
+
+      {/* Delete Confirm Modal */}
+      {showDeleteModal && fileToDelete && (
+        <DeleteConfirmModal
+          file={fileToDelete}
+          deleting={deleting}
+          onConfirm={handleConfirmDelete}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setFileToDelete(null);
+          }}
         />
       )}
     </div>
   );
 }
 
-// Empty State Component
-function EmptyState({ 
-  searchQuery, 
-  filter, 
-  dynamicCategories,
-  onUpload 
-}: { 
-  searchQuery: string; 
-  filter: string; 
-  dynamicCategories: Record<string, DynamicCategory>;
+// Empty State
+function EmptyState({
+  searchQuery,
+  filter,
+  onUpload,
+}: {
+  searchQuery: string;
+  filter: string;
   onUpload: () => void;
 }) {
   const getEmptyMessage = () => {
     if (searchQuery) return 'Không tìm thấy file nào';
-    if (filter === 'blog') return 'Chưa có ảnh nào dùng trong Blog';
-    if (filter === 'sections') return 'Chưa có ảnh nào dùng trong Sections';
-    if (filter === 'unused') return 'Không có ảnh nào chưa sử dụng';
-    // Check dynamic categories
-    const dynamicCat = dynamicCategories[filter];
-    if (dynamicCat) return `Chưa có ảnh nào trong ${dynamicCat.label}`;
+    if (filter === 'featured') return 'Chưa có ảnh nào được đánh dấu Featured';
+    if (filter === 'normal') return 'Không có ảnh thường';
     return 'Chưa có file nào. Upload để bắt đầu!';
   };
 
   return (
-    <div style={{ 
-      textAlign: 'center', 
-      padding: 60, 
-      background: 'rgba(12,12,16,0.5)', 
-      borderRadius: '16px', 
-      border: '1px solid rgba(255,255,255,0.05)' 
-    }}>
-      <i className="ri-gallery-line" style={{ fontSize: 64, color: tokens.color.border, marginBottom: 16, display: 'block' }} />
+    <div
+      style={{
+        textAlign: 'center',
+        padding: 60,
+        background: tokens.color.surface,
+        borderRadius: tokens.radius.lg,
+        border: `1px solid ${tokens.color.border}`,
+      }}
+    >
+      <i
+        className="ri-gallery-line"
+        style={{ fontSize: 64, color: tokens.color.border, marginBottom: 16, display: 'block' }}
+      />
       <p style={{ color: tokens.color.muted, marginBottom: 20, fontSize: 15 }}>{getEmptyMessage()}</p>
       {!searchQuery && filter === 'all' && (
-        <Button onClick={onUpload} icon="ri-upload-cloud-line" variant="secondary">
+        <Button onClick={onUpload} icon="ri-upload-cloud-line" variant="primary">
           Upload Files
         </Button>
       )}
@@ -438,88 +418,305 @@ function EmptyState({
   );
 }
 
-// List View Component
-function ListView({ 
-  files, 
-  getUsageInfo,
-  dynamicCategories,
-  onEdit, 
-  onDelete, 
-  onCopy 
-}: { 
-  files: MediaAsset[];
-  getUsageInfo: (id: string) => MediaUsageInfo;
-  dynamicCategories: Record<string, DynamicCategory>;
+// Media Card Component
+function MediaCard({
+  file,
+  index,
+  onEdit,
+  onDelete,
+  onToggleFeatured,
+  onCopy,
+}: {
+  file: MediaAsset;
+  index: number;
   onEdit: (file: MediaAsset) => void;
-  onDelete: (id: string) => void;
+  onDelete: (file: MediaAsset) => void;
+  onToggleFeatured: (file: MediaAsset) => void;
   onCopy: (url: string) => void;
 }) {
   return (
-    <div style={{ 
-      background: 'rgba(12,12,16,0.7)', 
-      borderRadius: '16px', 
-      border: '1px solid rgba(255,255,255,0.08)', 
-      overflow: 'hidden' 
-    }}>
-      {files.map((file, index) => (
-        <motion.div
-          key={file.id}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: index * 0.02 }}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.03 }}
+      style={{
+        background: tokens.color.surface,
+        borderRadius: tokens.radius.lg,
+        border: `1px solid ${file.isFeatured ? tokens.color.primary : tokens.color.border}`,
+        overflow: 'hidden',
+        position: 'relative',
+      }}
+    >
+      {/* Image */}
+      <div style={{ position: 'relative', paddingTop: '75%' }}>
+        <img
+          src={resolveMediaUrl(file.url)}
+          alt={file.alt || 'Media'}
+          loading="lazy"
           style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
+        />
+
+        {/* Featured Badge */}
+        {file.isFeatured && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 8,
+              left: 8,
+              padding: '4px 8px',
+              borderRadius: tokens.radius.sm,
+              background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+              color: '#0b0c0f',
+              fontSize: 10,
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            <i className="ri-star-fill" style={{ fontSize: 10 }} />
+            FEATURED
+          </div>
+        )}
+
+        {/* Hover Actions */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileHover={{ opacity: 1 }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(0,0,0,0.6)',
             display: 'flex',
             alignItems: 'center',
-            gap: 16,
-            padding: 14,
-            borderBottom: index < files.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+            justifyContent: 'center',
+            gap: 8,
           }}
         >
-          <OptimizedImage
+          <ActionButton icon="ri-star-line" color={tokens.color.warning} onClick={() => onToggleFeatured(file)} title={file.isFeatured ? 'Bỏ Featured' : 'Đánh dấu Featured'} />
+          <ActionButton icon="ri-file-copy-line" color={tokens.color.primary} onClick={() => onCopy(file.url)} title="Copy URL" />
+          <ActionButton icon="ri-edit-line" color={tokens.color.info} onClick={() => onEdit(file)} title="Chỉnh sửa" />
+          <ActionButton icon="ri-delete-bin-line" color={tokens.color.error} onClick={() => onDelete(file)} title="Xóa" />
+        </motion.div>
+      </div>
+
+      {/* Info */}
+      <div style={{ padding: 12 }}>
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 500,
+            color: tokens.color.text,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            marginBottom: 4,
+          }}
+        >
+          {file.alt || 'Untitled'}
+        </div>
+        <div style={{ fontSize: 11, color: tokens.color.muted }}>
+          {file.width && file.height ? `${file.width} × ${file.height}` : 'Unknown'} •{' '}
+          {new Date(file.createdAt).toLocaleDateString('vi-VN')}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Action Button
+function ActionButton({
+  icon,
+  color,
+  onClick,
+  title,
+}: {
+  icon: string;
+  color: string;
+  onClick: () => void;
+  title: string;
+}) {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.9 }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      style={{
+        padding: 10,
+        background: `${color}20`,
+        border: `1px solid ${color}40`,
+        borderRadius: tokens.radius.md,
+        color,
+        cursor: 'pointer',
+        fontSize: 16,
+      }}
+      title={title}
+    >
+      <i className={icon} />
+    </motion.button>
+  );
+}
+
+// Edit Media Modal
+function EditMediaModal({
+  file,
+  onSave,
+  onClose,
+}: {
+  file: MediaAsset;
+  onSave: (data: { alt?: string; caption?: string; tags?: string }) => void;
+  onClose: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    alt: file.alt || '',
+    caption: file.caption || '',
+    tags: file.tags || '',
+  });
+
+  const handleSubmit = async () => {
+    setSaving(true);
+    try {
+      onSave(form);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <ResponsiveModal
+      isOpen={true}
+      onClose={onClose}
+      title="Chỉnh sửa Media"
+      size="md"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} style={{ width: '100%' }}>
+            Hủy
+          </Button>
+          <Button variant="primary" onClick={handleSubmit} loading={saving} icon="ri-check-line" style={{ width: '100%' }}>
+            Lưu
+          </Button>
+        </>
+      }
+    >
+      {/* Preview */}
+      <div style={{ marginBottom: 20 }}>
+        <img
+          src={resolveMediaUrl(file.url)}
+          alt={file.alt || 'Media'}
+          style={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: tokens.radius.md }}
+        />
+      </div>
+
+      {/* Form */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <Input
+          label="Alt text (SEO)"
+          value={form.alt}
+          onChange={(v) => setForm((prev) => ({ ...prev, alt: v }))}
+          placeholder="Mô tả hình ảnh cho SEO"
+          fullWidth
+        />
+        <Input
+          label="Caption"
+          value={form.caption}
+          onChange={(v) => setForm((prev) => ({ ...prev, caption: v }))}
+          placeholder="Chú thích hình ảnh"
+          fullWidth
+        />
+        <Input
+          label="Tags"
+          value={form.tags}
+          onChange={(v) => setForm((prev) => ({ ...prev, tags: v }))}
+          placeholder="tag1, tag2, tag3"
+          fullWidth
+        />
+      </div>
+    </ResponsiveModal>
+  );
+}
+
+// Delete Confirm Modal
+function DeleteConfirmModal({
+  file,
+  deleting,
+  onConfirm,
+  onClose,
+}: {
+  file: MediaAsset;
+  deleting: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <ResponsiveModal
+      isOpen={true}
+      onClose={onClose}
+      title="Xác nhận xóa"
+      size="sm"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={deleting} style={{ width: '100%' }}>
+            Hủy
+          </Button>
+          <Button variant="danger" onClick={onConfirm} loading={deleting} icon="ri-delete-bin-line" style={{ width: '100%' }}>
+            Xóa
+          </Button>
+        </>
+      }
+    >
+      <div style={{ textAlign: 'center' }}>
+        {/* Preview */}
+        <div style={{ marginBottom: 16 }}>
+          <img
             src={resolveMediaUrl(file.url)}
             alt={file.alt || 'Media'}
-            loading="lazy"
-            style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: '8px' }}
+            style={{
+              width: 120,
+              height: 120,
+              objectFit: 'cover',
+              borderRadius: tokens.radius.md,
+              border: `2px solid ${tokens.color.error}40`,
+            }}
           />
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <div style={{ fontSize: 14, color: tokens.color.text, fontWeight: 600 }}>
-                {file.alt || 'Untitled'}
-              </div>
-              <UsageBadges usedIn={getUsageInfo(file.id).usedIn} dynamicCategories={dynamicCategories} />
-            </div>
-            <div style={{ fontSize: 12, color: tokens.color.muted }}>
-              {file.width && file.height ? `${file.width} × ${file.height}` : 'Unknown'} • {new Date(file.createdAt).toLocaleDateString('vi-VN')}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {[
-              { icon: 'ri-file-copy-line', onClick: () => onCopy(file.url), color: tokens.color.primary },
-              { icon: 'ri-edit-line', onClick: () => onEdit(file), color: tokens.color.info },
-              { icon: 'ri-delete-bin-line', onClick: () => onDelete(file.id), color: tokens.color.error },
-            ].map(({ icon, onClick, color }) => (
-              <motion.button
-                key={icon}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={onClick}
-                style={{
-                  padding: '8px 10px',
-                  background: `${color}15`,
-                  border: `1px solid ${color}30`,
-                  borderRadius: '8px',
-                  color,
-                  cursor: 'pointer',
-                  fontSize: 14,
-                }}
-              >
-                <i className={icon} />
-              </motion.button>
-            ))}
-          </div>
-        </motion.div>
-      ))}
-    </div>
+        </div>
+
+        {/* Warning Icon */}
+        <div
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: '50%',
+            background: `${tokens.color.error}15`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px',
+          }}
+        >
+          <i className="ri-error-warning-line" style={{ fontSize: 28, color: tokens.color.error }} />
+        </div>
+
+        {/* Message */}
+        <p style={{ color: tokens.color.text, fontSize: 15, marginBottom: 8 }}>
+          Bạn có chắc muốn xóa file này?
+        </p>
+        <p style={{ color: tokens.color.muted, fontSize: 13, margin: 0 }}>
+          Hành động này không thể hoàn tác.
+        </p>
+      </div>
+    </ResponsiveModal>
   );
 }
 

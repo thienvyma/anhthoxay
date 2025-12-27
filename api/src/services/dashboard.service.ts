@@ -15,7 +15,6 @@ import type {
   ProjectsStats,
   BidsStats,
   ContractorsStats,
-  InteriorQuotesStats,
   BlogPostsStats,
   UsersStats,
   MediaStats,
@@ -72,7 +71,6 @@ export class DashboardService {
       projects,
       bids,
       contractors,
-      interiorQuotes,
       blogPosts,
       users,
       media,
@@ -82,7 +80,6 @@ export class DashboardService {
       this.getProjectsStats(),
       this.getBidsStats(),
       this.getContractorsStats(),
-      this.getInteriorQuotesStats(),
       this.getBlogPostsStats(),
       this.getUsersStats(),
       this.getMediaStats(),
@@ -94,7 +91,6 @@ export class DashboardService {
       projects,
       bids,
       contractors,
-      interiorQuotes,
       blogPosts,
       users,
       media,
@@ -226,24 +222,6 @@ export class DashboardService {
       pending: byStatus['PENDING'] || 0,
       verified: byStatus['VERIFIED'] || 0,
     };
-  }
-
-  /**
-   * Get interior quotes statistics
-   */
-  private async getInteriorQuotesStats(): Promise<InteriorQuotesStats> {
-    const total = await this.prisma.interiorQuote.count();
-
-    // This month
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const thisMonth = await this.prisma.interiorQuote.count({
-      where: {
-        createdAt: { gte: startOfMonth },
-      },
-    });
-
-    return { total, thisMonth };
   }
 
   /**
@@ -405,16 +383,15 @@ export class DashboardService {
    */
   async getActivityFeed(limit: number = DEFAULT_ACTIVITY_LIMIT): Promise<ActivityItem[]> {
     // Fetch recent items from each source
-    const [leads, projects, bids, contractors, interiorQuotes] = await Promise.all([
+    const [leads, projects, bids, contractors] = await Promise.all([
       this.getRecentLeads(limit),
       this.getRecentProjects(limit),
       this.getRecentBids(limit),
       this.getRecentContractors(limit),
-      this.getRecentInteriorQuotes(limit),
     ]);
 
     // Combine and sort by createdAt descending
-    const allItems = [...leads, ...projects, ...bids, ...contractors, ...interiorQuotes];
+    const allItems = [...leads, ...projects, ...bids, ...contractors];
     allItems.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Return only the requested limit
@@ -508,25 +485,6 @@ export class DashboardService {
     }));
   }
 
-  /**
-   * Get recent interior quotes as activity items
-   */
-  private async getRecentInteriorQuotes(limit: number): Promise<ActivityItem[]> {
-    const quotes = await this.prisma.interiorQuote.findMany({
-      select: { id: true, code: true, customerName: true, createdAt: true },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-    });
-
-    return quotes.map((q) => ({
-      id: `interior-quote-${q.id}`,
-      type: 'INTERIOR_QUOTE' as ActivityType,
-      title: 'Báo giá nội thất',
-      description: `${q.code}: ${q.customerName}`,
-      entityId: q.id,
-      createdAt: q.createdAt.toISOString(),
-    }));
-  }
 }
 
 // ============================================

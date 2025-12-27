@@ -76,9 +76,7 @@ export function renderPreview(kind: SectionKind, data: DataRecord): React.JSX.El
       );
 
     case 'RICH_TEXT':
-      return (
-        <div style={{ color: '#111', lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: data.html || '<p style="color: #999">Chưa có nội dung...</p>' }} />
-      );
+      return <RichTextPreview data={data} />;
 
     case 'BANNER':
       return (
@@ -530,223 +528,6 @@ export function renderPreview(kind: SectionKind, data: DataRecord): React.JSX.El
         </div>
       );
 
-    case 'INTERIOR_QUOTE':
-      return (
-        <div style={{ background: 'transparent', borderRadius: 8, padding: 24 }}>
-          {/* Header - outside card */}
-          <div style={{ textAlign: 'center', marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
-              <i className={data.headerIcon || 'ri-home-smile-fill'} style={{ fontSize: 28, color: '#f5d393' }} />
-              <h2 style={{ fontSize: 24, fontWeight: 700, color: '#F4F4F5', margin: 0 }}>{data.title || 'Báo Giá Nội Thất'}</h2>
-            </div>
-            <p style={{ fontSize: 14, color: '#A1A1AA' }}>{data.subtitle || 'Chọn căn hộ và gói nội thất để nhận báo giá chi tiết ngay lập tức'}</p>
-          </div>
-          
-          {/* Content Box - Card wrapper with dark theme */}
-          <div style={{ background: '#131316', borderRadius: 20, padding: 24, border: '1px solid #27272A', maxWidth: data.maxWidth || 900, margin: '0 auto' }}>
-            {/* Wizard Steps Indicator */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20, flexWrap: 'wrap', paddingBottom: 16, borderBottom: '1px solid #27272A' }}>
-              {['CĐT', 'Dự án', 'Tòa', 'Căn', 'MB', 'Gói', 'BG'].map((step, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ 
-                    width: 28, 
-                    height: 28, 
-                    borderRadius: '50%', 
-                    background: idx === 0 ? '#f5d393' : '#27272A', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    color: idx === 0 ? '#111' : '#A1A1AA',
-                    fontSize: 11,
-                    fontWeight: 600 
-                  }}>
-                    {idx + 1}
-                  </div>
-                  <span style={{ fontSize: 10, color: idx === 0 ? '#F4F4F5' : '#A1A1AA' }}>{step}</span>
-                  {idx < 6 && <div style={{ width: 16, height: 2, background: '#27272A' }} />}
-                </div>
-              ))}
-            </div>
-            
-            {/* Step Content */}
-            <h4 style={{ fontSize: 14, fontWeight: 600, color: '#F4F4F5', marginBottom: 12 }}>Chọn chủ đầu tư</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
-              {['Vinhomes', 'Novaland', 'Capitaland'].map((item, idx) => (
-                <div key={idx} style={{ 
-                  padding: '16px', 
-                  background: idx === 0 ? 'rgba(245,211,147,0.1)' : '#1A1A1E', 
-                  border: `1px solid ${idx === 0 ? '#f5d393' : '#27272A'}`, 
-                  borderRadius: 8, 
-                  textAlign: 'center' 
-                }}>
-                  <i className="ri-building-4-line" style={{ fontSize: 24, color: '#f5d393', marginBottom: 8, display: 'block' }} />
-                  <span style={{ fontSize: 13, fontWeight: 500, color: '#F4F4F5' }}>{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      );
-
-    case 'INTERIOR_WIZARD':
-      return (
-        <div style={{ background: '#f5f5f5', borderRadius: 8, padding: 24 }}>
-          {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
-              <i className={data.headerIcon || 'ri-home-smile-fill'} style={{ fontSize: 28, color: '#f5d393' }} />
-              <h2 style={{ fontSize: 24, fontWeight: 700, color: '#111', margin: 0 }}>{data.title || 'Báo Giá Nội Thất'}</h2>
-            </div>
-            <p style={{ fontSize: 14, color: '#666' }}>{data.subtitle || 'Chọn căn hộ và gói nội thất để nhận báo giá chi tiết ngay lập tức'}</p>
-          </div>
-          
-          {/* Wizard Steps Indicator */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-            {['Dự án', 'Tòa nhà', 'Căn hộ', 'Mặt bằng', 'Gói', 'Kết quả'].map((step, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ 
-                  width: 28, 
-                  height: 28, 
-                  borderRadius: '50%', 
-                  background: idx === 0 ? '#f5d393' : '#e5e7eb', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  color: idx === 0 ? '#111' : '#666',
-                  fontSize: 12,
-                  fontWeight: 600 
-                }}>
-                  {idx + 1}
-                </div>
-                <span style={{ fontSize: 11, color: idx === 0 ? '#111' : '#999' }}>{step}</span>
-                {idx < 5 && <div style={{ width: 20, height: 2, background: '#e5e7eb' }} />}
-              </div>
-            ))}
-          </div>
-          
-          {/* Content Box */}
-          <div style={{ background: '#fff', borderRadius: 12, padding: 24, border: '1px solid #e5e7eb', maxWidth: data.maxWidth || 1200, margin: '0 auto' }}>
-            <h4 style={{ fontSize: 14, fontWeight: 600, color: '#111', marginBottom: 12 }}>Chọn dự án</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
-              {['Vinhomes Grand Park', 'Masteri Thảo Điền', 'The Sun Avenue'].map((item, idx) => (
-                <div key={idx} style={{ 
-                  padding: '16px', 
-                  background: idx === 0 ? 'rgba(245,211,147,0.1)' : '#f9fafb', 
-                  border: `1px solid ${idx === 0 ? '#f5d393' : '#e5e7eb'}`, 
-                  borderRadius: 8, 
-                  textAlign: 'center' 
-                }}>
-                  <i className="ri-building-2-line" style={{ fontSize: 24, color: '#f5d393', marginBottom: 8, display: 'block' }} />
-                  <span style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      );
-
-    case 'INTERIOR_PRICING_TABLE':
-      return (
-        <div style={{ background: 'transparent', borderRadius: 8, padding: 24 }}>
-          {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: 20 }}>
-            <h2 style={{ fontSize: 24, fontWeight: 700, color: '#F4F4F5', marginBottom: 8 }}>{data.title || 'Bảng Báo Giá Nội Thất'}</h2>
-            <p style={{ fontSize: 14, color: '#A1A1AA' }}>{data.subtitle || 'Chọn gói nội thất phù hợp với nhu cầu và ngân sách của bạn'}</p>
-          </div>
-          
-          {/* Pricing Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${data.columns || 3}, 1fr)`, gap: 16 }}>
-            {[
-              { name: 'Cơ bản', tier: 'BASIC', price: '50,000,000', color: '#A1A1AA' },
-              { name: 'Tiêu chuẩn', tier: 'STANDARD', price: '80,000,000', color: '#3B82F6', isPopular: true },
-              { name: 'Cao cấp', tier: 'PREMIUM', price: '120,000,000', color: '#F59E0B' },
-            ].slice(0, data.columns || 3).map((tier, idx) => (
-              <div key={idx} style={{ 
-                background: '#131316', 
-                borderRadius: 20, 
-                border: `2px solid ${tier.isPopular ? '#f5d393' : '#27272A'}`,
-                overflow: 'hidden',
-                position: 'relative'
-              }}>
-                {tier.isPopular && (
-                  <div style={{ 
-                    position: 'absolute', 
-                    top: 12, 
-                    right: 12, 
-                    background: '#f5d393', 
-                    color: '#111', 
-                    fontSize: 10, 
-                    fontWeight: 700, 
-                    padding: '4px 8px', 
-                    borderRadius: 20 
-                  }}>
-                    <i className="ri-star-fill" style={{ marginRight: 4 }} />
-                    Phổ biến
-                  </div>
-                )}
-                {/* Thumbnail placeholder */}
-                <div style={{ height: 100, background: 'linear-gradient(135deg, rgba(245,211,147,0.15), rgba(239,182,121,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <i className="ri-home-smile-line" style={{ fontSize: 32, color: '#f5d393', opacity: 0.5 }} />
-                </div>
-                <div style={{ padding: 16 }}>
-                  {/* Tier badge */}
-                  <div style={{ 
-                    display: 'inline-flex', 
-                    alignItems: 'center', 
-                    gap: 4, 
-                    padding: '4px 8px', 
-                    background: `${tier.color}15`, 
-                    color: tier.color, 
-                    fontSize: 11, 
-                    fontWeight: 600, 
-                    borderRadius: 6, 
-                    marginBottom: 8 
-                  }}>
-                    <i className="ri-home-line" />
-                    {tier.tier === 'BASIC' ? 'Cơ bản' : tier.tier === 'STANDARD' ? 'Tiêu chuẩn' : 'Cao cấp'}
-                  </div>
-                  <h4 style={{ fontSize: 16, fontWeight: 700, color: '#F4F4F5', margin: '0 0 8px' }}>{tier.name}</h4>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: '#f5d393', marginBottom: 12 }}>
-                    {tier.price}<span style={{ fontSize: 12, color: '#A1A1AA', fontWeight: 400 }}>đ</span>
-                  </div>
-                  {/* Features */}
-                  {data.showFeatures !== false && (
-                    <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 12px', fontSize: 12 }}>
-                      {['Nội thất phòng khách', 'Nội thất phòng ngủ', 'Thiết bị bếp'].map((f, i) => (
-                        <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0', color: '#F4F4F5', borderBottom: i < 2 ? '1px solid #27272A' : 'none' }}>
-                          <i className="ri-check-line" style={{ color: '#34D399', fontSize: 14 }} />
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {/* CTA */}
-                  {data.showCta !== false && (
-                    <button style={{ 
-                      width: '100%', 
-                      padding: '10px', 
-                      background: tier.isPopular ? 'linear-gradient(135deg, #f5d393, #efb679)' : 'transparent', 
-                      border: tier.isPopular ? 'none' : '1px solid #27272A', 
-                      borderRadius: 12, 
-                      color: tier.isPopular ? '#111' : '#F4F4F5', 
-                      fontSize: 13, 
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6
-                    }}>
-                      {data.ctaText || 'Liên hệ tư vấn'}
-                      <i className="ri-arrow-right-line" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-
     case 'MARKETPLACE':
       return (
         <div style={{ background: 'transparent', borderRadius: 8, padding: 24 }}>
@@ -850,6 +631,289 @@ export function renderPreview(kind: SectionKind, data: DataRecord): React.JSX.El
         </div>
       );
 
+    case 'FEATURED_SLIDESHOW':
+      return (
+        <div style={{ background: '#f5f5f5', borderRadius: 8, padding: 24 }}>
+          {data.title && <h2 style={{ fontSize: 24, fontWeight: 700, color: '#111', marginBottom: 8, textAlign: 'center' }}>{data.title}</h2>}
+          {data.subtitle && <p style={{ fontSize: 14, color: '#666', marginBottom: 20, textAlign: 'center' }}>{data.subtitle}</p>}
+          
+          {/* Slideshow Preview */}
+          <div style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', background: '#e5e7eb' }}>
+            <div style={{ paddingBottom: '56.25%', position: 'relative' }}>
+              <div style={{ 
+                position: 'absolute', 
+                inset: 0, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                background: 'linear-gradient(135deg, rgba(236,72,153,0.2), rgba(139,92,246,0.2))'
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <i className="ri-slideshow-3-line" style={{ fontSize: 48, color: '#ec4899', opacity: 0.5 }} />
+                  <p style={{ fontSize: 13, color: '#666', marginTop: 8 }}>Ảnh nổi bật từ Media Library</p>
+                </div>
+              </div>
+              
+              {/* Navigation Arrows */}
+              {data.showNavigation !== false && (
+                <>
+                  <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 36, height: 36, borderRadius: '50%', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <i className="ri-arrow-left-s-line" style={{ color: '#fff', fontSize: 20 }} />
+                  </div>
+                  <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', width: 36, height: 36, borderRadius: '50%', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <i className="ri-arrow-right-s-line" style={{ color: '#fff', fontSize: 20 }} />
+                  </div>
+                </>
+              )}
+            </div>
+            
+            {/* Pagination Dots */}
+            {data.showPagination !== false && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 6, padding: 12, background: '#fff' }}>
+                <div style={{ width: 20, height: 8, borderRadius: 4, background: '#ec4899' }} />
+                <div style={{ width: 8, height: 8, borderRadius: 4, background: '#d1d5db' }} />
+                <div style={{ width: 8, height: 8, borderRadius: 4, background: '#d1d5db' }} />
+              </div>
+            )}
+          </div>
+          
+          {/* Options Info */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 12 }}>
+            {data.autoplay !== false && (
+              <span style={{ fontSize: 11, color: '#666', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <i className="ri-play-circle-line" /> Tự động: {data.autoplayDelay || 5000}ms
+              </span>
+            )}
+          </div>
+        </div>
+      );
+
+    case 'MEDIA_GALLERY':
+      return (
+        <div style={{ background: '#f5f5f5', borderRadius: 8, padding: 24 }}>
+          {data.title && <h2 style={{ fontSize: 24, fontWeight: 700, color: '#111', marginBottom: 8, textAlign: 'center' }}>{data.title}</h2>}
+          {data.subtitle && <p style={{ fontSize: 14, color: '#666', marginBottom: 20, textAlign: 'center' }}>{data.subtitle}</p>}
+          
+          {/* Gallery Grid Preview */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: `repeat(${data.columns || 3}, 1fr)`, 
+            gap: 12 
+          }}>
+            {Array.from({ length: Math.min(data.itemsPerPage || 6, 6) }).map((_, idx) => (
+              <div key={idx} style={{ 
+                background: '#e5e7eb', 
+                borderRadius: 8, 
+                overflow: 'hidden',
+                border: '1px solid #d1d5db'
+              }}>
+                <div style={{ paddingBottom: '75%', position: 'relative' }}>
+                  <div style={{ 
+                    position: 'absolute', 
+                    inset: 0, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    background: `linear-gradient(135deg, rgba(139,92,246,${0.1 + idx * 0.05}), rgba(236,72,153,${0.1 + idx * 0.05}))`
+                  }}>
+                    <i className="ri-image-line" style={{ fontSize: 24, color: '#8b5cf6', opacity: 0.5 }} />
+                  </div>
+                </div>
+                {data.showCaptions !== false && (
+                  <div style={{ padding: 8, background: '#fff' }}>
+                    <div style={{ height: 8, background: '#e5e7eb', borderRadius: 4, width: '70%' }} />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          
+          {/* Pagination Preview */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 20 }}>
+            <button style={{ padding: '8px 12px', background: '#e5e7eb', border: 'none', borderRadius: 6, fontSize: 12, color: '#666' }}>
+              <i className="ri-arrow-left-s-line" /> Trước
+            </button>
+            <button style={{ width: 32, height: 32, background: '#8b5cf6', border: 'none', borderRadius: 6, color: '#fff', fontWeight: 600 }}>1</button>
+            <button style={{ width: 32, height: 32, background: '#e5e7eb', border: 'none', borderRadius: 6, color: '#666' }}>2</button>
+            <button style={{ width: 32, height: 32, background: '#e5e7eb', border: 'none', borderRadius: 6, color: '#666' }}>3</button>
+            <button style={{ padding: '8px 12px', background: '#e5e7eb', border: 'none', borderRadius: 6, fontSize: 12, color: '#666' }}>
+              Sau <i className="ri-arrow-right-s-line" />
+            </button>
+          </div>
+          
+          {/* Info */}
+          <p style={{ fontSize: 11, color: '#999', textAlign: 'center', marginTop: 12 }}>
+            {data.itemsPerPage || 12} ảnh/trang • {data.columns || 3} cột
+          </p>
+        </div>
+      );
+
+    case 'VIDEO_SHOWCASE':
+      return (
+        <div style={{ background: '#f5f5f5', borderRadius: 8, padding: 24 }}>
+          {data.title && <h2 style={{ fontSize: 24, fontWeight: 700, color: '#111', marginBottom: 8, textAlign: 'center' }}>{data.title}</h2>}
+          {data.subtitle && <p style={{ fontSize: 14, color: '#666', marginBottom: 20, textAlign: 'center' }}>{data.subtitle}</p>}
+          
+          {/* Video Preview */}
+          <div style={{ 
+            position: 'relative',
+            maxWidth: data.maxWidth === 'narrow' ? 800 : data.maxWidth === 'wide' ? 1200 : data.maxWidth === 'full' ? '100%' : 1000,
+            margin: '0 auto',
+            borderRadius: data.roundedCorners !== false ? 12 : 0,
+            overflow: 'hidden',
+            background: '#000',
+          }}>
+            {/* Aspect Ratio Container */}
+            <div style={{ 
+              paddingBottom: data.aspectRatio === '4:3' ? '75%' : data.aspectRatio === '1:1' ? '100%' : data.aspectRatio === '9:16' ? '177.78%' : data.aspectRatio === '21:9' ? '42.86%' : '56.25%',
+              position: 'relative',
+            }}>
+              <div style={{ 
+                position: 'absolute', 
+                inset: 0, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                background: data.thumbnail ? `url(${data.thumbnail}) center/cover` : 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+              }}>
+                {/* Play Button Overlay */}
+                <div style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: '50%',
+                  background: 'rgba(239, 68, 68, 0.9)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 8px 32px rgba(239, 68, 68, 0.4)',
+                }}>
+                  <i className="ri-play-fill" style={{ fontSize: 36, color: '#fff', marginLeft: 4 }} />
+                </div>
+                
+                {/* Overlay Text */}
+                {data.overlayText && (
+                  <div style={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    padding: 20,
+                    textAlign: 'center',
+                    ...(data.overlayPosition === 'top' ? { top: 0 } : data.overlayPosition === 'bottom' ? { bottom: 0 } : { top: '50%', transform: 'translateY(calc(-50% + 60px))' }),
+                  }}>
+                    <p style={{ 
+                      color: '#fff', 
+                      fontSize: 20, 
+                      fontWeight: 600, 
+                      textShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                      margin: 0,
+                    }}>
+                      {data.overlayText}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Video Source Info */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 16 }}>
+            <span style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 6, 
+              fontSize: 12, 
+              color: '#666',
+              padding: '4px 12px',
+              background: '#e5e7eb',
+              borderRadius: 20,
+            }}>
+              <i className={
+                data.videoSource === 'youtube' ? 'ri-youtube-fill' : 
+                data.videoSource === 'vimeo' ? 'ri-vimeo-fill' : 
+                'ri-video-line'
+              } style={{ color: '#EF4444' }} />
+              {data.videoSource === 'youtube' ? 'YouTube' : data.videoSource === 'vimeo' ? 'Vimeo' : 'Video'}
+            </span>
+            {data.autoplay !== false && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#666' }}>
+                <i className="ri-play-circle-line" /> Autoplay
+              </span>
+            )}
+            {data.loop !== false && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#666' }}>
+                <i className="ri-repeat-line" /> Loop
+              </span>
+            )}
+            {data.muted !== false && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#666' }}>
+                <i className="ri-volume-mute-line" /> Muted
+              </span>
+            )}
+          </div>
+        </div>
+      );
+
+    case 'FURNITURE_QUOTE':
+      return (
+        <div style={{ background: '#f5f5f5', borderRadius: 8, padding: 24 }}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <h2 style={{ fontSize: 24, fontWeight: 700, color: '#111', marginBottom: 8 }}>{data.title || 'Báo Giá Nội Thất'}</h2>
+            <p style={{ fontSize: 14, color: '#666' }}>{data.subtitle || 'Chọn căn hộ và nhận báo giá nội thất ngay'}</p>
+          </div>
+          
+          {/* Step Indicator */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+            {['Chủ đầu tư', 'Dự án', 'Tòa nhà', 'Căn hộ', 'Nội thất', 'Thông tin', 'Kết quả'].map((step, idx) => (
+              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ 
+                  width: 28, 
+                  height: 28, 
+                  borderRadius: '50%', 
+                  background: idx === 0 ? '#f5d393' : '#e5e7eb', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  color: idx === 0 ? '#111' : '#666', 
+                  fontWeight: 600,
+                  fontSize: 12,
+                }}>
+                  {idx + 1}
+                </div>
+                <span style={{ fontSize: 11, color: idx === 0 ? '#111' : '#999' }}>{step}</span>
+                {idx < 6 && <div style={{ width: 20, height: 2, background: '#e5e7eb', marginLeft: 4 }} />}
+              </div>
+            ))}
+          </div>
+          
+          {/* Content Box */}
+          <div style={{ background: '#fff', borderRadius: 12, padding: 24, border: '1px solid #e5e7eb', maxWidth: data.maxWidth || 900, margin: '0 auto' }}>
+            <h4 style={{ fontSize: 14, fontWeight: 600, color: '#111', marginBottom: 12 }}>Chọn chủ đầu tư</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+              {['Vinhomes', 'Novaland', 'Masterise'].map((item, idx) => (
+                <div key={idx} style={{ 
+                  padding: '16px', 
+                  background: idx === 0 ? 'rgba(245,211,147,0.1)' : '#f9fafb', 
+                  border: `1px solid ${idx === 0 ? '#f5d393' : '#e5e7eb'}`, 
+                  borderRadius: 8, 
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                }}>
+                  <i className="ri-building-4-line" style={{ fontSize: 24, color: '#f5d393', marginBottom: 8, display: 'block' }} />
+                  <span style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Info */}
+          <p style={{ fontSize: 11, color: '#999', marginTop: 16, textAlign: 'center' }}>
+            <i className="ri-information-line" style={{ marginRight: 4 }} />
+            Quy trình 7 bước: Chọn căn hộ → Chọn nội thất → Điền thông tin → Nhận báo giá
+          </p>
+        </div>
+      );
+
     default:
       return (
         <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>
@@ -858,4 +922,161 @@ export function renderPreview(kind: SectionKind, data: DataRecord): React.JSX.El
         </div>
       );
   }
+}
+
+// Rich Text Preview Component - handles both JSON blocks and markdown/html
+function RichTextPreview({ data }: { data: DataRecord }) {
+  const content = data.content || data.html || '';
+  
+  // Try to parse as JSON blocks
+  let blocks: Array<{ id: string; type: string; data: Record<string, unknown> }> = [];
+  let isBlocksFormat = false;
+  
+  try {
+    const parsed = JSON.parse(content);
+    if (Array.isArray(parsed)) {
+      blocks = parsed;
+      isBlocksFormat = true;
+    }
+  } catch {
+    // Not JSON, treat as markdown/html
+  }
+  
+  if (!content) {
+    return <p style={{ color: '#999', fontStyle: 'italic' }}>Chưa có nội dung...</p>;
+  }
+  
+  if (!isBlocksFormat) {
+    // Render as HTML
+    return (
+      <div style={{ color: '#111', lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: content }} />
+    );
+  }
+  
+  // Render blocks
+  return (
+    <div style={{ color: '#374151', lineHeight: 1.7 }}>
+      {blocks.map((block) => {
+        const { type, data: blockData } = block;
+        
+        switch (type) {
+          case 'heading': {
+            const level = (blockData.level as number) || 2;
+            const fontSize = level === 1 ? 28 : level === 2 ? 22 : 18;
+            return (
+              <div key={block.id} style={{ fontSize, fontWeight: 600, color: '#111827', marginBottom: 12, marginTop: level === 1 ? 24 : 16 }}>
+                {(blockData.text as string) || ''}
+              </div>
+            );
+          }
+          
+          case 'paragraph':
+            return (
+              <p key={block.id} style={{ marginBottom: 12, color: '#374151' }}>
+                {(blockData.text as string) || ''}
+              </p>
+            );
+          
+          case 'list': {
+            const items = (blockData.items as string[]) || [];
+            const ListTag = blockData.ordered ? 'ol' : 'ul';
+            return (
+              <ListTag key={block.id} style={{ marginBottom: 12, paddingLeft: 24, color: '#374151' }}>
+                {items.map((item, idx) => (
+                  <li key={idx} style={{ marginBottom: 4 }}>{item}</li>
+                ))}
+              </ListTag>
+            );
+          }
+          
+          case 'quote': {
+            const quoteText = typeof blockData.text === 'string' ? blockData.text : '';
+            const quoteAuthor = typeof blockData.author === 'string' ? blockData.author : '';
+            return (
+              <blockquote key={block.id} style={{
+                borderLeft: '4px solid #F5D393',
+                paddingLeft: 16,
+                marginLeft: 0,
+                marginBottom: 12,
+                fontStyle: 'italic',
+                color: '#4b5563',
+              }}>
+                <p style={{ margin: 0 }}>{quoteText}</p>
+                {quoteAuthor && (
+                  <footer style={{ marginTop: 8, fontSize: 14, color: '#6b7280' }}>
+                    — {quoteAuthor}
+                  </footer>
+                )}
+              </blockquote>
+            );
+          }
+          
+          case 'image': {
+            const imgUrl = typeof blockData.url === 'string' ? blockData.url : '';
+            const imgAlt = typeof blockData.alt === 'string' ? blockData.alt : '';
+            const imgCaption = typeof blockData.caption === 'string' ? blockData.caption : '';
+            return imgUrl ? (
+              <figure key={block.id} style={{ marginBottom: 12 }}>
+                <img src={imgUrl} alt={imgAlt} style={{ maxWidth: '100%', borderRadius: 8 }} />
+                {imgCaption && (
+                  <figcaption style={{ marginTop: 8, fontSize: 13, color: '#6b7280', textAlign: 'center' }}>
+                    {imgCaption}
+                  </figcaption>
+                )}
+              </figure>
+            ) : null;
+          }
+          
+          case 'callout': {
+            const calloutType = (blockData.type as string) || 'info';
+            const colors: Record<string, { bg: string; border: string; text: string }> = {
+              info: { bg: '#EFF6FF', border: '#3B82F6', text: '#1E40AF' },
+              success: { bg: '#ECFDF5', border: '#10B981', text: '#065F46' },
+              warning: { bg: '#FFFBEB', border: '#F59E0B', text: '#92400E' },
+              error: { bg: '#FEF2F2', border: '#EF4444', text: '#991B1B' },
+            };
+            const color = colors[calloutType] || colors.info;
+            return (
+              <div key={block.id} style={{
+                padding: 16,
+                background: color.bg,
+                borderLeft: `4px solid ${color.border}`,
+                borderRadius: 4,
+                marginBottom: 12,
+                color: color.text,
+              }}>
+                <i className={(blockData.icon as string) || 'ri-information-line'} style={{ marginRight: 8 }} />
+                {(blockData.text as string) || ''}
+              </div>
+            );
+          }
+          
+          case 'divider': {
+            const style = (blockData.style as string) || 'solid';
+            return (
+              <hr key={block.id} style={{
+                border: 'none',
+                borderTop: `2px ${style} #e5e7eb`,
+                margin: '24px 0',
+              }} />
+            );
+          }
+          
+          case 'columns': {
+            const left = typeof blockData.left === 'string' ? blockData.left : '';
+            const right = typeof blockData.right === 'string' ? blockData.right : '';
+            return (
+              <div key={block.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 12 }}>
+                <div style={{ color: '#374151' }}>{left}</div>
+                <div style={{ color: '#374151' }}>{right}</div>
+              </div>
+            );
+          }
+          
+          default:
+            return null;
+        }
+      })}
+    </div>
+  );
 }

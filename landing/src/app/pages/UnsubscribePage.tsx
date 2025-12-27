@@ -425,8 +425,9 @@ const styles: Record<string, React.CSSProperties> = {
     width: 50,
     height: 50,
     borderRadius: '50%',
-    border: `4px solid ${tokens.color.border}`,
-    borderTopColor: tokens.color.primary,
+    borderWidth: '4px',
+    borderStyle: 'solid',
+    borderColor: `${tokens.color.border} ${tokens.color.border} ${tokens.color.border} ${tokens.color.primary}`,
   },
   iconEmail: {
     color: tokens.color.primary,

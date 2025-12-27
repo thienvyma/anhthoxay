@@ -60,3 +60,33 @@ export {
   chatApi,
 } from './api/communication';
 export type { NotificationTemplate, RenderedTemplate } from './api/communication';
+
+// Re-export Furniture APIs
+export {
+  furnitureDevelopersApi,
+  furnitureProjectsApi,
+  furnitureBuildingsApi,
+  furnitureLayoutsApi,
+  furnitureApartmentTypesApi,
+  furnitureCategoriesApi,
+  furnitureProductsApi,
+  furnitureCombosApi,
+  furnitureFeesApi,
+  furnitureDataApi,
+  furnitureQuotationsApi,
+} from './api/furniture';
+export type {
+  FurnitureDeveloper,
+  FurnitureProject,
+  FurnitureBuilding,
+  FurnitureLayout,
+  FurnitureApartmentType,
+  FurnitureCategory,
+  FurnitureProduct,
+  FurnitureCombo,
+  FurnitureComboItem,
+  FurnitureFee,
+  FurnitureQuotation,
+  FurnitureQuotationItem,
+  FurnitureQuotationFee,
+} from './api/furniture';

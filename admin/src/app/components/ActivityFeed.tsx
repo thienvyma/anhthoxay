@@ -49,12 +49,6 @@ const ACTIVITY_CONFIG: Record<ActivityType, ActivityConfig> = {
     bgColor: 'rgba(245,158,11,0.2)',
     getRoute: (id) => `/contractors?id=${id}`,
   },
-  INTERIOR_QUOTE: {
-    icon: 'ri-home-smile-line',
-    color: '#10b981',
-    bgColor: 'rgba(16,185,129,0.2)',
-    getRoute: () => '/interior',
-  },
 };
 
 /**

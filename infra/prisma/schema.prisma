@@ -12,60 +12,60 @@ generator client {
 // ============================================
 
 model User {
-  id             String          @id @default(cuid())
-  email          String          @unique
-  passwordHash   String
-  name           String
-  phone          String?
-  avatar         String?
-  role           String          @default("MANAGER") // ADMIN, MANAGER, CONTRACTOR, HOMEOWNER, WORKER, USER
-  
+  id           String  @id @default(cuid())
+  email        String  @unique
+  passwordHash String
+  name         String
+  phone        String?
+  avatar       String?
+  role         String  @default("MANAGER") // ADMIN, MANAGER, CONTRACTOR, HOMEOWNER, WORKER, USER
+
   // Contractor specific fields
   companyName        String?
   businessLicense    String?
   taxCode            String?
-  verificationStatus String   @default("PENDING") // PENDING, VERIFIED, REJECTED
+  verificationStatus String    @default("PENDING") // PENDING, VERIFIED, REJECTED
   verifiedAt         DateTime?
-  verificationNote   String?  // Lý do từ chối (nếu có)
-  rating             Float    @default(0)
-  totalProjects      Int      @default(0)
-  
+  verificationNote   String? // Lý do từ chối (nếu có)
+  rating             Float     @default(0)
+  totalProjects      Int       @default(0)
+
   // Email unsubscribe token (Phase 4)
-  unsubscribeToken   String?  @unique // Unique token for email unsubscribe
-  
+  unsubscribeToken String? @unique // Unique token for email unsubscribe
+
   // Relations
-  contractorProfile  ContractorProfile?
-  sessions           Session[]
-  blogPosts          BlogPost[]
-  pendingChanges     PendingChange[]
-  
+  contractorProfile ContractorProfile?
+  sessions          Session[]
+  blogPosts         BlogPost[]
+  pendingChanges    PendingChange[]
+
   // Bidding Phase 2 relations
-  ownedProjects      Project[] @relation("ProjectOwner")
-  contractorBids     Bid[]     @relation("ContractorBids")
-  
+  ownedProjects  Project[] @relation("ProjectOwner")
+  contractorBids Bid[]     @relation("ContractorBids")
+
   // Bidding Phase 3 relations
-  feeTransactions    FeeTransaction[]
-  notifications      Notification[]
-  escrowsDeposited   Escrow[]  @relation("EscrowDepositor")
-  
+  feeTransactions  FeeTransaction[]
+  notifications    Notification[]
+  escrowsDeposited Escrow[]         @relation("EscrowDepositor")
+
   // Bidding Phase 4 relations - Chat & Notifications
   conversationParticipants ConversationParticipant[]
   sentMessages             Message[]
   notificationPreference   NotificationPreference?
-  
+
   // Bidding Phase 5 relations - Reviews & Ranking
-  reviewsGiven       Review[]  @relation("ReviewAuthor")
-  reviewsReceived    Review[]  @relation("ReviewSubject")
+  reviewsGiven       Review[]            @relation("ReviewAuthor")
+  reviewsReceived    Review[]            @relation("ReviewSubject")
   ranking            ContractorRanking?
   badges             ContractorBadge[]
   reviewHelpfulVotes ReviewHelpfulness[]
   reviewReports      ReviewReport[]
-  
+
   // Bidding Phase 6 relations - Saved Projects
-  savedProjects      SavedProject[]
-  
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  savedProjects SavedProject[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([role])
   @@index([verificationStatus])
@@ -76,28 +76,28 @@ model User {
 // ============================================
 
 model ContractorProfile {
-  id          String @id @default(cuid())
-  userId      String @unique
-  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   // Hồ sơ năng lực
-  description     String?   // Giới thiệu
-  experience      Int?      // Số năm kinh nghiệm
-  specialties     String?   // JSON: ["Sơn", "Ốp lát", "Điện"]
-  serviceAreas    String?   // JSON: ["region-id-1", "region-id-2"]
-  portfolioImages String?   // JSON: ["url1", "url2"]
-  certificates    String?   // JSON: [{name, imageUrl, issuedDate}]
-  
+  description     String? // Giới thiệu
+  experience      Int? // Số năm kinh nghiệm
+  specialties     String? // JSON: ["Sơn", "Ốp lát", "Điện"]
+  serviceAreas    String? // JSON: ["region-id-1", "region-id-2"]
+  portfolioImages String? // JSON: ["url1", "url2"]
+  certificates    String? // JSON: [{name, imageUrl, issuedDate}]
+
   // Documents for verification
   idCardFront          String?
   idCardBack           String?
   businessLicenseImage String?
-  
+
   // Submission tracking
-  submittedAt     DateTime?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  submittedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ============================================
@@ -105,23 +105,23 @@ model ContractorProfile {
 // ============================================
 
 model Region {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  parentId  String?
-  parent    Region?  @relation("RegionHierarchy", fields: [parentId], references: [id])
-  children  Region[] @relation("RegionHierarchy")
-  
-  level     Int      @default(1)  // 1: Tỉnh/TP, 2: Quận/Huyện, 3: Phường/Xã
-  isActive  Boolean  @default(true)
-  order     Int      @default(0)
-  
+  id       String   @id @default(cuid())
+  name     String
+  slug     String   @unique
+  parentId String?
+  parent   Region?  @relation("RegionHierarchy", fields: [parentId], references: [id])
+  children Region[] @relation("RegionHierarchy")
+
+  level    Int     @default(1) // 1: Tỉnh/TP, 2: Quận/Huyện, 3: Phường/Xã
+  isActive Boolean @default(true)
+  order    Int     @default(0)
+
   // Bidding Phase 2 relations
-  projects  Project[]
-  
+  projects Project[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([parentId])
   @@index([isActive])
   @@index([level])
@@ -132,10 +132,10 @@ model Session {
   userId           String
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   tokenSelector    String    @unique // Unhashed, indexed for O(1) lookup
-  tokenVerifier    String    // Hashed with bcrypt
+  tokenVerifier    String // Hashed with bcrypt
   token            String?   @unique // DEPRECATED: Keep for migration, nullable
-  previousSelector String?   // Previous selector for reuse detection
-  previousToken    String?   // DEPRECATED: Previous token hash for rotation detection
+  previousSelector String? // Previous selector for reuse detection
+  previousToken    String? // DEPRECATED: Previous token hash for rotation detection
   userAgent        String?
   ipAddress        String?
   expiresAt        DateTime
@@ -153,7 +153,7 @@ model TokenBlacklist {
   id        String   @id @default(cuid())
   tokenHash String   @unique // SHA256 hash of token
   userId    String
-  reason    String   // logout, password_change, admin_revoke, security
+  reason    String // logout, password_change, admin_revoke, security
   expiresAt DateTime // Auto-cleanup after token would expire
   createdAt DateTime @default(now())
 
@@ -168,12 +168,12 @@ model TokenBlacklist {
 
 model AuditLog {
   id        String   @id @default(cuid())
-  eventType String   // LOGIN_SUCCESS, LOGIN_FAILED, LOGOUT, TOKEN_REFRESH, PASSWORD_CHANGE, etc.
+  eventType String // LOGIN_SUCCESS, LOGIN_FAILED, LOGOUT, TOKEN_REFRESH, PASSWORD_CHANGE, etc.
   userId    String?
   email     String?
   ipAddress String
   userAgent String
-  metadata  String?  // JSON string for additional context
+  metadata  String? // JSON string for additional context
   severity  String   @default("INFO") // INFO, WARNING, CRITICAL
   createdAt DateTime @default(now())
 
@@ -215,7 +215,7 @@ model Section {
 // ============================================
 
 model MediaAsset {
-  id           String   @id @default(cuid())
+  id           String  @id @default(cuid())
   url          String
   alt          String?
   caption      String?
@@ -224,9 +224,16 @@ model MediaAsset {
   size         Int?
   mimeType     String?
   tags         String?
-  displayOrder Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  displayOrder Int     @default(0)
+
+  // Featured flag for slideshow
+  isFeatured Boolean @default(false) // Show in featured slideshow section
+  isActive   Boolean @default(true) // Show/hide in gallery
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isFeatured, isActive, displayOrder])
 }
 
 // ============================================
@@ -276,29 +283,28 @@ model BlogComment {
   updatedAt DateTime @updatedAt
 }
 
-
 // ============================================
 // ATH - HẠNG MỤC THI CÔNG (Service Categories)
 // ============================================
 
 model ServiceCategory {
-  id                 String                              @id @default(cuid())
-  name               String                              @unique
-  slug               String                              @unique
+  id                 String                            @id @default(cuid())
+  name               String                            @unique
+  slug               String                            @unique
   description        String?
   icon               String?
-  coefficient        Float                               @default(1.0)
+  coefficient        Float                             @default(1.0)
   formulaId          String?
-  formula            Formula?                            @relation(fields: [formulaId], references: [id])
+  formula            Formula?                          @relation(fields: [formulaId], references: [id])
   materialCategories ServiceCategoryMaterialCategory[]
-  order              Int                                 @default(0)
-  isActive           Boolean                             @default(true)
-  
+  order              Int                               @default(0)
+  isActive           Boolean                           @default(true)
+
   // Bidding Phase 2 relations
-  projects           Project[]
-  
-  createdAt          DateTime                            @default(now())
-  updatedAt          DateTime                            @updatedAt
+  projects Project[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ============================================
@@ -326,17 +332,17 @@ model UnitPrice {
 // ============================================
 
 model MaterialCategory {
-  id                String                              @id @default(cuid())
-  name              String                              @unique
-  slug              String                              @unique
+  id                String                            @id @default(cuid())
+  name              String                            @unique
+  slug              String                            @unique
   description       String?
   icon              String?
-  order             Int                                 @default(0)
-  isActive          Boolean                             @default(true)
+  order             Int                               @default(0)
+  isActive          Boolean                           @default(true)
   materials         Material[]
   serviceCategories ServiceCategoryMaterialCategory[]
-  createdAt         DateTime                            @default(now())
-  updatedAt         DateTime                            @updatedAt
+  createdAt         DateTime                          @default(now())
+  updatedAt         DateTime                          @updatedAt
 }
 
 // ============================================
@@ -344,18 +350,18 @@ model MaterialCategory {
 // ============================================
 
 model Material {
-  id          String            @id @default(cuid())
+  id          String           @id @default(cuid())
   name        String
   categoryId  String
-  category    MaterialCategory  @relation(fields: [categoryId], references: [id])
+  category    MaterialCategory @relation(fields: [categoryId], references: [id])
   imageUrl    String?
   price       Float
   unit        String?
   description String?
-  order       Int               @default(0)
-  isActive    Boolean           @default(true)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  order       Int              @default(0)
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   @@index([categoryId])
 }
@@ -393,18 +399,22 @@ model Formula {
 // ============================================
 
 model CustomerLead {
-  id            String   @id @default(cuid())
+  id            String  @id @default(cuid())
   name          String
   phone         String
   email         String?
   content       String
-  source        String   @default("CONTACT_FORM")
-  status        String   @default("NEW")
+  source        String  @default("CONTACT_FORM")
+  status        String  @default("NEW")
   quoteData     String?
   notes         String?
-  statusHistory String?  // JSON array of status changes: [{from, to, changedAt, changedBy?}]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  statusHistory String? // JSON array of status changes: [{from, to, changedAt, changedBy?}]
+
+  // Furniture Quotation System relation
+  furnitureQuotations FurnitureQuotation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([source])
@@ -455,8 +465,8 @@ model Settings {
 model Integration {
   id          String    @id @default(cuid())
   type        String    @unique // google_sheets, etc.
-  config      String    // JSON: { spreadsheetId, sheetName, syncEnabled }
-  credentials String?   // Encrypted refresh token
+  config      String // JSON: { spreadsheetId, sheetName, syncEnabled }
+  credentials String? // Encrypted refresh token
   lastSyncAt  DateTime?
   errorCount  Int       @default(0)
   lastError   String?
@@ -469,29 +479,29 @@ model Integration {
 // ============================================
 
 model BiddingSettings {
-  id                  String   @id @default("default")
-  
+  id String @id @default("default")
+
   // Bidding config
-  maxBidsPerProject   Int      @default(20)
-  defaultBidDuration  Int      @default(7)
-  minBidDuration      Int      @default(3)
-  maxBidDuration      Int      @default(30)
-  
+  maxBidsPerProject  Int @default(20)
+  defaultBidDuration Int @default(7)
+  minBidDuration     Int @default(3)
+  maxBidDuration     Int @default(30)
+
   // Escrow config
-  escrowPercentage    Float    @default(10)
-  escrowMinAmount     Float    @default(1000000)
-  escrowMaxAmount     Float?
-  
+  escrowPercentage Float  @default(10)
+  escrowMinAmount  Float  @default(1000000)
+  escrowMaxAmount  Float?
+
   // Fees config
-  verificationFee     Float    @default(500000)
-  winFeePercentage    Float    @default(5)
-  
+  verificationFee  Float @default(500000)
+  winFeePercentage Float @default(5)
+
   // Auto-approval
   autoApproveHomeowner Boolean @default(true)
   autoApproveProject   Boolean @default(false)
-  
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ============================================
@@ -499,17 +509,17 @@ model BiddingSettings {
 // ============================================
 
 model ServiceFee {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
-  code        String   @unique
-  type        String   // FIXED, PERCENTAGE
+  code        String  @unique
+  type        String // FIXED, PERCENTAGE
   value       Float
   description String?
-  isActive    Boolean  @default(true)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([code])
   @@index([isActive])
 }
@@ -519,71 +529,71 @@ model ServiceFee {
 // ============================================
 
 model Project {
-  id          String   @id @default(cuid())
-  code        String   @unique // AUTO: PRJ-2024-001
-  
+  id   String @id @default(cuid())
+  code String @unique // AUTO: PRJ-2024-001
+
   // Owner relation
-  ownerId     String
-  owner       User     @relation("ProjectOwner", fields: [ownerId], references: [id])
-  
+  ownerId String
+  owner   User   @relation("ProjectOwner", fields: [ownerId], references: [id])
+
   // Basic info
   title       String
   description String
   categoryId  String
   category    ServiceCategory @relation(fields: [categoryId], references: [id])
-  
+
   // Location
-  regionId    String
-  region      Region   @relation(fields: [regionId], references: [id])
-  address     String   // Hidden until match
-  
+  regionId String
+  region   Region @relation(fields: [regionId], references: [id])
+  address  String // Hidden until match
+
   // Details
-  area        Float?            // Diện tích (m²)
-  budgetMin   Float?            // Ngân sách tối thiểu
-  budgetMax   Float?            // Ngân sách tối đa
-  timeline    String?           // Timeline mong muốn (e.g., "2 tuần", "1 tháng")
-  images      String?           // JSON array of URLs (max 10)
-  requirements String?          // Yêu cầu đặc biệt
-  
+  area         Float? // Diện tích (m²)
+  budgetMin    Float? // Ngân sách tối thiểu
+  budgetMax    Float? // Ngân sách tối đa
+  timeline     String? // Timeline mong muốn (e.g., "2 tuần", "1 tháng")
+  images       String? // JSON array of URLs (max 10)
+  requirements String? // Yêu cầu đặc biệt
+
   // Status: DRAFT, PENDING_APPROVAL, REJECTED, OPEN, BIDDING_CLOSED, MATCHED, IN_PROGRESS, COMPLETED, CANCELLED
-  status      String   @default("DRAFT")
-  
+  status String @default("DRAFT")
+
   // Admin review
-  reviewedBy    String?
-  reviewedAt    DateTime?
-  reviewNote    String?
-  
+  reviewedBy String?
+  reviewedAt DateTime?
+  reviewNote String?
+
   // Bidding
-  bidDeadline   DateTime?
-  maxBids       Int       @default(20)
-  
+  bidDeadline DateTime?
+  maxBids     Int       @default(20)
+
   // Match (Phase 3)
   selectedBidId String?   @unique
   selectedBid   Bid?      @relation("SelectedBid", fields: [selectedBidId], references: [id])
   matchedAt     DateTime?
-  
+
   // Relations
-  bids          Bid[]     @relation("ProjectBids")
-  
+  bids Bid[] @relation("ProjectBids")
+
   // Phase 3 relations
-  escrow           Escrow?
-  feeTransactions  FeeTransaction[]
-  milestones       ProjectMilestone[]
-  
+  escrow          Escrow?
+  feeTransactions FeeTransaction[]
+  milestones      ProjectMilestone[]
+
   // Phase 4 relations - Chat
-  conversations    Conversation[]
-  
+  conversations Conversation[]
+
   // Phase 5 relations - Reviews
-  reviews          Review[]
-  
+  reviews Review[]
+
   // Phase 6 relations - Saved Projects
   savedByContractors SavedProject[]
-  
+
   // Timestamps
-  publishedAt   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
   @@index([status])
   @@index([ownerId])
   @@index([regionId])
@@ -596,43 +606,43 @@ model Project {
 // ============================================
 
 model Bid {
-  id          String   @id @default(cuid())
-  code        String   @unique // AUTO: BID-2024-001
-  
+  id   String @id @default(cuid())
+  code String @unique // AUTO: BID-2024-001
+
   // Relations
-  projectId   String
-  project     Project  @relation("ProjectBids", fields: [projectId], references: [id])
+  projectId    String
+  project      Project @relation("ProjectBids", fields: [projectId], references: [id])
   contractorId String
-  contractor  User     @relation("ContractorBids", fields: [contractorId], references: [id])
-  
+  contractor   User    @relation("ContractorBids", fields: [contractorId], references: [id])
+
   // Bid details
-  price       Float              // Giá đề xuất
-  timeline    String             // Timeline đề xuất (e.g., "10 ngày", "2 tuần")
-  proposal    String             // Mô tả đề xuất chi tiết
-  attachments String?            // JSON array: [{name, url, type, size}] (max 5 files)
-  
+  price       Float // Giá đề xuất
+  timeline    String // Timeline đề xuất (e.g., "10 ngày", "2 tuần")
+  proposal    String // Mô tả đề xuất chi tiết
+  attachments String? // JSON array: [{name, url, type, size}] (max 5 files)
+
   // Response time tracking (Phase 5)
-  responseTimeHours Float?       // Time from project publish to bid creation (hours)
-  
+  responseTimeHours Float? // Time from project publish to bid creation (hours)
+
   // Status: PENDING, APPROVED, REJECTED, SELECTED, NOT_SELECTED, WITHDRAWN
-  status      String   @default("PENDING")
-  
+  status String @default("PENDING")
+
   // Admin review
-  reviewedBy  String?
-  reviewedAt  DateTime?
-  reviewNote  String?
-  
+  reviewedBy String?
+  reviewedAt DateTime?
+  reviewNote String?
+
   // Selected (Phase 3)
   selectedProject Project? @relation("SelectedBid")
-  
+
   // Phase 3 relations
   escrow          Escrow?
   feeTransactions FeeTransaction[]
-  
+
   // Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([projectId, contractorId])
   @@index([projectId])
   @@index([contractorId])
@@ -644,46 +654,46 @@ model Bid {
 // ============================================
 
 model Escrow {
-  id          String   @id @default(cuid())
-  code        String   @unique // AUTO: ESC-YYYY-NNN
-  
+  id   String @id @default(cuid())
+  code String @unique // AUTO: ESC-YYYY-NNN
+
   // Relations
-  projectId   String   @unique
-  project     Project  @relation(fields: [projectId], references: [id])
-  bidId       String   @unique
-  bid         Bid      @relation(fields: [bidId], references: [id])
-  homeownerId String   // Người đặt cọc (chủ nhà)
-  homeowner   User     @relation("EscrowDepositor", fields: [homeownerId], references: [id])
-  
+  projectId   String  @unique
+  project     Project @relation(fields: [projectId], references: [id])
+  bidId       String  @unique
+  bid         Bid     @relation(fields: [bidId], references: [id])
+  homeownerId String // Người đặt cọc (chủ nhà)
+  homeowner   User    @relation("EscrowDepositor", fields: [homeownerId], references: [id])
+
   // Amount
-  amount         Float    // Calculated escrow amount
-  releasedAmount Float    @default(0) // Số tiền đã giải phóng
-  currency       String   @default("VND")
-  
+  amount         Float // Calculated escrow amount
+  releasedAmount Float  @default(0) // Số tiền đã giải phóng
+  currency       String @default("VND")
+
   // Status: PENDING, HELD, PARTIAL_RELEASED, RELEASED, REFUNDED, DISPUTED, CANCELLED
-  status      String   @default("PENDING")
-  
+  status String @default("PENDING")
+
   // Transactions log - JSON: [{type, amount, date, note, adminId}]
   transactions String?
-  
+
   // Milestones
-  milestones   ProjectMilestone[]
-  
+  milestones ProjectMilestone[]
+
   // Dispute
   disputeReason     String?
-  disputedBy        String?  // User who raised dispute
+  disputedBy        String? // User who raised dispute
   disputeResolvedAt DateTime?
-  disputeResolution String?  // Resolution note
-  
+  disputeResolution String? // Resolution note
+
   // Admin tracking
-  confirmedBy   String?
-  confirmedAt   DateTime?
-  releasedBy    String?
-  releasedAt    DateTime?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  confirmedBy String?
+  confirmedAt DateTime?
+  releasedBy  String?
+  releasedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([status])
   @@index([projectId])
   @@index([homeownerId])
@@ -694,33 +704,33 @@ model Escrow {
 // ============================================
 
 model ProjectMilestone {
-  id          String   @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Relations
-  escrowId    String
-  escrow      Escrow   @relation(fields: [escrowId], references: [id])
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id])
-  
+  escrowId  String
+  escrow    Escrow  @relation(fields: [escrowId], references: [id])
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+
   // Milestone details
-  name              String   // "50% Completion", "100% Completion"
-  percentage        Int      // 50, 100
-  releasePercentage Int      // % of escrow to release at this milestone
-  
+  name              String // "50% Completion", "100% Completion"
+  percentage        Int // 50, 100
+  releasePercentage Int // % of escrow to release at this milestone
+
   // Status: PENDING, REQUESTED, CONFIRMED, DISPUTED
-  status      String   @default("PENDING")
-  
+  status String @default("PENDING")
+
   // Tracking
-  requestedAt   DateTime?  // Contractor requests completion
+  requestedAt   DateTime? // Contractor requests completion
   requestedBy   String?
-  confirmedAt   DateTime?  // Homeowner confirms
+  confirmedAt   DateTime? // Homeowner confirms
   confirmedBy   String?
   disputedAt    DateTime?
   disputeReason String?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([escrowId])
   @@index([projectId])
   @@index([status])
@@ -731,35 +741,35 @@ model ProjectMilestone {
 // ============================================
 
 model FeeTransaction {
-  id          String   @id @default(cuid())
-  code        String   @unique // AUTO: FEE-YYYY-NNN
-  
+  id   String @id @default(cuid())
+  code String @unique // AUTO: FEE-YYYY-NNN
+
   // Relations
-  userId      String   // Contractor who pays
-  user        User     @relation(fields: [userId], references: [id])
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id])
-  bidId       String
-  bid         Bid      @relation(fields: [bidId], references: [id])
-  
+  userId    String // Contractor who pays
+  user      User    @relation(fields: [userId], references: [id])
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+  bidId     String
+  bid       Bid     @relation(fields: [bidId], references: [id])
+
   // Fee details
-  type        String   // WIN_FEE, VERIFICATION_FEE
-  amount      Float
-  currency    String   @default("VND")
-  
+  type     String // WIN_FEE, VERIFICATION_FEE
+  amount   Float
+  currency String @default("VND")
+
   // Status: PENDING, PAID, CANCELLED
-  status      String   @default("PENDING")
-  
+  status String @default("PENDING")
+
   // Payment tracking
-  paidAt      DateTime?
-  paidBy      String?  // Admin who marked as paid
-  cancelledAt DateTime?
-  cancelledBy String?
+  paidAt       DateTime?
+  paidBy       String? // Admin who marked as paid
+  cancelledAt  DateTime?
+  cancelledBy  String?
   cancelReason String?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([status])
   @@index([userId])
   @@index([type])
@@ -771,35 +781,35 @@ model FeeTransaction {
 // ============================================
 
 model Notification {
-  id          String   @id @default(cuid())
-  
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  
-  type        String   // BID_SELECTED, BID_NOT_SELECTED, ESCROW_HELD, ESCROW_RELEASED, etc.
-  title       String
-  content     String
-  data        String?  // JSON: { projectId, bidId, etc. }
-  
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  type    String // BID_SELECTED, BID_NOT_SELECTED, ESCROW_HELD, ESCROW_RELEASED, etc.
+  title   String
+  content String
+  data    String? // JSON: { projectId, bidId, etc. }
+
   // Channels - Phase 4 enhancement
-  channels    String?  // JSON: ["EMAIL", "SMS", "IN_APP"]
-  
+  channels String? // JSON: ["EMAIL", "SMS", "IN_APP"]
+
   // Delivery status
-  isRead      Boolean  @default(false)
-  readAt      DateTime?
-  
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
   // Email delivery tracking
-  emailSent   Boolean  @default(false)
+  emailSent   Boolean   @default(false)
   emailSentAt DateTime?
   emailError  String?
-  
+
   // SMS delivery tracking
-  smsSent     Boolean  @default(false)
-  smsSentAt   DateTime?
-  smsError    String?
-  
-  createdAt   DateTime @default(now())
-  
+  smsSent   Boolean   @default(false)
+  smsSentAt DateTime?
+  smsError  String?
+
+  createdAt DateTime @default(now())
+
   @@index([userId])
   @@index([isRead])
   @@index([type])
@@ -811,61 +821,61 @@ model Notification {
 // ============================================
 
 model Conversation {
-  id            String   @id @default(cuid())
-  projectId     String?  // Optional link to project
-  project       Project? @relation(fields: [projectId], references: [id])
-  
-  participants  ConversationParticipant[]
-  messages      Message[]
-  
-  isClosed      Boolean  @default(false)
-  closedAt      DateTime?
-  closedBy      String?
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
+  id        String   @id @default(cuid())
+  projectId String? // Optional link to project
+  project   Project? @relation(fields: [projectId], references: [id])
+
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  isClosed Boolean   @default(false)
+  closedAt DateTime?
+  closedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([projectId])
   @@index([isClosed])
 }
 
 model ConversationParticipant {
-  id              String       @id @default(cuid())
-  conversationId  String
-  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  userId          String
-  user            User         @relation(fields: [userId], references: [id])
-  
-  lastReadAt      DateTime?
-  isActive        Boolean      @default(true)
-  
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+
+  lastReadAt DateTime?
+  isActive   Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([conversationId, userId])
   @@index([userId])
   @@index([conversationId])
 }
 
 model Message {
-  id              String       @id @default(cuid())
-  conversationId  String
-  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  senderId        String
-  sender          User         @relation(fields: [senderId], references: [id])
-  
-  content         String
-  type            String       @default("TEXT") // TEXT, IMAGE, FILE, SYSTEM
-  attachments     String?      // JSON: [{name, url, type, size}]
-  
-  isRead          Boolean      @default(false)
-  readAt          DateTime?
-  readBy          String?      // JSON: [{userId, readAt}] for multi-participant tracking
-  isDeleted       Boolean      @default(false)
-  deletedAt       DateTime?
-  
-  createdAt       DateTime     @default(now())
-  
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id])
+
+  content     String
+  type        String  @default("TEXT") // TEXT, IMAGE, FILE, SYSTEM
+  attachments String? // JSON: [{name, url, type, size}]
+
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  readBy    String? // JSON: [{userId, readAt}] for multi-participant tracking
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+
   @@index([conversationId])
   @@index([senderId])
   @@index([createdAt])
@@ -877,10 +887,10 @@ model Message {
 // ============================================
 
 model NotificationPreference {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   // Email notifications
   emailEnabled        Boolean @default(true)
   emailBidReceived    Boolean @default(true)
@@ -888,17 +898,17 @@ model NotificationPreference {
   emailProjectMatched Boolean @default(true)
   emailNewMessage     Boolean @default(true)
   emailEscrowReleased Boolean @default(true)
-  
+
   // SMS notifications
-  smsEnabled          Boolean @default(true)
-  smsBidReceived      Boolean @default(false)
-  smsBidApproved      Boolean @default(true)
-  smsProjectMatched   Boolean @default(true)
-  smsNewMessage       Boolean @default(false)
-  smsEscrowReleased   Boolean @default(true)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  smsEnabled        Boolean @default(true)
+  smsBidReceived    Boolean @default(false)
+  smsBidApproved    Boolean @default(true)
+  smsProjectMatched Boolean @default(true)
+  smsNewMessage     Boolean @default(false)
+  smsEscrowReleased Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ============================================
@@ -906,28 +916,28 @@ model NotificationPreference {
 // ============================================
 
 model NotificationTemplate {
-  id          String   @id @default(cuid())
-  type        String   @unique // BID_RECEIVED, PROJECT_MATCHED, etc.
-  
+  id   String @id @default(cuid())
+  type String @unique // BID_RECEIVED, PROJECT_MATCHED, etc.
+
   // Email template
   emailSubject String
-  emailBody    String   // HTML with variables like {{projectCode}}
-  
+  emailBody    String // HTML with variables like {{projectCode}}
+
   // SMS template
-  smsBody      String   // Plain text, max 160 chars
-  
+  smsBody String // Plain text, max 160 chars
+
   // In-app template
-  inAppTitle   String
-  inAppBody    String
-  
+  inAppTitle String
+  inAppBody  String
+
   // Variables available
-  variables    String   // JSON: ["projectCode", "contractorName", "price"]
-  
+  variables String // JSON: ["projectCode", "contractorName", "price"]
+
   // Versioning
-  version      Int      @default(1)
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  version Int @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ============================================
@@ -935,24 +945,24 @@ model NotificationTemplate {
 // ============================================
 
 model ScheduledNotification {
-  id          String   @id @default(cuid())
-  
-  type        String   // BID_DEADLINE_REMINDER, NO_BIDS_REMINDER, ESCROW_PENDING
-  userId      String
-  
+  id String @id @default(cuid())
+
+  type   String // BID_DEADLINE_REMINDER, NO_BIDS_REMINDER, ESCROW_PENDING
+  userId String
+
   // Reference
-  projectId   String?
-  escrowId    String?
-  
+  projectId String?
+  escrowId  String?
+
   // Scheduling
   scheduledFor DateTime
   status       String   @default("PENDING") // PENDING, SENT, CANCELLED
-  
-  sentAt       DateTime?
-  cancelledAt  DateTime?
-  
-  createdAt    DateTime @default(now())
-  
+
+  sentAt      DateTime?
+  cancelledAt DateTime?
+
+  createdAt DateTime @default(now())
+
   @@index([status, scheduledFor])
   @@index([userId])
   @@index([type])
@@ -963,47 +973,47 @@ model ScheduledNotification {
 // ============================================
 
 model Review {
-  id          String   @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Relations
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id])
-  reviewerId  String   // Homeowner who writes the review
-  reviewer    User     @relation("ReviewAuthor", fields: [reviewerId], references: [id])
-  contractorId String  // Contractor being reviewed
-  contractor  User     @relation("ReviewSubject", fields: [contractorId], references: [id])
-  
+  projectId    String
+  project      Project @relation(fields: [projectId], references: [id])
+  reviewerId   String // Homeowner who writes the review
+  reviewer     User    @relation("ReviewAuthor", fields: [reviewerId], references: [id])
+  contractorId String // Contractor being reviewed
+  contractor   User    @relation("ReviewSubject", fields: [contractorId], references: [id])
+
   // Rating (1-5)
-  rating      Int
-  comment     String?
-  images      String?  // JSON: ["url1", "url2"] max 5
-  
+  rating  Int
+  comment String?
+  images  String? // JSON: ["url1", "url2"] max 5
+
   // Multi-criteria ratings (1-5) - Optional for detailed reviews
-  qualityRating       Int?  // Chất lượng công việc
-  timelinessRating    Int?  // Đúng tiến độ
-  communicationRating Int?  // Giao tiếp
-  valueRating         Int?  // Giá cả hợp lý
-  
+  qualityRating       Int? // Chất lượng công việc
+  timelinessRating    Int? // Đúng tiến độ
+  communicationRating Int? // Giao tiếp
+  valueRating         Int? // Giá cả hợp lý
+
   // Response from contractor
   response    String?
   respondedAt DateTime?
-  
+
   // Visibility
-  isPublic    Boolean  @default(true)
-  isDeleted   Boolean  @default(false)
-  deletedAt   DateTime?
-  deletedBy   String?
-  
+  isPublic  Boolean   @default(true)
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+  deletedBy String?
+
   // Helpfulness
-  helpfulCount Int     @default(0)
+  helpfulCount Int                 @default(0)
   helpfulVotes ReviewHelpfulness[]
-  
+
   // Reports
-  reports     ReviewReport[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  reports ReviewReport[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([projectId, reviewerId])
   @@index([contractorId])
   @@index([rating])
@@ -1016,14 +1026,14 @@ model Review {
 // ============================================
 
 model ReviewHelpfulness {
-  id        String   @id @default(cuid())
-  reviewId  String
-  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  
+  id       String @id @default(cuid())
+  reviewId String
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+
   createdAt DateTime @default(now())
-  
+
   @@unique([reviewId, userId])
   @@index([reviewId])
 }
@@ -1033,22 +1043,22 @@ model ReviewHelpfulness {
 // ============================================
 
 model ReviewReport {
-  id          String   @id @default(cuid())
-  reviewId    String
-  review      Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  reporterId  String
-  reporter    User     @relation(fields: [reporterId], references: [id])
-  
-  reason      String   // spam, offensive, fake, irrelevant
+  id         String @id @default(cuid())
+  reviewId   String
+  review     Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter   User   @relation(fields: [reporterId], references: [id])
+
+  reason      String // spam, offensive, fake, irrelevant
   description String?
-  status      String   @default("PENDING") // PENDING, RESOLVED, DISMISSED
-  
-  resolvedBy  String?
-  resolvedAt  DateTime?
-  resolution  String?  // hide, delete, dismiss
-  
-  createdAt   DateTime @default(now())
-  
+  status      String  @default("PENDING") // PENDING, RESOLVED, DISMISSED
+
+  resolvedBy String?
+  resolvedAt DateTime?
+  resolution String? // hide, delete, dismiss
+
+  createdAt DateTime @default(now())
+
   @@index([reviewId])
   @@index([status])
 }
@@ -1058,37 +1068,37 @@ model ReviewReport {
 // ============================================
 
 model ContractorRanking {
-  id              String   @id @default(cuid())
-  contractorId    String   @unique
-  contractor      User     @relation(fields: [contractorId], references: [id])
-  
+  id           String @id @default(cuid())
+  contractorId String @unique
+  contractor   User   @relation(fields: [contractorId], references: [id])
+
   // Score components (0-100 each)
-  ratingScore     Float    @default(0)      // 40% weight
-  projectsScore   Float    @default(0)      // 30% weight
-  responseScore   Float    @default(0)      // 15% weight
-  verificationScore Float  @default(0)      // 15% weight
-  totalScore      Float    @default(0)
-  
+  ratingScore       Float @default(0) // 40% weight
+  projectsScore     Float @default(0) // 30% weight
+  responseScore     Float @default(0) // 15% weight
+  verificationScore Float @default(0) // 15% weight
+  totalScore        Float @default(0)
+
   // Rank
-  rank            Int      @default(0)
-  previousRank    Int?
-  
+  rank         Int  @default(0)
+  previousRank Int?
+
   // Featured
-  isFeatured      Boolean  @default(false)
-  featuredAt      DateTime?
-  featuredBy      String?  // Admin who manually featured
-  
+  isFeatured Boolean   @default(false)
+  featuredAt DateTime?
+  featuredBy String? // Admin who manually featured
+
   // Stats cache
-  totalProjects       Int    @default(0)
-  completedProjects   Int    @default(0)
-  totalReviews        Int    @default(0)
-  averageRating       Float  @default(0)
-  averageResponseTime Float  @default(0)  // Average response time in hours (Phase 5)
-  
-  calculatedAt    DateTime @default(now())
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  totalProjects       Int   @default(0)
+  completedProjects   Int   @default(0)
+  totalReviews        Int   @default(0)
+  averageRating       Float @default(0)
+  averageResponseTime Float @default(0) // Average response time in hours (Phase 5)
+
+  calculatedAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
   @@index([totalScore])
   @@index([rank])
   @@index([isFeatured])
@@ -1099,13 +1109,13 @@ model ContractorRanking {
 // ============================================
 
 model ContractorBadge {
-  id           String   @id @default(cuid())
+  id           String @id @default(cuid())
   contractorId String
-  contractor   User     @relation(fields: [contractorId], references: [id])
-  
-  badgeType    String   // ACTIVE_CONTRACTOR, HIGH_QUALITY, FAST_RESPONDER
-  awardedAt    DateTime @default(now())
-  
+  contractor   User   @relation(fields: [contractorId], references: [id])
+
+  badgeType String // ACTIVE_CONTRACTOR, HIGH_QUALITY, FAST_RESPONDER
+  awardedAt DateTime @default(now())
+
   @@unique([contractorId, badgeType])
   @@index([contractorId])
 }
@@ -1115,449 +1125,210 @@ model ContractorBadge {
 // ============================================
 
 model SavedProject {
-  id           String   @id @default(cuid())
+  id           String  @id @default(cuid())
   contractorId String
-  contractor   User     @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+  contractor   User    @relation(fields: [contractorId], references: [id], onDelete: Cascade)
   projectId    String
-  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  
-  savedAt      DateTime @default(now())
-  
+  project      Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  savedAt DateTime @default(now())
+
   @@unique([contractorId, projectId])
   @@index([contractorId])
   @@index([projectId])
 }
 
-
 // ============================================
-// INTERIOR MODULE - CHỦ ĐẦU TƯ (Developer)
+// FURNITURE QUOTATION SYSTEM
 // ============================================
 
-model InteriorDeveloper {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  slug        String   @unique
-  logo        String?
-  description String?
-  website     String?
-  phone       String?
-  email       String?
-  address     String?
-  
-  developments InteriorDevelopment[]
-  
-  order       Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@index([isActive])
-  @@index([order])
+model FurnitureDeveloper {
+  id       String  @id @default(cuid())
+  name     String  @unique // ChuDauTu
+  imageUrl String? // Logo/image URL
+
+  projects FurnitureProject[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-// ============================================
-// INTERIOR MODULE - DỰ ÁN (Development)
-// ============================================
-
-model InteriorDevelopment {
-  id          String   @id @default(cuid())
+model FurnitureProject {
+  id          String             @id @default(cuid())
+  name        String // TenDuAn
+  code        String // MaDuAn
+  imageUrl    String? // Project image URL
   developerId String
-  developer   InteriorDeveloper @relation(fields: [developerId], references: [id], onDelete: Cascade)
-  
-  name        String
-  code        String   @unique
-  slug        String   @unique
-  address     String?
-  district    String?
-  city        String?
-  description String?
-  thumbnail   String?
-  images      String?  // JSON array
-  totalBuildings Int?
-  totalUnits     Int?
-  startYear      Int?
-  completionYear Int?
-  
-  buildings   InteriorBuilding[]
-  
-  order       Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  developer   FurnitureDeveloper @relation(fields: [developerId], references: [id], onDelete: Cascade)
+
+  buildings FurnitureBuilding[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([developerId, code])
   @@index([developerId])
-  @@index([isActive])
-  @@index([order])
 }
 
-// ============================================
-// INTERIOR MODULE - TÒA NHÀ (Building)
-// ============================================
+model FurnitureBuilding {
+  id        String           @id @default(cuid())
+  name      String // TenToaNha (display name)
+  code      String // MaToaNha (for lookup)
+  imageUrl  String? // Building image URL
+  projectId String
+  project   FurnitureProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  maxFloor  Int // SoTangMax
+  maxAxis   Int // SoTrucMax
 
-model InteriorBuilding {
-  id            String   @id @default(cuid())
-  developmentId String
-  development   InteriorDevelopment @relation(fields: [developmentId], references: [id], onDelete: Cascade)
-  
-  name          String
-  code          String
-  totalFloors   Int
-  startFloor    Int      @default(1)
-  endFloor      Int?
-  axisLabels    String   // JSON array: ["A","B","C","D"]
-  unitsPerFloor Int
-  unitCodeFormat String  @default("{building}.{floor}.{axis}")
-  specialFloors String?  // JSON array: [{floor, type, note}]
-  thumbnail     String?
-  floorPlanImage String?
-  
-  units         InteriorBuildingUnit[]
-  
-  order         Int      @default(0)
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  @@unique([developmentId, code])
-  @@index([developmentId])
-  @@index([isActive])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([code])
 }
 
-// ============================================
-// INTERIOR MODULE - CĂN HỘ THEO TRỤC (Building Unit)
-// ============================================
+model FurnitureLayout {
+  id            String @id @default(cuid())
+  layoutAxis    String @unique // {MaToaNha}_{SoTruc}
+  buildingCode  String // MaToaNha
+  axis          Int // SoTruc
+  apartmentType String // 1pn, 2pn, 3pn, 1pn+, penhouse, shophouse
 
-model InteriorBuildingUnit {
-  id          String   @id @default(cuid())
-  buildingId  String
-  building    InteriorBuilding @relation(fields: [buildingId], references: [id], onDelete: Cascade)
-  
-  axis        String
-  unitType    String   // STUDIO, 1PN, 2PN, 3PN, 4PN, PENTHOUSE, DUPLEX, SHOPHOUSE
-  bedrooms    Int
-  bathrooms   Int      @default(1)
-  position    String   @default("MIDDLE") // CORNER, EDGE, MIDDLE
-  direction   String?  // ĐÔNG, TÂY, NAM, BẮC, ĐÔNG_NAM, ĐÔNG_BẮC, TÂY_NAM, TÂY_BẮC
-  view        String?  // VIEW_POOL, VIEW_PARK, VIEW_CITY, VIEW_RIVER
-  floorStart  Int      @default(1)
-  floorEnd    Int?
-  layoutId    String
-  layout      InteriorUnitLayout @relation(fields: [layoutId], references: [id])
-  notes       String?
-  
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@unique([buildingId, axis])
-  @@index([buildingId])
-  @@index([layoutId])
-  @@index([unitType])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([buildingCode, axis])
+  @@index([buildingCode])
+  @@index([apartmentType])
 }
 
-// ============================================
-// INTERIOR MODULE - BẢN VẼ LAYOUT (Unit Layout)
-// ============================================
+model FurnitureApartmentType {
+  id            String  @id @default(cuid())
+  buildingCode  String // MaToaNha
+  apartmentType String // 1pn, 2pn, etc.
+  imageUrl      String?
+  description   String?
 
-model InteriorUnitLayout {
-  id          String   @id @default(cuid())
-  name        String
-  code        String   @unique
-  unitType    String   // STUDIO, 1PN, 2PN, 3PN, 4PN, PENTHOUSE, DUPLEX, SHOPHOUSE
-  bedrooms    Int
-  bathrooms   Int      @default(1)
-  grossArea   Float    // Diện tích tim tường
-  netArea     Float    // Diện tích thông thủy
-  carpetArea  Float?   // Diện tích thảm
-  balconyArea Float?
-  terraceArea Float?
-  rooms       String   // JSON array: [{name, area, type}]
-  layoutImage     String?  // 2D floor plan
-  layout3DImage   String?  // 3D render
-  dimensionImage  String?  // Dimension drawing
-  description     String?
-  highlights      String?  // JSON array: ["2 mặt thoáng", "View hồ bơi"]
-  
-  buildingUnits   InteriorBuildingUnit[]
-  packages        InteriorPackage[]
-  
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@index([unitType])
-  @@index([isActive])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([buildingCode])
+  @@index([apartmentType])
 }
 
-// ============================================
-// INTERIOR MODULE - GÓI NỘI THẤT (Package)
-// ============================================
-
-model InteriorPackage {
-  id          String   @id @default(cuid())
-  layoutId    String
-  layout      InteriorUnitLayout @relation(fields: [layoutId], references: [id], onDelete: Cascade)
-  
-  name        String
-  code        String
-  tier        Int      @default(1) // 1: Basic, 2: Standard, 3: Premium, 4: Luxury
-  description     String?
-  shortDescription String?
-  basePrice       Float
-  pricePerSqm     Float?
-  thumbnail       String?
-  images          String?  // JSON array
-  video360Url     String?
-  items           String   // JSON array: [{room, items: [{name, brand, material, qty, price}]}]
-  totalItems      Int?
-  totalItemsPrice Float?
-  warrantyMonths  Int?
-  installationDays Int?
-  
-  quotes          InteriorQuote[]
-  
-  order           Int     @default(0)
-  isActive        Boolean @default(true)
-  isFeatured      Boolean @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  @@unique([layoutId, code])
-  @@index([layoutId])
-  @@index([tier])
-  @@index([isActive])
-  @@index([isFeatured])
-}
-
-// ============================================
-// INTERIOR MODULE - DANH MỤC ĐỒ NỘI THẤT (Furniture Category)
-// ============================================
-
-model InteriorFurnitureCategory {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  slug        String   @unique
-  icon        String?
+model FurnitureCategory {
+  id          String  @id @default(cuid())
+  name        String  @unique
   description String?
-  parentId    String?
-  parent      InteriorFurnitureCategory?  @relation("FurnitureCategoryHierarchy", fields: [parentId], references: [id])
-  children    InteriorFurnitureCategory[] @relation("FurnitureCategoryHierarchy")
-  roomTypes   String?  // JSON array of room type codes
-  
-  items       InteriorFurnitureItem[]
-  
-  order       Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@index([parentId])
-  @@index([isActive])
-  @@index([order])
+  icon        String?
+  order       Int     @default(0)
+  isActive    Boolean @default(true)
+
+  products FurnitureProduct[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-// ============================================
-// INTERIOR MODULE - ĐỒ NỘI THẤT (Furniture Item)
-// ============================================
-
-model InteriorFurnitureItem {
-  id          String   @id @default(cuid())
+model FurnitureProduct {
+  id          String            @id @default(cuid())
+  name        String
   categoryId  String
-  category    InteriorFurnitureCategory @relation(fields: [categoryId], references: [id])
-  
-  name        String
-  sku         String?  @unique
-  brand       String?
-  origin      String?
-  material    String?
-  color       String?
-  dimensions  String?  // JSON: {width, height, depth, unit}
-  weight      Float?
+  category    FurnitureCategory @relation(fields: [categoryId], references: [id])
   price       Float
-  costPrice   Float?
-  thumbnail   String?
-  images      String?  // JSON array
+  imageUrl    String?
   description String?
-  features    String?  // JSON array
-  warrantyMonths Int?
-  inStock     Boolean  @default(true)
-  stockQty    Int?
-  
-  order       Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  dimensions  String? // JSON: { width, height, depth }
+  order       Int               @default(0)
+  isActive    Boolean           @default(true)
+
+  comboItems FurnitureComboItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([categoryId])
-  @@index([brand])
   @@index([isActive])
-  @@index([inStock])
 }
 
-// ============================================
-// INTERIOR MODULE - PHỤ PHÍ (Surcharge)
-// ============================================
+model FurnitureCombo {
+  id             String  @id @default(cuid())
+  name           String
+  apartmentTypes String // JSON array: ["1pn", "2pn"]
+  price          Float
+  imageUrl       String?
+  description    String?
+  isActive       Boolean @default(true)
 
-model InteriorSurcharge {
-  id          String   @id @default(cuid())
-  name        String
-  code        String   @unique
-  type        String   // FIXED, PERCENTAGE, PER_FLOOR, PER_SQM, CONDITIONAL
-  value       Float
-  conditions  String?  // JSON: {minFloor, maxFloor, minArea, maxArea, unitTypes, positions, buildings, developments}
-  description String?
-  isAutoApply Boolean  @default(true)
-  isOptional  Boolean  @default(false)
-  
-  order       Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@index([type])
+  items FurnitureComboItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([isActive])
-  @@index([isAutoApply])
 }
 
-// ============================================
-// INTERIOR MODULE - CẤU HÌNH BÁO GIÁ (Quote Settings) - Singleton
-// ============================================
+model FurnitureComboItem {
+  id        String           @id @default(cuid())
+  comboId   String
+  combo     FurnitureCombo   @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  productId String
+  product   FurnitureProduct @relation(fields: [productId], references: [id])
+  quantity  Int              @default(1)
 
-model InteriorQuoteSettings {
-  id          String   @id @default("default")
-  laborCostPerSqm     Float   @default(500000)
-  laborCostMin        Float?
-  laborCostMax        Float?
-  managementFeeType   String  @default("PERCENTAGE") // FIXED, PERCENTAGE
-  managementFeeValue  Float   @default(5)
-  contingencyType     String  @default("PERCENTAGE") // FIXED, PERCENTAGE
-  contingencyValue    Float   @default(3)
-  vatEnabled          Boolean @default(true)
-  vatPercent          Float   @default(10)
-  maxDiscountPercent  Float?  @default(15)
-  quoteValidityDays   Int     @default(30)
-  customFormula       String?
-  showItemBreakdown   Boolean @default(true)
-  showRoomBreakdown   Boolean @default(true)
-  showPricePerSqm     Boolean @default(true)
-  companyName         String?
-  companyPhone        String?
-  companyEmail        String?
-  companyAddress      String?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  @@unique([comboId, productId])
+  @@index([comboId])
+  @@index([productId])
 }
 
-// ============================================
-// INTERIOR MODULE - LOẠI PHÒNG (Room Type)
-// ============================================
+model FurnitureFee {
+  id            String  @id @default(cuid())
+  name          String
+  type          String // FIXED, PERCENTAGE
+  value         Float
+  applicability String // COMBO, CUSTOM, BOTH
+  description   String?
+  isActive      Boolean @default(true)
+  order         Int     @default(0)
 
-model InteriorRoomType {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  name        String
-  nameEn      String?
-  icon        String?
-  description String?
-  defaultCategories String?  // JSON array of category IDs
-  
-  order       Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([applicability])
   @@index([isActive])
-  @@index([order])
 }
 
-// ============================================
-// INTERIOR MODULE - BÁO GIÁ (Quote)
-// ============================================
+model FurnitureQuotation {
+  id     String       @id @default(cuid())
+  leadId String
+  lead   CustomerLead @relation(fields: [leadId], references: [id])
 
-model InteriorQuote {
-  id          String   @id @default(cuid())
-  code        String   @unique // AUTO: INT-YYYY-NNN
-  
-  // Customer info
-  customerName    String
-  customerPhone   String
-  customerEmail   String?
-  
-  // Unit info
-  developmentName String
-  buildingName    String
-  unitCode        String
-  floor           Int
-  axis            String
-  unitType        String
-  
-  // Layout info
-  layoutName      String
-  grossArea       Float
-  netArea         Float
-  
-  // Package info
-  packageId       String
-  package         InteriorPackage @relation(fields: [packageId], references: [id])
-  packageName     String
-  packageTier     Int
-  packagePrice    Float
-  
-  // Calculated costs
-  laborCost       Float
-  surcharges      String?  // JSON array: [{name, amount}]
-  surchargesTotal Float    @default(0)
-  managementFee   Float    @default(0)
-  contingency     Float    @default(0)
-  subtotal        Float
-  vatAmount       Float    @default(0)
-  discount        Float    @default(0)
-  grandTotal      Float
-  pricePerSqm     Float?
-  
-  // Status: DRAFT, SENT, VIEWED, ACCEPTED, REJECTED, EXPIRED
-  status          String   @default("DRAFT")
-  validUntil      DateTime?
-  
-  // Notes
-  notes           String?
-  internalNotes   String?
-  
-  // Tracking
-  sentAt          DateTime?
-  viewedAt        DateTime?
-  acceptedAt      DateTime?
-  rejectedAt      DateTime?
-  rejectionReason String?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  @@index([status])
-  @@index([customerPhone])
-  @@index([packageId])
+  // Apartment info
+  developerName  String
+  projectName    String
+  buildingName   String
+  buildingCode   String
+  floor          Int
+  axis           Int
+  unitNumber     String // Calculated: {buildingCode}.{floor}{axis}
+  apartmentType  String
+  layoutImageUrl String?
+
+  // Selection
+  selectionType String // COMBO, CUSTOM
+  comboId       String?
+  comboName     String?
+
+  // Items (JSON for flexibility)
+  items String // JSON: [{ productId, name, price, quantity }]
+
+  // Pricing
+  basePrice  Float
+  fees       String // JSON: [{ name, type, value, amount }]
+  totalPrice Float
+
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
   @@index([createdAt])
-}
-
-// ============================================
-// INTERIOR MODULE - SYNC LOG
-// ============================================
-
-model InteriorSyncLog {
-  id          String   @id @default(cuid())
-  direction   String   // 'pull' | 'push'
-  sheetId     String
-  sheetName   String
-  status      String   // 'success' | 'partial' | 'failed'
-  created     Int      @default(0)
-  updated     Int      @default(0)
-  skipped     Int      @default(0)
-  errors      String?  // JSON array of errors
-  syncedBy    String
-  syncedAt    DateTime @default(now())
-  
-  @@index([syncedAt])
-  @@index([direction])
-  @@index([status])
 }

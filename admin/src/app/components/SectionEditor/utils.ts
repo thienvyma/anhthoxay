@@ -38,10 +38,11 @@ export function getSectionDescription(kind: SectionKind): string {
     ABOUT: 'About section with company information',
     FAQ: 'Frequently asked questions section',
     VIDEO: 'Video embed section',
-    INTERIOR_QUOTE: 'Interior quote wizard (legacy)',
-    INTERIOR_PRICING_TABLE: 'Interior pricing table with package tiers',
-    INTERIOR_WIZARD: 'Interior quote wizard with 7 steps',
     MARKETPLACE: 'Public marketplace showing open projects for contractors',
+    FEATURED_SLIDESHOW: 'Slideshow of featured media images',
+    MEDIA_GALLERY: 'Full media gallery with pagination and lightbox',
+    VIDEO_SHOWCASE: 'Video showcase with autoplay support (YouTube, Vimeo, or direct URL)',
+    FURNITURE_QUOTE: 'Step-by-step apartment selection and furniture quotation process',
   };
   return descriptions[kind] || '';
 }
@@ -79,10 +80,11 @@ export function getSectionIcon(kind: SectionKind): string {
     ABOUT: 'ri-information-fill',
     FAQ: 'ri-question-answer-fill',
     VIDEO: 'ri-video-fill',
-    INTERIOR_QUOTE: 'ri-home-smile-fill',
-    INTERIOR_PRICING_TABLE: 'ri-price-tag-3-fill',
-    INTERIOR_WIZARD: 'ri-home-smile-fill',
     MARKETPLACE: 'ri-store-2-fill',
+    FEATURED_SLIDESHOW: 'ri-slideshow-3-fill',
+    MEDIA_GALLERY: 'ri-gallery-fill',
+    VIDEO_SHOWCASE: 'ri-video-fill',
+    FURNITURE_QUOTE: 'ri-sofa-fill',
   };
   return icons[kind] || 'ri-layout-fill';
 }

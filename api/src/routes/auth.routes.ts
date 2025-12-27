@@ -338,16 +338,14 @@ export function createAuthRoutes(prisma: PrismaClient) {
   });
 
   // ============================================
-  // DEV ONLY: Clear rate limits
-  // TODO: [TESTING] Xóa endpoint này sau khi test xong
+  // DEV ONLY: Clear rate limits (Development only)
   // ============================================
-  app.post('/clear-rate-limits', async (c) => {
-    if (process.env.NODE_ENV === 'production') {
-      return errorResponse(c, 'FORBIDDEN', 'Not available in production', 403);
-    }
-    clearAllLimits();
-    return successResponse(c, { message: 'All rate limits cleared' });
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    app.post('/clear-rate-limits', async (c) => {
+      clearAllLimits();
+      return successResponse(c, { message: 'All rate limits cleared' });
+    });
+  }
 
   return app;
 }

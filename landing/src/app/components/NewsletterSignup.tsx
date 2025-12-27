@@ -176,8 +176,9 @@ export function NewsletterSignup({ variant = 'inline', className = '' }: Newslet
                 <div style={{
                   width: '14px',
                   height: '14px',
-                  border: '2px solid rgba(11,11,12,0.3)',
-                  borderTopColor: '#0b0b0c',
+                  borderWidth: '2px',
+                  borderStyle: 'solid',
+                  borderColor: 'rgba(11,11,12,0.3) rgba(11,11,12,0.3) rgba(11,11,12,0.3) #0b0b0c',
                   borderRadius: '50%',
                   animation: 'spin 0.8s linear infinite'
                 }} />

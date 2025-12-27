@@ -42,7 +42,7 @@ export const createLeadSchema = z.object({
   phone: z.string().regex(/^[0-9+\-\s()]+$/, 'Số điện thoại không hợp lệ').min(10),
   email: z.string().email('Email không hợp lệ').optional().or(z.literal('')),
   content: z.string().min(10, 'Nội dung tối thiểu 10 ký tự').max(2000),
-  source: z.enum(['QUOTE_FORM', 'CONTACT_FORM']).default('CONTACT_FORM'),
+  source: z.enum(['QUOTE_FORM', 'CONTACT_FORM', 'FURNITURE_QUOTE']).default('CONTACT_FORM'),
   quoteData: z.string().optional(),
 });
 

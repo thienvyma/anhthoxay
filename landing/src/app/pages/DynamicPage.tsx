@@ -56,8 +56,9 @@ export function DynamicPage() {
             width: 40,
             height: 40,
             borderRadius: '50%',
-            border: `3px solid ${tokens.color.border}`,
-            borderTopColor: tokens.color.primary,
+            borderWidth: '3px',
+            borderStyle: 'solid',
+            borderColor: `${tokens.color.border} ${tokens.color.border} ${tokens.color.border} ${tokens.color.primary}`,
           }}
         />
       </div>

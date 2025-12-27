@@ -498,13 +498,6 @@ Khi thêm route mới, cập nhật danh sách này:
 ### Admin Routes - Ranking Job (requireRole('ADMIN'))
 - `GET /api/admin/rankings/job-status` - Trạng thái job tính xếp hạng
 
-### Admin Routes - Interior Sync (requireRole('ADMIN'))
-- `GET /api/admin/interior/sync/status` - Trạng thái kết nối Google Sheets
-- `GET /api/admin/interior/sync/logs` - Danh sách sync logs với pagination
-- `GET /api/admin/interior/sync/preview` - Preview thay đổi trước khi sync
-- `POST /api/admin/interior/sync/pull` - Pull dữ liệu từ Google Sheet vào DB (Rate limited: 1 req/phút)
-- `POST /api/admin/interior/sync/push` - Push dữ liệu từ DB ra Google Sheet (Rate limited: 1 req/phút)
-
 ### Admin Routes - Dashboard (requireRole('ADMIN'))
 - `GET /api/admin/dashboard` - Lấy thống kê tổng quan dashboard (leads, projects, bids, contractors, etc.)
 - `GET /api/admin/dashboard/activity` - Lấy activity feed gần đây (limit param)
