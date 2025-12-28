@@ -596,8 +596,12 @@ export class ReviewCrudService {
   /**
    * Recalculate contractor's average rating
    * Requirements: 5.1-5.5 - Recalculate on create/update/delete with weighted average
+   * Note: Uses in-memory calculation for time-weighted averaging.
+   * This is intentional as the weighting formula requires individual review dates.
+   * Optimized: Uses minimal select to reduce data transfer.
    */
   async recalculateContractorRating(contractorId: string): Promise<void> {
+    // Optimized: Only select needed fields for weighted calculation
     const reviews = await this.prisma.review.findMany({
       where: {
         contractorId,

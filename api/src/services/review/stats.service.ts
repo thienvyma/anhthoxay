@@ -131,24 +131,48 @@ export class ReviewStatsService {
   /**
    * Get review summary for a contractor
    * Requirements: 11.2 - Return rating distribution and averages
+   * Optimized: Use Prisma aggregation queries instead of fetching all records
    */
   async getContractorSummary(contractorId: string): Promise<ReviewSummary> {
-    const reviews = await this.prisma.review.findMany({
-      where: {
-        contractorId,
-        isPublic: true,
-        isDeleted: false,
-      },
-      select: {
-        rating: true,
-        qualityRating: true,
-        timelinessRating: true,
-        communicationRating: true,
-        valueRating: true,
-      },
-    });
+    // Optimized: Use aggregation queries to calculate stats at database level
+    const [aggregateResult, ratingDistribution, criteriaAverages] = await Promise.all([
+      // Get total count and average rating
+      this.prisma.review.aggregate({
+        where: {
+          contractorId,
+          isPublic: true,
+          isDeleted: false,
+        },
+        _count: { id: true },
+        _avg: { rating: true },
+      }),
+      // Get rating distribution using groupBy
+      this.prisma.review.groupBy({
+        by: ['rating'],
+        where: {
+          contractorId,
+          isPublic: true,
+          isDeleted: false,
+        },
+        _count: { rating: true },
+      }),
+      // Get averages for multi-criteria ratings
+      this.prisma.review.aggregate({
+        where: {
+          contractorId,
+          isPublic: true,
+          isDeleted: false,
+        },
+        _avg: {
+          qualityRating: true,
+          timelinessRating: true,
+          communicationRating: true,
+          valueRating: true,
+        },
+      }),
+    ]);
 
-    const totalReviews = reviews.length;
+    const totalReviews = aggregateResult._count.id;
     if (totalReviews === 0) {
       return {
         totalReviews: 0,
@@ -161,38 +185,28 @@ export class ReviewStatsService {
       };
     }
 
-    // Calculate rating distribution
-    const ratingDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    let totalRating = 0;
-    let qualitySum = 0, qualityCount = 0;
-    let timelinessSum = 0, timelinessCount = 0;
-    let communicationSum = 0, communicationCount = 0;
-    let valueSum = 0, valueCount = 0;
-
-    for (const review of reviews) {
-      ratingDistribution[review.rating as 1 | 2 | 3 | 4 | 5]++;
-      totalRating += review.rating;
-      
-      if (review.qualityRating) { qualitySum += review.qualityRating; qualityCount++; }
-      if (review.timelinessRating) { timelinessSum += review.timelinessRating; timelinessCount++; }
-      if (review.communicationRating) { communicationSum += review.communicationRating; communicationCount++; }
-      if (review.valueRating) { valueSum += review.valueRating; valueCount++; }
+    // Build rating distribution from groupBy result
+    const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    for (const group of ratingDistribution) {
+      const rating = group.rating as 1 | 2 | 3 | 4 | 5;
+      distribution[rating] = group._count.rating;
     }
 
     // Helper function for consistent rounding
-    const roundToOneDecimal = (value: number): number => {
+    const roundToOneDecimal = (value: number | null): number | null => {
+      if (value === null) return null;
       const fixed = parseFloat(value.toFixed(10));
       return Math.round(fixed * 10) / 10;
     };
 
     return {
       totalReviews,
-      averageRating: roundToOneDecimal(totalRating / totalReviews),
-      ratingDistribution,
-      averageQualityRating: qualityCount > 0 ? roundToOneDecimal(qualitySum / qualityCount) : null,
-      averageTimelinessRating: timelinessCount > 0 ? roundToOneDecimal(timelinessSum / timelinessCount) : null,
-      averageCommunicationRating: communicationCount > 0 ? roundToOneDecimal(communicationSum / communicationCount) : null,
-      averageValueRating: valueCount > 0 ? roundToOneDecimal(valueSum / valueCount) : null,
+      averageRating: roundToOneDecimal(aggregateResult._avg.rating) ?? 0,
+      ratingDistribution: distribution,
+      averageQualityRating: roundToOneDecimal(criteriaAverages._avg.qualityRating),
+      averageTimelinessRating: roundToOneDecimal(criteriaAverages._avg.timelinessRating),
+      averageCommunicationRating: roundToOneDecimal(criteriaAverages._avg.communicationRating),
+      averageValueRating: roundToOneDecimal(criteriaAverages._avg.valueRating),
     };
   }
 
@@ -203,24 +217,35 @@ export class ReviewStatsService {
   /**
    * Get contractor stats for ranking
    * Requirements: 10.2 - Return stats for contractor
+   * Optimized: Use aggregation queries instead of fetching all records
    */
   async getContractorStats(contractorId: string): Promise<{
     totalReviews: number;
     averageRating: number;
     responseRate: number;
   }> {
-    const reviews = await this.prisma.review.findMany({
-      where: {
-        contractorId,
-        isDeleted: false,
-      },
-      select: {
-        rating: true,
-        response: true,
-      },
-    });
+    // Use aggregation queries to calculate stats at database level
+    const [aggregateResult, respondedCount] = await Promise.all([
+      // Get total count and average rating
+      this.prisma.review.aggregate({
+        where: {
+          contractorId,
+          isDeleted: false,
+        },
+        _count: { id: true },
+        _avg: { rating: true },
+      }),
+      // Count reviews with responses
+      this.prisma.review.count({
+        where: {
+          contractorId,
+          isDeleted: false,
+          response: { not: null },
+        },
+      }),
+    ]);
 
-    const totalReviews = reviews.length;
+    const totalReviews = aggregateResult._count.id;
     if (totalReviews === 0) {
       return {
         totalReviews: 0,
@@ -229,12 +254,9 @@ export class ReviewStatsService {
       };
     }
 
-    const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
-    const respondedCount = reviews.filter(r => r.response !== null).length;
-
     return {
       totalReviews,
-      averageRating: Math.round((totalRating / totalReviews) * 10) / 10,
+      averageRating: Math.round((aggregateResult._avg.rating ?? 0) * 10) / 10,
       responseRate: Math.round((respondedCount / totalReviews) * 100),
     };
   }
@@ -242,6 +264,9 @@ export class ReviewStatsService {
   /**
    * Get monthly stats for contractor
    * Requirements: 10.3 - Return monthly review stats
+   * Note: Uses in-memory grouping because SQLite doesn't support date functions in groupBy.
+   * For PostgreSQL migration, this can be optimized with raw SQL date_trunc.
+   * Optimized: Uses minimal select to reduce data transfer.
    */
   async getMonthlyStats(
     contractorId: string,
@@ -256,6 +281,7 @@ export class ReviewStatsService {
     startDate.setDate(1);
     startDate.setHours(0, 0, 0, 0);
 
+    // Optimized: Only select needed fields
     const reviews = await this.prisma.review.findMany({
       where: {
         contractorId,
@@ -269,7 +295,7 @@ export class ReviewStatsService {
       orderBy: { createdAt: 'asc' },
     });
 
-    // Group by month
+    // Group by month (in-memory due to SQLite limitations)
     const monthlyData = new Map<string, { total: number; sum: number }>();
     
     for (const review of reviews) {

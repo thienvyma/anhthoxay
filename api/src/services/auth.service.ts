@@ -375,6 +375,18 @@ export class AuthService {
         // Set verifiedAt for auto-approved homeowners
         ...(input.accountType === 'homeowner' ? { verifiedAt: new Date() } : {}),
       },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        phone: true,
+        companyName: true,
+        verificationStatus: true,
+        verifiedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 

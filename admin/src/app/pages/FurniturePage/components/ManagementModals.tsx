@@ -34,20 +34,17 @@ interface ManagementModalsProps {
   developerForm: CreateDeveloperInput & { imageUrl?: string };
   setDeveloperForm: React.Dispatch<React.SetStateAction<CreateDeveloperInput & { imageUrl?: string }>>;
   onSaveDeveloper: () => void;
-  onDeveloperImageUpload: (file: File) => void;
 
   // Project
   projectForm: CreateProjectInput & { imageUrl?: string };
   setProjectForm: React.Dispatch<React.SetStateAction<CreateProjectInput & { imageUrl?: string }>>;
   onSaveProject: () => void;
-  onProjectImageUpload: (file: File) => void;
   developers: FurnitureDeveloper[];
 
   // Building
   buildingForm: CreateBuildingInput & { imageUrl?: string };
   setBuildingForm: React.Dispatch<React.SetStateAction<CreateBuildingInput & { imageUrl?: string }>>;
   onSaveBuilding: () => void;
-  onBuildingImageUpload: (file: File) => void;
   projects: FurnitureProject[];
 
   // Layout
@@ -158,16 +155,13 @@ export function ManagementModals(props: ManagementModalsProps) {
     developerForm,
     setDeveloperForm,
     onSaveDeveloper,
-    onDeveloperImageUpload,
     projectForm,
     setProjectForm,
     onSaveProject,
-    onProjectImageUpload,
     developers,
     buildingForm,
     setBuildingForm,
     onSaveBuilding,
-    onBuildingImageUpload,
     projects,
     layoutForm,
     setLayoutForm,
@@ -212,12 +206,6 @@ export function ManagementModals(props: ManagementModalsProps) {
             placeholder="VD: Masterise Homes"
             required
           />
-          <ImageUpload
-            imageUrl={developerForm.imageUrl}
-            onClear={() => setDeveloperForm((prev) => ({ ...prev, imageUrl: '' }))}
-            onUpload={onDeveloperImageUpload}
-            label="Ảnh / Logo"
-          />
         </div>
       </ResponsiveModal>
 
@@ -259,12 +247,6 @@ export function ManagementModals(props: ManagementModalsProps) {
               ]}
             />
           )}
-          <ImageUpload
-            imageUrl={projectForm.imageUrl}
-            onClear={() => setProjectForm((prev) => ({ ...prev, imageUrl: '' }))}
-            onUpload={onProjectImageUpload}
-            label="Ảnh dự án"
-          />
         </div>
       </ResponsiveModal>
 
@@ -322,12 +304,6 @@ export function ManagementModals(props: ManagementModalsProps) {
               ]}
             />
           )}
-          <ImageUpload
-            imageUrl={buildingForm.imageUrl}
-            onClear={() => setBuildingForm((prev) => ({ ...prev, imageUrl: '' }))}
-            onUpload={onBuildingImageUpload}
-            label="Ảnh tòa nhà"
-          />
         </div>
       </ResponsiveModal>
 

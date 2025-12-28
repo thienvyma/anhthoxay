@@ -15,6 +15,7 @@ import { createAuthMiddleware, getUser } from '../middleware/auth.middleware';
 import { validate, validateQuery, getValidatedBody, getValidatedQuery } from '../middleware/validation';
 import { successResponse, paginatedResponse, errorResponse } from '../utils/response';
 import { googleSheetsService } from '../services/google-sheets.service';
+import { rateLimiter } from '../middleware/rate-limiter';
 
 // ============================================
 // TYPES
@@ -86,7 +87,7 @@ export function createLeadsRoutes(prisma: PrismaClient) {
    * @description Create a new customer lead (public endpoint)
    * @access Public (with rate limiting)
    */
-  app.post('/', validate(createLeadSchema), async (c) => {
+  app.post('/', rateLimiter({ maxAttempts: 5, windowMs: 60 * 1000 }), validate(createLeadSchema), async (c) => {
     try {
       const body = getValidatedBody<z.infer<typeof createLeadSchema>>(c);
 

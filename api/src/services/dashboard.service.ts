@@ -32,6 +32,7 @@ import type {
 
 const MAX_PENDING_ITEMS = 5;
 const DEFAULT_ACTIVITY_LIMIT = 10;
+const MAX_ACTIVITY_LIMIT = 50;
 const DAILY_LEADS_DAYS = 30;
 
 // ============================================
@@ -103,14 +104,56 @@ export class DashboardService {
   // ============================================
 
   /**
-   * Get leads statistics
+   * Get leads statistics using aggregation queries
+   * Optimized: Uses count() and groupBy() instead of fetching all records
    */
   private async getLeadsStats(): Promise<LeadsStats> {
-    const leads = await this.prisma.customerLead.findMany({
-      select: { status: true, source: true, createdAt: true },
+    // Get total count
+    const total = await this.prisma.customerLead.count();
+
+    // Get counts by status using groupBy
+    const statusGroups = await this.prisma.customerLead.groupBy({
+      by: ['status'],
+      _count: { status: true },
     });
 
-    // Daily leads for last 30 days
+    const byStatus: Record<string, number> = {};
+    statusGroups.forEach((group) => {
+      byStatus[group.status] = group._count.status;
+    });
+
+    // Get counts by source using groupBy
+    const sourceGroups = await this.prisma.customerLead.groupBy({
+      by: ['source'],
+      _count: { source: true },
+    });
+
+    const bySource: Record<string, number> = {};
+    sourceGroups.forEach((group) => {
+      bySource[group.source] = group._count.source;
+    });
+
+    // Calculate conversion rate using counts
+    const totalNonCancelled = total - (byStatus['CANCELLED'] || 0);
+    const converted = byStatus['CONVERTED'] || 0;
+    const conversionRate =
+      totalNonCancelled > 0
+        ? Math.round((converted / totalNonCancelled) * 100 * 100) / 100
+        : 0;
+
+    // Daily leads for last 30 days - only fetch records from this period
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - DAILY_LEADS_DAYS);
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+    const recentLeads = await this.prisma.customerLead.findMany({
+      where: {
+        createdAt: { gte: thirtyDaysAgo },
+      },
+      select: { createdAt: true },
+    });
+
+    // Initialize daily leads map
     const dailyLeadsMap = new Map<string, number>();
     for (let i = 0; i < DAILY_LEADS_DAYS; i++) {
       const date = new Date();
@@ -119,7 +162,7 @@ export class DashboardService {
       dailyLeadsMap.set(dateStr, 0);
     }
 
-    leads.forEach((lead) => {
+    recentLeads.forEach((lead) => {
       const dateStr = lead.createdAt.toISOString().split('T')[0];
       if (dailyLeadsMap.has(dateStr)) {
         dailyLeadsMap.set(dateStr, (dailyLeadsMap.get(dateStr) || 0) + 1);
@@ -130,28 +173,8 @@ export class DashboardService {
       .map(([date, count]) => ({ date, count }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    // Status distribution
-    const byStatus: Record<string, number> = {};
-    leads.forEach((lead) => {
-      byStatus[lead.status] = (byStatus[lead.status] || 0) + 1;
-    });
-
-    // Source distribution
-    const bySource: Record<string, number> = {};
-    leads.forEach((lead) => {
-      bySource[lead.source] = (bySource[lead.source] || 0) + 1;
-    });
-
-    // Conversion rate
-    const totalNonCancelled = leads.filter((l) => l.status !== 'CANCELLED').length;
-    const converted = byStatus['CONVERTED'] || 0;
-    const conversionRate =
-      totalNonCancelled > 0
-        ? Math.round((converted / totalNonCancelled) * 100 * 100) / 100
-        : 0;
-
     return {
-      total: leads.length,
+      total,
       new: byStatus['NEW'] || 0,
       byStatus,
       bySource,
@@ -161,20 +184,26 @@ export class DashboardService {
   }
 
   /**
-   * Get projects statistics
+   * Get projects statistics using aggregation queries
+   * Optimized: Uses count() and groupBy() instead of fetching all records
    */
   private async getProjectsStats(): Promise<ProjectsStats> {
-    const projects = await this.prisma.project.findMany({
-      select: { status: true },
+    // Get total count
+    const total = await this.prisma.project.count();
+
+    // Get counts by status using groupBy
+    const statusGroups = await this.prisma.project.groupBy({
+      by: ['status'],
+      _count: { status: true },
     });
 
     const byStatus: Record<string, number> = {};
-    projects.forEach((p) => {
-      byStatus[p.status] = (byStatus[p.status] || 0) + 1;
+    statusGroups.forEach((group) => {
+      byStatus[group.status] = group._count.status;
     });
 
     return {
-      total: projects.length,
+      total,
       pending: byStatus['PENDING_APPROVAL'] || 0,
       open: byStatus['OPEN'] || 0,
       matched: byStatus['MATCHED'] || 0,
@@ -184,81 +213,107 @@ export class DashboardService {
   }
 
   /**
-   * Get bids statistics
+   * Get bids statistics using aggregation queries
+   * Optimized: Uses count() and groupBy() instead of fetching all records
    */
   private async getBidsStats(): Promise<BidsStats> {
-    const bids = await this.prisma.bid.findMany({
-      select: { status: true },
+    // Get total count
+    const total = await this.prisma.bid.count();
+
+    // Get counts by status using groupBy
+    const statusGroups = await this.prisma.bid.groupBy({
+      by: ['status'],
+      _count: { status: true },
     });
 
     const byStatus: Record<string, number> = {};
-    bids.forEach((b) => {
-      byStatus[b.status] = (byStatus[b.status] || 0) + 1;
+    statusGroups.forEach((group) => {
+      byStatus[group.status] = group._count.status;
     });
 
     return {
-      total: bids.length,
+      total,
       pending: byStatus['PENDING'] || 0,
       approved: byStatus['APPROVED'] || 0,
     };
   }
 
   /**
-   * Get contractors statistics
+   * Get contractors statistics using aggregation queries
+   * Optimized: Uses count() and groupBy() instead of fetching all records
    */
   private async getContractorsStats(): Promise<ContractorsStats> {
-    const contractors = await this.prisma.user.findMany({
+    // Get total count of contractors
+    const total = await this.prisma.user.count({
       where: { role: 'CONTRACTOR' },
-      select: { verificationStatus: true },
+    });
+
+    // Get counts by verification status using groupBy
+    const statusGroups = await this.prisma.user.groupBy({
+      by: ['verificationStatus'],
+      where: { role: 'CONTRACTOR' },
+      _count: { verificationStatus: true },
     });
 
     const byStatus: Record<string, number> = {};
-    contractors.forEach((c) => {
-      byStatus[c.verificationStatus] = (byStatus[c.verificationStatus] || 0) + 1;
+    statusGroups.forEach((group) => {
+      byStatus[group.verificationStatus] = group._count.verificationStatus;
     });
 
     return {
-      total: contractors.length,
+      total,
       pending: byStatus['PENDING'] || 0,
       verified: byStatus['VERIFIED'] || 0,
     };
   }
 
   /**
-   * Get blog posts statistics
+   * Get blog posts statistics using aggregation queries
+   * Optimized: Uses count() and groupBy() instead of fetching all records
    */
   private async getBlogPostsStats(): Promise<BlogPostsStats> {
-    const posts = await this.prisma.blogPost.findMany({
-      select: { status: true },
+    // Get total count
+    const total = await this.prisma.blogPost.count();
+
+    // Get counts by status using groupBy
+    const statusGroups = await this.prisma.blogPost.groupBy({
+      by: ['status'],
+      _count: { status: true },
     });
 
     const byStatus: Record<string, number> = {};
-    posts.forEach((p) => {
-      byStatus[p.status] = (byStatus[p.status] || 0) + 1;
+    statusGroups.forEach((group) => {
+      byStatus[group.status] = group._count.status;
     });
 
     return {
-      total: posts.length,
+      total,
       published: byStatus['PUBLISHED'] || 0,
       draft: byStatus['DRAFT'] || 0,
     };
   }
 
   /**
-   * Get users statistics
+   * Get users statistics using aggregation queries
+   * Optimized: Uses count() and groupBy() instead of fetching all records
    */
   private async getUsersStats(): Promise<UsersStats> {
-    const users = await this.prisma.user.findMany({
-      select: { role: true },
+    // Get total count
+    const total = await this.prisma.user.count();
+
+    // Get counts by role using groupBy
+    const roleGroups = await this.prisma.user.groupBy({
+      by: ['role'],
+      _count: { role: true },
     });
 
     const byRole: Record<string, number> = {};
-    users.forEach((u) => {
-      byRole[u.role] = (byRole[u.role] || 0) + 1;
+    roleGroups.forEach((group) => {
+      byRole[group.role] = group._count.role;
     });
 
     return {
-      total: users.length,
+      total,
       byRole,
     };
   }
@@ -378,16 +433,25 @@ export class DashboardService {
 
   /**
    * Get recent activity feed from multiple sources
-   * @param limit - Maximum number of items to return (default: 10)
+   * Optimized: Fetches only necessary items per source to minimize database load
+   * @param limit - Maximum number of items to return (default: 10, max: 50)
    * @returns Array of activity items sorted by createdAt descending
    */
   async getActivityFeed(limit: number = DEFAULT_ACTIVITY_LIMIT): Promise<ActivityItem[]> {
-    // Fetch recent items from each source
+    // Validate and cap the limit to prevent unbounded queries
+    const validatedLimit = Math.min(Math.max(1, limit), MAX_ACTIVITY_LIMIT);
+    
+    // Calculate per-source limit: fetch enough items from each source
+    // to ensure we can fill the requested limit after merging and sorting
+    // We divide by 4 (number of sources) and add buffer for better distribution
+    const perSourceLimit = Math.ceil(validatedLimit / 2);
+    
+    // Fetch recent items from each source with optimized limits
     const [leads, projects, bids, contractors] = await Promise.all([
-      this.getRecentLeads(limit),
-      this.getRecentProjects(limit),
-      this.getRecentBids(limit),
-      this.getRecentContractors(limit),
+      this.getRecentLeads(perSourceLimit),
+      this.getRecentProjects(perSourceLimit),
+      this.getRecentBids(perSourceLimit),
+      this.getRecentContractors(perSourceLimit),
     ]);
 
     // Combine and sort by createdAt descending
@@ -395,11 +459,12 @@ export class DashboardService {
     allItems.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Return only the requested limit
-    return allItems.slice(0, limit);
+    return allItems.slice(0, validatedLimit);
   }
 
   /**
    * Get recent leads as activity items
+   * @param limit - Maximum number of leads to fetch
    */
   private async getRecentLeads(limit: number): Promise<ActivityItem[]> {
     const leads = await this.prisma.customerLead.findMany({
@@ -420,6 +485,7 @@ export class DashboardService {
 
   /**
    * Get recent projects as activity items
+   * @param limit - Maximum number of projects to fetch
    */
   private async getRecentProjects(limit: number): Promise<ActivityItem[]> {
     const projects = await this.prisma.project.findMany({
@@ -440,6 +506,7 @@ export class DashboardService {
 
   /**
    * Get recent bids as activity items
+   * @param limit - Maximum number of bids to fetch
    */
   private async getRecentBids(limit: number): Promise<ActivityItem[]> {
     const bids = await this.prisma.bid.findMany({
@@ -466,6 +533,7 @@ export class DashboardService {
 
   /**
    * Get recent contractor registrations as activity items
+   * @param limit - Maximum number of contractors to fetch
    */
   private async getRecentContractors(limit: number): Promise<ActivityItem[]> {
     const contractors = await this.prisma.user.findMany({

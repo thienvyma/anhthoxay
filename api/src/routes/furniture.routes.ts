@@ -20,6 +20,7 @@ import {
 } from '../schemas/furniture.schema';
 // Note: Combo schemas removed as part of furniture-combo removal
 import { googleSheetsService } from '../services/google-sheets.service';
+import { rateLimiter } from '../middleware/rate-limiter';
 
 function handleServiceError(c: Parameters<typeof errorResponse>[0], error: unknown) {
   if (error instanceof FurnitureServiceError) {
@@ -93,7 +94,7 @@ export function createFurniturePublicRoutes(prisma: PrismaClient) {
       return successResponse(c, await furnitureService.getFees());
     } catch (error) { return handleServiceError(c, error); }
   });
-  app.post('/quotations', validate(createQuotationSchema), async (c) => {
+  app.post('/quotations', rateLimiter({ maxAttempts: 10, windowMs: 60 * 1000 }), validate(createQuotationSchema), async (c) => {
     try {
       const body = getValidatedBody<z.infer<typeof createQuotationSchema>>(c);
       console.log('[Furniture API] POST /quotations - body:', JSON.stringify(body, null, 2));

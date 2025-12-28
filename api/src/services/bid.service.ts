@@ -132,12 +132,43 @@ export class BidService {
   /**
    * Create a new bid
    * Requirements: 7.1-7.5 - Validate contractor, project, deadline, maxBids, uniqueness
+   * Optimized: Combined contractor and project queries to reduce N+1 patterns
    */
   async create(contractorId: string, data: CreateBidInput): Promise<BidWithRelations> {
-    // Validate contractor exists and is verified
-    const contractor = await this.prisma.user.findUnique({
-      where: { id: contractorId },
-    });
+    // Optimized: Fetch contractor and project in parallel to avoid sequential queries
+    const [contractor, project, existingBid] = await Promise.all([
+      // Validate contractor exists and is verified - select only needed fields
+      this.prisma.user.findUnique({
+        where: { id: contractorId },
+        select: {
+          id: true,
+          verificationStatus: true,
+        },
+      }),
+      // Validate project exists - select only needed fields
+      this.prisma.project.findUnique({
+        where: { id: data.projectId },
+        select: {
+          id: true,
+          status: true,
+          bidDeadline: true,
+          maxBids: true,
+          ownerId: true,
+          code: true,
+          publishedAt: true,
+          _count: { select: { bids: true } },
+        },
+      }),
+      // Requirements: 7.5, 6.5 - Check contractor hasn't already bid (exclude WITHDRAWN bids)
+      this.prisma.bid.findFirst({
+        where: {
+          projectId: data.projectId,
+          contractorId,
+          status: { notIn: ['WITHDRAWN', 'REJECTED'] }, // Allow re-bidding after withdraw or rejection
+        },
+        select: { id: true }, // Only need to check existence
+      }),
+    ]);
 
     if (!contractor) {
       throw new BidError('CONTRACTOR_NOT_FOUND', 'Contractor not found', 404);
@@ -151,21 +182,6 @@ export class BidService {
         403
       );
     }
-
-    // Validate project exists
-    const project = await this.prisma.project.findUnique({
-      where: { id: data.projectId },
-      select: {
-        id: true,
-        status: true,
-        bidDeadline: true,
-        maxBids: true,
-        ownerId: true,
-        code: true,
-        publishedAt: true,
-        _count: { select: { bids: true } },
-      },
-    });
 
     if (!project) {
       throw new BidError('PROJECT_NOT_FOUND', 'Project not found', 404);
@@ -197,15 +213,6 @@ export class BidService {
         400
       );
     }
-
-    // Requirements: 7.5, 6.5 - Check contractor hasn't already bid (exclude WITHDRAWN bids)
-    const existingBid = await this.prisma.bid.findFirst({
-      where: {
-        projectId: data.projectId,
-        contractorId,
-        status: { notIn: ['WITHDRAWN', 'REJECTED'] }, // Allow re-bidding after withdraw or rejection
-      },
-    });
 
     if (existingBid) {
       throw new BidError(
@@ -280,6 +287,7 @@ export class BidService {
   /**
    * Update a bid
    * Requirements: 7.6 - Only allow updates if bid status is PENDING
+   * Optimized: Use select to limit returned fields for validation
    */
   async update(
     id: string,
@@ -288,8 +296,16 @@ export class BidService {
   ): Promise<BidWithRelations> {
     const bid = await this.prisma.bid.findUnique({
       where: { id },
-      include: {
-        project: { select: { bidDeadline: true, status: true } },
+      select: {
+        id: true,
+        contractorId: true,
+        status: true,
+        project: { 
+          select: { 
+            bidDeadline: true, 
+            status: true,
+          },
+        },
       },
     });
 
@@ -341,10 +357,16 @@ export class BidService {
   /**
    * Withdraw a bid
    * Requirements: 7.7 - Change status to WITHDRAWN if PENDING or APPROVED
+   * Optimized: Use select to limit returned fields for validation
    */
   async withdraw(id: string, contractorId: string): Promise<BidWithRelations> {
     const bid = await this.prisma.bid.findUnique({
       where: { id },
+      select: {
+        id: true,
+        contractorId: true,
+        status: true,
+      },
     });
 
     if (!bid) {
@@ -446,6 +468,8 @@ export class BidService {
    * - Homeowner can select any PENDING bid
    * - Admin approves the match (final step)
    * - Contact info only revealed after admin approval
+   * 
+   * Optimized: Added completedProjects to contractor select, use proper select fields
    */
   async getBidsByProject(
     projectId: string,
@@ -455,9 +479,13 @@ export class BidService {
     const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc' } = query;
     const skip = (page - 1) * limit;
 
-    // Verify project ownership
+    // Verify project ownership - select only needed fields
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
+      select: {
+        id: true,
+        ownerId: true,
+      },
     });
 
     if (!project) {
@@ -487,6 +515,11 @@ export class BidService {
               name: true,
               rating: true,
               totalProjects: true,
+              ranking: {
+                select: {
+                  completedProjects: true,
+                },
+              },
             },
           },
         },
@@ -502,7 +535,7 @@ export class BidService {
         anonymousName: ANONYMOUS_LABELS[index] || `Nhà thầu ${index + 1}`,
         contractorRating: bid.contractor.rating,
         contractorTotalProjects: bid.contractor.totalProjects,
-        contractorCompletedProjects: 0,
+        contractorCompletedProjects: bid.contractor.ranking?.completedProjects ?? 0,
         price: bid.price,
         timeline: bid.timeline,
         proposal: bid.proposal,
@@ -604,12 +637,22 @@ export class BidService {
   /**
    * Approve a bid
    * Requirements: 8.3, 8.5, 12.2 - Change status to APPROVED, validate project is OPEN, notify contractor
+   * Optimized: Use select to limit returned fields for validation
    */
   async approve(id: string, adminId: string, note?: string): Promise<BidWithRelations> {
     const bid = await this.prisma.bid.findUnique({
       where: { id },
-      include: {
-        project: { select: { id: true, code: true, status: true } },
+      select: {
+        id: true,
+        status: true,
+        contractorId: true,
+        project: { 
+          select: { 
+            id: true, 
+            code: true, 
+            status: true,
+          },
+        },
       },
     });
 
@@ -682,10 +725,15 @@ export class BidService {
   /**
    * Reject a bid
    * Requirements: 8.4 - Change status to REJECTED and store rejection note
+   * Optimized: Use select to limit returned fields for validation
    */
   async reject(id: string, adminId: string, note: string): Promise<BidWithRelations> {
     const bid = await this.prisma.bid.findUnique({
       where: { id },
+      select: {
+        id: true,
+        status: true,
+      },
     });
 
     if (!bid) {

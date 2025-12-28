@@ -6,6 +6,60 @@ Danh sách các file được tạo mới hoặc chỉnh sửa theo ngày, để
 
 ## 2025-12-28
 
+### Task: Scalability Assessment & Cleanup
+**🆕 Created:**
+- `docs/SCALABILITY_ASSESSMENT.md` - Comprehensive assessment comparing project with enterprise best practices, including specific recommendations for furniture quotation system
+
+**🗑️ Deleted:**
+- `infra/prisma/infra/` - Removed duplicate database folder containing extra dev.db file
+
+### Task: Complete Scalability Audit - Phase 6 & 7 (Database Scaling Plan & Final Report)
+**✏️ Modified:**
+- `docs/adr/005-database-scaling.md` - Enhanced with detailed read/write analysis, query pattern analysis, PostgreSQL migration checklist, read replica strategy, and index recommendations
+
+**🆕 Created:**
+- `docs/SCALABILITY_AUDIT_REPORT.md` - Comprehensive audit report with all findings, prioritized action items, and scaling roadmap
+
+### Task: Optimize Review Services Queries (Scalability Audit Task 5.3)
+**✏️ Modified:**
+- `api/src/services/review/stats.service.ts` - Optimized N+1 query patterns:
+  - `getContractorStats`: Replaced `findMany` + in-memory calculation with `aggregate` + `count` queries
+  - `getMonthlyStats`: Added documentation explaining SQLite limitation for date groupBy, confirmed minimal select usage
+- `api/src/services/review/crud.service.ts` - Added documentation:
+  - `recalculateContractorRating`: Documented intentional in-memory calculation for time-weighted averaging
+
+### Task: Optimize Dashboard Service Queries (Scalability Audit Task 4)
+**✏️ Modified:**
+- `api/src/services/dashboard.service.ts` - Optimized database queries for better performance:
+  - Replaced `findMany` with `count()` and `groupBy()` aggregation queries for stats methods (getLeadsStats, getProjectsStats, getBidsStats, getContractorsStats, getBlogPostsStats, getUsersStats)
+  - Added date filter for daily leads query (only fetches last 30 days instead of all records)
+  - Added `MAX_ACTIVITY_LIMIT` constant (50) to cap activity feed queries
+  - Optimized `getActivityFeed` to validate and cap limit parameter
+  - Reduced per-source fetch limit in activity feed to minimize database load
+  - Added JSDoc comments documenting optimization changes
+
+### Task: Add Graceful Shutdown Handler (Scalability Audit Task 2)
+**✏️ Modified:**
+- `api/src/main.ts` - Added graceful shutdown handlers for SIGTERM/SIGINT signals, closes Prisma connection on shutdown, logs shutdown events, handles uncaught exceptions and unhandled rejections
+
+### Task: Fix PrismaClient Singleton Pattern (Scalability Audit Task 1)
+**✏️ Modified:**
+- `api/src/main.ts` - Removed local `new PrismaClient()` instantiation, now imports singleton from `./utils/prisma`
+- `api/src/services/google-sheets.service.ts` - Removed local `new PrismaClient()` instantiation, now imports singleton from `../utils/prisma`
+
+### Task: Điều chỉnh Dashboard cho phù hợp với báo giá nội thất/thi công
+**✏️ Modified:**
+- `admin/src/app/pages/DashboardPage.tsx` - Refactor dashboard: giữ lại widgets phù hợp (Leads, Blog, Users, Media), chuyển các tính năng Portal (Projects, Bids, Contractors, Matches, Escrow, Disputes) xuống section "Coming Soon"
+
+### Task: Fix bug LeadsPage bị trống do rate limiting (429 Too Many Requests)
+**✏️ Modified:**
+- `admin/src/app/pages/LeadsPage/index.tsx` - Fix duplicate API calls gây rate limit: tăng debounce 300ms→500ms, thêm isFetchingRef để tránh gọi trùng, gộp logic reset page, dùng Promise.allSettled cho furniture quotations check
+
+### Task: Bỏ trường ảnh trong form Chủ đầu tư, Dự án, Tòa nhà
+**✏️ Modified:**
+- `admin/src/app/pages/FurniturePage/ManagementTab.tsx` - Bỏ các image upload handlers cho Developer, Project, Building
+- `admin/src/app/pages/FurniturePage/components/ManagementModals.tsx` - Bỏ ImageUpload component trong modal Developer, Project, Building
+
 ### Task: Thêm cột "Trạng thái báo giá" cho leads nội thất
 **✏️ Modified:**
 - `admin/src/app/pages/LeadsPage/index.tsx` - Truyền `leadsWithFurnitureQuotes` vào `getLeadTableColumns()`

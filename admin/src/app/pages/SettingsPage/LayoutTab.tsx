@@ -316,10 +316,13 @@ export function LayoutTab({
         background: glass.background,
         borderRadius: tokens.radius.md,
         border: glass.border,
+        position: 'relative',
+        zIndex: 1,
       }}>
         {SUB_TABS.map((tab) => (
           <button
             key={tab.id}
+            type="button"
             onClick={() => setActiveSubTab(tab.id)}
             style={{
               flex: 1,

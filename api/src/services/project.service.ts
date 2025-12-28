@@ -153,12 +153,42 @@ export class ProjectService {
   /**
    * Create a new project
    * Requirements: 3.1 - Save with DRAFT status and return with generated code
+   * Optimized: Combined validation queries using Promise.all to reduce N+1 patterns
    */
   async create(ownerId: string, data: CreateProjectInput): Promise<ProjectWithRelations> {
-    // Validate owner exists and is a homeowner
-    const owner = await this.prisma.user.findUnique({
-      where: { id: ownerId },
-    });
+    // Optimized: Fetch owner, category, region, and settings in parallel
+    const [owner, category, region, settings] = await Promise.all([
+      // Validate owner exists and is a homeowner - select only needed fields
+      this.prisma.user.findUnique({
+        where: { id: ownerId },
+        select: {
+          id: true,
+          role: true,
+        },
+      }),
+      // Validate category exists - select only needed fields
+      this.prisma.serviceCategory.findUnique({
+        where: { id: data.categoryId },
+        select: {
+          id: true,
+        },
+      }),
+      // Validate region exists and is active - select only needed fields
+      this.prisma.region.findUnique({
+        where: { id: data.regionId },
+        select: {
+          id: true,
+          isActive: true,
+        },
+      }),
+      // Get default maxBids from BiddingSettings
+      this.prisma.biddingSettings.findUnique({
+        where: { id: 'default' },
+        select: {
+          maxBidsPerProject: true,
+        },
+      }),
+    ]);
 
     if (!owner) {
       throw new ProjectError('OWNER_NOT_FOUND', 'Owner not found', 404);
@@ -168,19 +198,9 @@ export class ProjectService {
       throw new ProjectError('NOT_HOMEOWNER', 'Only homeowners can create projects', 403);
     }
 
-    // Validate category exists
-    const category = await this.prisma.serviceCategory.findUnique({
-      where: { id: data.categoryId },
-    });
-
     if (!category) {
       throw new ProjectError('CATEGORY_NOT_FOUND', 'Category not found', 400);
     }
-
-    // Validate region exists and is active
-    const region = await this.prisma.region.findUnique({
-      where: { id: data.regionId },
-    });
 
     if (!region) {
       throw new ProjectError('REGION_NOT_FOUND', 'Region not found', 400);
@@ -193,10 +213,6 @@ export class ProjectService {
     // Generate unique project code
     const { code } = await generateProjectCode(this.prisma);
 
-    // Get default maxBids from BiddingSettings
-    const settings = await this.prisma.biddingSettings.findUnique({
-      where: { id: 'default' },
-    });
     const maxBids = settings?.maxBidsPerProject ?? 20;
 
     // Create project
@@ -227,6 +243,7 @@ export class ProjectService {
   /**
    * Update a project
    * Requirements: 3.2 - Allow updates if status is DRAFT, REJECTED, OPEN, or BIDDING_CLOSED
+   * Optimized: Combined validation queries using Promise.all when both category and region need validation
    */
   async update(
     id: string,
@@ -235,6 +252,11 @@ export class ProjectService {
   ): Promise<ProjectWithRelations> {
     const project = await this.prisma.project.findUnique({
       where: { id },
+      select: {
+        id: true,
+        ownerId: true,
+        status: true,
+      },
     });
 
     if (!project) {
@@ -256,26 +278,46 @@ export class ProjectService {
       );
     }
 
-    // Validate category if provided
+    // Optimized: Validate category and region in parallel if both are provided
+    const validationPromises: Promise<unknown>[] = [];
+    let categoryPromiseIndex = -1;
+    let regionPromiseIndex = -1;
+
     if (data.categoryId) {
-      const category = await this.prisma.serviceCategory.findUnique({
-        where: { id: data.categoryId },
-      });
-      if (!category) {
-        throw new ProjectError('CATEGORY_NOT_FOUND', 'Category not found', 400);
-      }
+      categoryPromiseIndex = validationPromises.length;
+      validationPromises.push(
+        this.prisma.serviceCategory.findUnique({
+          where: { id: data.categoryId },
+          select: { id: true },
+        })
+      );
     }
 
-    // Validate region if provided
     if (data.regionId) {
-      const region = await this.prisma.region.findUnique({
-        where: { id: data.regionId },
-      });
-      if (!region) {
-        throw new ProjectError('REGION_NOT_FOUND', 'Region not found', 400);
+      regionPromiseIndex = validationPromises.length;
+      validationPromises.push(
+        this.prisma.region.findUnique({
+          where: { id: data.regionId },
+          select: { id: true, isActive: true },
+        })
+      );
+    }
+
+    if (validationPromises.length > 0) {
+      const results = await Promise.all(validationPromises);
+
+      if (categoryPromiseIndex >= 0 && !results[categoryPromiseIndex]) {
+        throw new ProjectError('CATEGORY_NOT_FOUND', 'Category not found', 400);
       }
-      if (!region.isActive) {
-        throw new ProjectError('REGION_NOT_ACTIVE', 'Region is not active', 400);
+
+      if (regionPromiseIndex >= 0) {
+        const region = results[regionPromiseIndex] as { id: string; isActive: boolean } | null;
+        if (!region) {
+          throw new ProjectError('REGION_NOT_FOUND', 'Region not found', 400);
+        }
+        if (!region.isActive) {
+          throw new ProjectError('REGION_NOT_ACTIVE', 'Region is not active', 400);
+        }
       }
     }
 
@@ -305,11 +347,27 @@ export class ProjectService {
   /**
    * Submit project for approval
    * Requirements: 3.3, 3.4 - Change status to PENDING_APPROVAL and validate bidDeadline
+   * Optimized: Combined project and settings queries using Promise.all
    */
   async submit(id: string, ownerId: string, bidDeadline: Date): Promise<ProjectWithRelations> {
-    const project = await this.prisma.project.findUnique({
-      where: { id },
-    });
+    // Optimized: Fetch project and settings in parallel
+    const [project, settings] = await Promise.all([
+      this.prisma.project.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          ownerId: true,
+          status: true,
+        },
+      }),
+      this.prisma.biddingSettings.findUnique({
+        where: { id: 'default' },
+        select: {
+          minBidDuration: true,
+          maxBidDuration: true,
+        },
+      }),
+    ]);
 
     if (!project) {
       throw new ProjectError('PROJECT_NOT_FOUND', 'Project not found', 404);
@@ -330,10 +388,6 @@ export class ProjectService {
     }
 
     // Validate bidDeadline against BiddingSettings
-    const settings = await this.prisma.biddingSettings.findUnique({
-      where: { id: 'default' },
-    });
-
     const minDays = settings?.minBidDuration ?? 3;
     const maxDays = settings?.maxBidDuration ?? 30;
 
@@ -372,10 +426,16 @@ export class ProjectService {
   /**
    * Delete a project
    * Requirements: 3.5 - Allow deletion if status is DRAFT or REJECTED
+   * Optimized: Use select to limit returned fields for validation
    */
   async delete(id: string, ownerId: string): Promise<void> {
     const project = await this.prisma.project.findUnique({
       where: { id },
+      select: {
+        id: true,
+        ownerId: true,
+        status: true,
+      },
     });
 
     if (!project) {
@@ -677,10 +737,17 @@ export class ProjectService {
    * Approve a project
    * Requirements: 4.3, 4.5 - Change status to OPEN, set publishedAt, validate deadline
    * Requirements: 20.1, 20.2 - Schedule bid deadline and no-bids reminders
+   * Optimized: Use select to limit returned fields for validation
    */
   async approve(id: string, adminId: string, note?: string): Promise<ProjectWithRelations> {
     const project = await this.prisma.project.findUnique({
       where: { id },
+      select: {
+        id: true,
+        ownerId: true,
+        status: true,
+        bidDeadline: true,
+      },
     });
 
     if (!project) {
@@ -751,10 +818,15 @@ export class ProjectService {
   /**
    * Reject a project
    * Requirements: 4.4 - Change status to REJECTED and store rejection note
+   * Optimized: Use select to limit returned fields for validation
    */
   async reject(id: string, adminId: string, note: string): Promise<ProjectWithRelations> {
     const project = await this.prisma.project.findUnique({
       where: { id },
+      select: {
+        id: true,
+        status: true,
+      },
     });
 
     if (!project) {
@@ -801,6 +873,7 @@ export class ProjectService {
   /**
    * Transition project status
    * Requirements: 2.1-2.6 - Validate transition before applying
+   * Optimized: Use select to limit returned fields for validation
    */
   async transitionStatus(
     id: string,
@@ -809,6 +882,10 @@ export class ProjectService {
   ): Promise<ProjectWithRelations> {
     const project = await this.prisma.project.findUnique({
       where: { id },
+      select: {
+        id: true,
+        status: true,
+      },
     });
 
     if (!project) {

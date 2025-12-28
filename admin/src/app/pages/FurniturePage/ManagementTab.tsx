@@ -359,31 +359,7 @@ export function ManagementTab({
     } catch (error) { toast.error('Lỗi: ' + (error as Error).message); }
   };
 
-  // Image upload handlers
-  const handleDeveloperImageUpload = async (file: File) => {
-    try {
-      const result = await mediaApi.uploadFile(file);
-      setDeveloperForm((prev) => ({ ...prev, imageUrl: result.url }));
-      toast.success('Tải ảnh lên thành công');
-    } catch (error) { toast.error('Lỗi tải ảnh: ' + (error as Error).message); }
-  };
-
-  const handleProjectImageUpload = async (file: File) => {
-    try {
-      const result = await mediaApi.uploadFile(file);
-      setProjectForm((prev) => ({ ...prev, imageUrl: result.url }));
-      toast.success('Tải ảnh lên thành công');
-    } catch (error) { toast.error('Lỗi tải ảnh: ' + (error as Error).message); }
-  };
-
-  const handleBuildingImageUpload = async (file: File) => {
-    try {
-      const result = await mediaApi.uploadFile(file);
-      setBuildingForm((prev) => ({ ...prev, imageUrl: result.url }));
-      toast.success('Tải ảnh lên thành công');
-    } catch (error) { toast.error('Lỗi tải ảnh: ' + (error as Error).message); }
-  };
-
+  // Image upload handler for apartment type only
   const handleApartmentTypeImageUpload = async (file: File) => {
     try {
       const result = await mediaApi.uploadFile(file);
@@ -554,16 +530,13 @@ export function ManagementTab({
         developerForm={developerForm}
         setDeveloperForm={setDeveloperForm}
         onSaveDeveloper={handleSaveDeveloper}
-        onDeveloperImageUpload={handleDeveloperImageUpload}
         projectForm={projectForm}
         setProjectForm={setProjectForm}
         onSaveProject={handleSaveProject}
-        onProjectImageUpload={handleProjectImageUpload}
         developers={developers}
         buildingForm={buildingForm}
         setBuildingForm={setBuildingForm}
         onSaveBuilding={handleSaveBuilding}
-        onBuildingImageUpload={handleBuildingImageUpload}
         projects={projects}
         layoutForm={layoutForm}
         setLayoutForm={setLayoutForm}

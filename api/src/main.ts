@@ -14,9 +14,12 @@
 import { hostname } from 'os';
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { PrismaClient, User } from '@prisma/client';
+import { User } from '@prisma/client';
 import fs from 'fs';
 import path from 'path';
+
+// Prisma singleton import
+import { prisma } from './utils/prisma';
 
 // Middleware imports
 import { rateLimit } from './middleware';
@@ -111,7 +114,6 @@ console.log('🗄️ DATABASE_URL:', process.env.DATABASE_URL);
 // APP INITIALIZATION
 // ============================================
 
-const prisma = new PrismaClient();
 const app = new Hono<{ Variables: { user?: User; correlationId: string } }>();
 const authService = new AuthService(prisma);
 
@@ -296,8 +298,73 @@ app.onError(errorHandler());
 const port = parseInt(process.env.PORT || '4202', 10);
 console.log(`🚀 Starting server on port ${port}...`);
 
-serve({ fetch: app.fetch, port }, (info) => {
+const server = serve({ fetch: app.fetch, port }, (info) => {
   console.log(`✅ ANH THỢ XÂY API running at http://localhost:${info.port}`);
+});
+
+// ============================================
+// GRACEFUL SHUTDOWN HANDLER
+// ============================================
+
+/**
+ * Graceful shutdown handler
+ * Closes database connections and server on SIGTERM/SIGINT
+ * 
+ * **Feature: scalability-audit**
+ * **Requirements: 8.4**
+ */
+let isShuttingDown = false;
+
+async function gracefulShutdown(signal: string): Promise<void> {
+  // Prevent multiple shutdown attempts
+  if (isShuttingDown) {
+    console.log(`⚠️ Shutdown already in progress, ignoring ${signal}`);
+    return;
+  }
+  
+  isShuttingDown = true;
+  
+  console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+  
+  const shutdownStart = Date.now();
+  
+  try {
+    // Close HTTP server first (stop accepting new connections)
+    console.log('📡 Closing HTTP server...');
+    server.close();
+    console.log('✅ HTTP server closed');
+    
+    // Close Prisma database connection
+    console.log('🗄️ Closing database connection...');
+    await prisma.$disconnect();
+    console.log('✅ Database connection closed');
+    
+    const shutdownDuration = Date.now() - shutdownStart;
+    console.log(`✅ Graceful shutdown completed in ${shutdownDuration}ms`);
+    
+    process.exit(0);
+  } catch (error) {
+    const shutdownDuration = Date.now() - shutdownStart;
+    console.error(`❌ Error during shutdown after ${shutdownDuration}ms:`, error);
+    process.exit(1);
+  }
+}
+
+// Register signal handlers
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Handle uncaught exceptions gracefully
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  gracefulShutdown('uncaughtException');
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  // Don't exit on unhandled rejection, just log it
+  // This allows the server to continue running
 });
 
 export default app;

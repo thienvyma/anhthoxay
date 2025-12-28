@@ -7,10 +7,8 @@
  */
 
 import { google } from 'googleapis';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/prisma';
 import { encrypt, decrypt, isEncrypted } from '../utils/encryption';
-
-const prisma = new PrismaClient();
 
 // Google OAuth2 configuration
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
