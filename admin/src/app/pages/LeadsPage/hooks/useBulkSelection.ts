@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 export interface UseBulkSelectionReturn {
   selectedIds: Set<string>;
@@ -25,6 +25,9 @@ export function useBulkSelection<T extends { id: string }>(
 ): UseBulkSelectionReturn {
   const { clearOnChange = [] } = options;
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  
+  // Store previous values to detect actual changes
+  const prevValuesRef = useRef<string>('');
 
   const isAllSelected = items.length > 0 && selectedIds.size === items.length;
   const selectedCount = selectedIds.size;
@@ -53,9 +56,13 @@ export function useBulkSelection<T extends { id: string }>(
     setSelectedIds(new Set());
   }, []);
 
-  // Clear selection when dependencies change
+  // Clear selection when dependencies change (using JSON stringify for comparison)
   useEffect(() => {
-    setSelectedIds(new Set());
+    const currentValues = JSON.stringify(clearOnChange);
+    if (prevValuesRef.current && prevValuesRef.current !== currentValues) {
+      setSelectedIds(new Set());
+    }
+    prevValuesRef.current = currentValues;
   }, [clearOnChange]);
 
   return {

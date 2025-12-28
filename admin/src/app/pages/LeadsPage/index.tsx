@@ -28,15 +28,6 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-// Track previous value to detect changes
-function usePrevious<T>(value: T): T | undefined {
-  const ref = useRef<T | undefined>(undefined);
-  useEffect(() => {
-    ref.current = value;
-  });
-  return ref.current;
-}
-
 export function LeadsPage() {
   const { isMobile } = useResponsive();
   const [leads, setLeads] = useState<CustomerLead[]>([]);
@@ -56,18 +47,20 @@ export function LeadsPage() {
   const debouncedSearch = useDebounce(searchQuery, 500);
   const columns = useMemo(() => getLeadTableColumns(leadsWithFurnitureQuotes), [leadsWithFurnitureQuotes]);
   
-  // Use extracted hooks
+  // Use extracted hooks - memoize clearOnChange dependencies
+  const clearOnChangeDeps = useMemo(
+    () => [currentPage, filterStatus, filterSource, debouncedSearch],
+    [currentPage, filterStatus, filterSource, debouncedSearch]
+  );
   const { selectedIds, toggleSelectAll, toggleSelectOne, clearSelection, selectedCount } = useBulkSelection(
     leads,
-    { clearOnChange: [currentPage, filterStatus, filterSource, debouncedSearch] }
+    { clearOnChange: clearOnChangeDeps }
   );
   const { quotations: furnitureQuotations, loading: loadingQuotations } = useSelectedLeadQuotations(selectedLead?.id ?? null);
   
   // Track if we're currently fetching to prevent duplicate calls
   const isFetchingRef = useRef(false);
-  const prevSearch = usePrevious(debouncedSearch);
-  const prevStatus = usePrevious(filterStatus);
-  const prevSource = usePrevious(filterSource);
+  const isInitialMount = useRef(true);
 
   const fetchLeads = useCallback(async (resetPage = false) => {
     if (isFetchingRef.current) return;
@@ -96,21 +89,27 @@ export function LeadsPage() {
       setTotalPages(response.totalPages);
       setTotal(filterSource ? filteredData.length : response.total);
       
-      // Check which leads have furniture quotations
+      // Check which leads have furniture quotations - batch check instead of individual calls
       const leadsToCheck = filteredData.filter(l => l.source === 'FURNITURE_QUOTE');
       if (leadsToCheck.length > 0) {
         try {
           const { furnitureQuotationsApi } = await import('../../api/furniture');
-          const quotesResults = await Promise.allSettled(
-            leadsToCheck.map(lead => furnitureQuotationsApi.list(lead.id))
-          );
+          // Limit concurrent requests to avoid rate limiting
+          const batchSize = 5;
           const withQuotes = new Set<string>();
-          leadsToCheck.forEach((lead, idx) => {
-            const result = quotesResults[idx];
-            if (result.status === 'fulfilled' && result.value && result.value.length > 0) {
-              withQuotes.add(lead.id);
-            }
-          });
+          
+          for (let i = 0; i < leadsToCheck.length; i += batchSize) {
+            const batch = leadsToCheck.slice(i, i + batchSize);
+            const quotesResults = await Promise.allSettled(
+              batch.map(lead => furnitureQuotationsApi.list(lead.id))
+            );
+            batch.forEach((lead, idx) => {
+              const result = quotesResults[idx];
+              if (result.status === 'fulfilled' && result.value && result.value.length > 0) {
+                withQuotes.add(lead.id);
+              }
+            });
+          }
           setLeadsWithFurnitureQuotes(withQuotes);
         } catch {
           setLeadsWithFurnitureQuotes(new Set());
@@ -126,19 +125,25 @@ export function LeadsPage() {
     }
   }, [debouncedSearch, filterStatus, filterSource, currentPage]);
 
+  // Single useEffect for all fetch triggers
   useEffect(() => {
-    fetchLeads();
-  }, [currentPage]);
-
-  useEffect(() => {
-    const searchChanged = prevSearch !== undefined && prevSearch !== debouncedSearch;
-    const statusChanged = prevStatus !== undefined && prevStatus !== filterStatus;
-    const sourceChanged = prevSource !== undefined && prevSource !== filterSource;
-    
-    if (searchChanged || statusChanged || sourceChanged) {
-      fetchLeads(true);
+    // Skip initial mount - will be handled by the second effect
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      fetchLeads();
+      return;
     }
-  }, [debouncedSearch, filterStatus, filterSource, prevSearch, prevStatus, prevSource, fetchLeads]);
+    
+    // For subsequent changes, reset page if filters changed
+    fetchLeads(true);
+  }, [debouncedSearch, filterStatus, filterSource]);
+
+  // Separate effect for page changes only
+  useEffect(() => {
+    if (!isInitialMount.current) {
+      fetchLeads();
+    }
+  }, [currentPage]);
 
   const updateLeadStatus = async (id: string, status: string) => {
     try {

@@ -92,7 +92,6 @@ export type RouteType =
   | 'pages'
   | 'sections'
   | 'media'
-  | 'preview'
   | 'blog-manager'
   | 'settings'
   | 'leads'

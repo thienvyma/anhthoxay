@@ -4,6 +4,21 @@ Danh sách các file được tạo mới hoặc chỉnh sửa theo ngày, để
 
 ---
 
+## 2025-12-29
+
+### Task: Admin Improvements - Xóa Preview Page, Fix Navigation, Logo Management
+**🗑️ Deleted:**
+- `admin/src/app/pages/LivePreviewPage.tsx` - Xóa vì đã có preview trong Pages & Sections
+
+**✏️ Modified:**
+- `admin/src/app/App.tsx` - Xóa import LivePreviewPage, xóa route /preview, đổi AnimatePresence mode từ "popLayout" sang "wait" để fix navigation stuck
+- `admin/src/app/components/Layout.tsx` - Xóa menu item "Live Preview"
+- `admin/src/app/types/settings.ts` - Xóa 'preview' khỏi RouteType
+- `admin/src/app/pages/SettingsPage/types.ts` - Thêm LogoItem interface và LogoPosition type cho logo management
+- `admin/src/app/pages/SettingsPage/CompanyTab.tsx` - Thêm Logo Management section với upload/delete cho 5 vị trí (header, footer, pdf, quote, favicon)
+
+---
+
 ## 2025-12-28
 
 ### Task: Scalability Assessment & Cleanup

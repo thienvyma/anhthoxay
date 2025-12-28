@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { tokens, resolveMediaUrl, PORTAL_URL } from '@app/shared';
+import { tokens, resolveMediaUrl } from '@app/shared';
 import { useState, useRef, useEffect } from 'react';
 
 export interface HeaderLink {
@@ -167,7 +167,6 @@ function Dropdown({
 export function Header({ config, mobileMenuComponent }: HeaderProps) {
   const location = useLocation();
   const [ctaDropdownOpen, setCtaDropdownOpen] = useState(false);
-  const [authDropdownOpen, setAuthDropdownOpen] = useState(false);
 
   // Default config - ANH THỢ XÂY
   const defaultConfig: HeaderConfig = {
@@ -206,12 +205,6 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
     maxWidth: 1400,
     margin: '0 auto',
   };
-
-  // Auth dropdown items
-  const authItems = [
-    { label: 'Đăng nhập', href: `${PORTAL_URL}/auth/login`, icon: 'ri-login-box-line', external: true },
-    { label: 'Đăng ký', href: `${PORTAL_URL}/auth/register`, icon: 'ri-user-add-line', external: true },
-  ];
 
   return (
     <motion.header
@@ -444,50 +437,6 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
               )}
             </div>
           )}
-
-          {/* Auth Dropdown - Combined Login/Register */}
-          <div className="desktop-only">
-            <Dropdown
-              isOpen={authDropdownOpen}
-              onToggle={() => setAuthDropdownOpen(!authDropdownOpen)}
-              onClose={() => setAuthDropdownOpen(false)}
-              items={authItems}
-              trigger={
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  style={{
-                    color: tokens.color.text,
-                    padding: '8px 14px',
-                    borderRadius: tokens.radius.pill,
-                    fontSize: 13,
-                    fontWeight: 500,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    border: `1px solid ${tokens.color.border}`,
-                    background: 'rgba(255,255,255,0.05)',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = tokens.color.primary;
-                    e.currentTarget.style.color = tokens.color.primary;
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!authDropdownOpen) {
-                      e.currentTarget.style.borderColor = tokens.color.border;
-                      e.currentTarget.style.color = tokens.color.text;
-                    }
-                  }}
-                >
-                  <i className="ri-user-line" style={{ fontSize: 16 }} />
-                  Tài khoản
-                  <i className="ri-arrow-down-s-line" style={{ fontSize: 14 }} />
-                </motion.div>
-              }
-            />
-          </div>
 
           {/* Mobile Menu */}
           {showMobileMenu && mobileMenuComponent}

@@ -5,7 +5,7 @@ import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { settingsApi, mediaApi } from '../../api';
-import type { CompanySettings } from './types';
+import type { CompanySettings, LogoItem, LogoPosition } from './types';
 import { glass } from './types';
 
 interface CompanyTabProps {
@@ -18,6 +18,16 @@ interface CompanyTabProps {
 export function CompanyTab({ settings, onChange, onShowMessage, onError }: CompanyTabProps) {
   const [saving, setSaving] = useState(false);
   const [uploadingBg, setUploadingBg] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState<LogoPosition | null>(null);
+
+  // Logo position labels
+  const logoPositions: { value: LogoPosition; label: string; icon: string; description: string }[] = [
+    { value: 'header', label: 'Header', icon: 'ri-layout-top-line', description: 'Logo hiển thị trên header' },
+    { value: 'footer', label: 'Footer', icon: 'ri-layout-bottom-line', description: 'Logo hiển thị ở footer' },
+    { value: 'pdf', label: 'PDF / Báo giá', icon: 'ri-file-pdf-line', description: 'Logo trong file PDF xuất ra' },
+    { value: 'quote', label: 'Báo giá Web', icon: 'ri-price-tag-3-line', description: 'Logo trên trang báo giá' },
+    { value: 'favicon', label: 'Favicon', icon: 'ri-window-line', description: 'Icon tab trình duyệt (32x32px)' },
+  ];
 
   // Resolve background image URL
   const backgroundImageUrl = useMemo(() => {
@@ -77,6 +87,66 @@ export function CompanyTab({ settings, onChange, onShowMessage, onError }: Compa
       setSaving(false);
     }
   }, [settings, onChange, onShowMessage, onError]);
+
+  // Logo handlers
+  const handleLogoUpload = useCallback(async (file: File, position: LogoPosition) => {
+    try {
+      setUploadingLogo(position);
+      const result = await mediaApi.uploadFile(file);
+      
+      const currentLogos = settings.logos || [];
+      const existingIndex = currentLogos.findIndex(l => l.position === position);
+      
+      const newLogo: LogoItem = {
+        id: `logo-${position}-${Date.now()}`,
+        name: file.name,
+        url: result.url,
+        position,
+      };
+
+      let updatedLogos: LogoItem[];
+      if (existingIndex >= 0) {
+        updatedLogos = [...currentLogos];
+        updatedLogos[existingIndex] = newLogo;
+      } else {
+        updatedLogos = [...currentLogos, newLogo];
+      }
+
+      const updatedSettings = { ...settings, logos: updatedLogos };
+      onChange(updatedSettings);
+      await settingsApi.update('company', { value: updatedSettings });
+      
+      onShowMessage(`✅ Logo ${logoPositions.find(p => p.value === position)?.label} đã được cập nhật!`);
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      onError('Upload logo thất bại.');
+    } finally {
+      setUploadingLogo(null);
+    }
+  }, [settings, onChange, onShowMessage, onError, logoPositions]);
+
+  const handleRemoveLogo = useCallback(async (position: LogoPosition) => {
+    const posLabel = logoPositions.find(p => p.value === position)?.label;
+    if (!confirm(`Xóa logo ${posLabel}?`)) return;
+
+    try {
+      setSaving(true);
+      const updatedLogos = (settings.logos || []).filter(l => l.position !== position);
+      const updatedSettings = { ...settings, logos: updatedLogos };
+      onChange(updatedSettings);
+      await settingsApi.update('company', { value: updatedSettings });
+      onShowMessage(`✅ Đã xóa logo ${posLabel}!`);
+    } catch (error) {
+      console.error('Error removing logo:', error);
+      onError('Xóa logo thất bại.');
+    } finally {
+      setSaving(false);
+    }
+  }, [settings, onChange, onShowMessage, onError, logoPositions]);
+
+  const getLogoForPosition = useCallback((position: LogoPosition): LogoItem | undefined => {
+    return (settings.logos || []).find(l => l.position === position);
+  }, [settings.logos]);
 
   return (
     <motion.div
@@ -156,6 +226,150 @@ export function CompanyTab({ settings, onChange, onShowMessage, onError }: Compa
             )}
           </label>
         )}
+      </Card>
+
+      {/* Logo Management */}
+      <Card icon="ri-image-line" title="Quản Lý Logo" subtitle="Upload logo cho các vị trí khác nhau trên website">
+        <div style={{ 
+          padding: 12, 
+          background: 'rgba(245,211,147,0.1)', 
+          border: '1px solid rgba(245,211,147,0.2)',
+          borderRadius: tokens.radius.md,
+          marginBottom: 16,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: tokens.color.primary, fontSize: 13 }}>
+            <i className="ri-information-line" />
+            Upload logo riêng cho từng vị trí. Khuyến nghị: PNG trong suốt, tối thiểu 200px chiều rộng.
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+          {logoPositions.map((pos) => {
+            const logo = getLogoForPosition(pos.value);
+            const isUploading = uploadingLogo === pos.value;
+            
+            return (
+              <div
+                key={pos.value}
+                style={{
+                  padding: 16,
+                  background: glass.background,
+                  border: glass.border,
+                  borderRadius: tokens.radius.md,
+                }}
+              >
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 8, 
+                  marginBottom: 12,
+                  color: tokens.color.text,
+                  fontWeight: 500,
+                }}>
+                  <i className={pos.icon} style={{ fontSize: 18, color: tokens.color.primary }} />
+                  {pos.label}
+                </div>
+                <div style={{ fontSize: 12, color: tokens.color.muted, marginBottom: 12 }}>
+                  {pos.description}
+                </div>
+
+                {logo ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{
+                      padding: 12,
+                      background: 'rgba(255,255,255,0.03)',
+                      borderRadius: tokens.radius.sm,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minHeight: 80,
+                    }}>
+                      <img
+                        src={resolveMediaUrl(logo.url)}
+                        alt={`Logo ${pos.label}`}
+                        style={{ 
+                          maxWidth: '100%', 
+                          maxHeight: 60, 
+                          objectFit: 'contain',
+                        }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <label style={{ flex: 1 }}>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleLogoUpload(file, pos.value);
+                          }}
+                        />
+                        <Button 
+                          variant="secondary" 
+                          style={{ width: '100%', padding: '6px 12px', fontSize: 12 }}
+                          disabled={isUploading}
+                        >
+                          <i className={isUploading ? 'ri-loader-4-line' : 'ri-refresh-line'} />
+                          Thay đổi
+                        </Button>
+                      </label>
+                      <Button 
+                        variant="secondary" 
+                        onClick={() => handleRemoveLogo(pos.value)}
+                        disabled={saving}
+                        style={{ 
+                          padding: '6px 12px',
+                          fontSize: 12,
+                          color: tokens.color.error,
+                          borderColor: tokens.color.error,
+                        }}
+                      >
+                        <i className="ri-delete-bin-line" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <label style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 20,
+                    border: `2px dashed ${tokens.color.border}`,
+                    borderRadius: tokens.radius.sm,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    minHeight: 80,
+                  }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleLogoUpload(file, pos.value);
+                      }}
+                    />
+                    {isUploading ? (
+                      <motion.i
+                        className="ri-loader-4-line"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                        style={{ fontSize: 24, color: tokens.color.primary }}
+                      />
+                    ) : (
+                      <>
+                        <i className="ri-upload-cloud-line" style={{ fontSize: 20, color: tokens.color.muted, marginBottom: 4 }} />
+                        <span style={{ color: tokens.color.muted, fontSize: 11 }}>Upload logo</span>
+                      </>
+                    )}
+                  </label>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </Card>
 
       {/* Company Info */}

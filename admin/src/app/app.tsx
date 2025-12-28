@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ErrorBoundary } from '@app/ui';
 import { LoginPage } from './components/LoginPage';
 import { Layout } from './components/Layout';
@@ -10,7 +10,7 @@ import { ContractorsPage } from './pages/ContractorsPage';
 import { RegionsPage } from './pages/RegionsPage';
 import { SectionsPage } from './pages/SectionsPage';
 import { MediaPage } from './pages/MediaPage';
-import { LivePreviewPage } from './pages/LivePreviewPage';
+
 import { BlogManagerPage } from './pages/BlogManagerPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { LeadsPage } from './pages/LeadsPage';
@@ -134,47 +134,36 @@ function AppContent() {
       userEmail={user.email}
     >
       <ErrorBoundary>
-        <AnimatePresence mode="popLayout" initial={false}>
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-          >
-            <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/login" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              {/* Unified Pages & Sections route */}
-              <Route path="/pages/:slug" element={<SectionsPageWrapper />} />
-              <Route path="/pages" element={<SectionsPageWrapper />} />
-              {/* Legacy routes for backward compatibility */}
-              <Route path="/sections/:slug" element={<SectionsPageWrapper />} />
-              <Route path="/sections" element={<Navigate to="/pages/home" replace />} />
-              <Route path="/leads" element={<LeadsPage />} />
-              <Route path="/contractors" element={<ContractorsPage />} />
-              <Route path="/regions" element={<RegionsPage />} />
-              <Route path="/projects" element={<ProjectsPage />} />
-              <Route path="/bids" element={<BidsPage />} />
-              <Route path="/matches" element={<MatchesPage />} />
-              <Route path="/fees" element={<FeesPage />} />
-              <Route path="/disputes" element={<DisputesPage />} />
-              <Route path="/notification-templates" element={<NotificationTemplatesPage />} />
-              <Route path="/chat" element={<ChatPage />} />
-              <Route path="/bidding" element={<BiddingManagementPage />} />
-              <Route path="/bidding-settings" element={<BiddingSettingsPage />} />
-              <Route path="/furniture" element={<FurniturePage />} />
-              <Route path="/pricing-config" element={<PricingConfigPage />} />
-              <Route path="/media" element={<MediaPage />} />
-              <Route path="/preview" element={<LivePreviewPage />} />
-              <Route path="/blog-manager" element={<BlogManagerPage />} />
-              <Route path="/users" element={<UsersPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Routes>
-          </motion.div>
-        </AnimatePresence>
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          {/* Unified Pages & Sections route */}
+          <Route path="/pages/:slug" element={<SectionsPageWrapper />} />
+          <Route path="/pages" element={<SectionsPageWrapper />} />
+          {/* Legacy routes for backward compatibility */}
+          <Route path="/sections/:slug" element={<SectionsPageWrapper />} />
+          <Route path="/sections" element={<Navigate to="/pages/home" replace />} />
+          <Route path="/leads" element={<LeadsPage />} />
+          <Route path="/contractors" element={<ContractorsPage />} />
+          <Route path="/regions" element={<RegionsPage />} />
+          <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/bids" element={<BidsPage />} />
+          <Route path="/matches" element={<MatchesPage />} />
+          <Route path="/fees" element={<FeesPage />} />
+          <Route path="/disputes" element={<DisputesPage />} />
+          <Route path="/notification-templates" element={<NotificationTemplatesPage />} />
+          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/bidding" element={<BiddingManagementPage />} />
+          <Route path="/bidding-settings" element={<BiddingSettingsPage />} />
+          <Route path="/furniture" element={<FurniturePage />} />
+          <Route path="/pricing-config" element={<PricingConfigPage />} />
+          <Route path="/media" element={<MediaPage />} />
+          <Route path="/blog-manager" element={<BlogManagerPage />} />
+          <Route path="/users" element={<UsersPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
       </ErrorBoundary>
     </Layout>
   );

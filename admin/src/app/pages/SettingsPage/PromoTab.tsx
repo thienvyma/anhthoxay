@@ -5,7 +5,7 @@ import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { settingsApi, mediaApi } from '../../api';
-import type { PromoSettings } from './types';
+import type { PromoSettings, PopupMedia } from './types';
 import { glass } from './types';
 
 interface PromoTabProps {
@@ -15,9 +15,13 @@ interface PromoTabProps {
   onError: (message: string) => void;
 }
 
+type DeviceType = 'desktop' | 'mobile';
+type MediaType = 'image' | 'video';
+
 export function PromoTab({ settings, onChange, onShowMessage, onError }: PromoTabProps) {
   const [saving, setSaving] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingDesktop, setUploadingDesktop] = useState(false);
+  const [uploadingMobile, setUploadingMobile] = useState(false);
 
   const handleSave = useCallback(async () => {
     try {
@@ -32,23 +36,59 @@ export function PromoTab({ settings, onChange, onShowMessage, onError }: PromoTa
     }
   }, [settings, onShowMessage, onError]);
 
-  const handleImageUpload = useCallback(async (file: File) => {
+  const handleMediaUpload = useCallback(async (file: File, device: DeviceType) => {
+    const setUploading = device === 'desktop' ? setUploadingDesktop : setUploadingMobile;
     try {
-      setUploadingImage(true);
+      setUploading(true);
       const result = await mediaApi.uploadFile(file);
-
+      const isVideo = file.type.startsWith('video/');
+      
+      const mediaKey = device === 'desktop' ? 'desktopMedia' : 'mobileMedia';
       onChange({
         ...settings,
-        popup: { ...settings.popup, imageUrl: `${API_URL}${result.url}` },
+        popup: {
+          ...settings.popup,
+          [mediaKey]: {
+            type: isVideo ? 'video' : 'image',
+            url: `${API_URL}${result.url}`,
+            isExternal: false,
+          } as PopupMedia,
+        },
       });
-      onShowMessage('✅ Ảnh đã được upload!');
+      onShowMessage(`✅ ${isVideo ? 'Video' : 'Ảnh'} đã được upload!`);
     } catch (error) {
-      console.error('Error uploading image:', error);
-      onError('Upload ảnh thất bại.');
+      console.error('Error uploading media:', error);
+      onError('Upload thất bại.');
     } finally {
-      setUploadingImage(false);
+      setUploading(false);
     }
   }, [settings, onChange, onShowMessage, onError]);
+
+  const handleExternalUrl = useCallback((url: string, device: DeviceType, type: MediaType) => {
+    const mediaKey = device === 'desktop' ? 'desktopMedia' : 'mobileMedia';
+    onChange({
+      ...settings,
+      popup: {
+        ...settings.popup,
+        [mediaKey]: {
+          type,
+          url,
+          isExternal: true,
+        } as PopupMedia,
+      },
+    });
+  }, [settings, onChange]);
+
+  const clearMedia = useCallback((device: DeviceType) => {
+    const mediaKey = device === 'desktop' ? 'desktopMedia' : 'mobileMedia';
+    onChange({
+      ...settings,
+      popup: {
+        ...settings.popup,
+        [mediaKey]: undefined,
+      },
+    });
+  }, [settings, onChange]);
 
   const updateAnnouncement = useCallback((field: string, value: string | boolean) => {
     onChange({
@@ -75,7 +115,7 @@ export function PromoTab({ settings, onChange, onShowMessage, onError }: PromoTa
       <Card 
         icon="ri-window-line" 
         title="Popup Quảng Cáo (Landing)" 
-        subtitle="Cửa sổ popup hiển thị trên trang Landing"
+        subtitle="Cửa sổ popup hiển thị trên trang Landing - Hỗ trợ ảnh/video riêng cho PC và Mobile"
       >
         {/* Toggle */}
         <div style={{
@@ -128,56 +168,58 @@ export function PromoTab({ settings, onChange, onShowMessage, onError }: PromoTa
           />
         </div>
 
-        {/* Image Upload */}
-        <div style={{ marginTop: 16 }}>
-          <label style={{ display: 'block', marginBottom: 8, color: tokens.color.text, fontWeight: 500 }}>
-            Hình ảnh (tùy chọn)
-          </label>
-          {settings.popup.imageUrl ? (
-            <div style={{ position: 'relative', borderRadius: tokens.radius.md, overflow: 'hidden' }}>
-              <img
-                src={settings.popup.imageUrl}
-                alt="Popup banner"
-                style={{ width: '100%', maxHeight: 200, objectFit: 'cover' }}
-              />
-              <Button
-                variant="secondary"
-                onClick={() => updatePopup('imageUrl', '')}
-                style={{ position: 'absolute', top: 8, right: 8 }}
-              >
-                <i className="ri-delete-bin-line" />
-              </Button>
+        {/* Media Upload - Desktop & Mobile */}
+        <div style={{ marginTop: 24 }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 8, 
+            marginBottom: 16,
+            color: tokens.color.text,
+            fontWeight: 500,
+          }}>
+            <i className="ri-image-line" />
+            Media (Ảnh/Video)
+          </div>
+          
+          <div style={{ 
+            padding: 12, 
+            background: 'rgba(245,211,147,0.1)', 
+            border: '1px solid rgba(245,211,147,0.2)',
+            borderRadius: tokens.radius.md,
+            marginBottom: 16,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: tokens.color.primary, fontSize: 13 }}>
+              <i className="ri-information-line" />
+              Tỉ lệ khuyến nghị: PC (16:9 ngang), Mobile (9:16 dọc). Hỗ trợ ảnh và video.
             </div>
-          ) : (
-            <label style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 32,
-              border: `2px dashed ${tokens.color.border}`,
-              borderRadius: tokens.radius.md,
-              cursor: 'pointer',
-            }}>
-              <input
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImageUpload(file);
-                }}
-              />
-              {uploadingImage ? (
-                <i className="ri-loader-4-line" style={{ fontSize: 24, color: tokens.color.primary }} />
-              ) : (
-                <>
-                  <i className="ri-image-add-line" style={{ fontSize: 24, color: tokens.color.muted, marginBottom: 8 }} />
-                  <span style={{ color: tokens.color.muted, fontSize: 13 }}>Click để upload ảnh banner</span>
-                </>
-              )}
-            </label>
-          )}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            {/* Desktop Media */}
+            <MediaUploader
+              label="PC / Desktop"
+              icon="ri-computer-line"
+              media={settings.popup.desktopMedia}
+              uploading={uploadingDesktop}
+              onUpload={(file) => handleMediaUpload(file, 'desktop')}
+              onExternalUrl={(url, type) => handleExternalUrl(url, 'desktop', type)}
+              onClear={() => clearMedia('desktop')}
+              aspectHint="16:9 (ngang)"
+            />
+
+            {/* Mobile Media */}
+            <MediaUploader
+              label="Mobile"
+              icon="ri-smartphone-line"
+              media={settings.popup.mobileMedia}
+              uploading={uploadingMobile}
+              onUpload={(file) => handleMediaUpload(file, 'mobile')}
+              onExternalUrl={(url, type) => handleExternalUrl(url, 'mobile', type)}
+              onClear={() => clearMedia('mobile')}
+              aspectHint="9:16 (dọc)"
+            />
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
@@ -246,7 +288,7 @@ export function PromoTab({ settings, onChange, onShowMessage, onError }: PromoTa
         </Button>
       </div>
 
-      {/* Announcement - For User Page (Future) - Moved to bottom */}
+      {/* Announcement - For User Page (Future) */}
       <Card 
         icon="ri-notification-badge-line" 
         title="Thông Báo (Trang User)" 
@@ -267,7 +309,6 @@ export function PromoTab({ settings, onChange, onShowMessage, onError }: PromoTa
           </div>
         </div>
 
-        {/* Toggle */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -403,5 +444,191 @@ function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: b
         }}
       />
     </motion.div>
+  );
+}
+
+// Media Uploader Component
+interface MediaUploaderProps {
+  label: string;
+  icon: string;
+  media?: PopupMedia;
+  uploading: boolean;
+  onUpload: (file: File) => void;
+  onExternalUrl: (url: string, type: MediaType) => void;
+  onClear: () => void;
+  aspectHint: string;
+}
+
+function MediaUploader({ label, icon, media, uploading, onUpload, onExternalUrl, onClear, aspectHint }: MediaUploaderProps) {
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [urlInput, setUrlInput] = useState('');
+  const [urlType, setUrlType] = useState<MediaType>('video');
+
+  const handleUrlSubmit = () => {
+    if (urlInput.trim()) {
+      onExternalUrl(urlInput.trim(), urlType);
+      setUrlInput('');
+      setShowUrlInput(false);
+    }
+  };
+
+  return (
+    <div style={{
+      padding: 16,
+      background: glass.background,
+      border: glass.border,
+      borderRadius: tokens.radius.md,
+    }}>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 8, 
+        marginBottom: 12,
+        color: tokens.color.text,
+        fontWeight: 500,
+      }}>
+        <i className={icon} />
+        {label}
+        <span style={{ fontSize: 11, color: tokens.color.muted, fontWeight: 400 }}>({aspectHint})</span>
+      </div>
+
+      {media?.url ? (
+        <div style={{ position: 'relative' }}>
+          {media.type === 'video' ? (
+            <video
+              src={media.url}
+              controls
+              style={{ width: '100%', maxHeight: 150, borderRadius: tokens.radius.sm, background: '#000' }}
+            />
+          ) : (
+            <img
+              src={media.url}
+              alt={label}
+              style={{ width: '100%', maxHeight: 150, objectFit: 'cover', borderRadius: tokens.radius.sm }}
+            />
+          )}
+          <div style={{ 
+            position: 'absolute', 
+            top: 8, 
+            right: 8, 
+            display: 'flex', 
+            gap: 4,
+          }}>
+            <span style={{
+              padding: '2px 8px',
+              background: 'rgba(0,0,0,0.7)',
+              borderRadius: tokens.radius.sm,
+              color: '#fff',
+              fontSize: 10,
+              textTransform: 'uppercase',
+            }}>
+              {media.type}
+            </span>
+            <Button variant="secondary" onClick={onClear} style={{ padding: 4, minWidth: 28 }}>
+              <i className="ri-delete-bin-line" style={{ fontSize: 14 }} />
+            </Button>
+          </div>
+        </div>
+      ) : showUrlInput ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <select
+              value={urlType}
+              onChange={(e) => setUrlType(e.target.value as MediaType)}
+              style={{
+                padding: '8px 12px',
+                background: tokens.color.background,
+                border: `1px solid ${tokens.color.border}`,
+                borderRadius: tokens.radius.sm,
+                color: tokens.color.text,
+                fontSize: 13,
+              }}
+            >
+              <option value="video">Video</option>
+              <option value="image">Ảnh</option>
+            </select>
+            <input
+              type="text"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder="Nhập URL..."
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                background: tokens.color.background,
+                border: `1px solid ${tokens.color.border}`,
+                borderRadius: tokens.radius.sm,
+                color: tokens.color.text,
+                fontSize: 13,
+              }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button variant="primary" onClick={handleUrlSubmit} style={{ flex: 1, padding: '6px 12px' }}>
+              <i className="ri-check-line" /> Xác nhận
+            </Button>
+            <Button variant="secondary" onClick={() => setShowUrlInput(false)} style={{ padding: '6px 12px' }}>
+              Hủy
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <label style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+            border: `2px dashed ${tokens.color.border}`,
+            borderRadius: tokens.radius.md,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}>
+            <input
+              type="file"
+              accept="image/*,video/*"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) onUpload(file);
+              }}
+            />
+            {uploading ? (
+              <motion.i
+                className="ri-loader-4-line"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                style={{ fontSize: 24, color: tokens.color.primary }}
+              />
+            ) : (
+              <>
+                <i className="ri-upload-cloud-line" style={{ fontSize: 24, color: tokens.color.muted, marginBottom: 4 }} />
+                <span style={{ color: tokens.color.muted, fontSize: 12 }}>Upload ảnh/video</span>
+              </>
+            )}
+          </label>
+          <button
+            type="button"
+            onClick={() => setShowUrlInput(true)}
+            style={{
+              padding: '8px 12px',
+              background: 'transparent',
+              border: `1px solid ${tokens.color.border}`,
+              borderRadius: tokens.radius.sm,
+              color: tokens.color.muted,
+              fontSize: 12,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+            }}
+          >
+            <i className="ri-link" /> Hoặc nhập URL
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

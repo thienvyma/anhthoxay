@@ -4,7 +4,7 @@
  * Requirements: 5.1, 5.2
  */
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { tokens } from '@app/shared';
 import { useToast } from '../../components/Toast';
@@ -31,7 +31,7 @@ export function SettingsPage() {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<SettingsTab>('account');
   const [isReady, setIsReady] = useState(false);
-  const mountedRef = useRef(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // State
   const [companySettings, setCompanySettings] = useState<CompanySettings>(defaultCompanySettings);
@@ -39,48 +39,49 @@ export function SettingsPage() {
   const [headerConfig, setHeaderConfig] = useState<HeaderConfig>(defaultHeaderConfig);
   const [footerConfig, setFooterConfig] = useState<FooterConfig>(defaultFooterConfig);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
   // Fetch settings on mount - using settingsApi
   useEffect(() => {
+    let isCancelled = false;
+    
     const fetchSettings = async () => {
+      setIsReady(false);
+      setFetchError(null);
+      
       try {
         const [companyData, promoData] = await Promise.all([
           settingsApi.get('company').catch(() => null),
           settingsApi.get('promo').catch(() => null),
         ]);
 
-        if (!mountedRef.current) return;
+        if (isCancelled) return;
 
         // Company settings
         if (companyData?.value && typeof companyData.value === 'object') {
           setCompanySettings((prev) => ({ ...prev, ...(companyData.value as CompanySettings) }));
-        } else {
-          await settingsApi.update('company', { value: defaultCompanySettings }).catch((e) => console.warn('Failed to save default company settings:', e));
         }
 
         // Promo settings
         if (promoData?.value && typeof promoData.value === 'object') {
           setPromoSettings((prev) => ({ ...prev, ...(promoData.value as PromoSettings) }));
-        } else {
-          await settingsApi.update('promo', { value: defaultPromoSettings }).catch((e) => console.warn('Failed to save default promo settings:', e));
+        }
+        
+        if (!isCancelled) {
+          setIsReady(true);
         }
       } catch (error) {
         console.error('Failed to fetch settings:', error);
-      } finally {
-        if (mountedRef.current) {
-          setIsReady(true);
+        if (!isCancelled) {
+          setFetchError('Không thể tải cài đặt. Vui lòng thử lại.');
+          setIsReady(true); // Still show UI with defaults
         }
       }
     };
 
     fetchSettings();
+    
+    return () => {
+      isCancelled = true;
+    };
   }, []);
 
   // Stable callbacks using refs
@@ -156,6 +157,13 @@ export function SettingsPage() {
     ],
     [companySettings, promoSettings, headerConfig, footerConfig, showSavedMessage, handleError]
   );
+
+  // Show error toast when fetch fails
+  useEffect(() => {
+    if (fetchError) {
+      toast.error(fetchError);
+    }
+  }, [fetchError, toast]);
 
   // Show loading state until ready
   if (!isReady) {

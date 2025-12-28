@@ -9,7 +9,19 @@ export interface CompanySettings {
   website: string;
   workingHours: string;
   backgroundImage?: string;
+  // Logo management
+  logos?: LogoItem[];
 }
+
+// Logo item for different positions
+export interface LogoItem {
+  id: string;
+  name: string;
+  url: string;
+  position: LogoPosition;
+}
+
+export type LogoPosition = 'header' | 'footer' | 'pdf' | 'quote' | 'favicon';
 
 // Announcement - Thông báo cho trang User (sẽ phát triển sau)
 export interface AnnouncementSettings {
@@ -21,12 +33,24 @@ export interface AnnouncementSettings {
   textColor: string;
 }
 
+// Media item for popup (image or video)
+export interface PopupMedia {
+  type: 'image' | 'video';
+  url: string;
+  // For video: can be uploaded file URL or external link (YouTube, etc.)
+  isExternal?: boolean;
+}
+
 // Popup Banner - Cửa sổ popup quảng cáo trên Landing
 export interface PopupSettings {
   enabled: boolean;
   title: string;
   content: string;
+  // Legacy field - kept for backward compatibility
   imageUrl?: string;
+  // New: Separate media for desktop and mobile
+  desktopMedia?: PopupMedia;
+  mobileMedia?: PopupMedia;
   buttonText?: string;
   buttonLink?: string;
   showOnce: boolean; // Chỉ hiển thị 1 lần/session
@@ -110,6 +134,8 @@ export const defaultPopupSettings: PopupSettings = {
   title: 'Ưu đãi đặc biệt!',
   content: 'Đăng ký tư vấn ngay hôm nay để nhận ưu đãi giảm 15% cho dịch vụ cải tạo nhà.',
   imageUrl: '',
+  desktopMedia: undefined,
+  mobileMedia: undefined,
   buttonText: 'Nhận ưu đãi',
   buttonLink: '/bao-gia',
   showOnce: true,
