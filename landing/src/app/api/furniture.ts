@@ -1,6 +1,6 @@
 /**
  * Furniture Quotation API Client for Landing Page
- * Feature: furniture-quotation
+ * Feature: furniture-quotation, furniture-product-restructure
  * Requirements: 6.1, 6.2, 6.3, 6.4, 6.6, 7.2, 7.3
  */
 
@@ -68,11 +68,95 @@ export interface FurnitureCategory {
   updatedAt: string;
 }
 
+// ============================================
+// NEW PRODUCT BASE TYPES (furniture-product-restructure)
+// ============================================
+
+/**
+ * Variant info for landing page (minimal)
+ * Uses new FurnitureProductVariant schema
+ * _Requirements: 6.4, 7.2_
+ */
+export interface ProductVariantForLanding {
+  id: string;
+  materialId: string;
+  materialName: string;
+  calculatedPrice: number;
+  imageUrl: string | null;
+}
+
+/**
+ * Product base group for landing page (NEW schema)
+ * Uses new FurnitureProductBase schema
+ * _Requirements: 6.1, 6.2, 9.1_
+ */
+export interface ProductBaseGroup {
+  id: string;
+  name: string;
+  categoryId: string;
+  categoryName: string;
+  description: string | null;
+  imageUrl: string | null;
+  allowFitIn: boolean;
+  variants: ProductVariantForLanding[];
+  priceRange: { min: number; max: number } | null;
+  variantCount: number;
+}
+
+// ============================================
+// LEGACY PRODUCT TYPES (for backward compatibility)
+// ============================================
+
+/**
+ * Product variant for grouped display (LEGACY)
+ * @deprecated Use ProductVariantForLanding instead
+ * _Requirements: 2.3, 3.5_
+ */
+export interface ProductVariant {
+  id: string;
+  material: string;
+  calculatedPrice: number;
+  allowFitIn: boolean;
+  imageUrl: string | null;
+  description: string | null;
+  categoryId: string;
+  categoryName: string;
+  order: number;
+}
+
+/**
+ * Products grouped by name with material variants (LEGACY)
+ * @deprecated Use ProductBaseGroup instead
+ * _Requirements: 2.3_
+ */
+export interface ProductGroup {
+  name: string;
+  variants: ProductVariant[];
+}
+
+/**
+ * Query parameters for filtering products
+ * _Requirements: 1.4, 10.1_
+ */
+export interface GetProductsQuery {
+  categoryId?: string;
+  projectName?: string;
+  buildingCode?: string;
+  apartmentType?: string;
+}
+
+/**
+ * Legacy FurnitureProduct interface (for backward compatibility)
+ * @deprecated Use ProductGroup and ProductVariant instead
+ */
 export interface FurnitureProduct {
   id: string;
   name: string;
   categoryId: string;
   price: number;
+  material?: string;              // NEW: Material variant
+  calculatedPrice?: number;       // NEW: Pre-calculated price
+  allowFitIn?: boolean;           // NEW: Allow Fit-in option
   imageUrl: string | null;
   description: string | null;
   dimensions: string | null;
@@ -86,6 +170,7 @@ export interface FurnitureProduct {
 export interface FurnitureFee {
   id: string;
   name: string;
+  code?: string;                  // NEW: Unique code (e.g., "FIT_IN")
   type: 'FIXED' | 'PERCENTAGE';
   value: number;
   description: string | null;
@@ -95,11 +180,20 @@ export interface FurnitureFee {
   updatedAt: string;
 }
 
+/**
+ * Quotation item for calculation
+ * 
+ * **Feature: furniture-product-mapping**
+ * **Validates: Requirements 4.4, 4.5, 8.3**
+ */
 export interface QuotationItem {
   productId: string;
   name: string;
-  price: number;
+  material?: string;              // NEW: Material variant
+  price: number;                  // Base price (calculatedPrice)
   quantity: number;
+  fitInSelected?: boolean;        // NEW: Whether Fit-in is selected
+  fitInFee?: number;              // NEW: Fit-in fee amount (if selected)
 }
 
 export interface FeeBreakdown {
@@ -239,9 +333,55 @@ export const furnitureAPI = {
   // Furniture catalog
   getCategories: () => apiFetch<FurnitureCategory[]>('/api/furniture/categories'),
 
-  getProducts: (categoryId?: string) => {
+  /**
+   * Get products grouped by ProductBase with nested variants (NEW schema)
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 6.1, 9.1**
+   * 
+   * @param query - Optional query parameters for filtering by apartment mapping
+   * @returns Products grouped by ProductBase with nested variants
+   */
+  getProductsGrouped: (query?: GetProductsQuery) => {
+    const params = new URLSearchParams();
+    if (query?.categoryId) params.append('categoryId', query.categoryId);
+    if (query?.projectName) params.append('projectName', query.projectName);
+    if (query?.buildingCode) params.append('buildingCode', query.buildingCode);
+    if (query?.apartmentType) params.append('apartmentType', query.apartmentType);
+    const queryString = params.toString();
+    const url = `/api/furniture/products/grouped${queryString ? `?${queryString}` : ''}`;
+    return apiFetch<{ products: ProductBaseGroup[] }>(url);
+  },
+
+  /**
+   * Get products grouped by name with material variants (LEGACY schema)
+   * 
+   * @deprecated Use getProductsGrouped() instead which uses new ProductBase schema
+   * 
+   * **Feature: furniture-product-mapping**
+   * **Validates: Requirements 7.1, 10.1, 2.3**
+   * 
+   * @param query - Optional query parameters for filtering by apartment mapping
+   * @returns Products grouped by name with material variants (legacy format)
+   */
+  getProducts: (query?: GetProductsQuery) => {
+    const params = new URLSearchParams();
+    if (query?.categoryId) params.append('categoryId', query.categoryId);
+    if (query?.projectName) params.append('projectName', query.projectName);
+    if (query?.buildingCode) params.append('buildingCode', query.buildingCode);
+    if (query?.apartmentType) params.append('apartmentType', query.apartmentType);
+    const queryString = params.toString();
+    const url = `/api/furniture/products${queryString ? `?${queryString}` : ''}`;
+    return apiFetch<{ products: ProductGroup[] }>(url);
+  },
+
+  /**
+   * Get flat list of products (for backward compatibility)
+   * @deprecated Use getProducts() instead which returns grouped products
+   */
+  getProductsFlat: (categoryId?: string) => {
     const query = categoryId ? `?categoryId=${categoryId}` : '';
-    return apiFetch<FurnitureProduct[]>(`/api/furniture/products${query}`);
+    return apiFetch<FurnitureProduct[]>(`/api/furniture/products/flat${query}`);
   },
 
   getFees: () => {

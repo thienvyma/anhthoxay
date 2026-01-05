@@ -1,3 +1,4 @@
+import { tokens } from '../../theme';
 import type { SectionKind } from '../types';
 
 interface Template {
@@ -169,13 +170,148 @@ Email: contact@anhthoxay.com`,
   ],
 };
 
+// Styles using tokens
+const styles = {
+  overlay: {
+    position: 'fixed' as const,
+    inset: 0,
+    background: tokens.color.overlay,
+    backdropFilter: 'blur(4px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: tokens.zIndex.modal,
+    padding: tokens.space.md,
+  },
+  modal: {
+    background: tokens.color.surface,
+    borderRadius: tokens.radius.lg,
+    border: `1px solid ${tokens.color.border}`,
+    width: '100%',
+    maxWidth: '64rem',
+    maxHeight: '90vh',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column' as const,
+  },
+  modalSmall: {
+    background: tokens.color.surface,
+    borderRadius: tokens.radius.lg,
+    border: `1px solid ${tokens.color.border}`,
+    padding: tokens.space.xl,
+    maxWidth: '28rem',
+  },
+  header: {
+    padding: tokens.space.lg,
+    borderBottom: `1px solid ${tokens.color.border}`,
+  },
+  headerContent: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  title: {
+    fontSize: tokens.font.size.xl,
+    fontWeight: tokens.font.weight.semibold,
+    color: tokens.color.text,
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+  },
+  subtitle: {
+    fontSize: tokens.font.size.sm,
+    color: tokens.color.textMuted,
+    marginTop: tokens.space.xs,
+  },
+  closeButton: {
+    background: 'transparent',
+    border: 'none',
+    color: tokens.color.textMuted,
+    cursor: 'pointer',
+    padding: tokens.space.xs,
+    borderRadius: tokens.radius.sm,
+    transition: 'color 0.2s',
+  },
+  content: {
+    flex: 1,
+    overflowY: 'auto' as const,
+    padding: tokens.space.lg,
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: tokens.space.md,
+  },
+  templateCard: {
+    position: 'relative' as const,
+    background: tokens.color.surfaceAlt,
+    border: `1px solid ${tokens.color.border}`,
+    borderRadius: tokens.radius.md,
+    padding: tokens.space.lg,
+    textAlign: 'left' as const,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  templateCardHover: {
+    borderColor: tokens.color.info,
+    boxShadow: `0 4px 12px rgba(59, 130, 246, 0.15)`,
+  },
+  templateIcon: {
+    width: '40px',
+    height: '40px',
+    borderRadius: tokens.radius.md,
+    background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  templateTitle: {
+    color: tokens.color.text,
+    fontWeight: tokens.font.weight.semibold,
+    marginBottom: tokens.space.xs,
+    transition: 'color 0.2s',
+  },
+  templateDescription: {
+    fontSize: tokens.font.size.sm,
+    color: tokens.color.textMuted,
+  },
+  templateHint: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.space.sm,
+    fontSize: tokens.font.size.xs,
+    color: tokens.color.muted,
+  },
+  footer: {
+    padding: tokens.space.md,
+    borderTop: `1px solid ${tokens.color.border}`,
+    background: tokens.color.surfaceAlt,
+  },
+  cancelButton: {
+    width: '100%',
+    padding: `${tokens.space.sm} ${tokens.space.md}`,
+    background: tokens.color.surfaceHover,
+    border: 'none',
+    borderRadius: tokens.radius.md,
+    color: tokens.color.text,
+    cursor: 'pointer',
+    transition: 'background 0.2s',
+    fontWeight: tokens.font.weight.medium,
+  },
+  emptyText: {
+    color: tokens.color.textMuted,
+    marginBottom: tokens.space.md,
+  },
+};
+
 export function TemplatePicker({ kind, onSelect, onClose }: TemplatePickerProps) {
   const templates = TEMPLATES[kind] || [];
 
   if (templates.length === 0) {
     return (
       <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        style={styles.overlay}
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             onClose();
@@ -183,13 +319,19 @@ export function TemplatePicker({ kind, onSelect, onClose }: TemplatePickerProps)
         }}
       >
         <div 
-          className="bg-gray-800 rounded-xl border border-gray-700 p-8 max-w-md"
+          style={styles.modalSmall}
           onClick={(e) => e.stopPropagation()}
         >
-          <p className="text-gray-400 mb-4">Chưa có template cho loại section này.</p>
+          <p style={styles.emptyText}>Chưa có template cho loại section này.</p>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+            style={styles.cancelButton}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = tokens.color.border;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = tokens.color.surfaceHover;
+            }}
           >
             Đóng
           </button>
@@ -200,7 +342,7 @@ export function TemplatePicker({ kind, onSelect, onClose }: TemplatePickerProps)
 
   return (
     <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      style={styles.overlay}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -208,33 +350,39 @@ export function TemplatePicker({ kind, onSelect, onClose }: TemplatePickerProps)
       }}
     >
       <div 
-        className="bg-gray-800 rounded-xl border border-gray-700 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+        style={styles.modal}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6 border-b border-gray-700">
-          <div className="flex items-center justify-between">
+        <div style={styles.header}>
+          <div style={styles.headerContent}>
             <div>
-              <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-                <i className="ri-sparkling-line" style={{ fontSize: '20px', color: '#f5d393' }} />
+              <h2 style={styles.title}>
+                <i className="ri-sparkling-line" style={{ fontSize: '20px', color: tokens.color.primary }} />
                 Chọn Template
               </h2>
-              <p className="text-sm text-gray-400 mt-1">
+              <p style={styles.subtitle}>
                 Bắt đầu với template có sẵn cho {kind.toLowerCase().replace('_', ' ')}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-white transition-colors"
+              style={styles.closeButton}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = tokens.color.text;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = tokens.color.textMuted;
+              }}
             >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg style={{ width: '24px', height: '24px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div style={styles.content}>
+          <div style={styles.grid}>
             {templates.map((template) => (
               <button
                 key={template.id}
@@ -242,35 +390,51 @@ export function TemplatePicker({ kind, onSelect, onClose }: TemplatePickerProps)
                   onSelect(template.data);
                   onClose();
                 }}
-                className="group relative bg-gray-900 border border-gray-700 rounded-lg p-6 text-left hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transition-all"
+                style={styles.templateCard}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = tokens.color.info;
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.15)';
+                  const titleEl = e.currentTarget.querySelector('h3');
+                  if (titleEl) (titleEl as HTMLElement).style.color = tokens.color.info;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = tokens.color.border;
+                  e.currentTarget.style.boxShadow = 'none';
+                  const titleEl = e.currentTarget.querySelector('h3');
+                  if (titleEl) (titleEl as HTMLElement).style.color = tokens.color.text;
+                }}
               >
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: tokens.space.md, marginBottom: tokens.space.md }}>
+                  <div style={styles.templateIcon}>
                     <i className="ri-star-line" style={{ fontSize: '20px', color: 'white' }} />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-white font-semibold mb-1 group-hover:text-blue-400 transition-colors">
+                  <div style={{ flex: 1 }}>
+                    <h3 style={styles.templateTitle}>
                       {template.name}
                     </h3>
-                    <p className="text-sm text-gray-400">{template.description}</p>
+                    <p style={styles.templateDescription}>{template.description}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs text-gray-500">
+                <div style={styles.templateHint}>
                   <i className="ri-flashlight-line" style={{ fontSize: '14px' }} />
                   <span>Nhấn để sử dụng template</span>
                 </div>
-
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg pointer-events-none" />
               </button>
             ))}
           </div>
         </div>
 
-        <div className="p-4 border-t border-gray-700 bg-gray-900/50">
+        <div style={styles.footer}>
           <button
             onClick={onClose}
-            className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+            style={styles.cancelButton}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = tokens.color.border;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = tokens.color.surfaceHover;
+            }}
           >
             Hủy
           </button>

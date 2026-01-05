@@ -1,4 +1,4 @@
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import type { QuoteDataDisplayProps } from '../types';
 
 /**
@@ -51,7 +51,7 @@ export function QuoteDataDisplay({ quoteData }: QuoteDataDisplayProps) {
                     padding: '2px 8px',
                     borderRadius: 4,
                     background: 'rgba(59,130,246,0.2)',
-                    color: '#3b82f6',
+                    color: tokens.color.info,
                     fontSize: 12,
                   }}>
                     Tùy chọn ({items.length} sản phẩm)
@@ -71,7 +71,7 @@ export function QuoteDataDisplay({ quoteData }: QuoteDataDisplayProps) {
                           justifyContent: 'space-between', 
                           alignItems: 'center',
                           padding: '4px 8px',
-                          background: 'rgba(0,0,0,0.2)',
+                          background: tokens.color.surfaceAlt,
                           borderRadius: 4,
                           fontSize: 12,
                         }}>
@@ -169,7 +169,7 @@ export function QuoteDataDisplay({ quoteData }: QuoteDataDisplayProps) {
   } catch {
     return (
       <pre style={{
-        background: 'rgba(0,0,0,0.3)',
+        background: tokens.color.surfaceAlt,
         padding: 8,
         borderRadius: 6,
         color: tokens.color.muted,

@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 import { Card } from '../components/Card';
 import { ActivityFeed } from '../components/ActivityFeed';
 import {
@@ -188,7 +188,7 @@ function ActiveQuickActions() {
       icon: 'ri-sofa-line',
       label: 'Báo giá nội thất',
       route: '/furniture',
-      color: '#f59e0b',
+      color: tokens.color.warning,
     },
     {
       key: 'write-blog',
@@ -209,7 +209,7 @@ function ActiveQuickActions() {
       icon: 'ri-calculator-line',
       label: 'Cấu hình giá',
       route: '/pricing',
-      color: '#3b82f6',
+      color: tokens.color.info,
     },
     {
       key: 'settings',
@@ -240,7 +240,7 @@ function ActiveQuickActions() {
             onClick={() => navigate(action.route)}
             style={{
               padding: 16,
-              background: 'rgba(255,255,255,0.03)',
+              background: tokens.color.surfaceAlt,
               border: `1px solid ${tokens.color.border}`,
               borderRadius: tokens.radius.md,
               cursor: 'pointer',
@@ -293,7 +293,7 @@ function ComingSoonSection() {
       icon: 'ri-building-line',
       label: 'Công trình',
       description: 'Quản lý công trình từ chủ nhà',
-      color: '#3b82f6',
+      color: tokens.color.info,
     },
     {
       key: 'bids',
@@ -307,28 +307,28 @@ function ComingSoonSection() {
       icon: 'ri-building-2-line',
       label: 'Nhà thầu',
       description: 'Xét duyệt và quản lý nhà thầu',
-      color: '#f59e0b',
+      color: tokens.color.warning,
     },
     {
       key: 'matches',
       icon: 'ri-links-line',
       label: 'Ghép nối',
       description: 'Quản lý ghép nối chủ nhà - nhà thầu',
-      color: '#10b981',
+      color: tokens.color.success,
     },
     {
       key: 'escrow',
       icon: 'ri-safe-2-line',
       label: 'Escrow',
       description: 'Quản lý tiền đặt cọc',
-      color: '#06b6d4',
+      color: tokens.color.info,
     },
     {
       key: 'disputes',
       icon: 'ri-scales-3-line',
       label: 'Tranh chấp',
       description: 'Giải quyết tranh chấp',
-      color: '#ef4444',
+      color: tokens.color.error,
     },
   ];
 
@@ -360,7 +360,7 @@ function ComingSoonSection() {
             key={feature.key}
             style={{
               padding: 16,
-              background: 'rgba(255,255,255,0.02)',
+              background: tokens.color.surfaceAlt,
               border: `1px dashed ${tokens.color.border}`,
               borderRadius: tokens.radius.md,
               opacity: 0.6,
@@ -508,21 +508,13 @@ export function DashboardPage() {
         </div>
 
         {/* Landing Page Badge */}
-        <motion.div
-          animate={{
-            boxShadow: [
-              '0 0 0 0 rgba(245,211,147,0.4)',
-              '0 0 0 10px rgba(245,211,147,0)',
-              '0 0 0 0 rgba(245,211,147,0)',
-            ],
-          }}
-          transition={{ duration: 2, repeat: Infinity }}
+        <div
           style={{
             padding: isMobile ? '10px 16px' : '12px 20px',
-            background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+            background: tokens.color.primary,
             borderRadius: tokens.radius.md,
             color: '#111',
-            fontWeight: 600,
+            fontWeight: 500,
             fontSize: isMobile ? 13 : 14,
             display: 'flex',
             alignItems: 'center',
@@ -537,7 +529,7 @@ export function DashboardPage() {
             </div>
             <div>localhost:4200</div>
           </div>
-        </motion.div>
+        </div>
       </ResponsiveStack>
 
       {/* Error State */}

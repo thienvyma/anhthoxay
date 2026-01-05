@@ -1,0 +1,331 @@
+# Implementation Plan
+
+- [x] 1. Create admin tokens and theme infrastructure
+  - [x] 1.1 Create adminTokens.ts in shared package
+    - Create `packages/shared/src/adminTokens.ts` with light mode color values
+    - Export adminTokens with same structure as tokens (color, font, space, radius, shadow, motion, zIndex)
+    - Add new colors: primaryDark, inputBg, inputBorder, inputFocus, successBg, warningBg, errorBg, infoBg, overlay
+    - _Requirements: 2.1, 2.2, 12.1, 12.4_
+  - [ ]* 1.2 Write property test for admin tokens structure
+    - **Property 1: Admin tokens structure consistency**
+    - **Validates: Requirements 2.2, 12.4**
+  - [ ]* 1.3 Write property test for light mode colors
+    - **Property 2: Admin tokens light mode colors**
+    - **Validates: Requirements 2.1, 12.1**
+  - [ ]* 1.4 Write property test for original tokens unchanged
+    - **Property 3: Original tokens unchanged**
+    - **Validates: Requirements 12.2**
+  - [x] 1.5 Export adminTokens from shared package index
+    - Update `packages/shared/src/index.ts` to export adminTokens
+    - _Requirements: 2.1, 12.1_
+  - [x] 1.6 Create admin theme re-export
+    - Create `admin/src/theme/index.ts` to re-export adminTokens as tokens
+    - This allows admin components to import from local theme
+    - _Requirements: 2.3_
+
+- [x] 2. Update admin CSS files for light mode
+  - [x] 2.1 Update admin styles.css
+    - Change body background from `#0b0c0f` to `#F8F9FA`
+    - Change body color from `#e4e7ec` to `#1A1A1D`
+    - Update scrollbar colors for light theme
+    - _Requirements: 10.1, 10.3_
+  - [x] 2.2 Update admin variables.css
+    - Update all CSS variables to light mode values
+    - Update --color-background, --color-surface, --color-text, --color-border
+    - _Requirements: 10.2_
+
+- [x] 3. Checkpoint - Ensure tokens and CSS are working
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 4. Update core shared components
+  - [x] 4.1 Update Layout.tsx for light mode
+    - Change sidebar background to white
+    - Change header background to white
+    - Update menu item colors and hover states
+    - Update user info section colors
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+  - [x] 4.2 Update Card.tsx for light mode
+    - Change background to white
+    - Update border color
+    - Update icon background colors
+    - _Requirements: 1.2_
+  - [x] 4.3 Update Button.tsx for light mode
+    - Update variant colors for light backgrounds
+    - Ensure primary button has dark text
+    - Update secondary and outline variants
+    - _Requirements: 4.4_
+  - [x] 4.4 Update Input.tsx for light mode
+    - Change background to white
+    - Update border and focus colors
+    - Update label and error text colors
+    - _Requirements: 4.1, 4.2_
+  - [x] 4.5 Update Select.tsx for light mode
+    - Change background to white
+    - Update border and dropdown arrow colors
+    - _Requirements: 4.3_
+  - [x] 4.6 Update Modal.tsx for light mode
+    - Keep overlay as rgba(0,0,0,0.5)
+    - Change modal background to white
+    - Update header and content colors
+    - _Requirements: 6.1, 6.2, 6.3, 6.4_
+  - [x] 4.7 Update Toast.tsx for light mode
+    - Update success toast to light green background
+    - Update error toast to light red background
+    - Update warning toast to light yellow background
+    - Update info toast to light blue background
+    - _Requirements: 7.1, 7.2, 7.3, 7.4_
+  - [x] 4.8 Update LoginPage.tsx for light mode
+    - Change page background to light
+    - Update login card to white with shadow
+    - Update info box colors
+    - _Requirements: 8.1, 8.2, 8.3, 8.4_
+  - [x] 4.9 Update StatsCard.tsx for light mode
+    - Change background to white
+    - Update text and icon colors
+    - _Requirements: 1.2, 1.3_
+
+- [x] 5. Checkpoint - Ensure core components are working
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 6. Update responsive components
+  - [x] 6.1 Update ResponsiveTable.tsx for light mode
+    - Update header background to light gray
+    - Update row backgrounds and hover states
+    - Update selected row background
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
+  - [x] 6.2 Update ResponsiveModal.tsx for light mode
+    - Update modal background to white
+    - Update header and footer borders
+    - _Requirements: 6.2, 6.3_
+
+- [x] 7. Update DashboardPage for light mode
+  - [x] 7.1 Update DashboardPage.tsx
+    - Update stats grid backgrounds
+    - Update quick actions backgrounds
+    - Update coming soon section
+    - Replace hardcoded rgba colors with tokens
+    - _Requirements: 1.1, 1.2, 11.1, 11.2_
+  - [x] 7.2 Update chart components for light mode
+    - Update chart backgrounds
+    - Update legend text colors
+    - Update grid line colors
+    - Update tooltip styles
+    - _Requirements: 9.1, 9.2, 9.3, 9.4_
+
+- [x] 8. Update SettingsPage tabs for light mode
+  - [x] 8.1 Update AccountTab.tsx
+    - Replace rgba(255,255,255,0.03) with tokens.color.surfaceAlt
+    - Replace rgba(0,0,0,0.3) with tokens.color.inputBg
+    - Update session card backgrounds
+    - _Requirements: 11.1, 11.3_
+  - [x] 8.2 Update CompanyTab.tsx
+    - Replace hardcoded rgba colors
+    - Update form backgrounds
+    - _Requirements: 11.1_
+  - [x] 8.3 Update GoogleSheetsTab.tsx
+    - Replace hardcoded colors (#10b981, #ef4444)
+    - Update toggle switch colors
+    - Update status indicator colors
+    - _Requirements: 11.5_
+  - [x] 8.4 Update PromoTab.tsx
+    - Replace rgba colors
+    - Update toggle switch colors
+    - _Requirements: 11.1, 11.2_
+  - [x] 8.5 Update ServiceFeesTab.tsx
+    - Replace hardcoded colors (#93c5fd, #a7f3d0, #f87171)
+    - Update table backgrounds
+    - _Requirements: 11.5_
+
+- [x] 9. Update LeadsPage for light mode
+  - [x] 9.1 Update LeadsPage index.tsx
+    - Update filter and stats backgrounds
+    - _Requirements: 11.1_
+  - [x] 9.2 Update LeadsPage components
+    - Update LeadDetailModal.tsx - replace rgba(0,0,0,0.2)
+    - Update QuoteDataDisplay.tsx - replace rgba colors
+    - Update NotesEditor.tsx - replace rgba colors
+    - Update StatusHistory.tsx - replace rgba colors
+    - Update BulkDeleteModal.tsx - update overlay
+    - Update FurnitureQuotationHistory.tsx - replace rgba colors
+    - _Requirements: 11.1, 11.3, 11.4_
+
+- [x] 10. Update PricingConfigPage for light mode
+  - [x] 10.1 Update FormulasTab.tsx
+    - Replace rgba colors
+    - Update code block backgrounds
+    - _Requirements: 11.1, 11.3_
+  - [x] 10.2 Update MaterialsTab.tsx
+    - Replace rgba hover colors
+    - Update category sidebar backgrounds
+    - _Requirements: 11.2_
+  - [x] 10.3 Update ServiceCategoriesTab.tsx
+    - Replace rgba colors
+    - Update form backgrounds
+    - _Requirements: 11.1_
+  - [x] 10.4 Update UnitPricesTab.tsx
+    - Replace rgba colors
+    - Update tag backgrounds
+    - _Requirements: 11.1_
+
+- [x] 11. Update remaining pages for light mode
+  - [x] 11.1 Update UsersPage components
+    - Update SessionsModal.tsx - replace rgba colors
+    - Update EditUserModal.tsx - replace rgba colors
+    - _Requirements: 11.1_
+  - [x] 11.2 Update MediaPage
+    - Update card backgrounds
+    - Update hover overlay colors
+    - _Requirements: 11.1, 11.4_
+  - [x] 11.3 Update ProjectsPage components
+    - Update ProjectTable.tsx - replace hardcoded colors (#10B981, #EF4444)
+    - Update ProjectDetailModal.tsx - replace rgba colors
+    - Update ApprovalModal.tsx - replace rgba colors
+    - _Requirements: 11.4, 11.5_
+  - [x] 11.4 Update BidsPage components
+    - Update ApprovalModal.tsx - replace hardcoded colors
+    - _Requirements: 11.5_
+  - [x] 11.5 Update MatchesPage components
+    - Update EscrowActionModal.tsx - replace rgba colors
+    - Update MatchDetailModal.tsx - replace rgba colors
+    - _Requirements: 11.4_
+  - [x] 11.6 Update FeesPage components
+    - Update FeeDetailModal.tsx - replace hardcoded colors (#EF4444, #22C55E)
+    - Update FeeTable.tsx - replace hardcoded colors
+    - _Requirements: 11.5_
+  - [x] 11.7 Update ContractorsPage components
+    - Update VerifyModal.tsx - replace hardcoded colors
+    - _Requirements: 11.5_
+  - [x] 11.8 Update ChatPage components
+    - Update CloseConversationModal.tsx - replace hardcoded colors
+    - _Requirements: 11.5_
+  - [x] 11.9 Update RegionsPage components
+    - Update RegionTreeItem.tsx - replace rgba hover colors
+    - Update DeleteModal.tsx - replace rgba colors
+    - Update RegionModal.tsx - replace rgba colors
+    - _Requirements: 11.2, 11.4_
+  - [x] 11.10 Update NotificationTemplatesPage
+    - Update TemplateEditModal.tsx - replace hardcoded #fff
+    - _Requirements: 11.1_
+  - [x] 11.11 Update FurniturePage components
+    - Update PdfPreview.tsx - replace hardcoded #fff
+    - _Requirements: 11.1_
+
+- [x] 12. Update SectionEditor previews for light mode
+  - [x] 12.1 Update preview components
+    - Update AboutPreview.tsx - already uses #f5f5f5, keep for preview
+    - Update BannerPreview.tsx - keep #f5d393 for preview
+    - Update BlogListPreview.tsx - keep light colors for preview
+    - Update ContactInfoPreview.tsx - keep light colors for preview
+    - Update FABActionsPreview.tsx - keep light colors for preview
+    - Update FAQPreview.tsx - keep light colors for preview
+    - Update FeaturedBlogPostsPreview.tsx - keep light colors for preview
+    - Note: Preview components intentionally use light colors to show how content will look on landing page
+    - _Requirements: 13.1, 13.2, 13.3, 13.4_
+
+- [x] 13. Update app.tsx loading state
+  - [x] 13.1 Update loading spinner background
+    - Change background from #0b0c0f to #F8F9FA
+    - Update spinner border colors
+    - _Requirements: 1.1_
+
+- [ ] 14. Write property tests for contrast ratio
+  - [ ]* 14.1 Write property test for primary color contrast
+    - **Property 4: Primary color contrast ratio**
+    - **Validates: Requirements 14.2**
+  - [ ]* 14.2 Write property test for status colors consistency
+    - **Property 5: Status colors consistency**
+    - **Validates: Requirements 2.5**
+
+- [x] 15. Fix remaining hardcoded colors (discovered during review)
+  - [x] 15.1 Fix SettingsPage hardcoded colors
+    - AccountTab.tsx - replace remaining rgba(255,255,255,...) and #ef4444
+    - GoogleSheetsTab.tsx - replace #10b981, #ef4444 with tokens
+    - ServiceFeesTab.tsx - replace #93c5fd, #a7f3d0, #f87171 with tokens
+    - PromoTab.tsx - replace rgba(0,0,0,0.2) boxShadow
+    - CompanyTab.tsx - replace rgba(239, 68, 68, 0.1) with tokens.color.errorBg
+    - _Requirements: 11.1, 11.5_
+  - [x] 15.2 Fix PricingConfigPage hardcoded colors
+    - MaterialsTab.tsx - replace rgba(255,255,255,...) and #ef4444, #10b981
+    - ServiceCategoriesTab.tsx - replace rgba(255,255,255,0.02) and #ef4444, #10b981
+    - UnitPricesTab.tsx - replace #10b981, #ef4444
+    - index.tsx - replace rgba(255,255,255,0.1) spinner border
+    - FormulasTab.tsx - replace rgba colors and #ef4444, #10b981
+    - _Requirements: 11.1, 11.5_
+  - [x] 15.3 Fix UsersPage hardcoded colors
+    - SessionsModal.tsx - replace rgba(255,255,255,0.02) and #EF4444
+    - EditUserModal.tsx - replace rgba(255,255,255,0.02)
+    - UserTable.tsx - replace rgba(239, 68, 68, 0.1) hover
+    - _Requirements: 11.1_
+  - [x] 15.4 Fix ProjectsPage hardcoded colors
+    - ProjectTable.tsx - replace #10B981, #EF4444
+    - ProjectDetailModal.tsx - replace rgba(255,255,255,0.02) and #EF4444
+    - ApprovalModal.tsx - replace rgba(255,255,255,0.02) and #EF4444
+    - _Requirements: 11.4, 11.5_
+  - [x] 15.5 Fix MatchesPage hardcoded colors
+    - MatchDetailModal.tsx - replace rgba(255,255,255,0.02)
+    - EscrowActionModal.tsx - replace rgba(255,255,255,0.02) and #EF4444
+    - MatchTable.tsx - replace #22C55E, #EF4444, #3B82F6
+    - index.tsx - replace rgba colors and #22C55E, #EF4444
+    - _Requirements: 11.4_
+  - [x] 15.6 Fix NotificationTemplatesPage hardcoded colors
+    - TemplateEditModal.tsx - replace all rgba(255,255,255,...) colors
+    - index.tsx - replace #22c55e, #ef4444
+    - _Requirements: 11.1, 11.5_
+  - [x] 15.7 Fix RegionsPage hardcoded colors
+    - RegionTreeItem.tsx - replace rgba(255,255,255,0.02) and #EF4444, #10B981
+    - _Requirements: 11.2, 11.5_
+  - [x] 15.8 Fix LeadsPage hardcoded colors
+    - LeadFilters.tsx - replace rgba(255,255,255,0.02)
+    - LeadDetailModal.tsx - replace rgba(239, 68, 68, 0.1)
+    - LeadMobileCard.tsx - replace rgba(239, 68, 68, 0.1)
+    - NotesEditor.tsx - replace #10b981
+    - index.tsx - replace rgba(239, 68, 68, 0.1)
+    - _Requirements: 11.1_
+  - [x] 15.9 Fix FurniturePage hardcoded colors
+    - index.tsx - replace rgba(255,255,255,0.1) spinner border
+    - _Requirements: 11.1_
+  - [x] 15.10 Fix SectionsPage hardcoded colors
+    - SectionsPage.tsx - replace rgba(255,255,255,0.02) and #10B981
+    - _Requirements: 11.1, 11.5_
+  - [x] 15.11 Fix ChatPage hardcoded colors
+    - CloseConversationModal.tsx - replace #ef4444 with tokens.color.error
+    - ConversationDetail.tsx - replace rgba(239, 68, 68, 0.1) and #ef4444
+    - MessageBubble.tsx - replace #22c55e, #3b82f6, #a855f7
+    - index.tsx - replace rgba(239, 68, 68, 0.1) and #ef4444
+    - _Requirements: 11.4_
+  - [x] 15.12 Fix ApiKeysPage hardcoded colors
+    - ApiKeyDetailPanel.tsx - replace rgba(255,255,255,0.02) and #22c55e, #ef4444
+    - _Requirements: 11.4_
+  - [x] 15.13 Fix BidsPage hardcoded colors
+    - BidDetailModal.tsx - replace rgba(255,255,255,0.02) and #EF4444, #10B981
+    - BidTable.tsx - replace #10B981, #EF4444
+    - ApprovalModal.tsx - replace rgba(255,255,255,0.02) and #EF4444
+    - _Requirements: 11.4, 11.5_
+  - [x] 15.14 Fix FeesPage hardcoded colors
+    - FeeDetailModal.tsx - replace rgba(255,255,255,0.02) and #EF4444, #22C55E
+    - FeeTable.tsx - replace #22C55E, #EF4444
+    - _Requirements: 11.5_
+  - [x] 15.15 Fix DisputesPage hardcoded colors
+    - DisputeTable.tsx - replace rgba(255,255,255,0.1) spinner border
+    - DisputeDetailModal.tsx - replace rgba(255,255,255,0.02)
+    - ResolveDisputeModal.tsx - replace rgba(255,255,255,0.02) and #22C55E
+    - _Requirements: 11.4_
+  - [x] 15.16 Fix ContractorsPage hardcoded colors
+    - ProfileModal.tsx - replace rgba(255,255,255,0.02) and #EF4444, #10B981
+    - ContractorTable.tsx - replace #10B981, #EF4444
+    - VerifyModal.tsx - replace #EF4444
+    - _Requirements: 11.5_
+  - [x] 15.17 Fix BlogManagerPage hardcoded colors
+    - index.tsx - replace rgba(255,255,255,0.02)
+    - PostEditorModal.tsx - replace rgba(255,255,255,0.02)
+    - _Requirements: 11.1_
+  - [x] 15.18 Fix BiddingSettingsPage hardcoded colors
+    - ServiceFeesTab.tsx - replace rgba(255,255,255,0.08)
+    - _Requirements: 11.1_
+  - [x] 15.19 Fix DashboardPage hardcoded colors
+    - DashboardPage.tsx - replace rgba(255,255,255,0.02) and #10b981, #ef4444
+    - _Requirements: 11.1_
+
+- [x] 16. Final Checkpoint - All hardcoded colors fixed
+  - Typecheck passed successfully
+  - Note: SectionsPage.tsx categoryColors are intentional for section type identification

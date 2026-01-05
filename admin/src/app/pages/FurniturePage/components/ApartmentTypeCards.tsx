@@ -5,7 +5,7 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { ResponsiveGrid } from '../../../../components/responsive';
 import { Card } from '../../../components/Card';
 import { Button } from '../../../components/Button';

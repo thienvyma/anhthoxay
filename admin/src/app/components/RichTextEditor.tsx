@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 
 interface RichTextEditorProps {
   value: string;
@@ -119,7 +119,7 @@ export function RichTextEditor({ value, onChange, label, placeholder, rows = 10 
         alignItems: 'center', 
         gap: 4, 
         padding: 8,
-        background: 'rgba(0,0,0,0.3)',
+        background: tokens.color.surfaceAlt,
         border: `1px solid ${tokens.color.border}`,
         borderRadius: `${tokens.radius.md} ${tokens.radius.md} 0 0`,
       }}>
@@ -133,7 +133,7 @@ export function RichTextEditor({ value, onChange, label, placeholder, rows = 10 
                 tool.action();
               }}
               title={tool.label}
-              whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.1)' }}
+              whileHover={{ scale: 1.1, background: tokens.color.surfaceHover }}
               whileTap={{ scale: 0.95 }}
               style={{
                 padding: 8,
@@ -173,11 +173,10 @@ export function RichTextEditor({ value, onChange, label, placeholder, rows = 10 
             fontWeight: 500,
             border: showPreview ? `1px solid ${tokens.color.primary}` : `1px solid ${tokens.color.border}`,
             background: showPreview 
-              ? 'linear-gradient(135deg, rgba(245, 211, 147, 0.2) 0%, rgba(245, 211, 147, 0.1) 100%)'
+              ? `${tokens.color.primary}15`
               : 'transparent',
             color: showPreview ? tokens.color.primary : tokens.color.muted,
             cursor: 'pointer',
-            boxShadow: showPreview ? `0 0 20px rgba(245, 211, 147, 0.2)` : 'none',
           }}
         >
           <i className="ri-eye-line" style={{ fontSize: 16 }} />
@@ -216,7 +215,7 @@ export function RichTextEditor({ value, onChange, label, placeholder, rows = 10 
             style={{
               flex: 1,
               width: '100%',
-              background: 'rgba(0,0,0,0.3)',
+              background: tokens.color.surfaceAlt,
               padding: '12px 16px',
               color: tokens.color.text,
               border: 'none',
@@ -229,7 +228,7 @@ export function RichTextEditor({ value, onChange, label, placeholder, rows = 10 
           />
           <div style={{ 
             padding: '8px 16px',
-            background: 'rgba(0,0,0,0.5)',
+            background: tokens.color.overlay,
             borderTop: `1px solid ${tokens.color.border}`,
             fontSize: 12,
             color: tokens.color.muted,
@@ -246,13 +245,13 @@ export function RichTextEditor({ value, onChange, label, placeholder, rows = 10 
             exit={{ opacity: 0, x: 20 }}
             style={{ 
               width: '50%',
-              background: 'rgba(0,0,0,0.2)',
+              background: tokens.color.surfaceAlt,
               overflowY: 'auto',
             }}
           >
             <div style={{ 
               padding: '8px 16px',
-              background: 'rgba(0,0,0,0.5)',
+              background: tokens.color.overlay,
               borderBottom: `1px solid ${tokens.color.border}`,
               fontSize: 11,
               color: tokens.color.muted,

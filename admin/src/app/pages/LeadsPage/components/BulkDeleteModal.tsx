@@ -1,4 +1,4 @@
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { Button } from '../../../components/Button';
 
 export interface BulkDeleteModalProps {
@@ -25,7 +25,7 @@ export function BulkDeleteModal({
         style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0,0,0,0.7)',
+          background: tokens.color.overlay,
           zIndex: 9998,
         }} 
       />

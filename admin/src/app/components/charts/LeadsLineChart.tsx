@@ -1,5 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 
 interface DailyLead {
   date: string;
@@ -20,7 +20,7 @@ export function LeadsLineChart({ data }: LeadsLineChartProps) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={formattedData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+        <CartesianGrid strokeDasharray="3 3" stroke={tokens.color.surfaceHover} />
         <XAxis 
           dataKey="displayDate" 
           stroke={tokens.color.muted}

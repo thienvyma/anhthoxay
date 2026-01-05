@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, CSSProperties } from 'react';
+import { tokens } from '../../theme';
 
 interface OptimizedImageProps {
   src: string;
@@ -75,9 +76,9 @@ export function OptimizedImage({
     onError?.();
   };
 
-  // Generate blur placeholder from dominant color
+  // Generate blur placeholder from dominant color - use tokens.color.background
   const defaultBlurDataURL =
-    'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Cfilter id="b"%3E%3CfeGaussianBlur stdDeviation="20"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" fill="%230c0c10" filter="url(%23b)"/%3E%3C/svg%3E';
+    `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Cfilter id="b"%3E%3CfeGaussianBlur stdDeviation="20"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" fill="%23${tokens.color.background.slice(1)}" filter="url(%23b)"/%3E%3C/svg%3E`;
 
   const placeholderSrc = blurDataURL || defaultBlurDataURL;
 
@@ -87,7 +88,7 @@ export function OptimizedImage({
       style={{
         position: 'relative',
         overflow: 'hidden',
-        backgroundColor: '#0c0c10',
+        backgroundColor: tokens.color.background,
         ...style,
       }}
       className={className}
@@ -115,7 +116,7 @@ export function OptimizedImage({
             position: 'absolute',
             inset: 0,
             background:
-              'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%)',
+              `linear-gradient(90deg, transparent 0%, ${tokens.color.surfaceAlt} 50%, transparent 100%)`,
             animation: 'shimmer 2s infinite',
           }}
         />
@@ -154,8 +155,8 @@ export function OptimizedImage({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'rgba(12,12,16,0.8)',
-            color: 'rgba(255,255,255,0.3)',
+            background: tokens.color.surfaceAlt,
+            color: tokens.color.muted,
             fontSize: 14,
             flexDirection: 'column',
             gap: 8,

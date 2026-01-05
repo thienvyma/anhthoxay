@@ -1,4 +1,4 @@
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { statusColors, statusLabels } from '../types';
 import type { StatusHistoryProps, StatusHistoryEntry } from '../types';
 
@@ -26,7 +26,7 @@ export function StatusHistory({ history }: StatusHistoryProps) {
                 alignItems: 'center',
                 gap: 8,
                 padding: '8px 12px',
-                background: 'rgba(0,0,0,0.2)',
+                background: tokens.color.surfaceAlt,
                 borderRadius: 6,
                 fontSize: 13,
                 flexWrap: 'wrap',

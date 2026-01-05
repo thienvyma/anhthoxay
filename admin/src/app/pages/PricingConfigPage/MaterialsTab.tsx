@@ -1,6 +1,7 @@
 import { useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens, API_URL } from '@app/shared';
+import { API_URL } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
@@ -202,7 +203,7 @@ export function MaterialsTab({ materials, categories, onRefresh }: MaterialsTabP
             
             {/* All items */}
             <motion.div
-              whileHover={{ background: 'rgba(255,255,255,0.05)' }}
+              whileHover={{ background: tokens.color.surfaceHover }}
               onClick={() => setSelectedCategoryId(null)}
               style={{
                 padding: '12px 16px',
@@ -224,7 +225,7 @@ export function MaterialsTab({ materials, categories, onRefresh }: MaterialsTabP
             {categories.map(cat => (
               <motion.div
                 key={cat.id}
-                whileHover={{ background: 'rgba(255,255,255,0.05)' }}
+                whileHover={{ background: tokens.color.surfaceHover }}
                 onClick={() => setSelectedCategoryId(cat.id)}
                 style={{
                   padding: '12px 16px',
@@ -417,7 +418,7 @@ export function MaterialsTab({ materials, categories, onRefresh }: MaterialsTabP
                             right: 10,
                             padding: '4px 10px',
                             borderRadius: tokens.radius.sm,
-                            background: item.isActive ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)',
+                            background: item.isActive ? tokens.color.success : tokens.color.error,
                             color: '#fff',
                             fontSize: 11,
                             fontWeight: 600,
@@ -435,7 +436,7 @@ export function MaterialsTab({ materials, categories, onRefresh }: MaterialsTabP
                               left: 10,
                               padding: '4px 10px',
                               borderRadius: tokens.radius.sm,
-                              background: 'rgba(0, 0, 0, 0.7)',
+                              background: tokens.color.overlay,
                               color: '#fff',
                               fontSize: 11,
                               fontWeight: 500,
@@ -512,7 +513,7 @@ export function MaterialsTab({ materials, categories, onRefresh }: MaterialsTabP
                             style={{
                               flex: 1,
                               padding: '8px 12px',
-                              background: 'rgba(255, 255, 255, 0.05)',
+                              background: tokens.color.surfaceHover,
                               border: `1px solid ${tokens.color.border}`,
                               borderRadius: tokens.radius.sm,
                               color: tokens.color.primary,
@@ -533,10 +534,10 @@ export function MaterialsTab({ materials, categories, onRefresh }: MaterialsTabP
                             onClick={() => handleDelete(item.id)}
                             style={{
                               padding: '8px 12px',
-                              background: 'rgba(239, 68, 68, 0.1)',
-                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              background: tokens.color.errorBg,
+                              border: `1px solid ${tokens.color.error}40`,
                               borderRadius: tokens.radius.sm,
-                              color: '#ef4444',
+                              color: tokens.color.error,
                               fontSize: 13,
                               cursor: 'pointer',
                               display: 'flex',
@@ -567,7 +568,7 @@ export function MaterialsTab({ materials, categories, onRefresh }: MaterialsTabP
                     {filteredItems.map(item => (
                       <motion.tr
                         key={item.id}
-                        whileHover={{ background: 'rgba(255,255,255,0.02)' }}
+                        whileHover={{ background: tokens.color.surfaceHover }}
                         style={{ borderBottom: `1px solid ${tokens.color.border}`, cursor: 'pointer' }}
                         onClick={() => handleEdit(item)}
                       >
@@ -576,7 +577,7 @@ export function MaterialsTab({ materials, categories, onRefresh }: MaterialsTabP
                             {item.imageUrl ? (
                               <img src={item.imageUrl} alt={item.name} style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover' }} />
                             ) : (
-                              <div style={{ width: 48, height: 48, borderRadius: 8, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <div style={{ width: 48, height: 48, borderRadius: 8, background: tokens.color.surfaceHover, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <i className="ri-image-line" style={{ color: tokens.color.muted }} />
                               </div>
                             )}
@@ -592,16 +593,16 @@ export function MaterialsTab({ materials, categories, onRefresh }: MaterialsTabP
                           {item.unit && <span style={{ color: tokens.color.muted, fontSize: 12, marginLeft: 4 }}>/{item.unit}</span>}
                         </td>
                         <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                          <span style={{ padding: '4px 10px', borderRadius: 6, background: item.isActive ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: item.isActive ? '#10b981' : '#ef4444', fontSize: 12, fontWeight: 500 }}>
+                          <span style={{ padding: '4px 10px', borderRadius: 6, background: item.isActive ? tokens.color.successBg : tokens.color.errorBg, color: item.isActive ? tokens.color.success : tokens.color.error, fontSize: 12, fontWeight: 500 }}>
                             {item.isActive ? 'Hiện' : 'Ẩn'}
                           </span>
                         </td>
                         <td style={{ padding: '12px 20px', textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
                           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleEdit(item)} style={{ padding: 8, background: 'rgba(255,255,255,0.05)', border: `1px solid ${tokens.color.border}`, borderRadius: 6, cursor: 'pointer', color: tokens.color.primary }}>
+                            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleEdit(item)} style={{ padding: 8, background: tokens.color.surfaceHover, border: `1px solid ${tokens.color.border}`, borderRadius: 6, cursor: 'pointer', color: tokens.color.primary }}>
                               <i className="ri-edit-line" />
                             </motion.button>
-                            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDelete(item.id)} style={{ padding: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, cursor: 'pointer', color: '#ef4444' }}>
+                            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleDelete(item.id)} style={{ padding: 8, background: tokens.color.errorBg, border: `1px solid ${tokens.color.error}40`, borderRadius: 6, cursor: 'pointer', color: tokens.color.error }}>
                               <i className="ri-delete-bin-line" />
                             </motion.button>
                           </div>
@@ -632,11 +633,11 @@ export function MaterialsTab({ materials, categories, onRefresh }: MaterialsTabP
                       {cat.description && <p style={{ color: tokens.color.muted, margin: '4px 0 0', fontSize: 13 }}>{cat.description}</p>}
                     </div>
                   </div>
-                  <span style={{ padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.05)', color: tokens.color.muted, fontSize: 12 }}>{cat._count?.materials || 0} vật dụng</span>
+                  <span style={{ padding: '4px 8px', borderRadius: 6, background: tokens.color.surfaceHover, color: tokens.color.muted, fontSize: 12 }}>{cat._count?.materials || 0} vật dụng</span>
                 </div>
                 <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
                   <Button variant="outline" size="small" onClick={() => handleEditCategory(cat)}><i className="ri-edit-line" /> Sửa</Button>
-                  <Button variant="outline" size="small" onClick={() => handleDeleteCategory(cat.id)} style={{ color: '#ef4444' }}><i className="ri-delete-bin-line" /> Xóa</Button>
+                  <Button variant="outline" size="small" onClick={() => handleDeleteCategory(cat.id)} style={{ color: tokens.color.error }}><i className="ri-delete-bin-line" /> Xóa</Button>
                 </div>
               </Card>
             ))}
@@ -648,7 +649,7 @@ export function MaterialsTab({ materials, categories, onRefresh }: MaterialsTabP
       <AnimatePresence>
         {isCreating && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={resetForm}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+            style={{ position: 'fixed', inset: 0, background: tokens.color.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} onClick={e => e.stopPropagation()}
               style={{ background: tokens.color.surface, borderRadius: 16, padding: 32, width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto' }}>
               <h2 style={{ color: tokens.color.text, margin: '0 0 24px' }}>{editingItem ? 'Sửa vật dụng' : 'Thêm vật dụng mới'}</h2>
@@ -663,14 +664,14 @@ export function MaterialsTab({ materials, categories, onRefresh }: MaterialsTabP
                       <img src={form.imageUrl} alt="Preview" style={{ width: '100%', height: 180, objectFit: 'cover' }} />
                       <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 8 }}>
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => fileInputRef.current?.click()}
-                          style={{ padding: '8px 12px', background: 'rgba(59,130,246,0.9)', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', fontSize: 14 }}><i className="ri-refresh-line" /></motion.button>
+                          style={{ padding: '8px 12px', background: tokens.color.info, border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', fontSize: 14 }}><i className="ri-refresh-line" /></motion.button>
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={handleRemoveImage}
-                          style={{ padding: '8px 12px', background: 'rgba(239,68,68,0.9)', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', fontSize: 14 }}><i className="ri-delete-bin-line" /></motion.button>
+                          style={{ padding: '8px 12px', background: tokens.color.error, border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', fontSize: 14 }}><i className="ri-delete-bin-line" /></motion.button>
                       </div>
                     </div>
                   ) : (
                     <motion.div whileHover={{ borderColor: tokens.color.primary }} onClick={() => !uploading && fileInputRef.current?.click()}
-                      style={{ height: 180, border: `2px dashed ${tokens.color.border}`, borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: uploading ? 'wait' : 'pointer', background: 'rgba(255,255,255,0.02)' }}>
+                      style={{ height: 180, border: `2px dashed ${tokens.color.border}`, borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: uploading ? 'wait' : 'pointer', background: tokens.color.surfaceAlt }}>
                       {uploading ? (
                         <><motion.i className="ri-loader-4-line" animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ fontSize: 32, color: tokens.color.primary }} /><span style={{ color: tokens.color.muted, fontSize: 13 }}>Đang tải lên...</span></>
                       ) : (
@@ -701,7 +702,7 @@ export function MaterialsTab({ materials, categories, onRefresh }: MaterialsTabP
       <AnimatePresence>
         {isCreatingCategory && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={resetCategoryForm}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+            style={{ position: 'fixed', inset: 0, background: tokens.color.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} onClick={e => e.stopPropagation()}
               style={{ background: tokens.color.surface, borderRadius: 16, padding: 32, width: '100%', maxWidth: 450 }}>
               <h2 style={{ color: tokens.color.text, margin: '0 0 24px' }}>{editingCategory ? 'Sửa danh mục' : 'Thêm danh mục mới'}</h2>

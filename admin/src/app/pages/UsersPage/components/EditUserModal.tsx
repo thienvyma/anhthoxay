@@ -4,7 +4,7 @@
  * Requirements: 2.4
  */
 
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { ResponsiveModal } from '../../../../components/responsive';
 import { Button } from '../../../components/Button';
 import { Input } from '../../../components/Input';
@@ -56,7 +56,7 @@ export function EditUserModal({
         <div
           style={{
             padding: 12,
-            background: 'rgba(255,255,255,0.02)',
+            background: tokens.color.surfaceAlt,
             borderRadius: tokens.radius.md,
             border: `1px solid ${tokens.color.border}`,
           }}

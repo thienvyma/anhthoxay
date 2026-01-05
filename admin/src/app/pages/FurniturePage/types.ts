@@ -93,20 +93,60 @@ export interface FurnitureCategory {
 }
 
 /**
+ * Furniture Material (Chất liệu)
+ * Material type for furniture products
+ */
+export interface FurnitureMaterial {
+  id: string;
+  name: string;
+  description: string | null;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Pricing type for furniture products
+ */
+export type PricingType = 'M2' | 'LINEAR';
+
+/**
+ * Product-Apartment Mapping
+ * Links a product to a specific apartment (Project + Building + ApartmentType)
+ */
+export interface FurnitureProductMapping {
+  id: string;
+  productId: string;
+  projectName: string;
+  buildingCode: string;
+  apartmentType: string;
+  createdAt: string;
+}
+
+/**
  * Furniture Product
  * Individual furniture product in the catalog
  */
 export interface FurnitureProduct {
   id: string;
   name: string;
+  material: string;              // NEW: Chất liệu (VD: "Gỗ sồi", "MDF")
   categoryId: string;
   category?: FurnitureCategory;
-  price: number;
+  pricePerUnit: number;          // NEW: Giá trên 1 mét (VNĐ)
+  pricingType: PricingType;      // NEW: Cách tính giá (M2 = mét vuông, LINEAR = mét dài)
+  length: number;                // NEW: Chiều dài (m)
+  width?: number | null;         // NEW: Chiều rộng (m) - chỉ cho M2
+  calculatedPrice: number;       // NEW: Giá đã tính = pricePerUnit × dimensions
+  allowFitIn: boolean;           // NEW: Cho phép chọn Fit-in
+  price: number;                 // DEPRECATED: Keep for backward compatibility
   imageUrl: string | null;
   description: string | null;
-  dimensions: string | null; // JSON: { width, height, depth }
+  dimensions: string | null;     // DEPRECATED: JSON: { width, height, depth }
   order: number;
   isActive: boolean;
+  mappings?: FurnitureProductMapping[]; // NEW: Product-apartment mappings
   createdAt: string;
   updatedAt: string;
 }
@@ -123,6 +163,7 @@ export type FeeType = 'FIXED' | 'PERCENTAGE';
 export interface FurnitureFee {
   id: string;
   name: string;
+  code?: string; // Unique code for system fees (e.g., "FIT_IN", "VAT")
   type: FeeType;
   value: number;
   description: string | null;
@@ -171,7 +212,7 @@ export interface FurnitureQuotation {
 /**
  * Tab types for FurniturePage navigation
  */
-export type TabType = 'management' | 'catalog' | 'settings' | 'pdf';
+export type TabType = 'management' | 'catalog' | 'mapping' | 'settings' | 'pdf';
 
 // ========== TAB PROPS ==========
 
@@ -198,7 +239,8 @@ export interface ManagementTabProps extends TabProps {
  */
 export interface CatalogTabProps extends TabProps {
   categories: FurnitureCategory[];
-  products: FurnitureProduct[];
+  productBases: ProductBaseWithDetails[];
+  materials: FurnitureMaterial[];
 }
 
 /**
@@ -326,15 +368,32 @@ export interface UpdateCategoryInput {
 }
 
 /**
+ * Input for product-apartment mapping
+ */
+export interface ProductMappingInput {
+  projectName: string;
+  buildingCode: string;
+  apartmentType: string;
+}
+
+/**
  * Input for creating a product
  */
 export interface CreateProductInput {
   name: string;
+  material: string;              // NEW: Chất liệu
   categoryId: string;
-  price: number;
+  pricePerUnit: number;          // NEW: Giá trên 1 mét
+  pricingType: PricingType;      // NEW: M2 | LINEAR
+  length: number;                // NEW: Chiều dài
+  width?: number | null;         // NEW: Chiều rộng (required for M2)
+  calculatedPrice?: number;      // NEW: Auto-calculated
+  allowFitIn: boolean;           // NEW: Cho phép Fit-in
+  mappings: ProductMappingInput[]; // NEW: At least one mapping required
+  price?: number;                // DEPRECATED
   imageUrl?: string;
   description?: string;
-  dimensions?: string;
+  dimensions?: string;           // DEPRECATED
   order?: number;
   isActive?: boolean;
 }
@@ -344,11 +403,18 @@ export interface CreateProductInput {
  */
 export interface UpdateProductInput {
   name?: string;
+  material?: string;             // NEW
   categoryId?: string;
-  price?: number;
+  pricePerUnit?: number;         // NEW
+  pricingType?: PricingType;     // NEW
+  length?: number;               // NEW
+  width?: number | null;         // NEW
+  calculatedPrice?: number;      // NEW
+  allowFitIn?: boolean;          // NEW
+  price?: number;                // DEPRECATED
   imageUrl?: string | null;
   description?: string | null;
-  dimensions?: string | null;
+  dimensions?: string | null;    // DEPRECATED
   order?: number;
   isActive?: boolean;
 }
@@ -432,6 +498,141 @@ export interface MetricsGridRow {
 
 // Re-export API_URL from shared for convenience
 export { API_URL } from '@app/shared';
+
+// ========== PRODUCT BASE TYPES (NEW - furniture-product-restructure) ==========
+
+/**
+ * Variant with material info for display
+ * _Requirements: 4.1_
+ */
+export interface ProductVariantWithMaterial {
+  id: string;
+  productBaseId: string;
+  materialId: string;
+  material: {
+    id: string;
+    name: string;
+  };
+  pricePerUnit: number;
+  pricingType: 'LINEAR' | 'M2';
+  length: number;
+  width: number | null;
+  calculatedPrice: number;
+  imageUrl: string | null;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Product mapping type (now references productBaseId)
+ */
+export interface ProductBaseMapping {
+  id: string;
+  productBaseId: string;
+  projectName: string;
+  buildingCode: string;
+  apartmentType: string;
+  createdAt: string;
+}
+
+/**
+ * Product base with all details for admin
+ * _Requirements: 3.1, 9.2_
+ */
+export interface ProductBaseWithDetails {
+  id: string;
+  name: string;
+  categoryId: string;
+  category: {
+    id: string;
+    name: string;
+  };
+  description: string | null;
+  imageUrl: string | null;
+  allowFitIn: boolean;
+  order: number;
+  isActive: boolean;
+  variants: ProductVariantWithMaterial[];
+  mappings: ProductBaseMapping[];
+  variantCount: number;
+  priceRange: { min: number; max: number } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Paginated result for admin product list
+ * _Requirements: 9.2_
+ */
+export interface PaginatedProductBases {
+  products: ProductBaseWithDetails[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+/**
+ * Input for creating a variant
+ * _Requirements: 4.2, 4.3_
+ */
+export interface CreateVariantInput {
+  materialId: string;
+  pricePerUnit: number;
+  pricingType: 'LINEAR' | 'M2';
+  length: number;
+  width?: number | null;
+  imageUrl?: string | null;
+  order?: number;
+  isActive?: boolean;
+}
+
+/**
+ * Input for updating a variant
+ * _Requirements: 4.4_
+ */
+export interface UpdateVariantInput {
+  materialId?: string;
+  pricePerUnit?: number;
+  pricingType?: 'LINEAR' | 'M2';
+  length?: number;
+  width?: number | null;
+  imageUrl?: string | null;
+  order?: number;
+  isActive?: boolean;
+}
+
+/**
+ * Input for creating a product base with variants
+ * _Requirements: 3.2, 9.3_
+ */
+export interface CreateProductBaseInput {
+  name: string;
+  categoryId: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  allowFitIn?: boolean;
+  order?: number;
+  isActive?: boolean;
+  variants: CreateVariantInput[];
+  mappings?: ProductMappingInput[];
+}
+
+/**
+ * Input for updating a product base
+ * _Requirements: 3.3, 9.4_
+ */
+export interface UpdateProductBaseInput {
+  name?: string;
+  categoryId?: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  allowFitIn?: boolean;
+  order?: number;
+  isActive?: boolean;
+}
 
 
 // ========== PDF SETTINGS TYPES ==========

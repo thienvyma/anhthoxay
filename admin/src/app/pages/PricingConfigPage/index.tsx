@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { ResponsiveTabs, Tab } from '../../../components/responsive';
 import { ServiceCategoriesTab } from './ServiceCategoriesTab';
 import { UnitPricesTab } from './UnitPricesTab';
@@ -95,7 +95,7 @@ export function PricingConfigPage() {
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: tokens.color.primary }}
+          style={{ width: 48, height: 48, borderRadius: '50%', border: `3px solid ${tokens.color.border}`, borderTopColor: tokens.color.primary }}
         />
       </div>
     );

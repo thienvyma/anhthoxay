@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { RichTextEditor } from '../../RichTextEditor';
 import { VisualBlockEditor } from '../../VisualBlockEditor';
 import { InfoBanner, FormSection, ImageSection, RangeInput } from './shared';

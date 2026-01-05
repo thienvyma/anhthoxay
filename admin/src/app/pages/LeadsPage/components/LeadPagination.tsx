@@ -1,4 +1,4 @@
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { Button } from '../../../components/Button';
 import { ResponsiveStack } from '../../../../components/responsive/ResponsiveStack';
 

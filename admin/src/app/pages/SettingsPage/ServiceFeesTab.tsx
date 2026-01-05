@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
@@ -278,7 +278,7 @@ export function ServiceFeesTab({ onShowMessage, onError }: ServiceFeesTabProps) 
                     </td>
                     <td style={tdStyle}>
                       <code style={{
-                        background: 'rgba(255,255,255,0.1)',
+                        background: tokens.color.surfaceHover,
                         padding: '2px 8px',
                         borderRadius: 4,
                         fontSize: 12,
@@ -293,8 +293,8 @@ export function ServiceFeesTab({ onShowMessage, onError }: ServiceFeesTabProps) 
                         borderRadius: 4,
                         fontSize: 12,
                         fontWeight: 600,
-                        background: fee.type === 'PERCENTAGE' ? 'rgba(147,197,253,0.2)' : 'rgba(167,243,208,0.2)',
-                        color: fee.type === 'PERCENTAGE' ? '#93c5fd' : '#a7f3d0',
+                        background: fee.type === 'PERCENTAGE' ? tokens.color.infoBg : tokens.color.successBg,
+                        color: fee.type === 'PERCENTAGE' ? tokens.color.info : tokens.color.success,
                       }}>
                         {fee.type === 'PERCENTAGE' ? 'Phần trăm' : 'Cố định'}
                       </span>
@@ -315,7 +315,7 @@ export function ServiceFeesTab({ onShowMessage, onError }: ServiceFeesTabProps) 
                           borderRadius: 4,
                           fontSize: 12,
                           fontWeight: 600,
-                          color: fee.isActive ? '#a7f3d0' : tokens.color.muted,
+                          color: fee.isActive ? tokens.color.success : tokens.color.muted,
                           display: 'flex',
                           alignItems: 'center',
                           gap: 4,
@@ -331,7 +331,7 @@ export function ServiceFeesTab({ onShowMessage, onError }: ServiceFeesTabProps) 
                           <i className="ri-edit-line" />
                         </Button>
                         <Button variant="ghost" onClick={() => handleDelete(fee)}>
-                          <i className="ri-delete-bin-line" style={{ color: '#f87171' }} />
+                          <i className="ri-delete-bin-line" style={{ color: tokens.color.error }} />
                         </Button>
                       </div>
                     </td>
@@ -354,7 +354,7 @@ export function ServiceFeesTab({ onShowMessage, onError }: ServiceFeesTabProps) 
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(0,0,0,0.7)',
+              background: tokens.color.overlay,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

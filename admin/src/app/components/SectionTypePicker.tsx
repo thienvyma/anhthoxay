@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 import type { SectionKind } from '../types';
 
 interface SectionTypePickerProps {
@@ -247,7 +247,7 @@ const sectionTypes: Array<{
     icon: 'ri-customer-service-2-fill',
     label: 'Nút Hành Động Nổi',
     description: 'Nút cố định góc màn hình (gọi, chat)',
-    color: '#f5d393',
+    color: tokens.color.primary,
     category: 'cta',
   },
 
@@ -307,7 +307,7 @@ export function SectionTypePicker({ onSelect, onCancel }: SectionTypePickerProps
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.8)',
+        background: tokens.color.overlay,
         backdropFilter: 'blur(8px)',
         zIndex: 1000,
         display: 'flex',
@@ -372,7 +372,7 @@ export function SectionTypePicker({ onSelect, onCancel }: SectionTypePickerProps
               whileTap={{ scale: 0.9 }}
               onClick={onCancel}
               style={{
-                background: 'rgba(255,255,255,0.05)',
+                background: tokens.color.surfaceHover,
                 border: `1px solid ${tokens.color.border}`,
                 borderRadius: '50%',
                 width: 36,
@@ -490,7 +490,7 @@ export function SectionTypePicker({ onSelect, onCancel }: SectionTypePickerProps
                   background:
                     activeCategory === cat.id
                       ? tokens.color.primary
-                      : 'rgba(255,255,255,0.1)',
+                      : tokens.color.surfaceHover,
                   color: activeCategory === cat.id ? '#111' : tokens.color.muted,
                   padding: '2px 6px',
                   borderRadius: 10,
@@ -571,7 +571,7 @@ export function SectionTypePicker({ onSelect, onCancel }: SectionTypePickerProps
                     }}
                     onClick={() => onSelect(section.type)}
                     style={{
-                      background: 'rgba(255,255,255,0.02)',
+                      background: tokens.color.surfaceAlt,
                       border: `1px solid ${tokens.color.border}`,
                       borderRadius: tokens.radius.md,
                       padding: 16,

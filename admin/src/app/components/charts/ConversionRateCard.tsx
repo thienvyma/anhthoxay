@@ -1,4 +1,4 @@
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 
 interface ConversionRateCardProps {
   rate: number;
@@ -36,7 +36,7 @@ export function ConversionRateCard({ rate, totalLeads, convertedLeads }: Convers
             cy="60"
             r={radius}
             fill="none"
-            stroke="rgba(255,255,255,0.1)"
+            stroke={tokens.color.surfaceHover}
             strokeWidth="10"
           />
           {/* Progress circle */}

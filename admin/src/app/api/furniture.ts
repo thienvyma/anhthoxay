@@ -69,17 +69,42 @@ export interface FurnitureCategory {
   updatedAt: string;
 }
 
+/**
+ * Pricing type for furniture products
+ */
+export type PricingType = 'M2' | 'LINEAR';
+
+/**
+ * Product-Apartment Mapping
+ */
+export interface FurnitureProductMapping {
+  id: string;
+  productId: string;
+  projectName: string;
+  buildingCode: string;
+  apartmentType: string;
+  createdAt: string;
+}
+
 export interface FurnitureProduct {
   id: string;
   name: string;
+  material: string;              // NEW: Chất liệu
   categoryId: string;
   category?: FurnitureCategory;
-  price: number;
+  pricePerUnit: number;          // NEW: Giá trên 1 mét
+  pricingType: PricingType;      // NEW: M2 | LINEAR
+  length: number;                // NEW: Chiều dài
+  width?: number | null;         // NEW: Chiều rộng (for M2)
+  calculatedPrice: number;       // NEW: Giá đã tính
+  allowFitIn: boolean;           // NEW: Cho phép Fit-in
+  price: number;                 // DEPRECATED
   imageUrl: string | null;
   description: string | null;
-  dimensions: string | null;
+  dimensions: string | null;     // DEPRECATED
   order: number;
   isActive: boolean;
+  mappings?: FurnitureProductMapping[]; // NEW
   createdAt: string;
   updatedAt: string;
 }
@@ -88,6 +113,7 @@ export interface FurnitureProduct {
 export interface FurnitureFee {
   id: string;
   name: string;
+  code?: string; // Unique code for system fees (e.g., "FIT_IN", "VAT")
   type: 'FIXED' | 'PERCENTAGE';
   value: number;
   description: string | null;
@@ -97,11 +123,20 @@ export interface FurnitureFee {
   updatedAt: string;
 }
 
+/**
+ * Quotation item with material and Fit-in support
+ * 
+ * **Feature: furniture-product-mapping**
+ * **Validates: Requirements 8.3**
+ */
 export interface FurnitureQuotationItem {
   productId: string;
   name: string;
-  price: number;
+  material?: string;              // NEW: Material variant
+  price: number;                  // Base price (calculatedPrice)
   quantity: number;
+  fitInSelected?: boolean;        // NEW: Whether Fit-in is selected
+  fitInFee?: number;              // NEW: Fit-in fee amount (if selected)
 }
 
 export interface FurnitureQuotationFee {
@@ -211,24 +246,48 @@ interface UpdateCategoryInput {
   isActive?: boolean;
 }
 
+/**
+ * Input for product-apartment mapping
+ */
+interface ProductMappingInput {
+  projectName: string;
+  buildingCode: string;
+  apartmentType: string;
+}
+
 interface CreateProductInput {
   name: string;
+  material: string;              // NEW
   categoryId: string;
-  price: number;
+  pricePerUnit: number;          // NEW
+  pricingType: PricingType;      // NEW
+  length: number;                // NEW
+  width?: number | null;         // NEW
+  calculatedPrice?: number;      // NEW
+  allowFitIn: boolean;           // NEW
+  mappings: ProductMappingInput[]; // NEW
+  price?: number;                // DEPRECATED
   imageUrl?: string;
   description?: string;
-  dimensions?: string;
+  dimensions?: string;           // DEPRECATED
   order?: number;
   isActive?: boolean;
 }
 
 interface UpdateProductInput {
   name?: string;
+  material?: string;             // NEW
   categoryId?: string;
-  price?: number;
+  pricePerUnit?: number;         // NEW
+  pricingType?: PricingType;     // NEW
+  length?: number;               // NEW
+  width?: number | null;         // NEW
+  calculatedPrice?: number;      // NEW
+  allowFitIn?: boolean;          // NEW
+  price?: number;                // DEPRECATED
   imageUrl?: string | null;
   description?: string | null;
-  dimensions?: string | null;
+  dimensions?: string | null;    // DEPRECATED
   order?: number;
   isActive?: boolean;
 }
@@ -411,9 +470,52 @@ export const furnitureCategoriesApi = {
     apiFetch<{ ok: boolean }>(`/api/admin/furniture/categories/${id}`, { method: 'DELETE' }),
 };
 
-// ========== PRODUCTS API ==========
+// ========== MATERIALS API ==========
 /**
- * Furniture Products API
+ * Furniture Materials API (Chất liệu)
+ */
+export interface FurnitureMaterial {
+  id: string;
+  name: string;
+  description: string | null;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CreateMaterialInput {
+  name: string;
+  description?: string;
+  order?: number;
+  isActive?: boolean;
+}
+
+interface UpdateMaterialInput {
+  name?: string;
+  description?: string | null;
+  order?: number;
+  isActive?: boolean;
+}
+
+export const furnitureMaterialsApi = {
+  list: () =>
+    apiFetch<FurnitureMaterial[]>('/api/admin/furniture/materials'),
+
+  create: (data: CreateMaterialInput) =>
+    apiFetch<FurnitureMaterial>('/api/admin/furniture/materials', { method: 'POST', body: data }),
+
+  update: (id: string, data: UpdateMaterialInput) =>
+    apiFetch<FurnitureMaterial>(`/api/admin/furniture/materials/${id}`, { method: 'PUT', body: data }),
+
+  delete: (id: string) =>
+    apiFetch<{ ok: boolean }>(`/api/admin/furniture/materials/${id}`, { method: 'DELETE' }),
+};
+
+// ========== PRODUCTS API (LEGACY) ==========
+/**
+ * Furniture Products API (Legacy - READ-ONLY)
+ * @deprecated Use furnitureProductBasesApi for new products
  * 
  * **Feature: furniture-quotation**
  * **Requirements: 2.2, 2.3, 2.4, 2.5**
@@ -432,6 +534,291 @@ export const furnitureProductsApi = {
 
   delete: (id: string) =>
     apiFetch<{ ok: boolean }>(`/api/admin/furniture/products/${id}`, { method: 'DELETE' }),
+
+  // ========== PRODUCT MAPPINGS ==========
+  // _Requirements: 10.3, 10.4, 10.5_
+
+  /**
+   * Get all mappings for a product
+   * _Requirements: 10.5_
+   */
+  getMappings: (productId: string) =>
+    apiFetch<{ mappings: FurnitureProductMapping[] }>(`/api/admin/furniture/products/${productId}/mappings`),
+
+  /**
+   * Add a mapping to a product
+   * _Requirements: 10.3_
+   */
+  addMapping: (productId: string, data: ProductMappingInput) =>
+    apiFetch<FurnitureProductMapping>(`/api/admin/furniture/products/${productId}/mappings`, { method: 'POST', body: data }),
+
+  /**
+   * Remove a mapping from a product
+   * _Requirements: 10.4_
+   */
+  removeMapping: (productId: string, mappingId: string) =>
+    apiFetch<{ ok: boolean }>(`/api/admin/furniture/products/${productId}/mappings/${mappingId}`, { method: 'DELETE' }),
+};
+
+// ========== PRODUCT BASE TYPES (NEW - furniture-product-restructure) ==========
+
+/**
+ * Variant with material info for display
+ * _Requirements: 4.1_
+ */
+export interface ProductVariantWithMaterial {
+  id: string;
+  productBaseId: string;
+  materialId: string;
+  material: {
+    id: string;
+    name: string;
+  };
+  pricePerUnit: number;
+  pricingType: 'LINEAR' | 'M2';
+  length: number;
+  width: number | null;
+  calculatedPrice: number;
+  imageUrl: string | null;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Product mapping type (now references productBaseId)
+ */
+export interface ProductBaseMapping {
+  id: string;
+  productBaseId: string;
+  projectName: string;
+  buildingCode: string;
+  apartmentType: string;
+  createdAt: string;
+}
+
+/**
+ * Product base with all details for admin
+ * _Requirements: 3.1, 9.2_
+ */
+export interface ProductBaseWithDetails {
+  id: string;
+  name: string;
+  categoryId: string;
+  category: {
+    id: string;
+    name: string;
+  };
+  description: string | null;
+  imageUrl: string | null;
+  allowFitIn: boolean;
+  order: number;
+  isActive: boolean;
+  variants: ProductVariantWithMaterial[];
+  mappings: ProductBaseMapping[];
+  variantCount: number;
+  priceRange: { min: number; max: number } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Paginated result for admin product list
+ * _Requirements: 9.2_
+ */
+export interface PaginatedProductBases {
+  products: ProductBaseWithDetails[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+/**
+ * Input for creating a variant
+ * _Requirements: 4.2, 4.3_
+ */
+export interface CreateVariantInput {
+  materialId: string;
+  pricePerUnit: number;
+  pricingType: 'LINEAR' | 'M2';
+  length: number;
+  width?: number | null;
+  imageUrl?: string | null;
+  order?: number;
+  isActive?: boolean;
+}
+
+/**
+ * Input for updating a variant
+ * _Requirements: 4.4_
+ */
+export interface UpdateVariantInput {
+  materialId?: string;
+  pricePerUnit?: number;
+  pricingType?: 'LINEAR' | 'M2';
+  length?: number;
+  width?: number | null;
+  imageUrl?: string | null;
+  order?: number;
+  isActive?: boolean;
+}
+
+/**
+ * Input for creating a product base with variants
+ * _Requirements: 3.2, 9.3_
+ */
+export interface CreateProductBaseInput {
+  name: string;
+  categoryId: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  allowFitIn?: boolean;
+  order?: number;
+  isActive?: boolean;
+  variants: CreateVariantInput[];
+  mappings?: ProductMappingInput[];
+}
+
+/**
+ * Input for updating a product base
+ * _Requirements: 3.3, 9.4_
+ */
+export interface UpdateProductBaseInput {
+  name?: string;
+  categoryId?: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  allowFitIn?: boolean;
+  order?: number;
+  isActive?: boolean;
+}
+
+/**
+ * Query parameters for admin product list
+ * _Requirements: 9.2_
+ */
+export interface GetProductBasesAdminQuery {
+  categoryId?: string;
+  materialId?: string;
+  isActive?: boolean;
+  page?: number;
+  limit?: number;
+  sortBy?: 'name' | 'order' | 'createdAt' | 'updatedAt';
+  sortOrder?: 'asc' | 'desc';
+}
+
+// ========== PRODUCT BASES API (NEW - furniture-product-restructure) ==========
+/**
+ * Furniture Product Bases API
+ * 
+ * **Feature: furniture-product-restructure**
+ * **Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 9.2, 9.3, 9.4, 9.6**
+ */
+export const furnitureProductBasesApi = {
+  /**
+   * List product bases with pagination, filtering, and sorting
+   * _Requirements: 3.1, 9.2_
+   */
+  list: (query?: GetProductBasesAdminQuery) => {
+    const params = new URLSearchParams();
+    if (query?.categoryId) params.append('categoryId', query.categoryId);
+    if (query?.materialId) params.append('materialId', query.materialId);
+    if (query?.isActive !== undefined) params.append('isActive', String(query.isActive));
+    if (query?.page) params.append('page', String(query.page));
+    if (query?.limit) params.append('limit', String(query.limit));
+    if (query?.sortBy) params.append('sortBy', query.sortBy);
+    if (query?.sortOrder) params.append('sortOrder', query.sortOrder);
+    const queryStr = params.toString();
+    return apiFetch<PaginatedProductBases>(`/api/admin/furniture/product-bases${queryStr ? `?${queryStr}` : ''}`);
+  },
+
+  /**
+   * Get a single product base by ID
+   * _Requirements: 9.2_
+   */
+  get: (id: string) =>
+    apiFetch<ProductBaseWithDetails>(`/api/admin/furniture/product-bases/${id}`),
+
+  /**
+   * Create a new product base with variants
+   * _Requirements: 3.2, 9.3_
+   */
+  create: (data: CreateProductBaseInput) =>
+    apiFetch<ProductBaseWithDetails>('/api/admin/furniture/product-bases', { method: 'POST', body: data }),
+
+  /**
+   * Update a product base
+   * _Requirements: 3.3, 9.4_
+   */
+  update: (id: string, data: UpdateProductBaseInput) =>
+    apiFetch<ProductBaseWithDetails>(`/api/admin/furniture/product-bases/${id}`, { method: 'PUT', body: data }),
+
+  /**
+   * Delete a product base
+   * _Requirements: 3.4, 9.6_
+   */
+  delete: (id: string) =>
+    apiFetch<{ ok: boolean }>(`/api/admin/furniture/product-bases/${id}`, { method: 'DELETE' }),
+
+  // ========== VARIANTS ==========
+  // _Requirements: 4.2, 4.4, 4.5, 9.5_
+
+  /**
+   * Create a new variant for a product base
+   * _Requirements: 4.2, 9.5_
+   */
+  createVariant: (productBaseId: string, data: CreateVariantInput) =>
+    apiFetch<ProductVariantWithMaterial>(`/api/admin/furniture/product-bases/${productBaseId}/variants`, { method: 'POST', body: data }),
+
+  /**
+   * Update a variant
+   * _Requirements: 4.4, 9.5_
+   */
+  updateVariant: (productBaseId: string, variantId: string, data: UpdateVariantInput) =>
+    apiFetch<ProductVariantWithMaterial>(`/api/admin/furniture/product-bases/${productBaseId}/variants/${variantId}`, { method: 'PUT', body: data }),
+
+  /**
+   * Delete a variant
+   * _Requirements: 4.5, 9.5_
+   */
+  deleteVariant: (productBaseId: string, variantId: string) =>
+    apiFetch<{ ok: boolean }>(`/api/admin/furniture/product-bases/${productBaseId}/variants/${variantId}`, { method: 'DELETE' }),
+
+  // ========== MAPPINGS ==========
+  // _Requirements: 5.1, 5.2, 5.4, 5.5_
+
+  /**
+   * Get all mappings for a product base
+   * _Requirements: 5.1_
+   */
+  getMappings: (productBaseId: string) =>
+    apiFetch<{ mappings: ProductBaseMapping[] }>(`/api/admin/furniture/product-bases/${productBaseId}/mappings`),
+
+  /**
+   * Add a mapping to a product base
+   * _Requirements: 5.2_
+   */
+  addMapping: (productBaseId: string, data: ProductMappingInput) =>
+    apiFetch<ProductBaseMapping>(`/api/admin/furniture/product-bases/${productBaseId}/mappings`, { method: 'POST', body: data }),
+
+  /**
+   * Remove a mapping from a product base
+   * _Requirements: 5.4_
+   */
+  removeMapping: (productBaseId: string, mappingId: string) =>
+    apiFetch<{ ok: boolean }>(`/api/admin/furniture/product-bases/${productBaseId}/mappings/${mappingId}`, { method: 'DELETE' }),
+
+  /**
+   * Bulk create mappings for multiple product bases
+   * _Requirements: 5.5_
+   */
+  bulkMapping: (productBaseIds: string[], mapping: ProductMappingInput) =>
+    apiFetch<{ success: boolean; created: number; skipped: number; errors: Array<{ productBaseId: string; error: string }> }>(
+      '/api/admin/furniture/product-bases/bulk-mapping',
+      { method: 'POST', body: { productBaseIds, mapping } }
+    ),
 };
 
 // ========== FEES API ==========

@@ -1,5 +1,5 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 
 interface LeadsPieChartProps {
   data: Record<string, number>;

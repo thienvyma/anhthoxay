@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { Button } from '../../../components/Button';
 import { furnitureQuotationsApi } from '../../../api/furniture';
 import type { FurnitureQuotationHistoryProps } from '../types';
@@ -46,7 +46,7 @@ export function FurnitureQuotationHistory({ quotations, loading }: FurnitureQuot
           padding: 20, 
           textAlign: 'center', 
           color: tokens.color.muted,
-          background: 'rgba(0,0,0,0.2)',
+          background: tokens.color.surfaceAlt,
           borderRadius: 8,
         }}>
           <i className="ri-loader-4-line" style={{ animation: 'spin 1s linear infinite' }} /> Đang tải...
@@ -76,7 +76,7 @@ export function FurnitureQuotationHistory({ quotations, loading }: FurnitureQuot
             <div 
               key={quotation.id}
               style={{
-                background: 'rgba(0,0,0,0.2)',
+                background: tokens.color.surfaceAlt,
                 borderRadius: 8,
                 overflow: 'hidden',
               }}
@@ -92,7 +92,7 @@ export function FurnitureQuotationHistory({ quotations, loading }: FurnitureQuot
                   cursor: 'pointer',
                   transition: 'background 0.2s',
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                onMouseEnter={(e) => e.currentTarget.style.background = tokens.color.surfaceHover}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
                 {/* Date */}
@@ -131,7 +131,7 @@ export function FurnitureQuotationHistory({ quotations, loading }: FurnitureQuot
                   padding: '2px 8px',
                   borderRadius: 4,
                   background: 'rgba(59,130,246,0.2)',
-                  color: '#3b82f6',
+                  color: tokens.color.info,
                   fontSize: 11,
                   fontWeight: 500,
                 }}>
@@ -184,24 +184,55 @@ export function FurnitureQuotationHistory({ quotations, loading }: FurnitureQuot
                     <div style={{ marginTop: 12 }}>
                       <div style={{ fontSize: 11, color: tokens.color.muted, marginBottom: 6 }}>Sản phẩm đã chọn:</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        {items.map((item: { name: string; price: number; quantity: number }, idx: number) => (
-                          <div key={idx} style={{ 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
-                            alignItems: 'center',
-                            padding: '4px 8px',
-                            background: 'rgba(0,0,0,0.2)',
-                            borderRadius: 4,
-                            fontSize: 12,
-                          }}>
-                            <span style={{ color: tokens.color.text }}>
-                              {item.name} {item.quantity > 1 && <span style={{ color: tokens.color.muted }}>x{item.quantity}</span>}
-                            </span>
-                            <span style={{ color: tokens.color.muted }}>
-                              {new Intl.NumberFormat('vi-VN').format(item.price * item.quantity)} VNĐ
-                            </span>
-                          </div>
-                        ))}
+                        {items.map((item: { 
+                          name: string; 
+                          material?: string;
+                          price: number; 
+                          quantity: number;
+                          fitInSelected?: boolean;
+                          fitInFee?: number;
+                        }, idx: number) => {
+                          const itemTotal = item.price * item.quantity;
+                          const fitInTotal = item.fitInSelected && item.fitInFee ? item.fitInFee * item.quantity : 0;
+                          const totalWithFitIn = itemTotal + fitInTotal;
+                          
+                          return (
+                            <div key={idx} style={{ 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              alignItems: 'center',
+                              padding: '4px 8px',
+                              background: tokens.color.surfaceAlt,
+                              borderRadius: 4,
+                              fontSize: 12,
+                            }}>
+                              <span style={{ color: tokens.color.text }}>
+                                {item.name}
+                                {item.material && (
+                                  <span style={{ color: tokens.color.muted, marginLeft: 4 }}>
+                                    ({item.material})
+                                  </span>
+                                )}
+                                {item.quantity > 1 && <span style={{ color: tokens.color.muted }}> x{item.quantity}</span>}
+                                {item.fitInSelected && item.fitInFee && (
+                                  <span style={{ 
+                                    marginLeft: 6,
+                                    padding: '1px 4px',
+                                    borderRadius: 3,
+                                    background: 'rgba(245,211,147,0.2)',
+                                    color: tokens.color.primary,
+                                    fontSize: 10,
+                                  }}>
+                                    +Fit-in
+                                  </span>
+                                )}
+                              </span>
+                              <span style={{ color: tokens.color.muted }}>
+                                {new Intl.NumberFormat('vi-VN').format(totalWithFitIn)} VNĐ
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -216,6 +247,23 @@ export function FurnitureQuotationHistory({ quotations, loading }: FurnitureQuot
                             {new Intl.NumberFormat('vi-VN').format(quotation.basePrice)} VNĐ
                           </td>
                         </tr>
+                        {/* Fit-in fees total */}
+                        {(() => {
+                          const fitInTotal = items.reduce((sum: number, item: { fitInSelected?: boolean; fitInFee?: number; quantity: number }) => {
+                            if (item.fitInSelected && item.fitInFee) {
+                              return sum + (item.fitInFee * item.quantity);
+                            }
+                            return sum;
+                          }, 0);
+                          return fitInTotal > 0 ? (
+                            <tr>
+                              <td style={{ padding: '4px 0', color: tokens.color.muted }}>Phí Fit-in:</td>
+                              <td style={{ padding: '4px 0', color: tokens.color.primary, textAlign: 'right' }}>
+                                {new Intl.NumberFormat('vi-VN').format(fitInTotal)} VNĐ
+                              </td>
+                            </tr>
+                          ) : null;
+                        })()}
                         {fees.map((fee: { name: string; type: string; value: number; amount: number }, idx: number) => (
                           <tr key={idx}>
                             <td style={{ padding: '4px 0', color: tokens.color.muted }}>

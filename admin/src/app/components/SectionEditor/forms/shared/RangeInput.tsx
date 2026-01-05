@@ -4,7 +4,7 @@
  * Requirements: 3.4
  */
 
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../../theme';
 
 interface RangeInputProps {
   label: string;

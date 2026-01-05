@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { Card } from '../../../components/Card';
 import { Button } from '../../../components/Button';
 import { Input } from '../../../components/Input';

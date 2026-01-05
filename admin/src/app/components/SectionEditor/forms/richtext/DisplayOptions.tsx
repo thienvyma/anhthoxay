@@ -4,7 +4,7 @@
  * Requirements: 4.3
  */
 
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../../theme';
 import { FormSection, SelectInput } from '../shared';
 import type { DataRecord, UpdateFieldFn } from '../shared';
 

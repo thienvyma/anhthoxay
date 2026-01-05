@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 
 // Danh sách icon phổ biến cho dự án xây dựng/cải tạo nhà
 const ICON_CATEGORIES = {
@@ -143,7 +143,7 @@ export function IconPicker({ label, value, onChange, placeholder = 'Chọn icon.
         style={{
           width: '100%',
           padding: '12px 16px',
-          background: 'rgba(255, 255, 255, 0.05)',
+          background: tokens.color.surfaceHover,
           border: `1px solid ${isOpen ? tokens.color.primary : tokens.color.border}`,
           borderRadius: tokens.radius.md,
           color: value ? tokens.color.text : tokens.color.muted,
@@ -187,10 +187,9 @@ export function IconPicker({ label, value, onChange, placeholder = 'Chọn icon.
               top: 'calc(100% + 8px)',
               left: 0,
               right: 0,
-              background: 'rgba(20, 21, 26, 0.98)',
+              background: tokens.color.surface,
               border: `1px solid ${tokens.color.border}`,
               borderRadius: tokens.radius.md,
-              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.4)',
               zIndex: 1000,
               maxHeight: 400,
               overflow: 'hidden',
@@ -204,7 +203,7 @@ export function IconPicker({ label, value, onChange, placeholder = 'Chọn icon.
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                background: 'rgba(255, 255, 255, 0.05)',
+                background: tokens.color.surfaceHover,
                 borderRadius: tokens.radius.sm,
                 padding: '8px 12px',
               }}>
@@ -328,7 +327,7 @@ export function IconPicker({ label, value, onChange, placeholder = 'Chọn icon.
                                   width: '100%',
                                   padding: '8px',
                                   marginTop: 8,
-                                  background: 'rgba(255, 255, 255, 0.03)',
+                                  background: tokens.color.surfaceAlt,
                                   border: `1px dashed ${tokens.color.border}`,
                                   borderRadius: tokens.radius.sm,
                                   color: tokens.color.muted,
@@ -365,10 +364,10 @@ export function IconPicker({ label, value, onChange, placeholder = 'Chọn icon.
                   onClick={() => handleSelect('')}
                   style={{
                     padding: '4px 8px',
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    background: tokens.color.errorBg,
+                    border: `1px solid ${tokens.color.error}40`,
                     borderRadius: tokens.radius.sm,
-                    color: '#EF4444',
+                    color: tokens.color.error,
                     fontSize: 12,
                     cursor: 'pointer',
                   }}
@@ -394,7 +393,7 @@ export function IconPicker({ label, value, onChange, placeholder = 'Chọn icon.
                   }}
                   style={{
                     padding: '8px 16px',
-                    background: 'rgba(255, 255, 255, 0.05)',
+                    background: tokens.color.surfaceHover,
                     border: `1px solid ${tokens.color.border}`,
                     borderRadius: tokens.radius.sm,
                     color: tokens.color.muted,
@@ -431,7 +430,7 @@ function IconButton({ icon, isSelected, onClick }: { icon: string; isSelected: b
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: isSelected ? `${tokens.color.primary}20` : 'rgba(255, 255, 255, 0.03)',
+        background: isSelected ? `${tokens.color.primary}20` : tokens.color.surfaceAlt,
         border: `1px solid ${isSelected ? tokens.color.primary : tokens.color.border}`,
         borderRadius: tokens.radius.sm,
         color: isSelected ? tokens.color.primary : tokens.color.text,

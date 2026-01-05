@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
@@ -30,8 +30,8 @@ const defaultFeeFormData: FeeFormData = {
 };
 
 const glass = {
-  background: 'rgba(12,12,16,0.7)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: tokens.color.surfaceAlt,
+  border: `1px solid ${tokens.color.border}`,
 };
 
 const thStyle: React.CSSProperties = {
@@ -191,7 +191,7 @@ export const ServiceFeesTab = memo(function ServiceFeesTab() {
                         {fee.description && <p style={{ color: tokens.color.muted, fontSize: 12, margin: '4px 0 0' }}>{fee.description}</p>}
                       </div>
                     </td>
-                    <td style={tdStyle}><code style={{ background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: 4, fontSize: 12, color: tokens.color.accent }}>{fee.code}</code></td>
+                    <td style={tdStyle}><code style={{ background: tokens.color.surfaceHover, padding: '2px 8px', borderRadius: 4, fontSize: 12, color: tokens.color.accent }}>{fee.code}</code></td>
                     <td style={tdStyle}>
                       <span style={{ padding: '4px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600, background: fee.type === 'PERCENTAGE' ? 'rgba(147,197,253,0.2)' : 'rgba(167,243,208,0.2)', color: fee.type === 'PERCENTAGE' ? '#93c5fd' : '#a7f3d0' }}>
                         {fee.type === 'PERCENTAGE' ? 'Phần trăm' : 'Cố định'}
@@ -221,7 +221,7 @@ export const ServiceFeesTab = memo(function ServiceFeesTab() {
       <AnimatePresence>
         {showModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
+            style={{ position: 'fixed', inset: 0, background: tokens.color.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
             onClick={() => setShowModal(false)}>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}

@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens, resolveMediaUrl } from '@app/shared';
+import { resolveMediaUrl } from '@app/shared';
+import { tokens } from '../../theme';
 import { mediaApi } from '../api';
 
 interface ImageDropzoneProps {
@@ -221,7 +222,7 @@ export function ImageDropzone({ value, onChange, onRemove, label, height = 200, 
               <div style={{
                 width: '100%',
                 height: 8,
-                background: 'rgba(255, 255, 255, 0.1)',
+                background: tokens.color.border,
                 borderRadius: 4,
                 overflow: 'hidden',
               }}>
@@ -342,7 +343,7 @@ export function ImageDropzone({ value, onChange, onRemove, label, height = 200, 
                     type="button"
                     style={{
                       padding: '10px 20px',
-                      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                      background: `linear-gradient(135deg, ${tokens.color.error} 0%, #dc2626 100%)`,
                       color: '#fff',
                       border: 'none',
                       borderRadius: tokens.radius.md,
@@ -378,15 +379,15 @@ export function ImageDropzone({ value, onChange, onRemove, label, height = 200, 
                   isDragging 
                     ? tokens.color.primary
                     : errorMessage
-                    ? '#ef4444'
+                    ? tokens.color.error
                     : tokens.color.border
                 }`,
                 borderRadius: tokens.radius.md,
                 background: isDragging 
                   ? 'linear-gradient(135deg, rgba(245, 211, 147, 0.1) 0%, rgba(245, 211, 147, 0.05) 100%)'
                   : errorMessage
-                  ? 'rgba(239, 68, 68, 0.05)'
-                  : 'rgba(255, 255, 255, 0.02)',
+                  ? tokens.color.errorBg
+                  : tokens.color.surfaceAlt,
                 cursor: isUploading ? 'default' : 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
@@ -411,7 +412,7 @@ export function ImageDropzone({ value, onChange, onRemove, label, height = 200, 
                       flexDirection: 'column',
                       alignItems: 'center',
                       gap: 12,
-                      color: '#ef4444',
+                      color: tokens.color.error,
                     }}
                   >
                     <i className="ri-error-warning-line" style={{ fontSize: 48 }} />

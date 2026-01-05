@@ -20,31 +20,36 @@ style={{ borderRadius: tokens.radius.md }}
 // ❌ SAI - Hardcode màu
 style={{ color: '#F5D393' }}
 style={{ background: '#131316' }}
+
+// ❌ SAI - Dùng gradient
+style={{ background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})` }}
 ```
 
 ## 🎨 Design Tokens Reference
 
-### Colors
+### Colors (Updated - Sáng hơn, contrast tốt)
 ```ts
 tokens.color = {
-  // Backgrounds
-  background: '#0B0B0C',     // Main background
-  surface: '#131316',        // Cards, modals
-  surfaceHover: '#1A1A1E',   // Hover states
+  // Backgrounds - sáng hơn, dễ nhìn
+  background: '#1A1A1D',     // Main background
+  surface: '#232328',        // Cards, modals, sidebar, header
+  surfaceHover: '#2D2D33',   // Hover states
+  surfaceAlt: '#28282E',     // Alternative surface for nested cards
   
   // Brand
   primary: '#F5D393',        // Primary gold
   secondary: '#C7A775',      // Secondary gold
   accent: '#EFB679',         // Accent orange
   
-  // Text
-  text: '#F4F4F5',           // Primary text
-  textMuted: '#A1A1AA',      // Secondary text
-  muted: '#A1A1AA',          // Alias for textMuted
+  // Text - contrast tốt hơn
+  text: '#F5F5F5',           // Primary text
+  textMuted: '#B0B0B8',      // Secondary text
+  muted: '#8A8A94',          // Muted text
   
-  // Borders
-  border: '#27272A',         // Default border
-  borderHover: '#3F3F46',    // Hover border
+  // Borders - sáng hơn
+  border: '#404048',         // Default border
+  borderHover: '#5A5A64',    // Hover border
+  borderLight: '#4A4A52',    // Light border
   
   // Status
   success: '#34D399',
@@ -107,18 +112,18 @@ tokens.shadow = {
 
 ## 🧩 Component Patterns
 
-### Button Styles
+### Button Styles (NO GRADIENT)
 ```tsx
-// Primary Button (CTA)
+// Primary Button (CTA) - Solid color, no gradient
 <motion.button
-  whileHover={{ scale: 1.05 }}
-  whileTap={{ scale: 0.95 }}
+  whileHover={{ opacity: 0.9 }}
+  whileTap={{ scale: 0.98 }}
   style={{
-    background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+    background: tokens.color.primary,
     color: '#111',
-    padding: '8px 20px',
-    borderRadius: tokens.radius.pill,
-    fontWeight: 600,
+    padding: '10px 18px',
+    borderRadius: tokens.radius.md,
+    fontWeight: 500,
     fontSize: 14,
     border: 'none',
     cursor: 'pointer',
@@ -128,27 +133,47 @@ tokens.shadow = {
 // Secondary Button
 <motion.button
   style={{
-    background: 'rgba(255,255,255,0.05)',
+    background: tokens.color.surfaceHover,
     border: `1px solid ${tokens.color.border}`,
     color: tokens.color.text,
-    padding: '8px 16px',
+    padding: '10px 18px',
     borderRadius: tokens.radius.md,
   }}
 >
 
 // Icon Button
 <motion.button
-  whileHover={{ scale: 1.1 }}
-  whileTap={{ scale: 0.9 }}
+  whileHover={{ opacity: 0.8 }}
+  whileTap={{ scale: 0.95 }}
   style={{
     padding: 8,
-    background: 'rgba(255,255,255,0.05)',
+    background: tokens.color.surfaceHover,
     border: `1px solid ${tokens.color.border}`,
     borderRadius: tokens.radius.sm,
     color: tokens.color.primary,
     cursor: 'pointer',
   }}
 >
+```
+
+### Icon Box Pattern (NO GRADIENT)
+```tsx
+// Icon box với background nhạt
+<div
+  style={{
+    width: 40,
+    height: 40,
+    borderRadius: tokens.radius.md,
+    background: `${tokens.color.primary}15`, // 15% opacity
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: tokens.color.primary,
+    fontSize: 20,
+  }}
+>
+  <i className="ri-settings-line" />
+</div>
 ```
 
 ### Card/Surface Pattern
@@ -359,16 +384,20 @@ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))'
 - ❌ Dùng inline colors thay vì tokens
 - ❌ Tạo CSS variables mới trùng với tokens
 - ❌ Dùng icon library khác (FontAwesome, etc.)
-- ❌ Dùng gradient loè loẹt không theo brand
+- ❌ **Dùng gradient** (`linear-gradient`) cho backgrounds
+- ❌ Dùng `rgba(12,12,16,0.7)` hoặc backdrop-filter blur
+- ❌ Dùng boxShadow glow effects
 
 ## ✅ LUÔN LÀM
 
 - ✅ Import `tokens` từ `@app/shared`
 - ✅ Dùng tokens cho tất cả colors, spacing, radius
-- ✅ Dùng Framer Motion cho animations
+- ✅ Dùng Framer Motion cho animations (nhẹ nhàng)
 - ✅ Dùng Remix Icon (`ri-*`)
 - ✅ Follow responsive patterns với clamp()
-- ✅ Dùng `motion.div`, `motion.button` cho interactive elements
+- ✅ **Dùng solid colors** thay vì gradient
+- ✅ **Dùng `${tokens.color.primary}15`** cho icon backgrounds (15% opacity)
+- ✅ **Thống nhất** background giữa các sections (dùng `tokens.color.surface`)
 
 ## 📁 Portal CSS Variables (Bổ sung)
 

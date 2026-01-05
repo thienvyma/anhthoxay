@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { useToast } from '../../components/Toast';
 import { settingsApi } from '../../api';
 import { ResponsiveTabs, Tab } from '../../../components/responsive';
@@ -49,18 +49,18 @@ export function SettingsPage() {
       
       try {
         const [companyData, promoData] = await Promise.all([
-          settingsApi.get('company').catch(() => null),
-          settingsApi.get('promo').catch(() => null),
+          settingsApi.get('company'),
+          settingsApi.get('promo'),
         ]);
 
         if (isCancelled) return;
 
-        // Company settings
+        // Company settings - value is null if setting doesn't exist
         if (companyData?.value && typeof companyData.value === 'object') {
           setCompanySettings((prev) => ({ ...prev, ...(companyData.value as CompanySettings) }));
         }
 
-        // Promo settings
+        // Promo settings - value is null if setting doesn't exist
         if (promoData?.value && typeof promoData.value === 'object') {
           setPromoSettings((prev) => ({ ...prev, ...(promoData.value as PromoSettings) }));
         }
@@ -222,12 +222,12 @@ export function SettingsPage() {
             width: 48,
             height: 48,
             borderRadius: tokens.radius.lg,
-            background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+            background: `${tokens.color.primary}15`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: 24,
-            color: '#111',
+            color: tokens.color.primary,
           }}>
             <i className="ri-settings-3-line" />
           </div>

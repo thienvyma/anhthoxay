@@ -9,7 +9,7 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import type { BidListItem, BidStatus } from './types';
 import { STATUS_COLORS, STATUS_LABELS } from './types';
 
@@ -165,17 +165,17 @@ const BidRow = memo(function BidRow({
                 icon="ri-check-line"
                 title="Duyệt"
                 onClick={() => onApprove(bid)}
-                color="#10B981"
-                bgColor="rgba(16, 185, 129, 0.1)"
-                borderColor="rgba(16, 185, 129, 0.3)"
+                color={tokens.color.success}
+                bgColor={tokens.color.successBg}
+                borderColor={`${tokens.color.success}50`}
               />
               <ActionButton
                 icon="ri-close-line"
                 title="Từ chối"
                 onClick={() => onReject(bid)}
-                color="#EF4444"
-                bgColor="rgba(239, 68, 68, 0.1)"
-                borderColor="rgba(239, 68, 68, 0.3)"
+                color={tokens.color.error}
+                bgColor={tokens.color.errorBg}
+                borderColor={`${tokens.color.error}50`}
               />
             </>
           )}
@@ -213,7 +213,7 @@ function ActionButton({
   title,
   onClick,
   color,
-  bgColor = 'rgba(255,255,255,0.05)',
+  bgColor = tokens.color.surfaceHover,
   borderColor = tokens.color.border,
 }: {
   icon: string;

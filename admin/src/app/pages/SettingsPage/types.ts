@@ -9,6 +9,7 @@ export interface CompanySettings {
   website: string;
   workingHours: string;
   backgroundImage?: string;
+  adminBackgroundImage?: string; // Hình nền cho Admin Panel
   // Logo management
   logos?: LogoItem[];
 }
@@ -99,14 +100,14 @@ export interface FooterConfig {
 
 export type SettingsTab = 'account' | 'layout' | 'company' | 'promo' | 'integrations';
 
-// Glass Morphism Design Tokens (matching landing page)
+// Glass Morphism Design Tokens (Light Mode for Admin)
 export const glass = {
-  background: 'rgba(12,12,16,0.7)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: '#F9FAFB',  // Light gray background
+  border: '1px solid #E5E7EB',  // Visible border
   blur: 'blur(20px)',
-  shadow: '0 8px 32px rgba(0,0,0,0.3)',
-  hoverBorder: '1px solid rgba(245,211,147,0.3)',
-  hoverShadow: '0 12px 48px rgba(245,211,147,0.15)',
+  shadow: '0 2px 8px rgba(0,0,0,0.08)',
+  hoverBorder: '1px solid rgba(245,211,147,0.5)',
+  hoverShadow: '0 4px 16px rgba(245,211,147,0.15)',
 };
 
 // Default values - ATH Construction

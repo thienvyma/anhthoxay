@@ -6,7 +6,7 @@
 
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 import { StatsCard } from './StatsCard';
 import { ResponsiveGrid } from '../../components/responsive';
 import { useResponsive } from '../../hooks/useResponsive';
@@ -43,7 +43,7 @@ const STAT_CARDS: StatCardConfig[] = [
     key: 'projects',
     icon: 'ri-building-line',
     label: 'Công trình',
-    color: '#3b82f6',
+    color: tokens.color.info,
     route: '/bidding',
     getValue: (s) => s.projects.total,
     getPendingCount: (s) => s.projects.pending,
@@ -61,7 +61,7 @@ const STAT_CARDS: StatCardConfig[] = [
     key: 'contractors',
     icon: 'ri-building-2-line',
     label: 'Nhà thầu',
-    color: '#f59e0b',
+    color: tokens.color.warning,
     route: '/contractors',
     getValue: (s) => s.contractors.total,
     getPendingCount: (s) => s.contractors.pending,

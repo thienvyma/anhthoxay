@@ -9,7 +9,7 @@
 
 import { memo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Button } from '../../components/Button';
 import type { FeeListItem, FeeTransaction, FeeAction } from './types';
 import { 
@@ -70,7 +70,7 @@ export const FeeDetailModal = memo(function FeeDetailModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9998 }}
+            style={{ position: 'fixed', inset: 0, background: tokens.color.overlay, zIndex: 9998 }}
           />
           <div
             style={{
@@ -245,7 +245,7 @@ function ModalFooter({
         style={{
           padding: 24,
           borderTop: `1px solid ${tokens.color.border}`,
-          background: 'rgba(239, 68, 68, 0.05)',
+          background: tokens.color.errorBg,
         }}
       >
         <div style={{ marginBottom: 12 }}>
@@ -278,7 +278,7 @@ function ModalFooter({
             variant="primary"
             onClick={onCancel}
             disabled={!cancelReason.trim() || saving}
-            style={{ background: '#EF4444' }}
+            style={{ background: tokens.color.error }}
           >
             {saving ? (
               <motion.i
@@ -315,9 +315,9 @@ function ModalFooter({
         variant="secondary"
         onClick={onShowCancelForm}
         style={{
-          background: 'rgba(239, 68, 68, 0.1)',
-          borderColor: 'rgba(239, 68, 68, 0.3)',
-          color: '#EF4444',
+          background: tokens.color.errorBg,
+          borderColor: `${tokens.color.error}50`,
+          color: tokens.color.error,
         }}
       >
         <i className="ri-close-circle-line" style={{ marginRight: 8 }} />
@@ -327,7 +327,7 @@ function ModalFooter({
         variant="primary"
         onClick={onMarkPaid}
         disabled={saving}
-        style={{ background: '#22C55E' }}
+        style={{ background: tokens.color.success }}
       >
         {saving ? (
           <motion.i
@@ -390,7 +390,7 @@ function Section({ icon, title, children }: { icon: string; title: string; child
     <div
       style={{
         padding: 16,
-        background: 'rgba(255,255,255,0.02)',
+        background: tokens.color.surfaceAlt,
         borderRadius: tokens.radius.md,
         border: `1px solid ${tokens.color.border}`,
       }}

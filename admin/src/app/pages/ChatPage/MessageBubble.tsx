@@ -9,7 +9,7 @@
  */
 
 import { memo, useMemo } from 'react';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import type { ChatMessage, ReadReceipt } from '../../types';
 
 interface MessageBubbleProps {
@@ -80,9 +80,9 @@ export const MessageBubble = memo(function MessageBubble({
   }, [message.content, highlightQuery]);
 
   const roleColors: Record<string, { bg: string; text: string }> = {
-    HOMEOWNER: { bg: 'rgba(34, 197, 94, 0.15)', text: '#22c55e' },
-    CONTRACTOR: { bg: 'rgba(59, 130, 246, 0.15)', text: '#3b82f6' },
-    ADMIN: { bg: 'rgba(168, 85, 247, 0.15)', text: '#a855f7' },
+    HOMEOWNER: { bg: tokens.color.successBg, text: tokens.color.success },
+    CONTRACTOR: { bg: tokens.color.infoBg, text: tokens.color.info },
+    ADMIN: { bg: `${tokens.color.primary}15`, text: tokens.color.primary },
   };
 
   const roleLabels: Record<string, string> = {
@@ -97,7 +97,7 @@ export const MessageBubble = memo(function MessageBubble({
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <div
           style={{
-            background: 'rgba(255,255,255,0.05)',
+            background: tokens.color.surfaceHover,
             color: tokens.color.muted,
             fontSize: 13,
             padding: '8px 16px',
@@ -122,7 +122,7 @@ export const MessageBubble = memo(function MessageBubble({
             width: 36,
             height: 36,
             borderRadius: '50%',
-            background: 'rgba(255,255,255,0.1)',
+            background: tokens.color.surfaceHover,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -143,7 +143,7 @@ export const MessageBubble = memo(function MessageBubble({
           </div>
           <div
             style={{
-              background: 'rgba(255,255,255,0.05)',
+              background: tokens.color.surfaceHover,
               color: tokens.color.muted,
               fontStyle: 'italic',
               padding: '10px 14px',
@@ -214,7 +214,7 @@ export const MessageBubble = memo(function MessageBubble({
         {/* Message content */}
         <div
           style={{
-            background: 'rgba(255,255,255,0.05)',
+            background: tokens.color.surfaceHover,
             padding: '10px 14px',
             borderRadius: tokens.radius.md,
             display: 'inline-block',
@@ -303,7 +303,7 @@ export const MessageBubble = memo(function MessageBubble({
             style={{
               marginTop: 8,
               padding: 10,
-              background: 'rgba(255,255,255,0.03)',
+              background: tokens.color.surfaceAlt,
               borderRadius: tokens.radius.sm,
               fontSize: 12,
             }}

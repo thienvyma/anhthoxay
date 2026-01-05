@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { Button } from '../../../components/Button';
 import type { NotesEditorProps } from '../types';
 
@@ -32,7 +32,7 @@ export function NotesEditor({ initialNotes, onSave }: NotesEditorProps) {
           width: '100%',
           minHeight: 80,
           padding: 12,
-          background: 'rgba(0,0,0,0.2)',
+          background: tokens.color.surfaceAlt,
           border: `1px solid ${tokens.color.border}`,
           borderRadius: 8,
           color: tokens.color.text,
@@ -50,7 +50,7 @@ export function NotesEditor({ initialNotes, onSave }: NotesEditorProps) {
           {saving ? 'Đang lưu...' : 'Lưu ghi chú'}
         </Button>
         {saved && (
-          <span style={{ color: '#10b981', fontSize: 13 }}>
+          <span style={{ color: tokens.color.success, fontSize: 13 }}>
             <i className="ri-check-line" /> Đã lưu
           </span>
         )}

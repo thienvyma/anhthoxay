@@ -9,7 +9,7 @@
 
 import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Button } from '../../components/Button';
 import type { MatchListItem, MatchDetails, EscrowAction, EscrowStatus } from './types';
 import { 
@@ -46,7 +46,7 @@ export const MatchDetailModal = memo(function MatchDetailModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9998 }}
+            style={{ position: 'fixed', inset: 0, background: tokens.color.overlay, zIndex: 9998 }}
           />
           <div
             style={{
@@ -264,7 +264,7 @@ function Section({ icon, title, children }: { icon: string; title: string; child
     <div
       style={{
         padding: 16,
-        background: 'rgba(255,255,255,0.02)',
+        background: tokens.color.surfaceAlt,
         borderRadius: tokens.radius.md,
         border: `1px solid ${tokens.color.border}`,
       }}

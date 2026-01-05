@@ -8,7 +8,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useResponsive } from '../../hooks/useResponsive';
-import { tokens } from '@app/shared';
+import { tokens } from '../../app/../theme';
 
 export interface FilterOption {
   /** Unique filter identifier */

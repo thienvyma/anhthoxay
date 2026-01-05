@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { tokens, API_URL } from '@app/shared';
+import { API_URL } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
@@ -424,7 +425,7 @@ function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: b
         width: 48,
         height: 28,
         borderRadius: 14,
-        background: checked ? tokens.color.primary : 'rgba(255,255,255,0.1)',
+        background: checked ? tokens.color.primary : tokens.color.surfaceHover,
         position: 'relative',
         cursor: 'pointer',
         transition: 'background 0.2s',
@@ -440,7 +441,7 @@ function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: b
           height: 24,
           borderRadius: '50%',
           background: '#fff',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+          boxShadow: tokens.shadow.sm,
         }}
       />
     </motion.div>
@@ -516,7 +517,7 @@ function MediaUploader({ label, icon, media, uploading, onUpload, onExternalUrl,
           }}>
             <span style={{
               padding: '2px 8px',
-              background: 'rgba(0,0,0,0.7)',
+              background: tokens.color.overlay,
               borderRadius: tokens.radius.sm,
               color: '#fff',
               fontSize: 10,

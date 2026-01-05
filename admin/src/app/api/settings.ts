@@ -11,8 +11,12 @@ import type {
 
 // ========== SETTINGS ==========
 export const settingsApi = {
+  /** 
+   * Get setting by key. 
+   * Returns { key, value } where value is null if setting doesn't exist.
+   */
   get: (key: string) =>
-    apiFetch<Record<string, unknown>>(`/settings/${key}`),
+    apiFetch<{ key: string; value: unknown }>(`/settings/${key}`),
 
   update: (key: string, data: Record<string, unknown>) =>
     apiFetch<Record<string, unknown>>(`/settings/${key}`, { method: 'PUT', body: data }),

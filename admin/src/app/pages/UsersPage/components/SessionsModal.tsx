@@ -5,7 +5,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { ResponsiveModal, ResponsiveStack } from '../../../../components/responsive';
 import type { SessionsModalProps } from '../types';
 
@@ -51,7 +51,7 @@ export function SessionsModal({
               key={session.id}
               style={{
                 padding: isMobile ? 12 : 16,
-                background: 'rgba(255,255,255,0.02)',
+                background: tokens.color.surfaceAlt,
                 borderRadius: tokens.radius.md,
                 border: `1px solid ${tokens.color.border}`,
               }}
@@ -96,10 +96,10 @@ export function SessionsModal({
                   onClick={() => onRevokeSession(session.id)}
                   style={{
                     padding: '8px 16px',
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    background: tokens.color.errorBg,
+                    border: `1px solid ${tokens.color.error}50`,
                     borderRadius: tokens.radius.sm,
-                    color: '#EF4444',
+                    color: tokens.color.error,
                     cursor: 'pointer',
                     fontSize: 12,
                     fontWeight: 500,

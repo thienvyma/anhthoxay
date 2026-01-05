@@ -1,4 +1,4 @@
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { Card } from '../../../components/Card';
 import { Button } from '../../../components/Button';
 import { statusColors, statusLabels, sourceColors, sourceLabels } from '../types';
@@ -22,7 +22,7 @@ export function LeadMobileCard({ lead, onSelect, isSelected, onToggleSelect, has
   return (
     <Card style={{ 
       padding: 16,
-      background: isSelected ? 'rgba(239, 68, 68, 0.1)' : undefined,
+      background: isSelected ? tokens.color.errorBg : undefined,
       border: isSelected ? `1px solid ${tokens.color.error}` : undefined,
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
@@ -45,7 +45,7 @@ export function LeadMobileCard({ lead, onSelect, isSelected, onToggleSelect, has
         <span style={{
           padding: '4px 10px',
           borderRadius: 20,
-          background: colors?.bg || 'rgba(255,255,255,0.1)',
+          background: colors?.bg || tokens.color.surfaceHover,
           color: colors?.text || tokens.color.text,
           fontSize: 12,
           fontWeight: 500,
@@ -74,7 +74,7 @@ export function LeadMobileCard({ lead, onSelect, isSelected, onToggleSelect, has
           <span style={{
             padding: '2px 6px',
             borderRadius: 4,
-            background: srcColors?.bg || 'rgba(255,255,255,0.05)',
+            background: srcColors?.bg || tokens.color.surfaceHover,
             color: srcColors?.text || tokens.color.muted,
             fontSize: 11,
             display: 'inline-flex',

@@ -176,27 +176,90 @@ export const updateCategorySchema = createCategorySchema.partial();
 
 // ============================================
 // PRODUCT SCHEMAS
-// _Requirements: 2.3_
+// _Requirements: 2.3, 3.1, 3.2, 3.3, 9.1_
 // ============================================
 
 /**
+ * Pricing type enum
+ */
+export const pricingTypeEnum = z.enum(['M2', 'LINEAR']);
+
+/**
+ * Schema for product-apartment mapping input
+ * _Requirements: 1.1, 9.2_
+ */
+export const productMappingInputSchema = z.object({
+  projectName: z.string().min(1, 'Tên dự án không được trống').max(200),
+  buildingCode: z.string().min(1, 'Mã tòa nhà không được trống').max(50),
+  apartmentType: z.string().min(1, 'Loại căn hộ không được trống').max(50),
+}).transform(data => ({
+  ...data,
+  apartmentType: data.apartmentType.trim().toLowerCase(),
+}));
+
+/**
+ * Schema for adding a mapping to a product (API request body)
+ * _Requirements: 10.3_
+ */
+export const addProductMappingSchema = z.object({
+  projectName: z.string().min(1, 'Tên dự án không được trống').max(200),
+  buildingCode: z.string().min(1, 'Mã tòa nhà không được trống').max(50),
+  apartmentType: z.string().min(1, 'Loại căn hộ không được trống').max(50),
+});
+
+/**
  * Schema for creating a product
+ * NEW: Added material, pricePerUnit, pricingType, length, width, calculatedPrice, allowFitIn, mappings
+ * _Requirements: 2.1, 3.1, 3.2, 3.3, 1.1_
  */
 export const createProductSchema = z.object({
   name: z.string().min(1, 'Tên sản phẩm không được trống').max(200),
+  material: z.string().min(1, 'Chất liệu không được trống').max(100),
   categoryId: z.string().cuid('ID danh mục không hợp lệ'),
-  price: z.number().positive('Giá phải lớn hơn 0'),
-  imageUrl: z.string().url('URL ảnh không hợp lệ').optional().nullable(),
+  pricePerUnit: z.number().positive('Giá trên 1 mét phải lớn hơn 0'),
+  pricingType: pricingTypeEnum.default('LINEAR'),
+  length: z.number().positive('Chiều dài phải lớn hơn 0'),
+  width: z.number().positive('Chiều rộng phải lớn hơn 0').optional().nullable(),
+  calculatedPrice: z.number().nonnegative('Giá đã tính không được âm').optional(), // Auto-calculated if not provided
+  allowFitIn: z.boolean().default(false),
+  mappings: z.array(productMappingInputSchema).optional().default([]), // Optional - can add mappings later via API
+  price: z.number().nonnegative('Giá không được âm').optional(), // DEPRECATED: Keep for backward compatibility
+  imageUrl: z.string().max(500).optional().nullable().or(z.literal('')), // Accept relative path or URL
   description: z.string().max(1000).optional().nullable(),
-  dimensions: z.string().max(200).optional().nullable(),
+  dimensions: z.string().max(200).optional().nullable(), // DEPRECATED
   order: z.number().int().min(0).default(0),
   isActive: z.boolean().default(true),
-});
+}).refine(
+  (data) => {
+    // Width is required when pricingType is M2
+    if (data.pricingType === 'M2' && (data.width === undefined || data.width === null)) {
+      return false;
+    }
+    return true;
+  },
+  { message: 'Chiều rộng là bắt buộc khi loại tính giá là M2', path: ['width'] }
+);
 
 /**
  * Schema for updating a product
  */
-export const updateProductSchema = createProductSchema.partial();
+export const updateProductSchema = z.object({
+  name: z.string().min(1, 'Tên sản phẩm không được trống').max(200).optional(),
+  material: z.string().min(1, 'Chất liệu không được trống').max(100).optional(),
+  categoryId: z.string().cuid('ID danh mục không hợp lệ').optional(),
+  pricePerUnit: z.number().positive('Giá trên 1 mét phải lớn hơn 0').optional(),
+  pricingType: pricingTypeEnum.optional(),
+  length: z.number().positive('Chiều dài phải lớn hơn 0').optional(),
+  width: z.number().positive('Chiều rộng phải lớn hơn 0').optional().nullable(),
+  calculatedPrice: z.number().nonnegative('Giá đã tính không được âm').optional(),
+  allowFitIn: z.boolean().optional(),
+  price: z.number().positive('Giá phải lớn hơn 0').optional(), // DEPRECATED
+  imageUrl: z.string().max(500).optional().nullable().or(z.literal('')), // Accept relative path or URL
+  description: z.string().max(1000).optional().nullable(),
+  dimensions: z.string().max(200).optional().nullable(), // DEPRECATED
+  order: z.number().int().min(0).optional(),
+  isActive: z.boolean().optional(),
+});
 
 // ============================================
 // FEE SCHEMAS
@@ -215,9 +278,11 @@ export const feeApplicabilityEnum = z.enum(['CUSTOM', 'BOTH']);
 
 /**
  * Schema for creating a fee
+ * NEW: Added code field (unique identifier)
  */
 export const createFeeSchema = z.object({
   name: z.string().min(1, 'Tên phí không được trống').max(100),
+  code: z.string().min(1, 'Mã phí không được trống').max(50).regex(/^[A-Z_]+$/, 'Mã phí chỉ chứa chữ in hoa và dấu gạch dưới'),
   type: feeTypeEnum,
   value: z.number().positive('Giá trị phải lớn hơn 0'),
   applicability: feeApplicabilityEnum.default('BOTH'),  // Default to BOTH
@@ -229,7 +294,16 @@ export const createFeeSchema = z.object({
 /**
  * Schema for updating a fee
  */
-export const updateFeeSchema = createFeeSchema.partial();
+export const updateFeeSchema = z.object({
+  name: z.string().min(1, 'Tên phí không được trống').max(100).optional(),
+  code: z.string().min(1, 'Mã phí không được trống').max(50).regex(/^[A-Z_]+$/, 'Mã phí chỉ chứa chữ in hoa và dấu gạch dưới').optional(),
+  type: feeTypeEnum.optional(),
+  value: z.number().positive('Giá trị phải lớn hơn 0').optional(),
+  applicability: feeApplicabilityEnum.optional(),
+  description: z.string().max(500).optional().nullable(),
+  isActive: z.boolean().optional(),
+  order: z.number().int().min(0).optional(),
+});
 
 // ============================================
 // QUOTATION SCHEMAS
@@ -238,12 +312,20 @@ export const updateFeeSchema = createFeeSchema.partial();
 
 /**
  * Schema for quotation item
+ * 
+ * **Feature: furniture-product-mapping**
+ * **Validates: Requirements 8.3**
+ * 
+ * Includes material, calculatedPrice, fitInSelected, fitInFee for complete quotation data
  */
 export const quotationItemSchema = z.object({
   productId: z.string().min(1, 'ID sản phẩm không được trống'),
   name: z.string().min(1),
-  price: z.number().nonnegative(),
+  material: z.string().min(1, 'Chất liệu không được trống').optional(),  // NEW: Material variant
+  price: z.number().nonnegative(),                                       // Base price (calculatedPrice)
   quantity: z.number().int().min(1),
+  fitInSelected: z.boolean().optional().default(false),                  // NEW: Whether Fit-in is selected
+  fitInFee: z.number().nonnegative().optional(),                         // NEW: Fit-in fee amount (if selected)
 });
 
 /**
@@ -352,6 +434,103 @@ export const syncSchema = z.object({
 });
 
 // ============================================
+// PRODUCT BASE SCHEMAS (NEW - furniture-product-restructure)
+// _Requirements: 3.2, 3.3, 9.2, 9.3, 9.4_
+// ============================================
+
+/**
+ * Schema for creating a variant (used in product base creation)
+ * _Requirements: 4.2, 4.3_
+ */
+export const createVariantSchema = z.object({
+  materialId: z.string().cuid('ID chất liệu không hợp lệ'),
+  pricePerUnit: z.number().positive('Giá trên 1 mét phải lớn hơn 0'),
+  pricingType: pricingTypeEnum.default('LINEAR'),
+  length: z.number().positive('Chiều dài phải lớn hơn 0'),
+  width: z.number().positive('Chiều rộng phải lớn hơn 0').optional().nullable(),
+  imageUrl: z.string().max(500).optional().nullable().or(z.literal('')),
+  order: z.number().int().min(0).default(0),
+  isActive: z.boolean().default(true),
+}).refine(
+  (data) => {
+    // Width is required when pricingType is M2
+    if (data.pricingType === 'M2' && (data.width === undefined || data.width === null)) {
+      return false;
+    }
+    return true;
+  },
+  { message: 'Chiều rộng là bắt buộc khi loại tính giá là M2', path: ['width'] }
+);
+
+/**
+ * Schema for updating a variant
+ * _Requirements: 4.4_
+ */
+export const updateVariantSchema = z.object({
+  materialId: z.string().cuid('ID chất liệu không hợp lệ').optional(),
+  pricePerUnit: z.number().positive('Giá trên 1 mét phải lớn hơn 0').optional(),
+  pricingType: pricingTypeEnum.optional(),
+  length: z.number().positive('Chiều dài phải lớn hơn 0').optional(),
+  width: z.number().positive('Chiều rộng phải lớn hơn 0').optional().nullable(),
+  imageUrl: z.string().max(500).optional().nullable().or(z.literal('')),
+  order: z.number().int().min(0).optional(),
+  isActive: z.boolean().optional(),
+});
+
+/**
+ * Schema for creating a product base with variants
+ * _Requirements: 3.2, 9.3_
+ */
+export const createProductBaseSchema = z.object({
+  name: z.string().min(1, 'Tên sản phẩm không được trống').max(200),
+  categoryId: z.string().cuid('ID danh mục không hợp lệ'),
+  description: z.string().max(1000).optional().nullable(),
+  imageUrl: z.string().max(500).optional().nullable().or(z.literal('')),
+  allowFitIn: z.boolean().default(false),
+  order: z.number().int().min(0).default(0),
+  isActive: z.boolean().default(true),
+  variants: z.array(createVariantSchema).min(1, 'Phải có ít nhất một biến thể'),
+  mappings: z.array(productMappingInputSchema).optional().default([]),
+});
+
+/**
+ * Schema for updating a product base (partial updates)
+ * _Requirements: 3.3, 9.4_
+ */
+export const updateProductBaseSchema = z.object({
+  name: z.string().min(1, 'Tên sản phẩm không được trống').max(200).optional(),
+  categoryId: z.string().cuid('ID danh mục không hợp lệ').optional(),
+  description: z.string().max(1000).optional().nullable(),
+  imageUrl: z.string().max(500).optional().nullable().or(z.literal('')),
+  allowFitIn: z.boolean().optional(),
+  order: z.number().int().min(0).optional(),
+  isActive: z.boolean().optional(),
+});
+
+/**
+ * Schema for querying product bases (admin)
+ * _Requirements: 9.2_
+ */
+export const queryProductBasesAdminSchema = z.object({
+  categoryId: z.string().cuid().optional(),
+  materialId: z.string().cuid().optional(),
+  isActive: z.string().transform(val => val === 'true').optional(),
+  page: z.string().transform(val => parseInt(val, 10)).pipe(z.number().int().min(1)).optional(),
+  limit: z.string().transform(val => parseInt(val, 10)).pipe(z.number().int().min(1).max(100)).optional(),
+  sortBy: z.enum(['name', 'order', 'createdAt', 'updatedAt']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+});
+
+/**
+ * Schema for bulk mapping
+ * _Requirements: 5.5_
+ */
+export const bulkMappingSchema = z.object({
+  productBaseIds: z.array(z.string().cuid('ID sản phẩm không hợp lệ')).min(1, 'Phải chọn ít nhất một sản phẩm'),
+  mapping: productMappingInputSchema,
+});
+
+// ============================================
 // TYPE EXPORTS
 // ============================================
 
@@ -367,6 +546,8 @@ export type CreateApartmentTypeInput = z.infer<typeof createApartmentTypeSchema>
 export type UpdateApartmentTypeInput = z.infer<typeof updateApartmentTypeSchema>;
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
 export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
+export type ProductMappingInput = z.infer<typeof productMappingInputSchema>;
+export type AddProductMappingInput = z.infer<typeof addProductMappingSchema>;
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 export type CreateFeeInput = z.infer<typeof createFeeSchema>;
@@ -382,3 +563,9 @@ export type QueryProductsInput = z.infer<typeof queryProductsSchema>;
 export type QueryFeesInput = z.infer<typeof queryFeesSchema>;
 export type QueryQuotationsInput = z.infer<typeof queryQuotationsSchema>;
 export type SyncInput = z.infer<typeof syncSchema>;
+export type CreateVariantSchemaInput = z.infer<typeof createVariantSchema>;
+export type UpdateVariantSchemaInput = z.infer<typeof updateVariantSchema>;
+export type CreateProductBaseSchemaInput = z.infer<typeof createProductBaseSchema>;
+export type UpdateProductBaseSchemaInput = z.infer<typeof updateProductBaseSchema>;
+export type QueryProductBasesAdminInput = z.infer<typeof queryProductBasesAdminSchema>;
+export type BulkMappingSchemaInput = z.infer<typeof bulkMappingSchema>;

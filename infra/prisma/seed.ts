@@ -1858,7 +1858,7 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
   const apartmentTypes = ['1pn', '2pn', '3pn', '1pn1pk', '2pn1pk', '3pn1pk', '2pn2pk', '3pn2pk', 'penthouse', 'duplex'];
   
   // Building A: maxAxis = 10
-  const layoutsA = [];
+  const layoutsA: { buildingCode: string; apartmentType: string; axis: number }[] = [];
   for (let axis = 1; axis <= 10; axis++) {
     layoutsA.push({
       buildingCode: 'A',
@@ -1868,7 +1868,7 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
   }
   
   // Building SAP: maxAxis = 8
-  const layoutsSAP = [];
+  const layoutsSAP: { buildingCode: string; apartmentType: string; axis: number }[] = [];
   for (let axis = 1; axis <= 8; axis++) {
     layoutsSAP.push({
       buildingCode: 'SAP',
@@ -1945,102 +1945,517 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
 
   console.log(`✅ Created ${furnitureCategories.length} furniture categories`);
 
-  // Furniture Products (schema: name, categoryId, price, imageUrl, description, dimensions, order, isActive)
-  // Note: NO code, basePrice, material, color, brand, warrantyMonths fields
-  const furnitureProducts = [
-    // Phòng khách
-    {
-      categoryId: (await prisma.furnitureCategory.findFirst({ where: { name: 'Nội Thất Phòng Khách' } }))!.id,
-      name: 'Sofa góc da thật 7 chỗ',
-      description: 'Sofa góc cao cấp da thật nhập khẩu, thiết kế hiện đại',
-      imageUrl: '/uploads/products/sofa-goc.jpg',
-      price: 45000000,
-      dimensions: JSON.stringify({ width: 320, height: 85, depth: 180 }),
-      isActive: true,
-    },
-    {
-      categoryId: (await prisma.furnitureCategory.findFirst({ where: { name: 'Nội Thất Phòng Khách' } }))!.id,
-      name: 'Bàn trà kính cường lực',
-      description: 'Bàn trà mặt kính cường lực, chân kim loại mạ chrome',
-      imageUrl: '/uploads/products/ban-tra.jpg',
-      price: 8500000,
-      dimensions: JSON.stringify({ width: 120, height: 45, depth: 70 }),
-      isActive: true,
-    },
-    {
-      categoryId: (await prisma.furnitureCategory.findFirst({ where: { name: 'Nội Thất Phòng Khách' } }))!.id,
-      name: 'Kệ tivi gỗ công nghiệp',
-      description: 'Kệ tivi gỗ công nghiệp MDF, thiết kế đơn giản',
-      imageUrl: '/uploads/products/ke-tivi.jpg',
-      price: 12000000,
-      dimensions: JSON.stringify({ width: 200, height: 180, depth: 40 }),
-      isActive: true,
-    },
+  // ============================================
+  // FURNITURE MATERIALS (Chất liệu)
+  // ============================================
 
-    // Phòng ngủ
-    {
-      categoryId: (await prisma.furnitureCategory.findFirst({ where: { name: 'Nội Thất Phòng Ngủ' } }))!.id,
-      name: 'Giường ngủ gỗ sồi 1m8x2m',
-      description: 'Giường ngủ gỗ sồi tự nhiên, thiết kế cổ điển',
-      imageUrl: '/uploads/products/giuong-ngu.jpg',
-      price: 28000000,
-      dimensions: JSON.stringify({ width: 180, height: 90, depth: 200 }),
-      isActive: true,
-    },
-    {
-      categoryId: (await prisma.furnitureCategory.findFirst({ where: { name: 'Nội Thất Phòng Ngủ' } }))!.id,
-      name: 'Tủ quần áo 3 cánh',
-      description: 'Tủ quần áo gỗ công nghiệp, 3 cánh mở',
-      imageUrl: '/uploads/products/tu-quan-ao.jpg',
-      price: 18500000,
-      dimensions: JSON.stringify({ width: 180, height: 220, depth: 60 }),
-      isActive: true,
-    },
+  console.log('🎨 Seeding furniture materials...');
 
-    // Phòng bếp
+  const furnitureMaterials = [
     {
-      categoryId: (await prisma.furnitureCategory.findFirst({ where: { name: 'Nội Thất Phòng Bếp' } }))!.id,
-      name: 'Tủ bếp bộ 5 cánh',
-      description: 'Tủ bếp gỗ MFC, thiết kế hiện đại với đá nhân tạo',
-      imageUrl: '/uploads/products/tu-bep.jpg',
-      price: 45000000,
-      dimensions: JSON.stringify({ width: 400, height: 220, depth: 60 }),
+      name: 'Da thật',
+      description: 'Da bò thật nhập khẩu, cao cấp, bền đẹp',
+      order: 1,
       isActive: true,
     },
     {
-      categoryId: (await prisma.furnitureCategory.findFirst({ where: { name: 'Nội Thất Phòng Bếp' } }))!.id,
-      name: 'Bàn ăn gỗ thông 6 ghế',
-      description: 'Bàn ăn gỗ thông tự nhiên với 6 ghế bọc da',
-      imageUrl: '/uploads/products/ban-an.jpg',
-      price: 22000000,
-      dimensions: JSON.stringify({ width: 180, height: 75, depth: 90 }),
+      name: 'Vải bố',
+      description: 'Vải bố cao cấp, dễ vệ sinh, thoáng mát',
+      order: 2,
       isActive: true,
     },
-
-    // Trang trí
     {
-      categoryId: (await prisma.furnitureCategory.findFirst({ where: { name: 'Đồ Trang Trí' } }))?.id,
-      name: 'Đèn trang trí LED',
-      description: 'Đèn trang trí LED RGB, điều khiển qua app',
-      imageUrl: '/uploads/products/den-led.jpg',
-      price: 3500000,
-      dimensions: JSON.stringify({ width: 30, height: 15, depth: 30 }),
+      name: 'Gỗ sồi',
+      description: 'Gỗ sồi tự nhiên nhập khẩu, vân đẹp, bền chắc',
+      order: 3,
+      isActive: true,
+    },
+    {
+      name: 'Gỗ óc chó',
+      description: 'Gỗ óc chó cao cấp, màu nâu đậm sang trọng',
+      order: 4,
+      isActive: true,
+    },
+    {
+      name: 'Gỗ công nghiệp',
+      description: 'Gỗ công nghiệp MDF/MFC, giá tốt, đa dạng màu sắc',
+      order: 5,
+      isActive: true,
+    },
+    {
+      name: 'Gỗ công nghiệp MDF',
+      description: 'Gỗ MDF chống ẩm, phủ melamine',
+      order: 6,
+      isActive: true,
+    },
+    {
+      name: 'Gỗ MFC',
+      description: 'Gỗ MFC công nghiệp, giá rẻ, bền',
+      order: 7,
+      isActive: true,
+    },
+    {
+      name: 'Gỗ Acrylic',
+      description: 'Gỗ phủ Acrylic bóng gương, sang trọng',
+      order: 8,
+      isActive: true,
+    },
+    {
+      name: 'Gỗ thông',
+      description: 'Gỗ thông tự nhiên, vân đẹp, giá hợp lý',
+      order: 9,
+      isActive: true,
+    },
+    {
+      name: 'Kính cường lực',
+      description: 'Kính cường lực an toàn, trong suốt',
+      order: 10,
+      isActive: true,
+    },
+    {
+      name: 'Kim loại + Acrylic',
+      description: 'Kết hợp kim loại và Acrylic, hiện đại',
+      order: 11,
       isActive: true,
     },
   ];
 
-  for (const product of furnitureProducts) {
-    const existing = await prisma.furnitureProduct.findFirst({
-      where: { name: product.name },
+  for (const material of furnitureMaterials) {
+    await prisma.furnitureMaterial.upsert({
+      where: { name: material.name },
+      update: material,
+      create: material,
     });
-    if (!existing) {
-      await prisma.furnitureProduct.create({
-        data: product,
+  }
+
+  console.log(`✅ Created ${furnitureMaterials.length} furniture materials`);
+
+  // ============================================
+  // FURNITURE PRODUCTS - NEW SCHEMA (furniture-product-restructure)
+  // Using FurnitureProductBase + FurnitureProductVariant
+  // **Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.8**
+  // ============================================
+
+  console.log('🛋️ Seeding furniture products (new schema)...');
+
+  const livingRoomCategoryId = (await prisma.furnitureCategory.findFirst({ where: { name: 'Nội Thất Phòng Khách' } }))!.id;
+  const bedroomCategoryId = (await prisma.furnitureCategory.findFirst({ where: { name: 'Nội Thất Phòng Ngủ' } }))!.id;
+  const kitchenCategoryId = (await prisma.furnitureCategory.findFirst({ where: { name: 'Nội Thất Phòng Bếp' } }))?.id;
+  const decorCategoryId = (await prisma.furnitureCategory.findFirst({ where: { name: 'Đồ Trang Trí' } }))?.id;
+
+  // Get material IDs
+  const materialDaThat = await prisma.furnitureMaterial.findFirst({ where: { name: 'Da thật' } });
+  const materialVaiBo = await prisma.furnitureMaterial.findFirst({ where: { name: 'Vải bố' } });
+  const materialGoSoi = await prisma.furnitureMaterial.findFirst({ where: { name: 'Gỗ sồi' } });
+  const materialGoOcCho = await prisma.furnitureMaterial.findFirst({ where: { name: 'Gỗ óc chó' } });
+  const materialGoCongNghiep = await prisma.furnitureMaterial.findFirst({ where: { name: 'Gỗ công nghiệp' } });
+  const materialGoMDF = await prisma.furnitureMaterial.findFirst({ where: { name: 'Gỗ công nghiệp MDF' } });
+  const materialGoMFC = await prisma.furnitureMaterial.findFirst({ where: { name: 'Gỗ MFC' } });
+  const materialGoAcrylic = await prisma.furnitureMaterial.findFirst({ where: { name: 'Gỗ Acrylic' } });
+  const materialGoThong = await prisma.furnitureMaterial.findFirst({ where: { name: 'Gỗ thông' } });
+  const materialKinhCuongLuc = await prisma.furnitureMaterial.findFirst({ where: { name: 'Kính cường lực' } });
+  const materialKimLoaiAcrylic = await prisma.furnitureMaterial.findFirst({ where: { name: 'Kim loại + Acrylic' } });
+
+  // Define product bases with their variants
+  const furnitureProductBases = [
+    // Phòng khách - Sofa góc 7 chỗ
+    {
+      name: 'Sofa góc 7 chỗ',
+      categoryId: livingRoomCategoryId,
+      description: 'Sofa góc cao cấp, thiết kế hiện đại, phù hợp phòng khách rộng',
+      imageUrl: '/uploads/products/sofa-goc.jpg',
+      allowFitIn: true,
+      order: 1,
+      isActive: true,
+      variants: [
+        {
+          materialId: materialDaThat!.id,
+          pricePerUnit: 15000000,
+          pricingType: 'LINEAR',
+          length: 3.2,
+          width: null,
+          calculatedPrice: 15000000 * 3.2, // 48,000,000
+          imageUrl: '/uploads/products/sofa-goc-da.jpg',
+          order: 1,
+          isActive: true,
+        },
+        {
+          materialId: materialVaiBo!.id,
+          pricePerUnit: 8000000,
+          pricingType: 'LINEAR',
+          length: 3.2,
+          width: null,
+          calculatedPrice: 8000000 * 3.2, // 25,600,000
+          imageUrl: '/uploads/products/sofa-goc-vai.jpg',
+          order: 2,
+          isActive: true,
+        },
+      ],
+    },
+    // Phòng khách - Bàn trà
+    {
+      name: 'Bàn trà',
+      categoryId: livingRoomCategoryId,
+      description: 'Bàn trà phòng khách, thiết kế tinh tế',
+      imageUrl: '/uploads/products/ban-tra.jpg',
+      allowFitIn: false,
+      order: 2,
+      isActive: true,
+      variants: [
+        {
+          materialId: materialKinhCuongLuc!.id,
+          pricePerUnit: 7000000,
+          pricingType: 'M2',
+          length: 1.2,
+          width: 0.7,
+          calculatedPrice: 7000000 * 1.2 * 0.7, // 5,880,000
+          imageUrl: '/uploads/products/ban-tra-kinh.jpg',
+          order: 1,
+          isActive: true,
+        },
+        {
+          materialId: materialGoSoi!.id,
+          pricePerUnit: 10000000,
+          pricingType: 'M2',
+          length: 1.2,
+          width: 0.7,
+          calculatedPrice: 10000000 * 1.2 * 0.7, // 8,400,000
+          imageUrl: '/uploads/products/ban-tra-go.jpg',
+          order: 2,
+          isActive: true,
+        },
+      ],
+    },
+    // Phòng khách - Kệ tivi
+    {
+      name: 'Kệ tivi',
+      categoryId: livingRoomCategoryId,
+      description: 'Kệ tivi phòng khách, thiết kế hiện đại',
+      imageUrl: '/uploads/products/ke-tivi.jpg',
+      allowFitIn: true,
+      order: 3,
+      isActive: true,
+      variants: [
+        {
+          materialId: materialGoMDF!.id,
+          pricePerUnit: 6000000,
+          pricingType: 'LINEAR',
+          length: 2.0,
+          width: null,
+          calculatedPrice: 6000000 * 2.0, // 12,000,000
+          imageUrl: '/uploads/products/ke-tivi-mdf.jpg',
+          order: 1,
+          isActive: true,
+        },
+        {
+          materialId: materialGoOcCho!.id,
+          pricePerUnit: 12000000,
+          pricingType: 'LINEAR',
+          length: 2.0,
+          width: null,
+          calculatedPrice: 12000000 * 2.0, // 24,000,000
+          imageUrl: '/uploads/products/ke-tivi-oc-cho.jpg',
+          order: 2,
+          isActive: true,
+        },
+      ],
+    },
+    // Phòng ngủ - Giường ngủ
+    {
+      name: 'Giường ngủ 1m8x2m',
+      categoryId: bedroomCategoryId,
+      description: 'Giường ngủ cao cấp, kích thước 1m8x2m',
+      imageUrl: '/uploads/products/giuong-ngu.jpg',
+      allowFitIn: true,
+      order: 1,
+      isActive: true,
+      variants: [
+        {
+          materialId: materialGoSoi!.id,
+          pricePerUnit: 8000000,
+          pricingType: 'M2',
+          length: 2.0,
+          width: 1.8,
+          calculatedPrice: 8000000 * 2.0 * 1.8, // 28,800,000
+          imageUrl: '/uploads/products/giuong-ngu-soi.jpg',
+          order: 1,
+          isActive: true,
+        },
+        {
+          materialId: materialGoCongNghiep!.id,
+          pricePerUnit: 4000000,
+          pricingType: 'M2',
+          length: 2.0,
+          width: 1.8,
+          calculatedPrice: 4000000 * 2.0 * 1.8, // 14,400,000
+          imageUrl: '/uploads/products/giuong-ngu-cn.jpg',
+          order: 2,
+          isActive: true,
+        },
+      ],
+    },
+    // Phòng ngủ - Tủ quần áo
+    {
+      name: 'Tủ quần áo 3 cánh',
+      categoryId: bedroomCategoryId,
+      description: 'Tủ quần áo 3 cánh mở, thiết kế rộng rãi',
+      imageUrl: '/uploads/products/tu-quan-ao.jpg',
+      allowFitIn: true,
+      order: 2,
+      isActive: true,
+      variants: [
+        {
+          materialId: materialGoCongNghiep!.id,
+          pricePerUnit: 5000000,
+          pricingType: 'LINEAR',
+          length: 1.8,
+          width: null,
+          calculatedPrice: 5000000 * 1.8, // 9,000,000
+          imageUrl: '/uploads/products/tu-quan-ao-cn.jpg',
+          order: 1,
+          isActive: true,
+        },
+        {
+          materialId: materialGoSoi!.id,
+          pricePerUnit: 10000000,
+          pricingType: 'LINEAR',
+          length: 1.8,
+          width: null,
+          calculatedPrice: 10000000 * 1.8, // 18,000,000
+          imageUrl: '/uploads/products/tu-quan-ao-soi.jpg',
+          order: 2,
+          isActive: true,
+        },
+      ],
+    },
+    // Phòng bếp - Tủ bếp
+    {
+      name: 'Tủ bếp bộ',
+      categoryId: kitchenCategoryId!,
+      description: 'Tủ bếp bộ hoàn chỉnh với đá nhân tạo',
+      imageUrl: '/uploads/products/tu-bep.jpg',
+      allowFitIn: true,
+      order: 1,
+      isActive: true,
+      variants: [
+        {
+          materialId: materialGoMFC!.id,
+          pricePerUnit: 8000000,
+          pricingType: 'LINEAR',
+          length: 4.0,
+          width: null,
+          calculatedPrice: 8000000 * 4.0, // 32,000,000
+          imageUrl: '/uploads/products/tu-bep-mfc.jpg',
+          order: 1,
+          isActive: true,
+        },
+        {
+          materialId: materialGoAcrylic!.id,
+          pricePerUnit: 15000000,
+          pricingType: 'LINEAR',
+          length: 4.0,
+          width: null,
+          calculatedPrice: 15000000 * 4.0, // 60,000,000
+          imageUrl: '/uploads/products/tu-bep-acrylic.jpg',
+          order: 2,
+          isActive: true,
+        },
+      ],
+    },
+    // Phòng bếp - Bàn ăn
+    {
+      name: 'Bàn ăn 6 ghế',
+      categoryId: kitchenCategoryId!,
+      description: 'Bàn ăn 6 ghế với ghế bọc da',
+      imageUrl: '/uploads/products/ban-an.jpg',
+      allowFitIn: false,
+      order: 2,
+      isActive: true,
+      variants: [
+        {
+          materialId: materialGoThong!.id,
+          pricePerUnit: 12000000,
+          pricingType: 'M2',
+          length: 1.8,
+          width: 0.9,
+          calculatedPrice: 12000000 * 1.8 * 0.9, // 19,440,000
+          imageUrl: '/uploads/products/ban-an-thong.jpg',
+          order: 1,
+          isActive: true,
+        },
+      ],
+    },
+    // Trang trí - Đèn LED
+    {
+      name: 'Đèn trang trí LED',
+      categoryId: decorCategoryId!,
+      description: 'Đèn trang trí LED RGB, điều khiển qua app',
+      imageUrl: '/uploads/products/den-led.jpg',
+      allowFitIn: false,
+      order: 1,
+      isActive: true,
+      variants: [
+        {
+          materialId: materialKimLoaiAcrylic?.id,
+          pricePerUnit: 3500000,
+          pricingType: 'LINEAR',
+          length: 1.0,
+          width: null,
+          calculatedPrice: 3500000, // 3,500,000
+          imageUrl: '/uploads/products/den-led.jpg',
+          order: 1,
+          isActive: true,
+        },
+      ],
+    },
+  ];
+
+  // Clear existing data for clean seed (new schema)
+  await prisma.furnitureProductMapping.deleteMany({});
+  await prisma.furnitureProductVariant.deleteMany({});
+  await prisma.furnitureProductBase.deleteMany({});
+  // Also clear legacy products
+  await prisma.furnitureProduct.deleteMany({});
+
+  // Create product bases with variants
+  const createdProductBases: { id: string; name: string; categoryId: string }[] = [];
+  let totalVariants = 0;
+
+  for (const productBase of furnitureProductBases) {
+    const { variants, ...baseData } = productBase;
+    
+    const createdBase = await prisma.furnitureProductBase.create({
+      data: {
+        ...baseData,
+        variants: {
+          create: variants,
+        },
+      },
+    });
+    
+    createdProductBases.push({ 
+      id: createdBase.id, 
+      name: createdBase.name, 
+      categoryId: createdBase.categoryId 
+    });
+    totalVariants += variants.length;
+  }
+
+  console.log(`✅ Created ${furnitureProductBases.length} furniture product bases`);
+  console.log(`✅ Created ${totalVariants} furniture product variants`);
+
+  // Legacy products for backward compatibility (keeping old structure)
+  const furnitureProducts = [
+    // Phòng khách - Sofa với nhiều chất liệu (legacy format)
+    {
+      categoryId: livingRoomCategoryId,
+      name: 'Sofa góc 7 chỗ (Legacy)',
+      material: 'Da thật',
+      description: 'Sofa góc cao cấp da thật nhập khẩu, thiết kế hiện đại',
+      imageUrl: '/uploads/products/sofa-goc.jpg',
+      pricePerUnit: 15000000,
+      pricingType: 'LINEAR',
+      length: 3.2,
+      width: null,
+      calculatedPrice: 15000000 * 3.2,
+      price: 48000000,
+      allowFitIn: true,
+      dimensions: JSON.stringify({ width: 320, height: 85, depth: 180 }),
+      isActive: false, // Inactive - for backward compatibility only
+      order: 100,
+    },
+  ];
+
+  // Create legacy products (minimal, for backward compatibility)
+  for (const product of furnitureProducts) {
+    await prisma.furnitureProduct.create({
+      data: product,
+    });
+  }
+
+  console.log(`✅ Created ${furnitureProducts.length} legacy furniture products (backward compatibility)`);
+
+  // ============================================
+  // FURNITURE PRODUCT MAPPINGS (NEW SCHEMA)
+  // Now references FurnitureProductBase instead of FurnitureProduct
+  // **Validates: Requirements 1.5, 5.1, 5.2, 5.3**
+  // ============================================
+
+  console.log('🔗 Seeding furniture product mappings (new schema)...');
+
+  // Map product bases to apartments
+  const productBaseMappings = [
+    // Sofa góc - available in larger apartments
+    { productName: 'Sofa góc 7 chỗ', mappings: [
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '2pn' },
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '3pn' },
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '2pn1pk' },
+    ]},
+    // Bàn trà - available in all apartment types
+    { productName: 'Bàn trà', mappings: [
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '1pn' },
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '2pn' },
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '3pn' },
+    ]},
+    // Kệ tivi
+    { productName: 'Kệ tivi', mappings: [
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '1pn' },
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '2pn' },
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '3pn' },
+    ]},
+    // Giường ngủ
+    { productName: 'Giường ngủ 1m8x2m', mappings: [
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '1pn' },
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '2pn' },
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '3pn' },
+    ]},
+    // Tủ quần áo
+    { productName: 'Tủ quần áo 3 cánh', mappings: [
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '1pn' },
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '2pn' },
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '3pn' },
+    ]},
+    // Tủ bếp
+    { productName: 'Tủ bếp bộ', mappings: [
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '1pn' },
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '2pn' },
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '3pn' },
+    ]},
+    // Bàn ăn
+    { productName: 'Bàn ăn 6 ghế', mappings: [
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '2pn' },
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '3pn' },
+    ]},
+    // Đèn trang trí
+    { productName: 'Đèn trang trí LED', mappings: [
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '1pn' },
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '2pn' },
+      { projectName: 'Masteri Centre Point', buildingCode: 'A', apartmentType: '3pn' },
+    ]},
+  ];
+
+  let mappingCount = 0;
+  for (const pm of productBaseMappings) {
+    const productBase = createdProductBases.find(p => p.name === pm.productName);
+    if (!productBase) {
+      console.warn(`⚠️ Product base not found: ${pm.productName}`);
+      continue;
+    }
+    
+    for (const mapping of pm.mappings) {
+      await prisma.furnitureProductMapping.create({
+        data: {
+          productBaseId: productBase.id,
+          projectName: mapping.projectName,
+          buildingCode: mapping.buildingCode,
+          apartmentType: mapping.apartmentType.toLowerCase(),
+        },
       });
+      mappingCount++;
     }
   }
 
-  console.log(`✅ Created ${furnitureProducts.length} furniture products`);
+  console.log(`✅ Created ${mappingCount} furniture product mappings (new schema)`);
 
   // ============================================
   // FURNITURE APARTMENT TYPES
@@ -2132,6 +2547,7 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
   const furnitureFees = [
     {
       name: 'Phí thi công',
+      code: 'CONSTRUCTION_FEE',
       type: 'PERCENTAGE',
       value: 15,
       applicability: 'BOTH',
@@ -2141,6 +2557,7 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
     },
     {
       name: 'Phí vận chuyển',
+      code: 'SHIPPING_FEE',
       type: 'FIXED',
       value: 2000000,
       applicability: 'BOTH',
@@ -2150,6 +2567,7 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
     },
     {
       name: 'Phí thiết kế',
+      code: 'DESIGN_FEE',
       type: 'FIXED',
       value: 5000000,
       applicability: 'CUSTOM',
@@ -2159,6 +2577,7 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
     },
     {
       name: 'VAT',
+      code: 'VAT',
       type: 'PERCENTAGE',
       value: 10,
       applicability: 'BOTH',
@@ -2168,6 +2587,7 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
     },
     {
       name: 'Phí tư vấn',
+      code: 'CONSULTATION_FEE',
       type: 'FIXED',
       value: 1000000,
       applicability: 'CUSTOM',
@@ -2175,17 +2595,36 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
       isActive: true,
       order: 5,
     },
+    // FIT_IN fee for furniture product mapping feature
+    // **Feature: furniture-product-mapping**
+    // **Validates: Requirements 4.2**
+    {
+      name: 'Phí Fit-in',
+      code: 'FIT_IN',
+      type: 'FIXED',
+      value: 500000,
+      applicability: 'ALL',
+      description: 'Phí làm sản phẩm vừa khít với không gian căn hộ (áp dụng cho từng sản phẩm)',
+      isActive: true,
+      order: 6,
+    },
   ];
 
   for (const fee of furnitureFees) {
-    const existing = await prisma.furnitureFee.findFirst({
-      where: { name: fee.name },
+    // Use upsert to handle both new and existing fees
+    await prisma.furnitureFee.upsert({
+      where: { code: fee.code },
+      update: {
+        name: fee.name,
+        type: fee.type,
+        value: fee.value,
+        applicability: fee.applicability,
+        description: fee.description,
+        isActive: fee.isActive,
+        order: fee.order,
+      },
+      create: fee,
     });
-    if (!existing) {
-      await prisma.furnitureFee.create({
-        data: fee,
-      });
-    }
   }
 
   console.log(`✅ Created ${furnitureFees.length} furniture fees`);
@@ -2208,7 +2647,10 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
   console.log(`   • ${layouts.length} furniture layouts`);
   console.log(`   • ${furnitureApartmentTypes.length} furniture apartment types`);
   console.log(`   • ${furnitureCategories.length} furniture categories`);
-  console.log(`   • ${furnitureProducts.length} furniture products`);
+  console.log(`   • ${furnitureMaterials.length} furniture materials`);
+  console.log(`   • ${furnitureProductBases.length} furniture product bases (NEW SCHEMA)`);
+  console.log(`   • ${totalVariants} furniture product variants (NEW SCHEMA)`);
+  console.log(`   • ${mappingCount} furniture product mappings (NEW SCHEMA)`);
   console.log(`   • ${furnitureFees.length} furniture fees`);
   console.log('');
   console.log('✨ All systems ready for testing!');

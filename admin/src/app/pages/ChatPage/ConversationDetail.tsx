@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { chatApi } from '../../api';
 import type { Conversation, ChatMessage, ReadReceipt } from '../../types';
 import { MessageBubble } from './MessageBubble';
@@ -226,10 +226,10 @@ export const ConversationDetail = memo(function ConversationDetail({
                 onClick={() => setShowCloseModal(true)}
                 style={{
                   padding: '8px 16px',
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  background: tokens.color.errorBg,
+                  border: `1px solid ${tokens.color.error}50`,
                   borderRadius: tokens.radius.md,
-                  color: '#ef4444',
+                  color: tokens.color.error,
                   cursor: 'pointer',
                   fontSize: 13,
                   fontWeight: 500,
@@ -241,7 +241,7 @@ export const ConversationDetail = memo(function ConversationDetail({
               <span
                 style={{
                   padding: '8px 16px',
-                  background: 'rgba(255,255,255,0.05)',
+                  background: tokens.color.surfaceHover,
                   border: `1px solid ${tokens.color.border}`,
                   borderRadius: tokens.radius.md,
                   color: tokens.color.muted,
@@ -346,7 +346,7 @@ export const ConversationDetail = memo(function ConversationDetail({
                         transition: 'background 0.2s',
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                        e.currentTarget.style.background = tokens.color.surfaceHover;
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background = 'transparent';
@@ -490,7 +490,7 @@ export const ConversationDetail = memo(function ConversationDetail({
                 background: !systemMessage.trim() || sending ? tokens.color.muted : tokens.color.primary,
                 border: 'none',
                 borderRadius: tokens.radius.md,
-                color: '#fff',
+                color: !systemMessage.trim() || sending ? '#fff' : '#111',
                 fontSize: 14,
                 fontWeight: 500,
                 cursor: !systemMessage.trim() || sending ? 'not-allowed' : 'pointer',

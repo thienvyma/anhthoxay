@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { tokens } from '@app/shared';
+import { tokens } from '../../app/../theme';
 import { useResponsive } from '../../hooks/useResponsive';
 
 export interface ResponsiveActionBarProps {

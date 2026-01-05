@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 import { Input } from './Input';
 import { Button } from './Button';
 import { authApi } from '../api';
@@ -54,7 +54,7 @@ export function LoginPage() {
         style={{
           width: '100%',
           maxWidth: 420,
-          background: 'rgba(20,21,26,0.95)',
+          background: tokens.color.surface,
           border: `1px solid ${tokens.color.border}`,
           borderRadius: tokens.radius.lg,
           padding: 40,
@@ -68,7 +68,7 @@ export function LoginPage() {
               height: 80,
               margin: '0 auto 16px',
               borderRadius: tokens.radius.md,
-              background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+              background: tokens.color.primary,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -94,7 +94,7 @@ export function LoginPage() {
               animate={{ opacity: 1, y: 0 }}
               style={{
                 padding: 12,
-                background: 'rgba(239,68,68,0.1)',
+                background: tokens.color.errorBg,
                 border: `1px solid ${tokens.color.error}`,
                 borderRadius: tokens.radius.md,
                 color: tokens.color.error,
@@ -123,6 +123,7 @@ export function LoginPage() {
           <Input
             label="Password"
             type="password"
+            autoComplete="current-password"
             value={password}
             onChange={setPassword}
             placeholder="Enter your password"
@@ -141,14 +142,14 @@ export function LoginPage() {
           style={{
             marginTop: 24,
             padding: 16,
-            background: 'rgba(245,211,147,0.05)',
-            border: `1px solid ${tokens.color.primary}40`,
+            background: tokens.color.warningBg,
+            border: `1px solid ${tokens.color.warning}40`,
             borderRadius: tokens.radius.md,
             fontSize: 13,
-            color: tokens.color.muted,
+            color: tokens.color.textMuted,
           }}
         >
-          <div style={{ color: tokens.color.primary, fontWeight: 600, marginBottom: 8 }}>
+          <div style={{ color: tokens.color.warning, fontWeight: 600, marginBottom: 8 }}>
             <i className="ri-information-line" style={{ marginRight: 4 }} />
             Demo Credentials
           </div>

@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { usersApi } from '../../api';
 import { useToast } from '../../components/Toast';
 import { Button } from '../../components/Button';

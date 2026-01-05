@@ -1,5 +1,5 @@
 import { CSSProperties } from 'react';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 
 interface InputProps {
   value: string | number;
@@ -13,6 +13,8 @@ interface InputProps {
   required?: boolean;
   fullWidth?: boolean;
   style?: CSSProperties;
+  autoComplete?: string;
+  name?: string;
 }
 
 export function Input({
@@ -27,7 +29,17 @@ export function Input({
   required = false,
   fullWidth = false,
   style,
+  autoComplete,
+  name,
 }: InputProps) {
+  // Auto-determine autocomplete based on type if not provided
+  const resolvedAutoComplete = autoComplete ?? (
+    type === 'password' ? 'current-password' :
+    type === 'email' ? 'email' :
+    type === 'tel' ? 'tel' :
+    type === 'url' ? 'url' :
+    'off'
+  );
   return (
     <div 
       style={{ width: fullWidth ? '100%' : 'auto', ...style }}
@@ -39,9 +51,9 @@ export function Input({
           style={{
             display: 'block',
             color: tokens.color.text,
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: 500,
-            marginBottom: 8,
+            marginBottom: 6,
           }}
         >
           {label}
@@ -58,12 +70,14 @@ export function Input({
               top: '50%',
               transform: 'translateY(-50%)',
               color: tokens.color.muted,
-              fontSize: 18,
+              fontSize: 16,
             }}
           />
         )}
         <input
           type={type}
+          name={name}
+          autoComplete={resolvedAutoComplete}
           value={value ?? ''}
           onChange={(e) => {
             e.stopPropagation();
@@ -86,28 +100,24 @@ export function Input({
           required={required}
           style={{
             width: '100%',
-            padding: icon ? '12px 16px 12px 44px' : '12px 16px',
-            background: 'rgba(12,12,16,0.6)',
-            backdropFilter: 'blur(10px)',
+            padding: icon ? '10px 14px 10px 40px' : '10px 14px',
+            background: tokens.color.background,
             border: `1px solid ${error ? tokens.color.error : tokens.color.border}`,
-            borderRadius: '12px',
+            borderRadius: tokens.radius.md,
             color: tokens.color.text,
             fontSize: 14,
             fontWeight: 400,
             outline: 'none',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            transition: 'border-color 0.15s ease',
           }}
           onFocus={(e) => {
             if (!error) {
               e.target.style.borderColor = tokens.color.primary;
-              e.target.style.boxShadow = '0 4px 16px rgba(245,211,147,0.2)';
             }
           }}
           onBlur={(e) => {
             if (!error) {
               e.target.style.borderColor = tokens.color.border;
-              e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
             }
           }}
         />
@@ -158,9 +168,9 @@ export function TextArea({
           style={{
             display: 'block',
             color: tokens.color.text,
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: 500,
-            marginBottom: 8,
+            marginBottom: 6,
           }}
         >
           {label}
@@ -185,30 +195,26 @@ export function TextArea({
         rows={rows}
         style={{
           width: '100%',
-          padding: '12px 16px',
-          background: 'rgba(12,12,16,0.6)',
-          backdropFilter: 'blur(10px)',
+          padding: '10px 14px',
+          background: tokens.color.background,
           border: `1px solid ${error ? tokens.color.error : tokens.color.border}`,
-          borderRadius: '12px',
+          borderRadius: tokens.radius.md,
           color: tokens.color.text,
           fontSize: 14,
           fontWeight: 400,
           outline: 'none',
           resize: 'vertical',
           fontFamily: 'inherit',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          transition: 'border-color 0.15s ease',
         }}
         onFocus={(e) => {
           if (!error) {
             e.target.style.borderColor = tokens.color.primary;
-            e.target.style.boxShadow = '0 4px 16px rgba(245,211,147,0.2)';
           }
         }}
         onBlur={(e) => {
           if (!error) {
             e.target.style.borderColor = tokens.color.border;
-            e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
           }
         }}
       />

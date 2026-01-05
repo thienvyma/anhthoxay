@@ -64,6 +64,9 @@ model User {
   // Bidding Phase 6 relations - Saved Projects
   savedProjects SavedProject[]
 
+  // API Key Management relations
+  createdApiKeys ApiKey[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1224,21 +1227,42 @@ model FurnitureCategory {
   order       Int     @default(0)
   isActive    Boolean @default(true)
 
+  // Legacy relation (read-only for backward compatibility)
   products FurnitureProduct[]
+  
+  // NEW: Relation to ProductBase (furniture-product-restructure)
+  productBases FurnitureProductBase[] @relation("ProductBaseCategory")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+// ============================================
+// LEGACY: FurnitureProduct - READ-ONLY
+// ============================================
+// ⚠️ DEPRECATED: This table is READ-ONLY for backward compatibility.
+// New products MUST use FurnitureProductBase + FurnitureProductVariant.
+// DO NOT write to this table - it exists only for historical quotation references.
+// See: furniture-product-restructure spec for migration details.
+// **Feature: furniture-product-restructure**
+// **Validates: Requirements 2.7, 10.3**
+// ============================================
 model FurnitureProduct {
   id          String            @id @default(cuid())
   name        String
+  material    String            // Chất liệu (VD: "Gỗ sồi", "MDF")
   categoryId  String
   category    FurnitureCategory @relation(fields: [categoryId], references: [id])
-  price       Float
+  pricePerUnit    Float         // Giá trên 1 mét (VNĐ)
+  pricingType     String        @default("LINEAR") // M2 (mét vuông) | LINEAR (mét dài)
+  length          Float         // Chiều dài (m)
+  width           Float?        // Chiều rộng (m) - chỉ cho M2
+  calculatedPrice Float         // Giá đã tính = pricePerUnit × dimensions
+  allowFitIn      Boolean       @default(false) // Cho phép chọn Fit-in
+  price       Float             // DEPRECATED: Keep for backward compatibility
   imageUrl    String?
   description String?
-  dimensions  String? // JSON: { width, height, depth }
+  dimensions  String? // JSON: { width, height, depth } - DEPRECATED
   order       Int               @default(0)
   isActive    Boolean           @default(true)
 
@@ -1249,9 +1273,105 @@ model FurnitureProduct {
   @@index([isActive])
 }
 
+// ============================================
+// FURNITURE PRODUCT MAPPING (UPDATED - furniture-product-restructure)
+// Now references FurnitureProductBase instead of individual products
+// ============================================
+
+model FurnitureProductMapping {
+  id            String               @id @default(cuid())
+  productBaseId String
+  productBase   FurnitureProductBase @relation("ProductBaseMapping", fields: [productBaseId], references: [id], onDelete: Cascade)
+  projectName   String               // TenDuAn
+  buildingCode  String               // MaToaNha
+  apartmentType String               // 1pn, 2pn, 3pn
+  createdAt     DateTime             @default(now())
+
+  @@unique([productBaseId, projectName, buildingCode, apartmentType])
+  @@index([projectName, buildingCode, apartmentType])
+}
+
+// ============================================
+// FURNITURE MATERIAL (Chất liệu nội thất)
+// ============================================
+
+model FurnitureMaterial {
+  id          String  @id @default(cuid())
+  name        String  @unique // VD: "Gỗ sồi", "MDF", "Da thật", "Vải bố"
+  description String?
+  order       Int     @default(0)
+  isActive    Boolean @default(true)
+
+  // NEW: Relation to variants (furniture-product-restructure)
+  productVariants FurnitureProductVariant[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+// ============================================
+// FURNITURE PRODUCT BASE (NEW - furniture-product-restructure)
+// Sản phẩm nội thất gốc, chứa thông tin chung
+// ============================================
+
+model FurnitureProductBase {
+  id          String            @id @default(cuid())
+  name        String
+  categoryId  String
+  category    FurnitureCategory @relation("ProductBaseCategory", fields: [categoryId], references: [id])
+  description String?
+  imageUrl    String?
+  allowFitIn  Boolean           @default(false)
+  order       Int               @default(0)
+  isActive    Boolean           @default(true)
+
+  // Relations
+  variants FurnitureProductVariant[]
+  mappings FurnitureProductMapping[] @relation("ProductBaseMapping")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, categoryId])
+  @@index([categoryId])
+  @@index([isActive])
+}
+
+// ============================================
+// FURNITURE PRODUCT VARIANT (NEW - furniture-product-restructure)
+// Biến thể của sản phẩm theo chất liệu
+// ============================================
+
+model FurnitureProductVariant {
+  id              String               @id @default(cuid())
+  productBaseId   String
+  productBase     FurnitureProductBase @relation(fields: [productBaseId], references: [id], onDelete: Cascade)
+  materialId      String
+  material        FurnitureMaterial    @relation(fields: [materialId], references: [id])
+  pricePerUnit    Float                // Giá trên 1 mét (VNĐ)
+  pricingType     String               @default("LINEAR") // LINEAR | M2
+  length          Float                // Chiều dài (m)
+  width           Float?               // Chiều rộng (m) - chỉ cho M2
+  calculatedPrice Float                // Auto-calculated: pricePerUnit × dimensions
+  imageUrl        String?              // Optional variant-specific image
+  order           Int                  @default(0)
+  isActive        Boolean              @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([productBaseId, materialId])
+  @@index([productBaseId])
+  @@index([materialId])
+  @@index([isActive])
+}
+
 model FurnitureFee {
   id            String  @id @default(cuid())
   name          String
+  code          String  @unique // NEW: Unique code (VD: "FIT_IN")
   type          String // FIXED, PERCENTAGE
   value         Float
   applicability String  @default("ALL") // ALL (applies to all quotations)
@@ -1262,6 +1382,7 @@ model FurnitureFee {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([code])
   @@index([isActive])
 }
 
@@ -1352,5 +1473,65 @@ model FurnitureQuotation {
   createdAt DateTime @default(now())
 
   @@index([leadId])
+  @@index([createdAt])
+}
+
+
+// ============================================
+// API KEY MANAGEMENT (External Integrations)
+// ============================================
+
+// API Key Scope: READ_ONLY, READ_WRITE, FULL_ACCESS
+// API Key Status: ACTIVE, INACTIVE, EXPIRED
+
+model ApiKey {
+  id          String  @id @default(cuid())
+  name        String  @unique // Tên để nhận diện (e.g., "Marketing Agent", "n8n Workflow")
+  description String? // Mô tả mục đích sử dụng
+
+  // Key storage (prefix + hashed key)
+  keyPrefix String @unique // First 8 chars of key for identification
+  keyHash   String // bcrypt hash of full key
+
+  // Permissions
+  scope            String @default("READ_ONLY") // READ_ONLY, READ_WRITE, FULL_ACCESS
+  allowedEndpoints String // JSON: ["leads", "blog", "projects", "contractors", "reports"]
+
+  // Status
+  status     String    @default("ACTIVE") // ACTIVE, INACTIVE, EXPIRED
+  lastUsedAt DateTime?
+  usageCount Int       @default(0)
+
+  // Expiration (optional)
+  expiresAt DateTime?
+
+  // Audit
+  createdBy String // Admin who created
+  creator   User   @relation(fields: [createdBy], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  usageLogs ApiKeyUsageLog[]
+
+  @@index([keyPrefix])
+  @@index([status])
+  @@index([createdBy])
+}
+
+// API Key Usage Log model
+model ApiKeyUsageLog {
+  id           String   @id @default(cuid())
+  apiKeyId     String
+  apiKey       ApiKey   @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  endpoint     String
+  method       String
+  statusCode   Int
+  responseTime Int // milliseconds
+  ipAddress    String
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@index([apiKeyId])
   @@index([createdAt])
 }

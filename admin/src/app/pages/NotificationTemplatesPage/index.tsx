@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { useToast } from '../../components/Toast';
 import { notificationTemplatesApi, type NotificationTemplate } from '../../api';
 import { TemplateEditModal } from './TemplateEditModal';
@@ -42,8 +42,8 @@ const TEMPLATE_TYPE_LABELS: Record<string, string> = {
 
 // Glass effect styles
 const glass = {
-  background: 'rgba(30, 30, 40, 0.6)',
-  border: '1px solid rgba(255, 255, 255, 0.08)',
+  background: tokens.color.surface,
+  border: `1px solid ${tokens.color.border}`,
 };
 
 interface NotificationTemplatesPageProps {
@@ -146,12 +146,12 @@ export function NotificationTemplatesPage({ embedded = false }: NotificationTemp
                 width: 48,
                 height: 48,
                 borderRadius: tokens.radius.lg,
-                background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+                background: `${tokens.color.primary}15`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: 24,
-                color: '#111',
+                color: tokens.color.primary,
               }}>
                 <i className="ri-mail-settings-line" />
               </div>
@@ -236,8 +236,8 @@ export function NotificationTemplatesPage({ embedded = false }: NotificationTemp
                     borderRadius: tokens.radius.sm,
                     fontSize: 11,
                     fontWeight: 600,
-                    background: hasTemplate ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                    color: hasTemplate ? '#22c55e' : '#ef4444',
+                    background: hasTemplate ? tokens.color.successBg : tokens.color.errorBg,
+                    color: hasTemplate ? tokens.color.success : tokens.color.error,
                   }}>
                     {hasTemplate ? 'Đã cấu hình' : 'Chưa cấu hình'}
                   </span>

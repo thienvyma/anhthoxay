@@ -4,7 +4,7 @@
  * Requirements: 4.4
  */
 
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../../theme';
 
 interface ImageRatioSliderProps {
   value: number;

@@ -6,7 +6,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { Card } from '../../../components/Card';
 import { Button } from '../../../components/Button';
 import type { FurnitureCategory } from '../types';
@@ -62,9 +62,7 @@ export function CategoryList({
             justifyContent: 'space-between',
             padding: '12px 16px',
             borderRadius: 12,
-            background: !selectedCategoryId
-              ? `linear-gradient(135deg, ${tokens.color.primary}20, ${tokens.color.accent}10)`
-              : 'transparent',
+            background: !selectedCategoryId ? `${tokens.color.primary}15` : 'transparent',
             border: `1px solid ${!selectedCategoryId ? tokens.color.primary : tokens.color.border}`,
             cursor: 'pointer',
             transition: 'all 0.2s',
@@ -113,9 +111,7 @@ export function CategoryList({
               padding: '12px 16px',
               borderRadius: 12,
               background:
-                selectedCategoryId === category.id
-                  ? `linear-gradient(135deg, ${tokens.color.primary}20, ${tokens.color.accent}10)`
-                  : 'transparent',
+                selectedCategoryId === category.id ? `${tokens.color.primary}15` : 'transparent',
               border: `1px solid ${
                 selectedCategoryId === category.id ? tokens.color.primary : tokens.color.border
               }`,
@@ -130,11 +126,11 @@ export function CategoryList({
                   width: 36,
                   height: 36,
                   borderRadius: 8,
-                  background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+                  background: `${tokens.color.primary}15`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#0b0c0f',
+                  color: tokens.color.primary,
                   flexShrink: 0,
                 }}
               >

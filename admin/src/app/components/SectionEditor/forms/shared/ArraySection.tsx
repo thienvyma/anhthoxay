@@ -5,7 +5,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../../theme';
 import { Button } from '../../../Button';
 import type { DataRecord } from './types';
 
@@ -55,7 +55,7 @@ export function ArraySection({
           animate={{ opacity: 1, y: 0 }}
           style={{
             padding: 12,
-            background: 'rgba(255,255,255,0.03)',
+            background: tokens.color.surfaceAlt,
             borderRadius: tokens.radius.md,
             border: `1px solid ${tokens.color.border}`,
             marginBottom: 12,
@@ -81,7 +81,7 @@ export function ArraySection({
                 background: 'rgba(239, 68, 68, 0.1)',
                 border: '1px solid rgba(239, 68, 68, 0.3)',
                 borderRadius: tokens.radius.sm,
-                color: '#EF4444',
+                color: tokens.color.error,
                 cursor: 'pointer',
               }}
             >

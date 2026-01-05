@@ -15,8 +15,10 @@ import {
   createDeveloperSchema, updateDeveloperSchema, createProjectSchema, updateProjectSchema,
   createBuildingSchema, updateBuildingSchema, createLayoutSchema, updateLayoutSchema,
   createApartmentTypeSchema, updateApartmentTypeSchema, createCategorySchema, updateCategorySchema,
-  createProductSchema, updateProductSchema,
+  createProductSchema, updateProductSchema, addProductMappingSchema,
   createFeeSchema, updateFeeSchema, createQuotationSchema, syncSchema,
+  createProductBaseSchema, updateProductBaseSchema, createVariantSchema, updateVariantSchema,
+  bulkMappingSchema,
 } from '../schemas/furniture.schema';
 // Note: Combo schemas removed as part of furniture-combo removal
 import { googleSheetsService } from '../services/google-sheets.service';
@@ -84,14 +86,115 @@ export function createFurniturePublicRoutes(prisma: PrismaClient) {
     catch (error) { return handleServiceError(c, error); }
   });
 
+  /**
+   * GET /api/furniture/products/grouped
+   * Returns products grouped by ProductBase with nested variants (NEW schema)
+   * 
+   * Query params:
+   * - categoryId: Filter by category ID
+   * - projectName: Filter by project name (via mappings)
+   * - buildingCode: Filter by building code (via mappings)
+   * - apartmentType: Filter by apartment type (via mappings)
+   * 
+   * Response: { products: ProductBaseGroup[] }
+   * Each ProductBaseGroup has: id, name, categoryId, categoryName, description, imageUrl, allowFitIn, variants[], priceRange, variantCount
+   * Each variant has: id, materialId, materialName, calculatedPrice, imageUrl
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 9.1, 6.1**
+   */
+  app.get('/products/grouped', async (c) => {
+    try {
+      const query = {
+        categoryId: c.req.query('categoryId'),
+        projectName: c.req.query('projectName'),
+        buildingCode: c.req.query('buildingCode'),
+        apartmentType: c.req.query('apartmentType'),
+      };
+      // Return products grouped by ProductBase with nested variants (NEW schema)
+      const groupedProducts = await furnitureService.getProductBasesGrouped(query);
+      return successResponse(c, { products: groupedProducts });
+    }
+    catch (error) { return handleServiceError(c, error); }
+  });
+
+  /**
+   * GET /api/furniture/products
+   * Returns products grouped by name with material variants (LEGACY schema)
+   * 
+   * @deprecated Use GET /api/furniture/products/grouped instead for new ProductBase schema
+   * 
+   * Query params:
+   * - projectName: Filter by project name
+   * - buildingCode: Filter by building code
+   * - apartmentType: Filter by apartment type
+   * - categoryId: Filter by category ID
+   * 
+   * Response: { products: ProductGroup[] }
+   * Each ProductGroup has: name, variants[]
+   * Each variant has: id, material, calculatedPrice, allowFitIn, imageUrl, description
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 10.4**
+   */
   app.get('/products', async (c) => {
-    try { return successResponse(c, await furnitureService.getProducts(c.req.query('categoryId'))); }
+    try {
+      // Accept optional query params for filtering by apartment mapping
+      const query = {
+        categoryId: c.req.query('categoryId'),
+        projectName: c.req.query('projectName'),
+        buildingCode: c.req.query('buildingCode'),
+        apartmentType: c.req.query('apartmentType'),
+      };
+      // Return grouped products with material variants (LEGACY)
+      const groupedProducts = await furnitureService.getProductsGrouped(query);
+      
+      // Add deprecation warning header
+      // _Requirements: 10.4_
+      c.header('X-Deprecation-Warning', 'Use /api/furniture/products/grouped instead');
+      c.header('Deprecation', 'true');
+      
+      return successResponse(c, { products: groupedProducts });
+    }
+    catch (error) { return handleServiceError(c, error); }
+  });
+
+  /**
+   * GET /api/furniture/products/flat
+   * Returns flat list of products (for backward compatibility)
+   * 
+   * @deprecated Legacy endpoint - use /products/grouped for new schema
+   * 
+   * Query params:
+   * - projectName: Filter by project name
+   * - buildingCode: Filter by building code
+   * - apartmentType: Filter by apartment type
+   * - categoryId: Filter by category ID
+   * 
+   * _Requirements: 1.4, 10.1_
+   */
+  app.get('/products/flat', async (c) => {
+    try {
+      const query = {
+        categoryId: c.req.query('categoryId'),
+        projectName: c.req.query('projectName'),
+        buildingCode: c.req.query('buildingCode'),
+        apartmentType: c.req.query('apartmentType'),
+      };
+      
+      // Add deprecation warning header
+      c.header('X-Deprecation-Warning', 'Use /api/furniture/products/grouped instead');
+      c.header('Deprecation', 'true');
+      
+      return successResponse(c, await furnitureService.getProducts(query));
+    }
     catch (error) { return handleServiceError(c, error); }
   });
 
   app.get('/fees', async (c) => {
     try {
-      return successResponse(c, await furnitureService.getFees());
+      // Public route: only return active fees
+      return successResponse(c, await furnitureService.getActiveFees());
     } catch (error) { return handleServiceError(c, error); }
   });
   app.post('/quotations', rateLimiter({ maxAttempts: 10, windowMs: 60 * 1000 }), validate(createQuotationSchema), async (c) => {
@@ -117,8 +220,8 @@ export function createFurniturePublicRoutes(prisma: PrismaClient) {
       }
       if (!leadId) return errorResponse(c, 'VALIDATION_ERROR', 'Phai co leadId hoac leadData', 400);
       
-      // Get all active fees
-      const fees = await furnitureService.getFees();
+      // Get all active fees for quotation calculation
+      const fees = await furnitureService.getActiveFees();
       
       const quotation = await furnitureService.createQuotation({
         leadId,
@@ -281,8 +384,103 @@ export function createFurnitureAdminRoutes(prisma: PrismaClient) {
     catch (error) { return handleServiceError(c, error); }
   });
 
+  // ========== MATERIALS (Chất liệu) ==========
+  app.get('/materials', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const materials = await prisma.furnitureMaterial.findMany({
+        orderBy: [{ order: 'asc' }, { name: 'asc' }],
+      });
+      return successResponse(c, materials);
+    } catch (error) { return handleServiceError(c, error); }
+  });
+  app.post('/materials', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const body = await c.req.json();
+      if (!body.name?.trim()) return errorResponse(c, 'VALIDATION_ERROR', 'Tên chất liệu không được trống', 400);
+      const material = await prisma.furnitureMaterial.create({
+        data: {
+          name: body.name.trim(),
+          description: body.description || null,
+          order: body.order ?? 0,
+          isActive: body.isActive ?? true,
+        },
+      });
+      return successResponse(c, material, 201);
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2002') {
+        return errorResponse(c, 'DUPLICATE_ERROR', 'Chất liệu đã tồn tại', 409);
+      }
+      return handleServiceError(c, error);
+    }
+  });
+  app.put('/materials/:id', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const id = c.req.param('id');
+      const body = await c.req.json();
+      const material = await prisma.furnitureMaterial.update({
+        where: { id },
+        data: {
+          ...(body.name !== undefined && { name: body.name.trim() }),
+          ...(body.description !== undefined && { description: body.description }),
+          ...(body.order !== undefined && { order: body.order }),
+          ...(body.isActive !== undefined && { isActive: body.isActive }),
+        },
+      });
+      return successResponse(c, material);
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2025') {
+        return errorResponse(c, 'NOT_FOUND', 'Không tìm thấy chất liệu', 404);
+      }
+      if ((error as { code?: string }).code === 'P2002') {
+        return errorResponse(c, 'DUPLICATE_ERROR', 'Chất liệu đã tồn tại', 409);
+      }
+      return handleServiceError(c, error);
+    }
+  });
+  app.delete('/materials/:id', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const id = c.req.param('id');
+      
+      // Check if material is referenced by active FurnitureProductVariant
+      // _Requirements: 1.7_
+      const activeVariantCount = await prisma.furnitureProductVariant.count({
+        where: {
+          materialId: id,
+          isActive: true,
+        },
+      });
+      
+      if (activeVariantCount > 0) {
+        return errorResponse(
+          c, 
+          'MATERIAL_IN_USE', 
+          'Không thể xóa chất liệu đang được sử dụng bởi sản phẩm', 
+          409
+        );
+      }
+      
+      await prisma.furnitureMaterial.delete({ where: { id } });
+      return successResponse(c, { ok: true });
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2025') {
+        return errorResponse(c, 'NOT_FOUND', 'Không tìm thấy chất liệu', 404);
+      }
+      return handleServiceError(c, error);
+    }
+  });
+
   app.get('/products', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
-    try { return successResponse(c, await furnitureService.getProducts(c.req.query('categoryId'))); }
+    try {
+      // Accept optional query params for filtering by apartment mapping
+      // _Requirements: 1.4, 10.1_
+      const query = {
+        categoryId: c.req.query('categoryId'),
+        projectName: c.req.query('projectName'),
+        buildingCode: c.req.query('buildingCode'),
+        apartmentType: c.req.query('apartmentType'),
+      };
+      return successResponse(c, await furnitureService.getProducts(query));
+    }
     catch (error) { return handleServiceError(c, error); }
   });
   app.post('/products', authenticate(), requireRole('ADMIN', 'MANAGER'), validate(createProductSchema), async (c) => {
@@ -296,6 +494,373 @@ export function createFurnitureAdminRoutes(prisma: PrismaClient) {
   app.delete('/products/:id', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
     try { await furnitureService.deleteProduct(c.req.param('id')); return successResponse(c, { ok: true }); }
     catch (error) { return handleServiceError(c, error); }
+  });
+
+  // ========== PRODUCT MAPPINGS (for FurnitureProductBase) ==========
+  // _Requirements: 5.2, 5.4, 5.5_
+
+  /**
+   * POST /api/admin/furniture/products/:productBaseId/mappings
+   * Add a new mapping to a product base
+   * 
+   * Body: ProductMappingInput (projectName, buildingCode, apartmentType)
+   * Response: ProductMapping
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 5.2**
+   */
+  app.post('/products/:productBaseId/mappings', authenticate(), requireRole('ADMIN', 'MANAGER'), validate(addProductMappingSchema), async (c) => {
+    try {
+      const productBaseId = c.req.param('productBaseId');
+      const body = getValidatedBody<z.infer<typeof addProductMappingSchema>>(c);
+      const mapping = await furnitureService.addProductMapping(productBaseId, body);
+      return successResponse(c, mapping, 201);
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  /**
+   * POST /api/admin/furniture/products/bulk-mapping
+   * Create mappings for multiple product bases in a single operation
+   * 
+   * Body: { productBaseIds: string[], mapping: ProductMappingInput }
+   * Response: { success: boolean, created: number, skipped: number, errors: [] }
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 5.5**
+   */
+  app.post('/products/bulk-mapping', authenticate(), requireRole('ADMIN', 'MANAGER'), validate(bulkMappingSchema), async (c) => {
+    try {
+      const body = getValidatedBody<z.infer<typeof bulkMappingSchema>>(c);
+      const result = await furnitureService.bulkCreateMappings(body.productBaseIds, body.mapping);
+      return successResponse(c, result);
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  /**
+   * DELETE /api/admin/furniture/products/:productBaseId/mappings/:mappingId
+   * Remove a mapping from a product base
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 5.4**
+   */
+  app.delete('/products/:productBaseId/mappings/:mappingId', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const mappingId = c.req.param('mappingId');
+      await furnitureService.removeProductMapping(mappingId);
+      return successResponse(c, { ok: true });
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  /**
+   * GET /api/admin/furniture/products/:productBaseId/mappings
+   * Get all mappings for a product base
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 5.1**
+   */
+  app.get('/products/:productBaseId/mappings', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const productBaseId = c.req.param('productBaseId');
+      const mappings = await furnitureService.getProductMappings(productBaseId);
+      return successResponse(c, { mappings });
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  // ========== PRODUCT VARIANTS (NEW - furniture-product-restructure) ==========
+  // _Requirements: 9.5, 4.2, 4.4, 4.5_
+
+  /**
+   * POST /api/admin/furniture/products/:productBaseId/variants
+   * Create a new variant for a product base
+   * 
+   * Body: CreateVariantInput (materialId, pricePerUnit, pricingType, length, width?, ...)
+   * Response: ProductVariantWithMaterial
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 9.5, 4.2**
+   */
+  app.post('/products/:productBaseId/variants', authenticate(), requireRole('ADMIN', 'MANAGER'), validate(createVariantSchema), async (c) => {
+    try {
+      const productBaseId = c.req.param('productBaseId');
+      const body = getValidatedBody<z.infer<typeof createVariantSchema>>(c);
+      const variant = await furnitureService.createVariant(productBaseId, body);
+      return successResponse(c, variant, 201);
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  /**
+   * PUT /api/admin/furniture/products/:productBaseId/variants/:variantId
+   * Update a variant
+   * 
+   * Body: UpdateVariantInput (materialId?, pricePerUnit?, pricingType?, ...)
+   * Response: ProductVariantWithMaterial
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 9.5, 4.4**
+   */
+  app.put('/products/:productBaseId/variants/:variantId', authenticate(), requireRole('ADMIN', 'MANAGER'), validate(updateVariantSchema), async (c) => {
+    try {
+      const variantId = c.req.param('variantId');
+      const body = getValidatedBody<z.infer<typeof updateVariantSchema>>(c);
+      const variant = await furnitureService.updateVariant(variantId, body);
+      return successResponse(c, variant);
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  /**
+   * DELETE /api/admin/furniture/products/:productBaseId/variants/:variantId
+   * Delete a variant
+   * Returns error if it's the last variant of the product base
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 9.5, 4.5**
+   */
+  app.delete('/products/:productBaseId/variants/:variantId', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const variantId = c.req.param('variantId');
+      await furnitureService.deleteVariant(variantId);
+      return successResponse(c, { ok: true });
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  // ========== PRODUCT BASE CRUD (NEW - furniture-product-restructure) ==========
+  // _Requirements: 9.2, 9.3, 9.4, 9.6, 3.1, 3.2, 3.3, 3.4_
+
+  /**
+   * GET /api/admin/furniture/product-bases
+   * Get all product bases with pagination, filtering, and sorting
+   * 
+   * Query params:
+   * - categoryId: Filter by category ID
+   * - materialId: Filter by material ID (products with variants using this material)
+   * - isActive: Filter by active status (true/false)
+   * - page: Page number (default: 1)
+   * - limit: Items per page (default: 20, max: 100)
+   * - sortBy: Sort field (name, order, createdAt, updatedAt)
+   * - sortOrder: Sort direction (asc, desc)
+   * 
+   * Response: { products: ProductBaseWithDetails[], total, page, limit, totalPages }
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 9.2, 3.1**
+   */
+  app.get('/product-bases', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const pageStr = c.req.query('page');
+      const limitStr = c.req.query('limit');
+      const query = {
+        categoryId: c.req.query('categoryId') || undefined,
+        materialId: c.req.query('materialId') || undefined,
+        isActive: c.req.query('isActive') ? c.req.query('isActive') === 'true' : undefined,
+        page: pageStr ? parseInt(pageStr, 10) : undefined,
+        limit: limitStr ? parseInt(limitStr, 10) : undefined,
+        sortBy: c.req.query('sortBy') as 'name' | 'order' | 'createdAt' | 'updatedAt' | undefined,
+        sortOrder: c.req.query('sortOrder') as 'asc' | 'desc' | undefined,
+      };
+      
+      const result = await furnitureService.getProductBasesForAdmin(query);
+      return successResponse(c, result);
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  /**
+   * GET /api/admin/furniture/product-bases/:id
+   * Get a single product base by ID with all details
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 9.2**
+   */
+  app.get('/product-bases/:id', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const id = c.req.param('id');
+      const productBase = await furnitureService.getProductBaseById(id);
+      if (!productBase) {
+        return errorResponse(c, 'NOT_FOUND', 'Product base not found', 404);
+      }
+      return successResponse(c, productBase);
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  /**
+   * POST /api/admin/furniture/product-bases
+   * Create a new product base with variants
+   * 
+   * Body: CreateProductBaseInput (name, categoryId, variants[], mappings[]?, ...)
+   * Response: ProductBaseWithDetails
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 9.3, 3.2**
+   */
+  app.post('/product-bases', authenticate(), requireRole('ADMIN', 'MANAGER'), validate(createProductBaseSchema), async (c) => {
+    try {
+      const body = getValidatedBody<z.infer<typeof createProductBaseSchema>>(c);
+      const productBase = await furnitureService.createProductBase(body);
+      return successResponse(c, productBase, 201);
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  /**
+   * PUT /api/admin/furniture/product-bases/:id
+   * Update a product base (partial updates)
+   * Does not update variants - use variant-specific endpoints
+   * 
+   * Body: UpdateProductBaseInput (name?, categoryId?, description?, ...)
+   * Response: ProductBaseWithDetails
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 9.4, 3.3**
+   */
+  app.put('/product-bases/:id', authenticate(), requireRole('ADMIN', 'MANAGER'), validate(updateProductBaseSchema), async (c) => {
+    try {
+      const id = c.req.param('id');
+      const body = getValidatedBody<z.infer<typeof updateProductBaseSchema>>(c);
+      const productBase = await furnitureService.updateProductBase(id, body);
+      return successResponse(c, productBase);
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  /**
+   * DELETE /api/admin/furniture/product-bases/:id
+   * Delete a product base
+   * Cascade deletes variants (handled by Prisma)
+   * Returns error if referenced by quotations
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 9.6, 3.4**
+   */
+  app.delete('/product-bases/:id', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const id = c.req.param('id');
+      await furnitureService.deleteProductBase(id);
+      return successResponse(c, { ok: true });
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  // ========== VARIANT CRUD (NEW - furniture-product-restructure) ==========
+  // _Requirements: 9.5, 4.2, 4.4, 4.5_
+
+  /**
+   * POST /api/admin/furniture/product-bases/:productBaseId/variants
+   * Create a new variant for a product base
+   * 
+   * Body: CreateVariantInput (materialId, pricePerUnit, pricingType, length, width?, ...)
+   * Response: ProductVariantWithMaterial
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 9.5, 4.2**
+   */
+  app.post('/product-bases/:productBaseId/variants', authenticate(), requireRole('ADMIN', 'MANAGER'), validate(createVariantSchema), async (c) => {
+    try {
+      const productBaseId = c.req.param('productBaseId');
+      const body = getValidatedBody<z.infer<typeof createVariantSchema>>(c);
+      const variant = await furnitureService.createVariant(productBaseId, body);
+      return successResponse(c, variant, 201);
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  /**
+   * PUT /api/admin/furniture/product-bases/:productBaseId/variants/:variantId
+   * Update a variant
+   * 
+   * Body: UpdateVariantInput (materialId?, pricePerUnit?, pricingType?, ...)
+   * Response: ProductVariantWithMaterial
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 9.5, 4.4**
+   */
+  app.put('/product-bases/:productBaseId/variants/:variantId', authenticate(), requireRole('ADMIN', 'MANAGER'), validate(updateVariantSchema), async (c) => {
+    try {
+      const variantId = c.req.param('variantId');
+      const body = getValidatedBody<z.infer<typeof updateVariantSchema>>(c);
+      const variant = await furnitureService.updateVariant(variantId, body);
+      return successResponse(c, variant);
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  /**
+   * DELETE /api/admin/furniture/product-bases/:productBaseId/variants/:variantId
+   * Delete a variant
+   * Returns error if it's the last variant of the product base
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 9.5, 4.5**
+   */
+  app.delete('/product-bases/:productBaseId/variants/:variantId', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const variantId = c.req.param('variantId');
+      await furnitureService.deleteVariant(variantId);
+      return successResponse(c, { ok: true });
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  // ========== PRODUCT BASE MAPPINGS (NEW - furniture-product-restructure) ==========
+  // _Requirements: 5.2, 5.4, 5.5_
+
+  /**
+   * POST /api/admin/furniture/product-bases/:productBaseId/mappings
+   * Add a mapping to a product base
+   * 
+   * Body: ProductMappingInput (projectName, buildingCode, apartmentType)
+   * Response: ProductMapping
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 5.2**
+   */
+  app.post('/product-bases/:productBaseId/mappings', authenticate(), requireRole('ADMIN', 'MANAGER'), validate(addProductMappingSchema), async (c) => {
+    try {
+      const productBaseId = c.req.param('productBaseId');
+      const body = getValidatedBody<z.infer<typeof addProductMappingSchema>>(c);
+      const mapping = await furnitureService.addProductMapping(productBaseId, body);
+      return successResponse(c, mapping, 201);
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  /**
+   * DELETE /api/admin/furniture/product-bases/:productBaseId/mappings/:mappingId
+   * Remove a mapping from a product base
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 5.4**
+   */
+  app.delete('/product-bases/:productBaseId/mappings/:mappingId', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const mappingId = c.req.param('mappingId');
+      await furnitureService.removeProductMapping(mappingId);
+      return successResponse(c, { ok: true });
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  /**
+   * GET /api/admin/furniture/product-bases/:productBaseId/mappings
+   * Get all mappings for a product base
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 5.1**
+   */
+  app.get('/product-bases/:productBaseId/mappings', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const productBaseId = c.req.param('productBaseId');
+      const mappings = await furnitureService.getProductMappings(productBaseId);
+      return successResponse(c, { mappings });
+    } catch (error) { return handleServiceError(c, error); }
+  });
+
+  /**
+   * POST /api/admin/furniture/product-bases/bulk-mapping
+   * Create mappings for multiple product bases in a single operation
+   * 
+   * Body: { productBaseIds: string[], mapping: ProductMappingInput }
+   * Response: { success: boolean, created: number, skipped: number, errors: [] }
+   * 
+   * **Feature: furniture-product-restructure**
+   * **Validates: Requirements 5.5**
+   */
+  app.post('/product-bases/bulk-mapping', authenticate(), requireRole('ADMIN', 'MANAGER'), validate(bulkMappingSchema), async (c) => {
+    try {
+      const body = getValidatedBody<z.infer<typeof bulkMappingSchema>>(c);
+      const result = await furnitureService.bulkCreateMappings(body.productBaseIds, body.mapping);
+      return successResponse(c, result);
+    } catch (error) { return handleServiceError(c, error); }
   });
 
   app.get('/fees', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {

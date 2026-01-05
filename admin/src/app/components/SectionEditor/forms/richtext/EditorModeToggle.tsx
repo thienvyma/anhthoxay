@@ -4,7 +4,7 @@
  * Requirements: 4.5
  */
 
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../../theme';
 
 interface EditorModeToggleProps {
   mode: 'visual' | 'markdown';
@@ -29,7 +29,7 @@ export function EditorModeToggle({ mode, onChange }: EditorModeToggleProps) {
       <div style={{ 
         display: 'flex', 
         gap: 4, 
-        background: 'rgba(0,0,0,0.2)', 
+        background: tokens.color.surfaceAlt, 
         borderRadius: tokens.radius.md, 
         padding: 4 
       }}>

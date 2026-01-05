@@ -25,11 +25,20 @@ import * as fs from 'fs';
 // TYPES
 // ============================================
 
+/**
+ * Quotation item with material and Fit-in support
+ * 
+ * **Feature: furniture-product-mapping**
+ * **Validates: Requirements 8.3**
+ */
 export interface QuotationItem {
   productId: string;
   name: string;
-  price: number;
+  material?: string;              // NEW: Material variant
+  price: number;                  // Base price (calculatedPrice)
   quantity: number;
+  fitInSelected?: boolean;        // NEW: Whether Fit-in is selected
+  fitInFee?: number;              // NEW: Fit-in fee amount (if selected)
 }
 
 export interface QuotationFee {
@@ -336,14 +345,29 @@ export async function generateQuotationPDF(
             yPos = 50;
           }
 
+          // Calculate item total including Fit-in fee
+          // **Feature: furniture-product-mapping**
+          // **Validates: Requirements 8.3, 8.4**
+          const itemBaseTotal = item.price * item.quantity;
+          const itemFitInFee = item.fitInFee || 0;
+          const itemTotal = itemBaseTotal + itemFitInFee;
+
           xPos = tableLeft;
-          doc.text(processText(item.name), xPos, yPos, { width: colWidths[0] });
+          // Product name with material and Fit-in indicator
+          let productDisplay = processText(item.name);
+          if (item.material) {
+            productDisplay += ` (${processText(item.material)})`;
+          }
+          if (item.fitInSelected && itemFitInFee > 0) {
+            productDisplay += ' + Fit-in';
+          }
+          doc.text(productDisplay, xPos, yPos, { width: colWidths[0] });
           xPos += colWidths[0];
           doc.text(item.quantity.toString(), xPos, yPos, { width: colWidths[1], align: 'right' });
           xPos += colWidths[1];
           doc.text(formatCurrency(item.price), xPos, yPos, { width: colWidths[2], align: 'right' });
           xPos += colWidths[2];
-          doc.text(formatCurrency(item.price * item.quantity), xPos, yPos, { width: colWidths[3], align: 'right' });
+          doc.text(formatCurrency(itemTotal), xPos, yPos, { width: colWidths[3], align: 'right' });
 
           yPos += bodyTextSize + 8;
         }
@@ -353,6 +377,8 @@ export async function generateQuotationPDF(
 
       // ============================================
       // PRICE BREAKDOWN
+      // **Feature: furniture-product-mapping**
+      // **Validates: Requirements 8.4**
       // ============================================
 
       if (settings.showFeeDetails) {
@@ -370,8 +396,8 @@ export async function generateQuotationPDF(
         const priceLeft = 300;
         const priceWidth = 245;
 
-        // Base price
-        doc.font(fontName).fontSize(bodyTextSize).fillColor(mutedColor).text(processText('Giá cơ bản:'), priceLeft, yPos, { width: 120 });
+        // Base price (product prices without Fit-in)
+        doc.font(fontName).fontSize(bodyTextSize).fillColor(mutedColor).text(processText('Giá nội thất:'), priceLeft, yPos, { width: 120 });
         doc.fillColor(textColor).text(formatCurrency(quotation.basePrice) + ' VNĐ', priceLeft + 120, yPos, {
           width: priceWidth - 120,
           align: 'right',
@@ -379,7 +405,20 @@ export async function generateQuotationPDF(
 
         yPos += bodyTextSize + 10;
 
-        // Fees
+        // Calculate total Fit-in fees from items
+        // _Requirements: 8.4_
+        const totalFitInFees = items.reduce((sum, item) => sum + (item.fitInFee || 0), 0);
+        if (totalFitInFees > 0) {
+          doc.fillColor(mutedColor).text(processText('Phí Fit-in:'), priceLeft, yPos, { width: 120 });
+          doc.fillColor(textColor).text(formatCurrency(totalFitInFees) + ' VNĐ', priceLeft + 120, yPos, {
+            width: priceWidth - 120,
+            align: 'right',
+          });
+
+          yPos += bodyTextSize + 10;
+        }
+
+        // Other fees (excluding FIT_IN which is already calculated per item)
         for (const fee of fees) {
           const feeLabel = fee.type === 'PERCENTAGE' ? processText(`${fee.name} (${fee.value}%):`) : processText(`${fee.name}:`);
 

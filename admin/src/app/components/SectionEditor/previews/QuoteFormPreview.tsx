@@ -1,8 +1,9 @@
 import type { PreviewProps } from './types';
+import { tokens } from '../../../../theme';
 
 export function QuoteFormPreview({ data }: PreviewProps) {
   const layoutStyle = data.layout === 'glass' 
-    ? { background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }
+    ? { background: tokens.color.surfaceHover, backdropFilter: 'blur(10px)', border: '1px solid tokens.color.border' }
     : data.layout === 'simple'
     ? { background: 'transparent' }
     : { background: 'linear-gradient(135deg, rgba(245,211,147,0.1) 0%, rgba(239,182,121,0.05) 100%)', border: '1px solid rgba(245,211,147,0.2)' };

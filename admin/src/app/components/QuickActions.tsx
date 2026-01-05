@@ -6,7 +6,7 @@
 
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 import { Card } from './Card';
 import type { DashboardStats } from '../api/dashboard';
 
@@ -30,7 +30,7 @@ const QUICK_ACTIONS: QuickActionConfig[] = [
     icon: 'ri-building-line',
     label: 'Duyệt công trình',
     route: '/bidding',
-    color: '#3b82f6',
+    color: tokens.color.info,
     getBadgeCount: (s) => s.projects.pending,
   },
   {
@@ -38,7 +38,7 @@ const QUICK_ACTIONS: QuickActionConfig[] = [
     icon: 'ri-building-2-line',
     label: 'Duyệt nhà thầu',
     route: '/contractors',
-    color: '#f59e0b',
+    color: tokens.color.warning,
     getBadgeCount: (s) => s.contractors.pending,
   },
   {
@@ -104,7 +104,7 @@ export function QuickActions({ stats }: QuickActionsProps) {
               onClick={() => navigate(action.route)}
               style={{
                 padding: 16,
-                background: 'rgba(255,255,255,0.03)',
+                background: tokens.color.surfaceAlt,
                 border: `1px solid ${tokens.color.border}`,
                 borderRadius: tokens.radius.md,
                 cursor: 'pointer',

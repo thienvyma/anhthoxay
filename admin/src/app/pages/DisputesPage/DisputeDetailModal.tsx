@@ -9,7 +9,7 @@
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Button } from '../../components/Button';
 import {
   DISPUTE_STATUS_COLORS,
@@ -60,7 +60,7 @@ export function DisputeDetailModal({
         style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0,0,0,0.7)',
+          background: tokens.color.overlay,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -144,7 +144,7 @@ export function DisputeDetailModal({
                     width: 40,
                     height: 40,
                     borderRadius: '50%',
-                    border: '3px solid rgba(255,255,255,0.1)',
+                    border: `3px solid ${tokens.color.border}`,
                     borderTopColor: tokens.color.primary,
                     margin: '0 auto',
                   }}
@@ -283,7 +283,7 @@ function Section({
   return (
     <div
       style={{
-        background: 'rgba(255,255,255,0.02)',
+        background: tokens.color.surfaceAlt,
         borderRadius: tokens.radius.md,
         border: `1px solid ${tokens.color.border}`,
         padding: 16,

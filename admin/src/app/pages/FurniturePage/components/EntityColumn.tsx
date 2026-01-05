@@ -5,7 +5,7 @@
 
 import { useState, useMemo, memo } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { Button } from '../../../components/Button';
 import type { FurnitureDeveloper, FurnitureProject, FurnitureBuilding } from '../types';
 

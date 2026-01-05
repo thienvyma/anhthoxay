@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { chatApi } from '../../api';
 import type { Conversation } from '../../types';
 import { ConversationList } from './ConversationList';
@@ -113,10 +113,10 @@ export function ChatPage({ embedded = false }: ChatPageProps) {
           style={{
             marginBottom: 16,
             padding: 16,
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
+            background: tokens.color.errorBg,
+            border: `1px solid ${tokens.color.error}50`,
             borderRadius: tokens.radius.md,
-            color: '#ef4444',
+            color: tokens.color.error,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -128,7 +128,7 @@ export function ChatPage({ embedded = false }: ChatPageProps) {
             style={{
               background: 'none',
               border: 'none',
-              color: '#ef4444',
+              color: tokens.color.error,
               cursor: 'pointer',
               padding: 4,
               fontSize: 16,

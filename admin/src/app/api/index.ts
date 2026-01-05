@@ -104,6 +104,21 @@ export type {
   FurnitureQuotationFee,
 } from './furniture';
 
+// API Keys APIs
+export { apiKeysApi } from './api-keys';
+export type {
+  ApiKey,
+  ApiKeyScope,
+  ApiKeyStatus,
+  EndpointGroup,
+  ApiKeyUsageLog,
+  CreateApiKeyInput,
+  UpdateApiKeyInput,
+  ListApiKeysParams,
+  CreateApiKeyResponse,
+  TestApiKeyResult,
+} from './api-keys';
+
 // Backward compatible combined api export
 export const api = {
   // Auth

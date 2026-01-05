@@ -4,7 +4,7 @@
  * Requirements: 3.4
  */
 
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../../theme';
 import { ImageDropzone } from '../../../ImageDropzone';
 
 interface ImageSectionProps {
@@ -17,7 +17,7 @@ export function ImageSection({ label, value, onChange }: ImageSectionProps) {
   return (
     <div
       style={{
-        background: 'rgba(255, 255, 255, 0.02)',
+        background: tokens.color.surfaceAlt,
         border: `1px solid ${tokens.color.border}`,
         borderRadius: tokens.radius.md,
         padding: 16,

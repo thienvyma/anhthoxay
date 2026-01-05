@@ -7,6 +7,8 @@ export const API_BASE = API_URL;
 export interface FetchOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
   skipAuth?: boolean;
+  /** If true, don't log errors to console (useful for expected 404s) */
+  silent?: boolean;
 }
 
 interface ValidationDetail {
@@ -131,12 +133,15 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
       errorMessage = `${errorMessage}\n\nValidation Errors:\n${validationErrors}`;
     }
     
-    console.error(`API Error [${options.method || 'GET'} ${endpoint}]:`, {
-      status: response.status,
-      statusText: response.statusText,
-      error: error,
-      url: url,
-    });
+    // Only log errors if not silent (useful for expected 404s)
+    if (!options.silent) {
+      console.error(`API Error [${options.method || 'GET'} ${endpoint}]:`, {
+        status: response.status,
+        statusText: response.statusText,
+        error: error,
+        url: url,
+      });
+    }
     throw new Error(errorMessage);
   }
 

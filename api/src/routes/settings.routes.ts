@@ -72,14 +72,17 @@ export function createSettingsRoutes(prisma: PrismaClient) {
    * @route GET /settings/:key
    * @description Get a single setting by key
    * @access Public
+   * @returns { key, value } or { key, value: null } if not found
    */
   app.get('/:key', async (c) => {
     try {
       const key = c.req.param('key');
       const setting = await prisma.settings.findUnique({ where: { key } });
       
+      // Return null value instead of 404 for non-existent settings
+      // This allows frontend to handle missing settings gracefully
       if (!setting) {
-        return errorResponse(c, 'NOT_FOUND', 'Setting not found', 404);
+        return successResponse(c, { key, value: null });
       }
       
       let value: Prisma.JsonValue;

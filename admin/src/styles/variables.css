@@ -44,22 +44,32 @@
   --font-size-display: 64px;
 
   /* ========================================
-   * COLORS (from @app/shared tokens)
+   * COLORS (from @app/shared adminTokens - Light Mode)
    * ======================================== */
-  --color-background: #0B0B0C;
-  --color-surface: #131316;
-  --color-surface-hover: #1A1A1E;
+  --color-background: #F8F9FA;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F3F4F6;
+  --color-surface-alt: #F9FAFB;
   --color-primary: #F5D393;
+  --color-primary-dark: #B8860B;
   --color-secondary: #C7A775;
   --color-accent: #EFB679;
-  --color-text: #F4F4F5;
-  --color-text-muted: #A1A1AA;
-  --color-border: #27272A;
-  --color-border-hover: #3F3F46;
-  --color-success: #34D399;
+  --color-text: #1A1A1D;
+  --color-text-muted: #6B7280;
+  --color-muted: #9CA3AF;
+  --color-border: #E5E7EB;
+  --color-border-hover: #D1D5DB;
+  --color-border-light: #F3F4F6;
+  --color-input-bg: #FFFFFF;
+  --color-input-border: #D1D5DB;
+  --color-success: #10B981;
   --color-warning: #F59E0B;
   --color-error: #EF4444;
   --color-info: #3B82F6;
+  --color-success-bg: #ECFDF5;
+  --color-warning-bg: #FFFBEB;
+  --color-error-bg: #FEF2F2;
+  --color-info-bg: #EFF6FF;
 
   /* ========================================
    * BORDER RADIUS (from @app/shared tokens)
@@ -71,12 +81,12 @@
   --radius-pill: 999px;
 
   /* ========================================
-   * SHADOWS (from @app/shared tokens)
+   * SHADOWS (from @app/shared adminTokens - Light Mode)
    * ======================================== */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
-  --shadow-md: 0 6px 24px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 12px 44px rgba(0, 0, 0, 0.45);
-  --shadow-glow: 0 0 24px rgba(245, 211, 147, 0.3);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 6px 24px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 12px 44px rgba(0, 0, 0, 0.16);
+  --shadow-glow: 0 0 24px rgba(245, 211, 147, 0.2);
 
   /* ========================================
    * Z-INDEX (from @app/shared tokens)

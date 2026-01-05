@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { Button } from '../../../components/Button';
 import { ResponsiveModal } from '../../../../components/responsive/ResponsiveModal';
 import { ResponsiveGrid } from '../../../../components/responsive/ResponsiveGrid';
@@ -88,7 +88,7 @@ export function LeadDetailModal({
             marginTop: 4, 
             whiteSpace: 'pre-wrap',
             padding: 12,
-            background: 'rgba(0,0,0,0.2)',
+            background: tokens.color.surfaceAlt,
             borderRadius: 8,
           }}>
             {lead.content}
@@ -100,7 +100,7 @@ export function LeadDetailModal({
           <div>
             <label style={{ color: tokens.color.muted, fontSize: 13 }}>Dữ liệu báo giá</label>
             <div style={{
-              background: 'rgba(0,0,0,0.2)',
+              background: tokens.color.surfaceAlt,
               padding: 12,
               borderRadius: 8,
               marginTop: 4,
@@ -167,7 +167,7 @@ export function LeadDetailModal({
             ) : (
               <div style={{ 
                 padding: 16, 
-                background: 'rgba(239, 68, 68, 0.1)', 
+                background: tokens.color.errorBg, 
                 borderRadius: 8,
                 border: `1px solid ${tokens.color.error}` 
               }}>

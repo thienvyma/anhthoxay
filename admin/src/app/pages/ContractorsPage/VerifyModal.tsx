@@ -6,7 +6,7 @@
 
 import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Button } from '../../components/Button';
 import type { Contractor } from './types';
 
@@ -40,7 +40,7 @@ export const VerifyModal = memo(function VerifyModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 10000 }}
+            style={{ position: 'fixed', inset: 0, background: tokens.color.overlay, zIndex: 10000 }}
           />
           <div
             style={{
@@ -139,7 +139,7 @@ export const VerifyModal = memo(function VerifyModal({
                     onClick={onConfirm}
                     disabled={saving}
                     fullWidth
-                    style={action === 'REJECTED' ? { background: '#EF4444', borderColor: '#EF4444' } : undefined}
+                    style={action === 'REJECTED' ? { background: tokens.color.error, borderColor: tokens.color.error } : undefined}
                   >
                     {saving ? 'Đang xử lý...' : action === 'VERIFIED' ? 'Xác minh' : 'Từ chối'}
                   </Button>

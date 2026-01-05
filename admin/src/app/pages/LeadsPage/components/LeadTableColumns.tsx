@@ -1,4 +1,4 @@
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { TableColumn } from '../../../../components/responsive/ResponsiveTable';
 import { statusColors, statusLabels, sourceLabels, sourceColors } from '../types';
 import type { CustomerLead } from '../types';
@@ -74,7 +74,7 @@ export function getLeadTableColumns(leadsWithFurnitureQuotes?: Set<string>): Tab
           <span style={{
             padding: '4px 8px',
             borderRadius: 6,
-            background: colors?.bg || 'rgba(255,255,255,0.05)',
+            background: colors?.bg || tokens.color.surfaceHover,
             color: colors?.text || tokens.color.muted,
             fontSize: 12,
             display: 'inline-flex',
@@ -130,7 +130,7 @@ export function getLeadTableColumns(leadsWithFurnitureQuotes?: Set<string>): Tab
           <span style={{
             padding: '4px 12px',
             borderRadius: 20,
-            background: colors?.bg || 'rgba(255,255,255,0.1)',
+            background: colors?.bg || tokens.color.surfaceHover,
             color: colors?.text || tokens.color.text,
             fontSize: 13,
             fontWeight: 500,

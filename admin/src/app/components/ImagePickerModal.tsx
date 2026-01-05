@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { tokens, resolveMediaUrl } from '@app/shared';
+import { resolveMediaUrl } from '@app/shared';
+import { tokens } from '../../theme';
 import { mediaApi } from '../api';
 import type { MediaAsset } from '../types';
 import { Button } from './Button';
@@ -144,7 +145,7 @@ export function ImagePickerModal({ onSelect, onCancel, onClose, currentUrl }: Im
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0,0,0,0.8)',
+          background: tokens.color.overlay,
           backdropFilter: 'blur(8px)',
           zIndex: 999999999,
           display: 'flex',
@@ -204,7 +205,7 @@ export function ImagePickerModal({ onSelect, onCancel, onClose, currentUrl }: Im
               handleCancel();
             }}
             style={{
-              background: 'rgba(255,255,255,0.05)',
+              background: tokens.color.surfaceHover,
               border: `1px solid ${tokens.color.border}`,
               borderRadius: '50%',
               width: 40,
@@ -337,7 +338,7 @@ export function ImagePickerModal({ onSelect, onCancel, onClose, currentUrl }: Im
                     overflow: 'hidden',
                     cursor: 'pointer',
                     border: `2px solid ${selectedUrl === item.url ? tokens.color.primary : tokens.color.border}`,
-                    background: 'rgba(255,255,255,0.03)',
+                    background: tokens.color.surfaceAlt,
                     pointerEvents: 'auto',
                   }}
                 >

@@ -1,4 +1,4 @@
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { Button } from '../../../components/Button';
 import { ResponsiveStack } from '../../../../components/responsive/ResponsiveStack';
 import { statusLabels } from '../types';
@@ -52,7 +52,7 @@ export function LeadFilters({
             style={{
               width: '100%',
               padding: '10px 12px 10px 40px',
-              background: 'rgba(255,255,255,0.05)',
+              background: tokens.color.surfaceHover,
               border: `1px solid ${tokens.color.border}`,
               borderRadius: 8,
               color: tokens.color.text,
@@ -89,7 +89,7 @@ export function LeadFilters({
         flexWrap: 'wrap', 
         marginBottom: 24,
         padding: 12,
-        background: 'rgba(255,255,255,0.02)',
+        background: tokens.color.surfaceAlt,
         borderRadius: 8,
         border: `1px solid ${tokens.color.border}`,
       }}>

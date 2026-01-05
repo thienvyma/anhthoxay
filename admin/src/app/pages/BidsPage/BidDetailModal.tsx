@@ -9,7 +9,7 @@
 
 import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Button } from '../../components/Button';
 import type { BidListItem, Bid } from './types';
 import { STATUS_COLORS, STATUS_LABELS } from './types';
@@ -42,7 +42,7 @@ export const BidDetailModal = memo(function BidDetailModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9998 }}
+            style={{ position: 'fixed', inset: 0, background: tokens.color.overlay, zIndex: 9998 }}
           />
           <div
             style={{
@@ -171,7 +171,7 @@ function ModalFooter({
       <Button
         variant="secondary"
         onClick={onReject}
-        style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#EF4444' }}
+        style={{ background: tokens.color.errorBg, borderColor: `${tokens.color.error}50`, color: tokens.color.error }}
       >
         <i className="ri-close-line" style={{ marginRight: 8 }} />
         Từ chối
@@ -232,7 +232,7 @@ function Section({ icon, title, children }: { icon: string; title: string; child
     <div
       style={{
         padding: 16,
-        background: 'rgba(255,255,255,0.02)',
+        background: tokens.color.surfaceAlt,
         borderRadius: tokens.radius.md,
         border: `1px solid ${tokens.color.border}`,
       }}
@@ -300,9 +300,9 @@ function BidInfoSection({ detail }: { detail: Bid }) {
 // Contractor Section
 function ContractorSection({ detail }: { detail: Bid }) {
   const verificationColors: Record<string, string> = {
-    PENDING: '#F59E0B',
-    VERIFIED: '#10B981',
-    REJECTED: '#EF4444',
+    PENDING: tokens.color.warning,
+    VERIFIED: tokens.color.success,
+    REJECTED: tokens.color.error,
   };
   const verificationLabels: Record<string, string> = {
     PENDING: 'Chờ xác minh',
@@ -354,13 +354,13 @@ function ContractorSection({ detail }: { detail: Bid }) {
 function ProjectSection({ detail }: { detail: Bid }) {
   const projectStatusColors: Record<string, string> = {
     DRAFT: '#6B7280',
-    PENDING_APPROVAL: '#F59E0B',
-    REJECTED: '#EF4444',
-    OPEN: '#10B981',
+    PENDING_APPROVAL: tokens.color.warning,
+    REJECTED: tokens.color.error,
+    OPEN: tokens.color.success,
     BIDDING_CLOSED: '#8B5CF6',
-    MATCHED: '#3B82F6',
+    MATCHED: tokens.color.info,
     IN_PROGRESS: '#06B6D4',
-    COMPLETED: '#22C55E',
+    COMPLETED: tokens.color.success,
     CANCELLED: '#9CA3AF',
   };
   const projectStatusLabels: Record<string, string> = {
@@ -427,7 +427,7 @@ function AttachmentsSection({ attachments }: { attachments: Bid['attachments'] }
               alignItems: 'center',
               gap: 12,
               padding: '10px 12px',
-              background: 'rgba(255,255,255,0.02)',
+              background: tokens.color.surfaceAlt,
               borderRadius: tokens.radius.sm,
               border: `1px solid ${tokens.color.border}`,
               textDecoration: 'none',
@@ -461,9 +461,9 @@ function ReviewNoteSection({ note }: { note: string }) {
       <div
         style={{
           padding: 12,
-          background: 'rgba(239, 68, 68, 0.1)',
+          background: tokens.color.errorBg,
           borderRadius: tokens.radius.sm,
-          color: '#EF4444',
+          color: tokens.color.error,
           fontSize: 13,
         }}
       >

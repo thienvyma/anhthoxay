@@ -94,6 +94,7 @@ export type RouteType =
   | 'media'
   | 'blog-manager'
   | 'settings'
+  | 'settings/api-keys'
   | 'leads'
   | 'pricing-config'
   | 'furniture'
@@ -109,4 +110,6 @@ export type RouteType =
   | 'notification-templates'
   | 'chat'
   | 'bidding'
-  | 'bidding-settings';
+  | 'bidding-settings'
+  | 'api-keys'
+  | 'guide';

@@ -5,7 +5,7 @@
 // **Requirements: 1.1, 1.3, 1.4**
 
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 import { useResponsive } from '../../hooks/useResponsive';
 
 export interface StatsCardProps {
@@ -49,7 +49,7 @@ export function StatsCard({
       <div
         style={{
           padding: isMobile ? 12 : 20,
-          background: 'rgba(255,255,255,0.03)',
+          background: tokens.color.surface,
           border: `1px solid ${tokens.color.border}`,
           borderRadius: tokens.radius.lg,
           position: 'relative',
@@ -61,7 +61,7 @@ export function StatsCard({
               style={{
                 width: isMobile ? 60 : 100,
                 height: 14,
-                background: 'rgba(255,255,255,0.1)',
+                background: tokens.color.surfaceHover,
                 borderRadius: tokens.radius.sm,
                 marginBottom: 12,
               }}
@@ -70,7 +70,7 @@ export function StatsCard({
               style={{
                 width: isMobile ? 40 : 60,
                 height: isMobile ? 24 : 32,
-                background: 'rgba(255,255,255,0.1)',
+                background: tokens.color.surfaceHover,
                 borderRadius: tokens.radius.sm,
               }}
             />
@@ -80,7 +80,7 @@ export function StatsCard({
               width: isMobile ? 40 : 56,
               height: isMobile ? 40 : 56,
               borderRadius: tokens.radius.md,
-              background: 'rgba(255,255,255,0.05)',
+              background: tokens.color.surfaceAlt,
             }}
           />
         </div>
@@ -95,12 +95,13 @@ export function StatsCard({
       onClick={onClick}
       style={{
         padding: isMobile ? 12 : 20,
-        background: 'rgba(255,255,255,0.03)',
+        background: tokens.color.surface,
         border: `1px solid ${hasPending ? `${color}60` : tokens.color.border}`,
         borderRadius: tokens.radius.lg,
         cursor: onClick ? 'pointer' : 'default',
         position: 'relative',
         transition: 'border-color 0.2s ease',
+        boxShadow: tokens.shadow.sm,
       }}
     >
       {/* Pending Badge */}

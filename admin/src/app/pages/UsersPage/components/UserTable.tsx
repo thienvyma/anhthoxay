@@ -5,7 +5,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import {
   ResponsiveTable,
   TableColumn,
@@ -35,11 +35,11 @@ export function UserTable({
               height: 40,
               minWidth: 40,
               borderRadius: '50%',
-              background: `linear-gradient(135deg, ${ROLE_COLORS[user.role as UserRole]}, ${ROLE_COLORS[user.role as UserRole]}80)`,
+              background: ROLE_COLORS[user.role as UserRole],
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#fff',
+              color: tokens.color.text,
               fontWeight: 600,
               fontSize: 16,
             }}
@@ -193,7 +193,7 @@ export function UserTable({
         <i className="ri-logout-circle-line" />
       </motion.button>
       <motion.button
-        whileHover={{ scale: 1.05, background: 'rgba(239, 68, 68, 0.1)' }}
+        whileHover={{ scale: 1.05, background: tokens.color.errorBg }}
         whileTap={{ scale: 0.95 }}
         onClick={(e) => {
           e.stopPropagation();

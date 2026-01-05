@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
@@ -42,8 +42,8 @@ const defaultSettings: BiddingSettings = {
 };
 
 const glass = {
-  background: 'rgba(12,12,16,0.7)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: tokens.color.surfaceAlt,
+  border: `1px solid ${tokens.color.border}`,
 };
 
 

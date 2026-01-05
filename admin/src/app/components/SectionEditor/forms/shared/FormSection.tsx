@@ -4,7 +4,7 @@
  * Requirements: 3.4
  */
 
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../../theme';
 import type { ReactNode } from 'react';
 
 interface FormSectionProps {
@@ -20,7 +20,7 @@ export function FormSection({
   icon,
   iconColor,
   title,
-  bgColor = 'rgba(255,255,255,0.02)',
+  bgColor = tokens.color.surfaceAlt,
   borderColor = tokens.color.border,
   children,
 }: FormSectionProps) {

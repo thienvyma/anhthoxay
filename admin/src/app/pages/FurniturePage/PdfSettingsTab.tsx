@@ -7,7 +7,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input, TextArea } from '../../components/Input';
@@ -164,7 +164,7 @@ export function PdfSettingsTab({ pdfSettings: initialSettings, onRefresh }: PdfS
               alignItems: 'center',
               gap: 8,
               padding: '8px 16px',
-              background: showPreview ? tokens.color.primary : 'rgba(255,255,255,0.05)',
+              background: showPreview ? tokens.color.primary : tokens.color.surfaceHover,
               color: showPreview ? '#111' : tokens.color.text,
               border: `1px solid ${showPreview ? tokens.color.primary : tokens.color.border}`,
               borderRadius: tokens.radius.md,

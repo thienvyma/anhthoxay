@@ -9,7 +9,7 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import type { ProjectListItem, ProjectStatus } from './types';
 import { STATUS_COLORS, STATUS_LABELS } from './types';
 
@@ -135,7 +135,7 @@ const ProjectRow = memo(function ProjectRow({
           style={{
             padding: '4px 10px',
             borderRadius: tokens.radius.sm,
-            background: project.bidCount > 0 ? `${tokens.color.primary}20` : 'rgba(255,255,255,0.05)',
+            background: project.bidCount > 0 ? `${tokens.color.primary}20` : tokens.color.surfaceHover,
             color: project.bidCount > 0 ? tokens.color.primary : tokens.color.muted,
             fontSize: 13,
             fontWeight: 600,
@@ -158,17 +158,17 @@ const ProjectRow = memo(function ProjectRow({
                 icon="ri-check-line"
                 title="Duyệt"
                 onClick={() => onApprove(project)}
-                color="#10B981"
-                bgColor="rgba(16, 185, 129, 0.1)"
-                borderColor="rgba(16, 185, 129, 0.3)"
+                color={tokens.color.success}
+                bgColor={tokens.color.successBg}
+                borderColor={`${tokens.color.success}40`}
               />
               <ActionButton
                 icon="ri-close-line"
                 title="Từ chối"
                 onClick={() => onReject(project)}
-                color="#EF4444"
-                bgColor="rgba(239, 68, 68, 0.1)"
-                borderColor="rgba(239, 68, 68, 0.3)"
+                color={tokens.color.error}
+                bgColor={tokens.color.errorBg}
+                borderColor={`${tokens.color.error}40`}
               />
             </>
           )}
@@ -206,7 +206,7 @@ function ActionButton({
   title,
   onClick,
   color,
-  bgColor = 'rgba(255,255,255,0.05)',
+  bgColor = tokens.color.surfaceHover,
   borderColor = tokens.color.border,
 }: {
   icon: string;

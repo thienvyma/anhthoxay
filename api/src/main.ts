@@ -22,7 +22,7 @@ import path from 'path';
 import { prisma } from './utils/prisma';
 
 // Middleware imports
-import { rateLimit } from './middleware';
+import { rateLimiter } from './middleware/rate-limiter';
 import { securityHeaders } from './middleware/security-headers';
 import { correlationId } from './middleware/correlation-id';
 import { errorHandler } from './middleware/error-handler';
@@ -65,7 +65,9 @@ import { createPublicReportRoutes, createAdminReportRoutes } from './routes/repo
 import { createSavedProjectRoutes } from './routes/saved-project.routes';
 import { createActivityRoutes } from './routes/activity.routes';
 import { createAdminDashboardRoutes } from './routes/dashboard.routes';
-import { createFurniturePublicRoutes, createFurnitureAdminRoutes } from './routes/furniture.routes';
+import { createFurniturePublicRoutes, createFurnitureAdminRoutes } from './routes/furniture';
+import { createApiKeysRoutes } from './routes/api-keys.routes';
+import { createExternalApiRoutes } from './routes/external-api';
 
 // Service imports
 import { AuthService } from './services/auth.service';
@@ -151,9 +153,9 @@ app.use('*', async (c, next) => {
 
 // Rate limiting
 const isDev = process.env.NODE_ENV !== 'production';
-app.use('/api/auth/login', rateLimit({ windowMs: 1 * 60 * 1000, max: isDev ? 100 : 20 }));
-app.use('/leads', rateLimit({ windowMs: 60 * 1000, max: isDev ? 100 : 30 }));
-app.use('*', rateLimit({ windowMs: 60 * 1000, max: isDev ? 500 : 200 }));
+app.use('/api/auth/login', rateLimiter({ windowMs: 1 * 60 * 1000, maxAttempts: isDev ? 100 : 20 }));
+app.use('/leads', rateLimiter({ windowMs: 60 * 1000, maxAttempts: isDev ? 100 : 30 }));
+app.use('*', rateLimiter({ windowMs: 60 * 1000, maxAttempts: isDev ? 500 : 200 }));
 
 // ============================================
 // HEALTH CHECK & ROOT
@@ -284,6 +286,12 @@ app.route('/api/admin/dashboard', createAdminDashboardRoutes(prisma));
 // Furniture routes - Feature: furniture-quotation
 app.route('/api/furniture', createFurniturePublicRoutes(prisma));
 app.route('/api/admin/furniture', createFurnitureAdminRoutes(prisma));
+
+// API Keys routes - Feature: admin-guide-api-keys
+app.route('/api/admin/api-keys', createApiKeysRoutes(prisma));
+
+// External API routes - Feature: admin-guide-api-keys (API Key authenticated)
+app.route('/api/external', createExternalApiRoutes(prisma));
 
 // ============================================
 // GLOBAL ERROR HANDLER

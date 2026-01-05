@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { ChatPage } from '../ChatPage';
 import { NotificationTemplatesPage } from '../NotificationTemplatesPage';
 import { RegionsPage } from '../RegionsPage';
@@ -59,7 +59,7 @@ export function BiddingSettingsPage() {
           gap: 8,
           marginBottom: 24,
           padding: 8,
-          background: 'rgba(255,255,255,0.02)',
+          background: tokens.color.surfaceAlt,
           borderRadius: tokens.radius.lg,
           border: `1px solid ${tokens.color.border}`,
           overflowX: 'auto',
@@ -78,9 +78,7 @@ export function BiddingSettingsPage() {
                 alignItems: 'center',
                 gap: 8,
                 padding: '12px 20px',
-                background: isActive
-                  ? `linear-gradient(135deg, ${tokens.color.primary}20, ${tokens.color.primary}10)`
-                  : 'transparent',
+                background: isActive ? `${tokens.color.primary}15` : 'transparent',
                 border: isActive ? `1px solid ${tokens.color.primary}40` : '1px solid transparent',
                 borderRadius: tokens.radius.md,
                 color: isActive ? tokens.color.primary : tokens.color.muted,

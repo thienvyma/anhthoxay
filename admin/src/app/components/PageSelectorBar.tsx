@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 import { Button } from './Button';
 import { Input } from './Input';
 import { useToast } from './Toast';
@@ -146,12 +146,11 @@ export function PageSelectorBar({
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         style={{
-          background: `linear-gradient(135deg, ${tokens.color.surface}, rgba(20,21,26,0.95))`,
+          background: tokens.color.surface,
           border: `1px solid ${tokens.color.border}`,
           borderRadius: tokens.radius.lg,
           padding: isMobile ? '12px' : '20px 24px',
           marginBottom: isMobile ? 16 : 24,
-          boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
         }}
       >
         <div style={{ 
@@ -169,12 +168,12 @@ export function PageSelectorBar({
                   width: 40,
                   height: 40,
                   borderRadius: tokens.radius.md,
-                  background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+                  background: `${tokens.color.primary}15`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: 20,
-                  color: '#111',
+                  color: tokens.color.primary,
                   flexShrink: 0,
                 }}
               >
@@ -191,7 +190,7 @@ export function PageSelectorBar({
                 style={{
                   width: '100%',
                   padding: isMobile ? '10px 12px' : '12px 16px',
-                  background: 'rgba(255,255,255,0.05)',
+                  background: tokens.color.surfaceHover,
                   border: `1px solid ${tokens.color.border}`,
                   borderRadius: tokens.radius.md,
                   color: tokens.color.text,
@@ -215,7 +214,7 @@ export function PageSelectorBar({
                     <span style={{ 
                       fontSize: 12, 
                       color: tokens.color.muted,
-                      background: 'rgba(255,255,255,0.05)',
+                      background: tokens.color.surfaceHover,
                       padding: '2px 8px',
                       borderRadius: tokens.radius.sm,
                       flexShrink: 0,
@@ -245,10 +244,9 @@ export function PageSelectorBar({
                       top: 'calc(100% + 8px)',
                       left: 0,
                       right: 0,
-                      background: 'rgba(20,21,26,0.98)',
+                      background: tokens.color.surface,
                       border: `1px solid ${tokens.color.border}`,
                       borderRadius: tokens.radius.md,
-                      boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
                       zIndex: 100,
                       maxHeight: 400,
                       overflowY: 'auto',
@@ -257,7 +255,7 @@ export function PageSelectorBar({
                     {pages.map((page) => (
                       <motion.button
                         key={page.id}
-                        whileHover={{ background: 'rgba(255,255,255,0.08)' }}
+                        whileHover={{ background: tokens.color.surfaceHover }}
                         onClick={() => {
                           onSelectPage(page);
                           setShowDropdown(false);
@@ -296,11 +294,11 @@ export function PageSelectorBar({
                           <span style={{ 
                             fontSize: 10, 
                             fontWeight: 600,
-                            color: page.isActive !== false ? '#10B981' : '#EF4444',
+                            color: page.isActive !== false ? tokens.color.success : tokens.color.error,
                             background: page.isActive !== false 
-                              ? 'rgba(16, 185, 129, 0.15)' 
-                              : 'rgba(239, 68, 68, 0.15)',
-                            border: `1px solid ${page.isActive !== false ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                              ? tokens.color.successBg 
+                              : tokens.color.errorBg,
+                            border: `1px solid ${page.isActive !== false ? `${tokens.color.success}40` : `${tokens.color.error}40`}`,
                             padding: '2px 6px',
                             borderRadius: tokens.radius.sm,
                             display: 'flex',
@@ -316,7 +314,7 @@ export function PageSelectorBar({
                           <span style={{ 
                             fontSize: 11, 
                             color: tokens.color.muted,
-                            background: 'rgba(255,255,255,0.05)',
+                            background: tokens.color.surfaceHover,
                             padding: '2px 6px',
                             borderRadius: tokens.radius.sm,
                           }}>
@@ -349,11 +347,11 @@ export function PageSelectorBar({
                 style={{
                   padding: isMobile ? '6px 10px' : '8px 14px',
                   background: selectedPage.isActive !== false 
-                    ? 'rgba(16, 185, 129, 0.15)' 
-                    : 'rgba(239, 68, 68, 0.15)',
-                  border: `1px solid ${selectedPage.isActive !== false ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+                    ? tokens.color.successBg 
+                    : tokens.color.errorBg,
+                  border: `1px solid ${selectedPage.isActive !== false ? `${tokens.color.success}60` : `${tokens.color.error}60`}`,
                   borderRadius: tokens.radius.md,
-                  color: selectedPage.isActive !== false ? '#10B981' : '#EF4444',
+                  color: selectedPage.isActive !== false ? tokens.color.success : tokens.color.error,
                   cursor: 'pointer',
                   fontSize: isMobile ? 12 : 13,
                   fontWeight: 600,
@@ -375,7 +373,7 @@ export function PageSelectorBar({
               title="Create new page"
               style={{
                 padding: isMobile ? '6px 10px' : '10px 16px',
-                background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+                background: tokens.color.primary,
                 border: 'none',
                 borderRadius: tokens.radius.md,
                 color: '#111',
@@ -385,7 +383,6 @@ export function PageSelectorBar({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 4,
-                boxShadow: `0 4px 12px ${tokens.color.primary}40`,
                 minHeight: 36,
               }}
             >
@@ -402,7 +399,7 @@ export function PageSelectorBar({
                   title="Edit page"
                   style={{
                     padding: isMobile ? '6px 10px' : '10px 12px',
-                    background: 'rgba(255,255,255,0.05)',
+                    background: tokens.color.surfaceHover,
                     border: `1px solid ${tokens.color.border}`,
                     borderRadius: tokens.radius.md,
                     color: tokens.color.primary,
@@ -422,7 +419,7 @@ export function PageSelectorBar({
                     title="Delete page"
                     style={{
                       padding: isMobile ? '6px 10px' : '10px 12px',
-                      background: 'rgba(255,255,255,0.05)',
+                      background: tokens.color.surfaceHover,
                       border: `1px solid ${tokens.color.border}`,
                       borderRadius: tokens.radius.md,
                       color: tokens.color.error,
@@ -443,7 +440,7 @@ export function PageSelectorBar({
                     title="Preview page"
                     style={{
                       padding: '10px 12px',
-                      background: 'rgba(255,255,255,0.05)',
+                      background: tokens.color.surfaceHover,
                       border: `1px solid ${tokens.color.border}`,
                       borderRadius: tokens.radius.md,
                       color: tokens.color.text,
@@ -504,7 +501,7 @@ export function PageSelectorBar({
               style={{
                 position: 'fixed',
                 inset: 0,
-                background: 'rgba(0,0,0,0.7)',
+                background: tokens.color.overlay,
                 backdropFilter: 'blur(4px)',
                 zIndex: 9998,
               }}
@@ -529,10 +526,9 @@ export function PageSelectorBar({
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 style={{
                   width: 'min(500px, 100%)',
-                  background: 'rgba(20,21,26,0.98)',
+                  background: tokens.color.surface,
                   borderRadius: tokens.radius.lg,
                   border: `1px solid ${tokens.color.border}`,
-                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
                 }}
               >
                 <div style={{ padding: 24, borderBottom: `1px solid ${tokens.color.border}` }}>

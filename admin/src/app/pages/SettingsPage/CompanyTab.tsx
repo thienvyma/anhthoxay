@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { tokens, resolveMediaUrl } from '@app/shared';
+import { resolveMediaUrl } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
@@ -18,6 +19,7 @@ interface CompanyTabProps {
 export function CompanyTab({ settings, onChange, onShowMessage, onError }: CompanyTabProps) {
   const [saving, setSaving] = useState(false);
   const [uploadingBg, setUploadingBg] = useState(false);
+  const [uploadingAdminBg, setUploadingAdminBg] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState<LogoPosition | null>(null);
 
   // Logo position labels
@@ -34,6 +36,12 @@ export function CompanyTab({ settings, onChange, onShowMessage, onError }: Compa
     if (!settings.backgroundImage) return null;
     return resolveMediaUrl(settings.backgroundImage);
   }, [settings.backgroundImage]);
+
+  // Resolve admin background image URL
+  const adminBackgroundImageUrl = useMemo(() => {
+    if (!settings.adminBackgroundImage) return null;
+    return resolveMediaUrl(settings.adminBackgroundImage);
+  }, [settings.adminBackgroundImage]);
 
   const handleSave = useCallback(async () => {
     try {
@@ -83,6 +91,46 @@ export function CompanyTab({ settings, onChange, onShowMessage, onError }: Compa
     } catch (error) {
       console.error('Error removing background:', error);
       onError('Xóa hình nền thất bại.');
+    } finally {
+      setSaving(false);
+    }
+  }, [settings, onChange, onShowMessage, onError]);
+
+  // Admin background handlers
+  const handleAdminBackgroundUpload = useCallback(async (file: File) => {
+    try {
+      setUploadingAdminBg(true);
+      const result = await mediaApi.uploadFile(file);
+
+      const updatedSettings = { ...settings, adminBackgroundImage: result.url };
+      onChange(updatedSettings);
+
+      // Save immediately
+      await settingsApi.update('company', { value: updatedSettings });
+
+      onShowMessage('✅ Hình nền Admin đã được cập nhật!');
+    } catch (error) {
+      console.error('Error uploading admin background:', error);
+      onError('Upload hình nền Admin thất bại. Vui lòng thử lại.');
+    } finally {
+      setUploadingAdminBg(false);
+    }
+  }, [settings, onChange, onShowMessage, onError]);
+
+  const handleRemoveAdminBackground = useCallback(async () => {
+    if (!confirm('Xóa hình nền Admin?')) return;
+
+    try {
+      setSaving(true);
+      const updatedSettings = { ...settings, adminBackgroundImage: '' };
+      onChange(updatedSettings);
+
+      await settingsApi.update('company', { value: updatedSettings });
+
+      onShowMessage('✅ Đã xóa hình nền Admin!');
+    } catch (error) {
+      console.error('Error removing admin background:', error);
+      onError('Xóa hình nền Admin thất bại.');
     } finally {
       setSaving(false);
     }
@@ -186,7 +234,7 @@ export function CompanyTab({ settings, onChange, onShowMessage, onError }: Compa
                 onClick={handleRemoveBackground} 
                 disabled={saving}
                 style={{ 
-                  background: 'rgba(239, 68, 68, 0.1)',
+                  background: tokens.color.errorBg,
                   borderColor: tokens.color.error,
                   color: tokens.color.error,
                 }}
@@ -222,6 +270,84 @@ export function CompanyTab({ settings, onChange, onShowMessage, onError }: Compa
               <>
                 <i className="ri-upload-cloud-2-line" style={{ fontSize: 32, color: tokens.color.muted, marginBottom: 8 }} />
                 <span style={{ color: tokens.color.muted }}>Click để upload hình nền</span>
+              </>
+            )}
+          </label>
+        )}
+      </Card>
+
+      {/* Admin Background */}
+      <Card icon="ri-admin-line" title="Hình Nền Admin Panel" subtitle="Upload hình nền cho trang quản trị">
+        <div style={{ marginBottom: 12, fontSize: 13, color: tokens.color.muted }}>
+          Khuyến nghị: 1920x1080px hoặc lớn hơn. Hình nền sẽ hiển thị mờ phía sau nội dung admin.
+        </div>
+
+        {settings.adminBackgroundImage ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* Image Preview */}
+            <div style={{ 
+              borderRadius: tokens.radius.md, 
+              overflow: 'hidden',
+              border: `1px solid ${tokens.color.border}`,
+            }}>
+              <img
+                src={adminBackgroundImageUrl || settings.adminBackgroundImage}
+                alt="Admin background"
+                style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }}
+                onError={(e) => {
+                  console.error('Image load error:', settings.adminBackgroundImage);
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            </div>
+            {/* Delete Button - Outside image */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button 
+                variant="secondary" 
+                onClick={handleRemoveAdminBackground} 
+                disabled={saving}
+                style={{ 
+                  background: tokens.color.errorBg,
+                  borderColor: tokens.color.error,
+                  color: tokens.color.error,
+                }}
+              >
+                <i className="ri-delete-bin-line" /> Xóa hình nền
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <label style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 40,
+            border: `2px dashed ${tokens.color.border}`,
+            borderRadius: tokens.radius.md,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}>
+            <input
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleAdminBackgroundUpload(file);
+              }}
+            />
+            {uploadingAdminBg ? (
+              <motion.i
+                className="ri-loader-4-line"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                style={{ fontSize: 32, color: tokens.color.primary }}
+              />
+            ) : (
+              <>
+                <i className="ri-upload-cloud-2-line" style={{ fontSize: 32, color: tokens.color.muted, marginBottom: 8 }} />
+                <span style={{ color: tokens.color.muted }}>Click để upload hình nền Admin</span>
               </>
             )}
           </label>
@@ -277,7 +403,7 @@ export function CompanyTab({ settings, onChange, onShowMessage, onError }: Compa
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div style={{
                       padding: 12,
-                      background: 'rgba(255,255,255,0.03)',
+                      background: tokens.color.surfaceAlt,
                       borderRadius: tokens.radius.sm,
                       display: 'flex',
                       alignItems: 'center',

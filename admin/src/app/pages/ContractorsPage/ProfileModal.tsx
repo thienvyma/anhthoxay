@@ -6,7 +6,7 @@
 
 import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Button } from '../../components/Button';
 import type { Contractor, ContractorProfile } from './types';
 import { STATUS_COLORS, STATUS_LABELS, type VerificationStatus } from './types';
@@ -37,7 +37,7 @@ export const ProfileModal = memo(function ProfileModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9998 }}
+            style={{ position: 'fixed', inset: 0, background: tokens.color.overlay, zIndex: 9998 }}
           />
           <div
             style={{
@@ -150,7 +150,7 @@ function ModalFooter({
       <Button
         variant="secondary"
         onClick={() => onVerify('REJECTED')}
-        style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#EF4444' }}
+        style={{ background: tokens.color.errorBg, borderColor: `${tokens.color.error}50`, color: tokens.color.error }}
       >
         <i className="ri-close-line" style={{ marginRight: 8 }} />
         Từ chối
@@ -218,7 +218,7 @@ function Section({ icon, title, children }: { icon: string; title: string; child
     <div
       style={{
         padding: 16,
-        background: 'rgba(255,255,255,0.02)',
+        background: tokens.color.surfaceAlt,
         borderRadius: tokens.radius.md,
         border: `1px solid ${tokens.color.border}`,
       }}
@@ -285,9 +285,9 @@ function StatusSection({ detail }: { detail: ContractorProfile }) {
           style={{
             marginTop: 12,
             padding: 12,
-            background: 'rgba(239, 68, 68, 0.1)',
+            background: tokens.color.errorBg,
             borderRadius: tokens.radius.sm,
-            color: '#EF4444',
+            color: tokens.color.error,
             fontSize: 13,
           }}
         >
@@ -385,7 +385,7 @@ function CertificatesSection({ certificates }: { certificates: Array<{ name: str
               alignItems: 'center',
               gap: 12,
               padding: 12,
-              background: 'rgba(255,255,255,0.02)',
+              background: tokens.color.surfaceAlt,
               borderRadius: tokens.radius.sm,
               border: `1px solid ${tokens.color.border}`,
             }}
@@ -415,19 +415,19 @@ const BADGE_INFO: Record<string, { name: string; description: string; icon: stri
     name: 'Nhà thầu Tích cực',
     description: 'Đã hoàn thành 10 dự án trở lên',
     icon: '🏆',
-    color: '#F59E0B',
+    color: tokens.color.warning,
   },
   HIGH_QUALITY: {
     name: 'Chất lượng Cao',
     description: 'Duy trì đánh giá 4.5+ trong 6 tháng',
     icon: '⭐',
-    color: '#10B981',
+    color: tokens.color.success,
   },
   FAST_RESPONDER: {
     name: 'Phản hồi Nhanh',
     description: 'Phản hồi 90%+ yêu cầu trong 24 giờ',
     icon: '⚡',
-    color: '#3B82F6',
+    color: tokens.color.info,
   },
 };
 
@@ -496,7 +496,7 @@ function DocumentPreview({ label, url }: { label: string; url: string | null }) 
             borderRadius: tokens.radius.md,
             overflow: 'hidden',
             border: `1px solid ${tokens.color.border}`,
-            background: 'rgba(255,255,255,0.02)',
+            background: tokens.color.surfaceAlt,
           }}
         >
           <img src={url} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

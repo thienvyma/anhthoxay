@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { pagesApi, sectionsApi } from '../api';
@@ -225,12 +225,12 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
               width: isMobile ? 36 : 40,
               height: isMobile ? 36 : 40,
               borderRadius: tokens.radius.md,
-              background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+              background: `${tokens.color.primary}15`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: isMobile ? 18 : 20,
-              color: '#111',
+              color: tokens.color.primary,
               flexShrink: 0,
             }}
           >
@@ -313,7 +313,7 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
                 sections={page.sections}
                 sectionTypes={sectionTypes}
                 categoryColors={{
-                  'Hero & Banners': '#f5d393',
+                  'Hero & Banners': tokens.color.primary,
                   'Content': '#3B82F6',
                   'Blog': '#8B5CF6',
                   'Social Proof': '#F59E0B',
@@ -346,7 +346,7 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
           >
             <div style={{
               padding: '12px 16px',
-              background: 'rgba(255,255,255,0.02)',
+              background: tokens.color.surfaceAlt,
               borderBottom: `1px solid ${tokens.color.border}`,
               display: 'flex',
               alignItems: 'center',
@@ -357,8 +357,7 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
                   width: 8,
                   height: 8,
                   borderRadius: '50%',
-                  background: '#10B981',
-                  boxShadow: '0 0 8px rgba(16, 185, 129, 0.5)',
+                  background: tokens.color.success,
                 }} />
                 <span style={{ color: tokens.color.text, fontSize: 14, fontWeight: 600 }}>
                   Live Preview
@@ -367,7 +366,7 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
               <button
                 onClick={() => setPreviewKey(prev => prev + 1)}
                 style={{
-                  background: 'rgba(255,255,255,0.05)',
+                  background: tokens.color.surfaceHover,
                   border: `1px solid ${tokens.color.border}`,
                   color: tokens.color.text,
                   padding: '6px 12px',

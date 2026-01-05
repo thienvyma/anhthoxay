@@ -6,8 +6,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { ResponsiveModal, ResponsiveTable, TableColumn } from '../../../components/responsive';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
@@ -32,6 +31,14 @@ const FEE_TYPE_OPTIONS = [
   { value: 'PERCENTAGE', label: 'Phần trăm (%)' },
 ];
 
+// ========== SYSTEM FEES (không thể xóa) ==========
+const SYSTEM_FEE_CODES = [
+  'FIT_IN',           // Phí Fit-in
+  'CONSTRUCTION_FEE', // Phí thi công
+  'SHIPPING_FEE',     // Phí vận chuyển
+  'VAT',              // Thuế VAT
+];
+
 // ========== COMPONENT ==========
 export function SettingsTab({ fees, onRefresh }: SettingsTabProps) {
   const toast = useToast();
@@ -41,6 +48,7 @@ export function SettingsTab({ fees, onRefresh }: SettingsTabProps) {
   const [editingFee, setEditingFee] = useState<FurnitureFee | null>(null);
   const [deletingFeeId, setDeletingFeeId] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [togglingFeeId, setTogglingFeeId] = useState<string | null>(null);
 
   // Form state
   const [feeForm, setFeeForm] = useState<CreateFeeInput>({
@@ -51,7 +59,6 @@ export function SettingsTab({ fees, onRefresh }: SettingsTabProps) {
     order: 0,
     isActive: true,
   });
-
 
   // ========== HELPERS ==========
   const formatPrice = (price: number) => {
@@ -72,6 +79,11 @@ export function SettingsTab({ fees, onRefresh }: SettingsTabProps) {
     const option = FEE_TYPE_OPTIONS.find((opt) => opt.value === type);
     return option?.label || type;
   };
+
+  // Check if fee is a system fee (cannot be deleted)
+  const isSystemFee = useCallback((fee: FurnitureFee) => {
+    return SYSTEM_FEE_CODES.includes(fee.code || '');
+  }, []);
 
   // ========== MODAL HANDLERS ==========
   const openFeeModal = useCallback((fee?: FurnitureFee) => {
@@ -147,18 +159,17 @@ export function SettingsTab({ fees, onRefresh }: SettingsTabProps) {
   };
 
   const handleToggleStatus = async (fee: FurnitureFee) => {
-    setLoading(true);
+    setTogglingFeeId(fee.id);
     try {
       await furnitureFeesApi.update(fee.id, { isActive: !fee.isActive });
-      toast.success(fee.isActive ? 'Đã ẩn phí' : 'Đã kích hoạt phí');
+      toast.success(fee.isActive ? 'Đã tắt phí' : 'Đã bật phí');
       onRefresh();
     } catch (error) {
       toast.error('Lỗi: ' + (error as Error).message);
     } finally {
-      setLoading(false);
+      setTogglingFeeId(null);
     }
   };
-
 
   // ========== TABLE COLUMNS ==========
   const columns: TableColumn<FurnitureFee>[] = useMemo(
@@ -168,22 +179,45 @@ export function SettingsTab({ fees, onRefresh }: SettingsTabProps) {
         header: 'Tên phí',
         priority: 1,
         render: (_, row) => (
-          <div>
-            <div style={{ fontWeight: 600, color: tokens.color.text }}>{row.name}</div>
-            {row.description && (
-              <div
-                style={{
-                  fontSize: 12,
-                  color: tokens.color.muted,
-                  maxWidth: 250,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {row.description}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontWeight: 600, color: tokens.color.text }}>{row.name}</span>
+                {isSystemFee(row) && (
+                  <span
+                    style={{
+                      background: `${tokens.color.primary}20`,
+                      color: tokens.color.primary,
+                      padding: '2px 6px',
+                      borderRadius: 4,
+                      fontSize: 10,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Hệ thống
+                  </span>
+                )}
               </div>
-            )}
+              {row.description && (
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: tokens.color.muted,
+                    maxWidth: 250,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {row.description}
+                </div>
+              )}
+              {row.code && (
+                <div style={{ fontSize: 11, color: tokens.color.muted, fontFamily: 'monospace' }}>
+                  Code: {row.code}
+                </div>
+              )}
+            </div>
           </div>
         ),
       },
@@ -223,44 +257,49 @@ export function SettingsTab({ fees, onRefresh }: SettingsTabProps) {
       },
       {
         key: 'isActive' as keyof FurnitureFee,
-        header: 'Trạng thái',
+        header: 'Bật/Tắt',
         priority: 4,
         align: 'center',
         render: (value, row) => (
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <button
             onClick={(e) => {
               e.stopPropagation();
-              handleToggleStatus(row);
+              if (togglingFeeId !== row.id) {
+                handleToggleStatus(row);
+              }
             }}
-            disabled={loading}
+            disabled={togglingFeeId === row.id}
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '4px 12px',
-              borderRadius: 16,
-              border: 'none',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              background: value
-                ? `${tokens.color.success}20`
-                : `${tokens.color.muted}20`,
-              color: value ? tokens.color.success : tokens.color.muted,
-              fontSize: 12,
-              fontWeight: 500,
-              transition: 'all 0.2s',
+              position: 'relative',
+              width: 44,
+              height: 24,
+              borderRadius: 12,
+              border: `1px solid ${tokens.color.border}`,
+              background: value ? tokens.color.success : tokens.color.border,
+              cursor: togglingFeeId === row.id ? 'not-allowed' : 'pointer',
+              transition: 'background 0.2s',
+              padding: 0,
+              opacity: togglingFeeId === row.id ? 0.6 : 1,
             }}
           >
-            <i className={value ? 'ri-check-line' : 'ri-close-line'} />
-            {value ? 'Hoạt động' : 'Đã ẩn'}
-          </motion.button>
+            <span
+              style={{
+                position: 'absolute',
+                top: 2,
+                left: value ? 22 : 2,
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                background: tokens.color.text,
+                transition: 'left 0.2s',
+              }}
+            />
+          </button>
         ),
       },
     ],
-    [loading]
+    [togglingFeeId, isSystemFee]
   );
-
 
   // ========== RENDER ==========
   return (
@@ -300,6 +339,8 @@ export function SettingsTab({ fees, onRefresh }: SettingsTabProps) {
             <ul style={{ margin: 0, paddingLeft: 20, color: tokens.color.muted, fontSize: 13, lineHeight: 1.6 }}>
               <li><strong>Cố định (VNĐ):</strong> Phí được cộng trực tiếp vào tổng giá (VD: 500,000 VNĐ)</li>
               <li><strong>Phần trăm (%):</strong> Phí được tính theo % của giá cơ bản (VD: 5%)</li>
+              <li><strong>Phí hệ thống:</strong> Các phí có nhãn "Hệ thống" không thể xóa, chỉ có thể bật/tắt</li>
+              <li><strong>Bật/Tắt:</strong> Click vào nút trạng thái để bật hoặc tắt phí</li>
             </ul>
           </div>
         </div>
@@ -323,20 +364,21 @@ export function SettingsTab({ fees, onRefresh }: SettingsTabProps) {
               >
                 <i className="ri-edit-line" />
               </Button>
-              <Button
-                variant="ghost"
-                size="small"
-                onClick={() => openDeleteFeeModal(row.id)}
-                disabled={loading}
-                style={{ color: tokens.color.error }}
-              >
-                <i className="ri-delete-bin-line" />
-              </Button>
+              {!isSystemFee(row) && (
+                <Button
+                  variant="ghost"
+                  size="small"
+                  onClick={() => openDeleteFeeModal(row.id)}
+                  disabled={loading}
+                  style={{ color: tokens.color.error }}
+                >
+                  <i className="ri-delete-bin-line" />
+                </Button>
+              )}
             </div>
           )}
         />
       </Card>
-
 
       {/* Fee Form Modal */}
       <ResponsiveModal
@@ -356,6 +398,17 @@ export function SettingsTab({ fees, onRefresh }: SettingsTabProps) {
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {editingFee && isSystemFee(editingFee) && (
+            <Card style={{ background: `${tokens.color.warning}10`, border: `1px solid ${tokens.color.warning}30`, padding: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <i className="ri-lock-line" style={{ color: tokens.color.warning }} />
+                <span style={{ color: tokens.color.warning, fontSize: 13 }}>
+                  Đây là phí hệ thống. Bạn có thể chỉnh sửa giá trị nhưng không thể xóa.
+                </span>
+              </div>
+            </Card>
+          )}
+
           <Input
             label="Tên phí"
             value={feeForm.name}

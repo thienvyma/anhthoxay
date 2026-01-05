@@ -9,7 +9,7 @@
 
 import { memo, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import type { Conversation } from '../../types';
 
 interface ConversationListProps {
@@ -144,15 +144,13 @@ export const ConversationList = memo(function ConversationList({
             return (
               <motion.button
                 key={conversation.id}
-                whileHover={{ backgroundColor: isSelected ? undefined : 'rgba(255,255,255,0.05)' }}
+                whileHover={{ backgroundColor: isSelected ? undefined : tokens.color.surfaceHover }}
                 onClick={() => onSelect(conversation)}
                 style={{
                   width: '100%',
                   padding: 16,
                   textAlign: 'left',
-                  background: isSelected
-                    ? `linear-gradient(135deg, ${tokens.color.primary}15, ${tokens.color.primary}05)`
-                    : 'transparent',
+                  background: isSelected ? `${tokens.color.primary}15` : 'transparent',
                   border: 'none',
                   borderBottom: `1px solid ${tokens.color.border}`,
                   borderLeft: isSelected ? `3px solid ${tokens.color.primary}` : '3px solid transparent',
@@ -179,7 +177,7 @@ export const ConversationList = memo(function ConversationList({
                           style={{
                             padding: '2px 8px',
                             fontSize: 11,
-                            background: 'rgba(255,255,255,0.1)',
+                            background: tokens.color.surfaceHover,
                             color: tokens.color.muted,
                             borderRadius: tokens.radius.sm,
                           }}

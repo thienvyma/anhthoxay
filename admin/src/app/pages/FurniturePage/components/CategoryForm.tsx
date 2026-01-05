@@ -6,7 +6,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { ResponsiveModal } from '../../../../components/responsive';
 import { Button } from '../../../components/Button';
 import { Input, TextArea } from '../../../components/Input';
@@ -114,9 +114,7 @@ export function CategoryForm({
                     formData.icon === icon.value ? tokens.color.primary : tokens.color.border
                   }`,
                   background:
-                    formData.icon === icon.value
-                      ? `linear-gradient(135deg, ${tokens.color.primary}20, ${tokens.color.accent}10)`
-                      : 'transparent',
+                    formData.icon === icon.value ? `${tokens.color.primary}15` : 'transparent',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',

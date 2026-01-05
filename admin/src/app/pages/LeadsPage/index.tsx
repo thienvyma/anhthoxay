@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Button } from '../../components/Button';
 import { leadsApi } from '../../api';
 import { ResponsiveTable } from '../../../components/responsive/ResponsiveTable';
@@ -274,7 +274,7 @@ export function LeadsPage() {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '12px 16px',
-          background: 'rgba(239, 68, 68, 0.1)',
+          background: tokens.color.errorBg,
           border: `1px solid ${tokens.color.error}`,
           borderRadius: 8,
           marginBottom: 16,

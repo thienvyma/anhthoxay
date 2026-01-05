@@ -9,7 +9,7 @@
 
 import { useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 
 interface CloseConversationModalProps {
   onClose: () => void;
@@ -42,7 +42,7 @@ export const CloseConversationModal = memo(function CloseConversationModal({
         style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0, 0, 0, 0.6)',
+          background: tokens.color.overlay,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -80,13 +80,13 @@ export const CloseConversationModal = memo(function CloseConversationModal({
                 width: 40,
                 height: 40,
                 borderRadius: tokens.radius.md,
-                background: 'rgba(239, 68, 68, 0.15)',
+                background: tokens.color.errorBg,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <i className="ri-chat-off-line" style={{ fontSize: 20, color: '#ef4444' }} />
+              <i className="ri-chat-off-line" style={{ fontSize: 20, color: tokens.color.error }} />
             </div>
             <div>
               <h3 style={{ color: tokens.color.text, fontSize: 18, fontWeight: 600, margin: 0 }}>
@@ -174,7 +174,7 @@ export const CloseConversationModal = memo(function CloseConversationModal({
               disabled={loading}
               style={{
                 padding: '10px 20px',
-                background: '#ef4444',
+                background: tokens.color.error,
                 border: 'none',
                 borderRadius: tokens.radius.md,
                 color: '#fff',

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
@@ -112,7 +112,7 @@ export function UnitPricesTab({ unitPrices, onRefresh }: UnitPricesTabProps) {
                     {item.description && <div style={{ color: tokens.color.muted, fontSize: 12 }}>{item.description}</div>}
                   </td>
                   <td style={{ padding: 16 }}>
-                    <span style={{ padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.05)', color: tokens.color.muted, fontSize: 12 }}>{item.category}</span>
+                    <span style={{ padding: '4px 8px', borderRadius: 6, background: tokens.color.surfaceHover, color: tokens.color.muted, fontSize: 12 }}>{item.category}</span>
                   </td>
                   <td style={{ padding: 16 }}>
                     <code style={{ background: 'rgba(245,211,147,0.1)', color: tokens.color.primary, padding: '2px 6px', borderRadius: 4, fontSize: 12 }}>{item.tag}</code>
@@ -122,14 +122,14 @@ export function UnitPricesTab({ unitPrices, onRefresh }: UnitPricesTabProps) {
                   <td style={{ padding: 16, textAlign: 'center' }}>
                     <span style={{
                       padding: '4px 8px', borderRadius: 12,
-                      background: item.isActive ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)',
-                      color: item.isActive ? '#10b981' : '#ef4444', fontSize: 12,
+                      background: item.isActive ? tokens.color.successBg : tokens.color.errorBg,
+                      color: item.isActive ? tokens.color.success : tokens.color.error, fontSize: 12,
                     }}>{item.isActive ? 'Hoạt động' : 'Tắt'}</span>
                   </td>
                   <td style={{ padding: 16, textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                       <Button variant="outline" size="small" onClick={() => handleEdit(item)}><i className="ri-edit-line" /></Button>
-                      <Button variant="outline" size="small" onClick={() => handleDelete(item.id)} style={{ color: '#ef4444' }}><i className="ri-delete-bin-line" /></Button>
+                      <Button variant="outline" size="small" onClick={() => handleDelete(item.id)} style={{ color: tokens.color.error }}><i className="ri-delete-bin-line" /></Button>
                     </div>
                   </td>
                 </tr>
@@ -142,7 +142,7 @@ export function UnitPricesTab({ unitPrices, onRefresh }: UnitPricesTabProps) {
       <AnimatePresence>
         {isCreating && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={resetForm}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+            style={{ position: 'fixed', inset: 0, background: tokens.color.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} onClick={e => e.stopPropagation()}
               style={{ background: tokens.color.surface, borderRadius: 16, padding: 32, width: '100%', maxWidth: 500 }}>
               <h2 style={{ color: tokens.color.text, margin: '0 0 24px' }}>{editingItem ? 'Sửa đơn giá' : 'Thêm đơn giá mới'}</h2>

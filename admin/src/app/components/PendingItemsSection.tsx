@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 import { Card } from './Card';
 import type { PendingProject, PendingBid, PendingContractor } from '../api/dashboard';
 
@@ -114,7 +114,7 @@ export function PendingItemsSection({
       onClick={() => navigate(`/bidding?project=${project.id}`)}
       style={{
         padding: 16,
-        background: 'rgba(255,255,255,0.03)',
+        background: tokens.color.surfaceAlt,
         border: `1px solid ${tokens.color.border}`,
         borderRadius: tokens.radius.md,
         cursor: 'pointer',
@@ -133,7 +133,7 @@ export function PendingItemsSection({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#3b82f6',
+            color: tokens.color.info,
             fontSize: 18,
           }}
         >
@@ -161,7 +161,7 @@ export function PendingItemsSection({
       onClick={() => navigate(`/bidding?bid=${bid.id}`)}
       style={{
         padding: 16,
-        background: 'rgba(255,255,255,0.03)',
+        background: tokens.color.surfaceAlt,
         border: `1px solid ${tokens.color.border}`,
         borderRadius: tokens.radius.md,
         cursor: 'pointer',
@@ -213,7 +213,7 @@ export function PendingItemsSection({
       onClick={() => navigate(`/contractors?id=${contractor.id}`)}
       style={{
         padding: 16,
-        background: 'rgba(255,255,255,0.03)',
+        background: tokens.color.surfaceAlt,
         border: `1px solid ${tokens.color.border}`,
         borderRadius: tokens.radius.md,
         cursor: 'pointer',
@@ -280,7 +280,7 @@ export function PendingItemsSection({
               key={i}
               style={{
                 padding: 16,
-                background: 'rgba(255,255,255,0.03)',
+                background: tokens.color.surfaceAlt,
                 border: `1px solid ${tokens.color.border}`,
                 borderRadius: tokens.radius.md,
                 display: 'flex',
@@ -293,7 +293,7 @@ export function PendingItemsSection({
                   width: 40,
                   height: 40,
                   borderRadius: tokens.radius.md,
-                  background: 'rgba(255,255,255,0.1)',
+                  background: tokens.color.surfaceHover,
                 }}
               />
               <div style={{ flex: 1 }}>
@@ -301,7 +301,7 @@ export function PendingItemsSection({
                   style={{
                     width: '60%',
                     height: 14,
-                    background: 'rgba(255,255,255,0.1)',
+                    background: tokens.color.surfaceHover,
                     borderRadius: tokens.radius.sm,
                     marginBottom: 8,
                   }}
@@ -310,7 +310,7 @@ export function PendingItemsSection({
                   style={{
                     width: '40%',
                     height: 12,
-                    background: 'rgba(255,255,255,0.05)',
+                    background: tokens.color.surfaceHover,
                     borderRadius: tokens.radius.sm,
                   }}
                 />

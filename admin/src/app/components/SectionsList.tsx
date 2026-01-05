@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 import {
   DndContext,
   closestCenter,
@@ -66,12 +66,12 @@ function SortableSectionItem({
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         whileHover={{
-          background: 'rgba(255,255,255,0.06)',
+          background: tokens.color.surfaceHover,
           borderColor: color + '40',
         }}
         style={{
           padding: isMobile ? 10 : 16,
-          background: 'rgba(255,255,255,0.03)',
+          background: tokens.color.surfaceAlt,
           border: `1px solid ${tokens.color.border}`,
           borderRadius: tokens.radius.md,
           display: 'flex',
@@ -188,7 +188,7 @@ function SortableSectionItem({
             onClick={onEdit}
             style={{
               padding: isMobile ? '6px 12px' : '10px 18px',
-              background: 'rgba(255,255,255,0.05)',
+              background: tokens.color.surfaceHover,
               border: `1px solid ${tokens.color.border}`,
               borderRadius: tokens.radius.md,
               color: tokens.color.primary,
@@ -210,10 +210,10 @@ function SortableSectionItem({
             onClick={onDelete}
             style={{
               padding: isMobile ? '6px 12px' : '10px 18px',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: `1px solid rgba(239, 68, 68, 0.3)`,
+              background: tokens.color.errorBg,
+              border: `1px solid ${tokens.color.error}40`,
               borderRadius: tokens.radius.md,
-              color: '#EF4444',
+              color: tokens.color.error,
               cursor: 'pointer',
               fontSize: isMobile ? 12 : 14,
               fontWeight: 600,
@@ -291,7 +291,7 @@ export function SectionsList({
       case 'BLOG_LIST':
         return categoryColors['Blog'];
       case 'FAB_ACTIONS':
-        return '#f5d393'; // Gold color for floating actions
+        return tokens.color.primary; // Gold color for floating actions
       default:
         return tokens.color.primary;
     }

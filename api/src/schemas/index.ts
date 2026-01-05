@@ -555,6 +555,9 @@ export {
   createCategorySchema,
   updateCategorySchema,
   // Product schemas
+  pricingTypeEnum,
+  productMappingInputSchema,
+  addProductMappingSchema,
   createProductSchema,
   updateProductSchema,
   // Fee schemas
@@ -587,6 +590,8 @@ export {
   type UpdateApartmentTypeInput,
   type CreateCategoryInput,
   type UpdateCategoryInput,
+  type ProductMappingInput,
+  type AddProductMappingInput,
   type CreateProductInput,
   type UpdateProductInput,
   type CreateFeeInput as CreateFurnitureFeeInput,
@@ -602,3 +607,21 @@ export {
   type QueryFeesInput,
   type QueryQuotationsInput,
 } from './furniture.schema';
+
+// ============================================
+// API KEY SCHEMAS
+// ============================================
+export {
+  apiKeyScopeEnum,
+  apiKeyStatusEnum,
+  endpointGroupEnum,
+  CreateApiKeySchema,
+  UpdateApiKeySchema,
+  ListApiKeysQuerySchema,
+  type ApiKeyScope,
+  type ApiKeyStatus,
+  type EndpointGroup,
+  type CreateApiKeyInput,
+  type UpdateApiKeyInput,
+  type ListApiKeysQuery,
+} from './api-key.schema';

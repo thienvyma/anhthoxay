@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import type { SectionKind } from '../types';
 import type { DataRecord, UpdateFieldFn, AddArrayItemFn, RemoveArrayItemFn, OnImagePickFn } from './shared';
 

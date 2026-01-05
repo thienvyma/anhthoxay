@@ -8,7 +8,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Button } from '../../components/Button';
 import {
   DISPUTE_STATUS_COLORS,
@@ -42,7 +42,7 @@ export function DisputeTable({ disputes, loading, onViewDetail, onResolve }: Dis
             width: 40,
             height: 40,
             borderRadius: '50%',
-            border: '3px solid rgba(255,255,255,0.1)',
+            border: `3px solid ${tokens.color.border}`,
             borderTopColor: tokens.color.primary,
           }}
         />
@@ -159,7 +159,7 @@ export function DisputeTable({ disputes, loading, onViewDetail, onResolve }: Dis
                   borderBottom: `1px solid ${tokens.color.border}`,
                   cursor: 'pointer',
                 }}
-                whileHover={{ background: 'rgba(255,255,255,0.02)' }}
+                whileHover={{ background: tokens.color.surfaceHover }}
                 onClick={() => onViewDetail(dispute)}
               >
                 {/* Project */}

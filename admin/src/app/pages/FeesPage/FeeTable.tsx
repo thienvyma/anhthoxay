@@ -9,7 +9,7 @@
 
 import { memo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import type { FeeListItem, FeeStatus, FeeType, FeeAction } from './types';
 import { 
   FEE_STATUS_COLORS, 
@@ -162,17 +162,17 @@ const FeeRow = memo(function FeeRow({
                   icon="ri-check-double-line"
                   title="Đánh dấu đã thanh toán"
                   onClick={handleMarkPaid}
-                  color="#22C55E"
-                  bgColor="rgba(34, 197, 94, 0.1)"
-                  borderColor="rgba(34, 197, 94, 0.3)"
+                  color={tokens.color.success}
+                  bgColor={tokens.color.successBg}
+                  borderColor={`${tokens.color.success}50`}
                 />
                 <ActionButton
                   icon="ri-close-circle-line"
                   title="Hủy phí"
                   onClick={() => setShowCancelInput(!showCancelInput)}
-                  color="#EF4444"
-                  bgColor="rgba(239, 68, 68, 0.1)"
-                  borderColor="rgba(239, 68, 68, 0.3)"
+                  color={tokens.color.error}
+                  bgColor={tokens.color.errorBg}
+                  borderColor={`${tokens.color.error}50`}
                 />
               </>
             )}
@@ -181,7 +181,7 @@ const FeeRow = memo(function FeeRow({
       </tr>
       {/* Cancel reason input row */}
       {showCancelInput && (
-        <tr style={{ background: 'rgba(239, 68, 68, 0.05)' }}>
+        <tr style={{ background: tokens.color.errorBg }}>
           <td colSpan={6} style={{ padding: '12px 16px' }}>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <input
@@ -207,7 +207,7 @@ const FeeRow = memo(function FeeRow({
                 disabled={!cancelReason.trim()}
                 style={{
                   padding: '8px 16px',
-                  background: '#EF4444',
+                  background: tokens.color.error,
                   border: 'none',
                   borderRadius: tokens.radius.md,
                   color: '#fff',
@@ -295,7 +295,7 @@ function ActionButton({
   title,
   onClick,
   color,
-  bgColor = 'rgba(255,255,255,0.05)',
+  bgColor = tokens.color.surfaceHover,
   borderColor = tokens.color.border,
 }: {
   icon: string;

@@ -4,7 +4,7 @@
  * Requirements: 3.2
  */
 
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { Input, TextArea } from '../../Input';
 import { InfoBanner } from './shared';
 import type { DataRecord, UpdateFieldFn } from './shared';

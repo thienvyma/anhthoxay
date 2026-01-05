@@ -111,7 +111,8 @@ api/src/
 │   ├── error-handler.ts        # Global error handler
 │   ├── rate-limiter.ts         # Rate limiting tập trung
 │   ├── security-headers.ts     # Security headers
-│   └── validation.ts           # Zod validation middleware
+│   ├── validation.ts           # Zod validation middleware
+│   └── api-key-auth.middleware.ts # API Key authentication middleware
 ├── routes/
 │   ├── auth.routes.ts          # /api/auth/* endpoints
 │   ├── users.routes.ts         # /api/users/* endpoints (ADMIN only)
@@ -141,7 +142,9 @@ api/src/
 │   ├── pricing.routes.ts       # /service-categories/*, /unit-prices/*, etc.
 │   ├── blog.routes.ts          # /blog/*
 │   ├── settings.routes.ts      # /settings/*
-│   └── integrations.routes.ts  # /integrations/*
+│   ├── integrations.routes.ts  # /integrations/*
+│   ├── api-keys.routes.ts      # /api/admin/api-keys/* (ADMIN only)
+│   └── external-api.routes.ts  # /api/external/* (API Key auth)
 ├── services/
 │   ├── auth.service.ts         # Auth business logic
 │   ├── contractor.service.ts   # Contractor profile & verification logic
@@ -176,7 +179,8 @@ api/src/
 │   ├── pricing.service.ts      # Pricing CRUD logic
 │   ├── quote.service.ts        # Quote calculation logic
 │   ├── users.service.ts        # User management logic
-│   └── google-sheets.service.ts # Google Sheets integration
+│   ├── google-sheets.service.ts # Google Sheets integration
+│   └── api-key.service.ts      # API Key management logic
 ├── schemas/
 │   ├── index.ts                # Re-exports all schemas
 │   ├── auth.schema.ts          # Auth validation schemas
@@ -209,7 +213,8 @@ api/src/
 │   ├── pricing.schema.ts       # Pricing validation schemas
 │   ├── blog.schema.ts          # Blog validation schemas
 │   ├── settings.schema.ts      # Settings validation schemas
-│   └── users.schema.ts         # Users validation schemas
+│   ├── users.schema.ts         # Users validation schemas
+│   └── api-key.schema.ts       # API Key validation schemas
 └── utils/
     ├── logger.ts               # Structured logging
     └── response.ts             # Response helpers
@@ -510,6 +515,56 @@ Khi thêm route mới, cập nhật danh sách này:
 
 ### User Routes - Activity (Authenticated)
 - `GET /api/user/activity` - Lịch sử hoạt động của user
+
+### Admin Routes - API Key Management (requireRole('ADMIN'))
+- `GET /api/admin/api-keys` - Danh sách tất cả API keys
+- `POST /api/admin/api-keys` - Tạo API key mới
+- `GET /api/admin/api-keys/:id` - Chi tiết API key
+- `PUT /api/admin/api-keys/:id` - Cập nhật API key
+- `DELETE /api/admin/api-keys/:id` - Xóa API key
+- `PUT /api/admin/api-keys/:id/toggle` - Bật/tắt API key
+- `POST /api/admin/api-keys/:id/test` - Test API key
+- `GET /api/admin/api-keys/:id/logs` - Lấy usage logs của API key
+
+### External API Routes (API Key Auth - X-API-Key header)
+> **Note**: Các routes này dùng API key authentication thay vì JWT. API key được tạo từ Admin Panel.
+
+**Leads Routes (requires `leads` endpoint group):**
+- `GET /api/external/leads` - Danh sách leads (READ_ONLY, READ_WRITE, FULL_ACCESS)
+- `POST /api/external/leads` - Tạo lead mới (READ_WRITE, FULL_ACCESS)
+- `GET /api/external/leads/stats` - Thống kê leads (requires `reports` endpoint group)
+
+**Blog Routes (requires `blog` endpoint group):**
+- `GET /api/external/blog/posts` - Danh sách bài viết
+- `GET /api/external/blog/posts/:slug` - Chi tiết bài viết
+- `GET /api/external/blog/categories` - Danh sách danh mục
+
+**Projects Routes (requires `projects` endpoint group):**
+- `GET /api/external/projects` - Danh sách công trình đang mở
+- `GET /api/external/projects/:id` - Chi tiết công trình (ẩn address, owner info)
+
+**Contractors Routes (requires `contractors` endpoint group):**
+- `GET /api/external/contractors` - Danh sách nhà thầu đã xác minh
+
+**Reports Routes (requires `reports` endpoint group):**
+- `GET /api/external/reports/dashboard` - Thống kê tổng quan
+
+**Health Check:**
+- `GET /api/external/health` - Kiểm tra kết nối API key
+
+**API Key Scopes:**
+- `READ_ONLY` - Chỉ GET requests
+- `READ_WRITE` - GET, POST, PUT requests
+- `FULL_ACCESS` - Tất cả methods (GET, POST, PUT, DELETE)
+
+**API Key Error Codes:**
+- `API_KEY_REQUIRED` (401) - Thiếu X-API-Key header
+- `API_KEY_INVALID` (401) - API key không hợp lệ
+- `API_KEY_INACTIVE` (401) - API key đã bị tắt
+- `API_KEY_EXPIRED` (401) - API key đã hết hạn
+- `PERMISSION_DENIED` (403) - Không có quyền truy cập
+- `ENDPOINT_NOT_ALLOWED` (403) - Endpoint không được phép
+- `SCOPE_INSUFFICIENT` (403) - Quyền không đủ cho thao tác này
 
 ## 🚨 KHÔNG BAO GIỜ
 

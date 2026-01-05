@@ -6,7 +6,7 @@
 
 import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Button } from '../../components/Button';
 import type { Region } from './types';
 
@@ -34,7 +34,7 @@ export const DeleteModal = memo(function DeleteModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 10000 }}
+            style={{ position: 'fixed', inset: 0, background: tokens.color.overlay, zIndex: 10000 }}
           />
           <div
             style={{

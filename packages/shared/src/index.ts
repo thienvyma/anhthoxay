@@ -20,23 +20,34 @@ export function resolveMediaUrl(url: string | undefined | null): string {
 
 // Design tokens for the whole platform (colors, typography, spacing, motion)
 export const tokens = {
-	color: {
-		background: '#0B0B0C',
-		surface: '#131316',
-		surfaceHover: '#1A1A1E',
-		primary: '#F5D393',
-		secondary: '#C7A775',
-		accent: '#EFB679',
-		text: '#F4F4F5',
-		textMuted: '#A1A1AA',
-		muted: '#A1A1AA',
-		border: '#27272A',
-		borderHover: '#3F3F46',
-		success: '#34D399',
-		warning: '#F59E0B',
-		error: '#EF4444',
-		info: '#3B82F6',
-	},
+  color: {
+    // Backgrounds - sáng hơn, dễ nhìn
+    background: '#1A1A1D',
+    surface: '#232328',
+    surfaceHover: '#2D2D33',
+    surfaceAlt: '#28282E',
+
+    // Brand
+    primary: '#F5D393',
+    secondary: '#C7A775',
+    accent: '#EFB679',
+
+    // Text - contrast tốt hơn
+    text: '#F5F5F5',
+    textMuted: '#B0B0B8',
+    muted: '#8A8A94',
+
+    // Borders - sáng hơn
+    border: '#404048',
+    borderHover: '#5A5A64',
+    borderLight: '#4A4A52',
+
+    // Status
+    success: '#34D399',
+    warning: '#F59E0B',
+    error: '#EF4444',
+    info: '#3B82F6',
+  },
 	font: {
 		display: 'Playfair Display, serif',
 		sans: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
@@ -112,3 +123,6 @@ export const tokens = {
 } as const;
 
 export type Tokens = typeof tokens;
+
+// Admin-specific tokens for light mode
+export { adminTokens, type AdminTokens } from './adminTokens';

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { googleSheetsApi, GoogleSheetsStatus } from '../../api';
@@ -113,7 +113,7 @@ export function GoogleSheetsTab() {
             width: 12,
             height: 12,
             borderRadius: '50%',
-            background: status?.connected ? '#10b981' : '#ef4444',
+            background: status?.connected ? tokens.color.success : tokens.color.error,
           }} />
           <span style={{ color: tokens.color.text, fontSize: 16 }}>
             {status?.connected ? 'Đã kết nối' : 'Chưa kết nối'}
@@ -140,9 +140,9 @@ export function GoogleSheetsTab() {
               padding: '12px 16px',
               borderRadius: 8,
               marginBottom: 16,
-              background: message.type === 'success' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-              border: `1px solid ${message.type === 'success' ? '#10b981' : '#ef4444'}`,
-              color: message.type === 'success' ? '#10b981' : '#ef4444',
+              background: message.type === 'success' ? tokens.color.successBg : tokens.color.errorBg,
+              border: `1px solid ${message.type === 'success' ? tokens.color.success : tokens.color.error}`,
+              color: message.type === 'success' ? tokens.color.success : tokens.color.error,
             }}>
               <i className={message.type === 'success' ? 'ri-check-line' : 'ri-error-warning-line'} style={{ marginRight: 8 }} />
               {message.text}
@@ -163,7 +163,7 @@ export function GoogleSheetsTab() {
                 style={{
                   width: '100%',
                   padding: '10px 12px',
-                  background: 'rgba(255,255,255,0.05)',
+                  background: tokens.color.surfaceHover,
                   border: `1px solid ${tokens.color.border}`,
                   borderRadius: 8,
                   color: tokens.color.text,
@@ -188,7 +188,7 @@ export function GoogleSheetsTab() {
                 style={{
                   width: '100%',
                   padding: '10px 12px',
-                  background: 'rgba(255,255,255,0.05)',
+                  background: tokens.color.surfaceHover,
                   border: `1px solid ${tokens.color.border}`,
                   borderRadius: 8,
                   color: tokens.color.text,
@@ -206,7 +206,7 @@ export function GoogleSheetsTab() {
                   height: 26,
                   borderRadius: 13,
                   border: 'none',
-                  background: syncEnabled ? tokens.color.primary : 'rgba(255,255,255,0.1)',
+                  background: syncEnabled ? tokens.color.primary : tokens.color.surfaceHover,
                   cursor: 'pointer',
                   position: 'relative',
                   transition: 'background 0.2s',
@@ -264,7 +264,7 @@ export function GoogleSheetsTab() {
             <div>
               <div style={{ color: tokens.color.muted, fontSize: 13 }}>Số lỗi</div>
               <div style={{ 
-                color: status.errorCount > 0 ? '#ef4444' : '#10b981', 
+                color: status.errorCount > 0 ? tokens.color.error : tokens.color.success, 
                 fontSize: 16, 
                 marginTop: 4 
               }}>
@@ -276,11 +276,11 @@ export function GoogleSheetsTab() {
             <div style={{
               marginTop: 16,
               padding: 12,
-              background: 'rgba(239,68,68,0.1)',
+              background: tokens.color.errorBg,
               borderRadius: 8,
-              border: '1px solid rgba(239,68,68,0.3)',
+              border: `1px solid ${tokens.color.error}40`,
             }}>
-              <div style={{ color: '#ef4444', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
+              <div style={{ color: tokens.color.error, fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
                 Lỗi gần nhất
               </div>
               <div style={{ color: tokens.color.muted, fontSize: 13 }}>

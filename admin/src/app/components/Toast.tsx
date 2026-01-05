@@ -1,6 +1,6 @@
 import { useState, useCallback, createContext, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 
 // Toast types
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
@@ -63,30 +63,30 @@ export function useToast() {
   return context;
 }
 
-// Toast icons and colors
+// Toast icons and colors - Light mode
 const toastConfig: Record<ToastType, { icon: string; bg: string; border: string; iconColor: string }> = {
   success: {
     icon: 'ri-checkbox-circle-fill',
-    bg: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.1))',
-    border: 'rgba(16,185,129,0.4)',
+    bg: '#ECFDF5',
+    border: '#10b981',
     iconColor: '#10b981',
   },
   error: {
     icon: 'ri-error-warning-fill',
-    bg: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(220,38,38,0.1))',
-    border: 'rgba(239,68,68,0.4)',
-    iconColor: '#ef4444',
+    bg: '#FEF2F2',
+    border: tokens.color.error,
+    iconColor: tokens.color.error,
   },
   warning: {
     icon: 'ri-alert-fill',
-    bg: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(217,119,6,0.1))',
-    border: 'rgba(245,158,11,0.4)',
+    bg: '#FFFBEB',
+    border: '#f59e0b',
     iconColor: '#f59e0b',
   },
   info: {
     icon: 'ri-information-fill',
-    bg: 'linear-gradient(135deg, rgba(59,130,246,0.15), rgba(37,99,235,0.1))',
-    border: 'rgba(59,130,246,0.4)',
+    bg: '#EFF6FF',
+    border: '#3b82f6',
     iconColor: '#3b82f6',
   },
 };
@@ -102,15 +102,13 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
       exit={{ opacity: 0, y: -30, scale: 0.9 }}
       transition={{ type: 'spring', stiffness: 500, damping: 30 }}
       style={{
-        background: 'rgba(20, 20, 24, 0.95)',
-        backdropFilter: 'blur(24px)',
+        background: tokens.color.surface,
         border: `2px solid ${config.border}`,
         borderRadius: '20px',
         padding: '20px 28px',
         display: 'flex',
         alignItems: 'center',
         gap: '16px',
-        boxShadow: `0 20px 60px rgba(0,0,0,0.5), 0 0 40px ${config.iconColor}30, inset 0 1px 0 rgba(255,255,255,0.1)`,
         minWidth: '320px',
         maxWidth: '500px',
         position: 'relative',
@@ -167,7 +165,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
         whileTap={{ scale: 0.9 }}
         onClick={onRemove}
         style={{
-          background: 'rgba(255,255,255,0.1)',
+          background: tokens.color.surfaceHover,
           border: 'none',
           borderRadius: '50%',
           width: 28,

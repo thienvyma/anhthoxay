@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { matchesApi, escrowsApi } from '../../api';
 import { useToast } from '../../components/Toast';
 import { Button } from '../../components/Button';
@@ -399,7 +399,7 @@ export function MatchesPage({ embedded = false }: MatchesPageProps) {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
+            background: tokens.color.overlay,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -436,11 +436,11 @@ export function MatchesPage({ embedded = false }: MatchesPageProps) {
             {matchAction === 'approve' ? (
               <div style={{ 
                 padding: 16, 
-                background: 'rgba(34, 197, 94, 0.1)', 
+                background: tokens.color.successBg, 
                 borderRadius: tokens.radius.md,
                 marginBottom: 16,
               }}>
-                <p style={{ color: '#22C55E', fontSize: 14, margin: 0 }}>
+                <p style={{ color: tokens.color.success, fontSize: 14, margin: 0 }}>
                   <i className="ri-information-line" style={{ marginRight: 8 }} />
                   Khi duyệt kết nối, hệ thống sẽ:
                 </p>
@@ -454,11 +454,11 @@ export function MatchesPage({ embedded = false }: MatchesPageProps) {
             ) : (
               <div style={{ 
                 padding: 16, 
-                background: 'rgba(239, 68, 68, 0.1)', 
+                background: tokens.color.errorBg, 
                 borderRadius: tokens.radius.md,
                 marginBottom: 16,
               }}>
-                <p style={{ color: '#EF4444', fontSize: 14, margin: 0 }}>
+                <p style={{ color: tokens.color.error, fontSize: 14, margin: 0 }}>
                   <i className="ri-error-warning-line" style={{ marginRight: 8 }} />
                   Khi từ chối kết nối:
                 </p>

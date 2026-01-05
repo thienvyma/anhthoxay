@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { ResponsiveActionBar } from '../../../components/responsive';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';

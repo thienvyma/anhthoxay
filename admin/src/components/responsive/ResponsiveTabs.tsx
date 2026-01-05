@@ -8,7 +8,7 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useResponsive } from '../../hooks/useResponsive';
-import { tokens } from '@app/shared';
+import { tokens } from '../../app/../theme';
 
 export interface Tab {
   /** Unique tab identifier */

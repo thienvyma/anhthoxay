@@ -4,7 +4,7 @@
  */
 
 import { memo } from 'react';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { Card } from '../../../components/Card';
 import type { FurnitureDeveloper, FurnitureProject, FurnitureBuilding } from '../types';
 

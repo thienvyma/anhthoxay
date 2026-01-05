@@ -10,7 +10,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Button } from '../../components/Button';
 import {
   RESOLUTION_TYPE_LABELS,
@@ -69,7 +69,7 @@ export function ResolveDisputeModal({
         style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0,0,0,0.7)',
+          background: tokens.color.overlay,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -128,7 +128,7 @@ export function ResolveDisputeModal({
             {detail && (
               <div
                 style={{
-                  background: 'rgba(255,255,255,0.02)',
+                  background: tokens.color.surfaceAlt,
                   borderRadius: tokens.radius.md,
                   border: `1px solid ${tokens.color.border}`,
                   padding: 16,
@@ -200,7 +200,7 @@ export function ResolveDisputeModal({
                   icon="ri-hand-coin-line"
                   label={RESOLUTION_TYPE_LABELS.RELEASE_TO_CONTRACTOR}
                   description="Giải phóng số tiền escrow còn lại cho nhà thầu"
-                  color="#22C55E"
+                  color={tokens.color.success}
                 />
               </div>
             </div>
@@ -226,7 +226,7 @@ export function ResolveDisputeModal({
                 style={{
                   width: '100%',
                   padding: 12,
-                  background: 'rgba(255,255,255,0.02)',
+                  background: tokens.color.surfaceAlt,
                   border: `1px solid ${tokens.color.border}`,
                   borderRadius: tokens.radius.md,
                   color: tokens.color.text,
@@ -301,7 +301,7 @@ function ResolutionOption({
         alignItems: 'flex-start',
         gap: 12,
         padding: 16,
-        background: selected ? `${color}10` : 'rgba(255,255,255,0.02)',
+        background: selected ? `${color}10` : tokens.color.surfaceAlt,
         border: `2px solid ${selected ? color : tokens.color.border}`,
         borderRadius: tokens.radius.md,
         cursor: 'pointer',
@@ -313,7 +313,7 @@ function ResolutionOption({
           width: 40,
           height: 40,
           borderRadius: tokens.radius.md,
-          background: selected ? `${color}20` : 'rgba(255,255,255,0.05)',
+          background: selected ? `${color}20` : tokens.color.surfaceHover,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

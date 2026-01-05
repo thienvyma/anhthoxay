@@ -6,7 +6,7 @@
 import { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 
 interface ModalProps {
   isOpen: boolean;
@@ -42,7 +42,7 @@ export function Modal({
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(0,0,0,0.7)',
+              background: tokens.color.overlay,
               zIndex: 9998,
             }}
           />
@@ -158,7 +158,7 @@ export function ConfirmModal({
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(0,0,0,0.7)',
+              background: tokens.color.overlay,
               zIndex: 9998,
             }}
           />
@@ -202,7 +202,7 @@ export function ConfirmModal({
                   disabled={loading}
                   style={{
                     padding: '8px 16px',
-                    background: 'rgba(255,255,255,0.05)',
+                    background: tokens.color.surfaceHover,
                     border: `1px solid ${tokens.color.border}`,
                     borderRadius: tokens.radius.md,
                     color: tokens.color.text,

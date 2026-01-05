@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { tokens } from '@app/shared';
+import { tokens } from '../../app/../theme';
 import { useResponsive } from '../../hooks/useResponsive';
 import { ResponsiveStack } from './ResponsiveStack';
 
@@ -63,12 +63,12 @@ export function ResponsivePageHeader({
               width: isMobile ? 36 : 40,
               height: isMobile ? 36 : 40,
               borderRadius: tokens.radius.md,
-              background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+              background: `${tokens.color.primary}15`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: isMobile ? 18 : 20,
-              color: '#111',
+              color: tokens.color.primary,
               flexShrink: 0,
             }}
           >

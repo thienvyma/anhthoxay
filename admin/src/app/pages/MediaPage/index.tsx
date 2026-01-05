@@ -5,7 +5,8 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { tokens, resolveMediaUrl } from '@app/shared';
+import { resolveMediaUrl } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { mediaApi } from '../../api';
@@ -176,11 +177,10 @@ export function MediaPage() {
         animate={{ opacity: 1, y: 0 }}
         style={{
           marginBottom: isMobile ? 20 : 32,
-          background: 'rgba(12,12,16,0.7)',
-          backdropFilter: 'blur(20px)',
+          background: tokens.color.surface,
           border: `1px solid ${tokens.color.border}`,
-          borderRadius: isMobile ? '16px' : '24px',
-          padding: isMobile ? '16px' : '24px 28px',
+          borderRadius: isMobile ? tokens.radius.md : tokens.radius.lg,
+          padding: isMobile ? '16px' : '24px',
         }}
       >
         <ResponsiveStack
@@ -191,22 +191,21 @@ export function MediaPage() {
           style={{ marginBottom: 20 }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 16 }}>
-            <motion.div
-              whileHover={{ scale: 1.05, rotate: 15 }}
+            <div
               style={{
                 width: isMobile ? 44 : 56,
                 height: isMobile ? 44 : 56,
                 borderRadius: isMobile ? '12px' : '16px',
-                background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
+                background: `${tokens.color.primary}15`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: isMobile ? 22 : 28,
-                color: '#0b0c0f',
+                color: tokens.color.primary,
               }}
             >
               <i className="ri-gallery-line" />
-            </motion.div>
+            </div>
             <div>
               <h1
                 style={{
@@ -214,9 +213,6 @@ export function MediaPage() {
                   fontWeight: 700,
                   color: tokens.color.text,
                   margin: 0,
-                  background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
                 }}
               >
                 Media Library
@@ -267,7 +263,7 @@ export function MediaPage() {
             style={{
               display: 'flex',
               gap: 4,
-              background: 'rgba(255,255,255,0.05)',
+              background: tokens.color.surfaceHover,
               borderRadius: tokens.radius.md,
               padding: 4,
             }}
@@ -286,14 +282,14 @@ export function MediaPage() {
                   padding: '8px 16px',
                   background:
                     filter === tab.value
-                      ? `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`
+                      ? tokens.color.primary
                       : 'transparent',
                   border: 'none',
                   borderRadius: tokens.radius.sm,
-                  color: filter === tab.value ? '#0b0c0f' : tokens.color.muted,
+                  color: filter === tab.value ? '#111' : tokens.color.muted,
                   cursor: 'pointer',
                   fontSize: 13,
-                  fontWeight: filter === tab.value ? 600 : 400,
+                  fontWeight: filter === tab.value ? 500 : 400,
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
@@ -472,10 +468,10 @@ function MediaCard({
               left: 8,
               padding: '4px 8px',
               borderRadius: tokens.radius.sm,
-              background: `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`,
-              color: '#0b0c0f',
+              background: tokens.color.primary,
+              color: '#111',
               fontSize: 10,
-              fontWeight: 700,
+              fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
               gap: 4,
@@ -493,7 +489,7 @@ function MediaCard({
           style={{
             position: 'absolute',
             inset: 0,
-            background: 'rgba(0,0,0,0.6)',
+            background: tokens.color.overlay,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { feesApi } from '../../api';
 import { useToast } from '../../components/Toast';
 import { Button } from '../../components/Button';

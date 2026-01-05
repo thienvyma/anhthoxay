@@ -26,6 +26,8 @@ import { ChatPage } from './pages/ChatPage';
 import { BiddingManagementPage } from './pages/BiddingManagementPage';
 import { BiddingSettingsPage } from './pages/BiddingSettingsPage';
 import { FurniturePage } from './pages/FurniturePage';
+import { ApiKeysPage } from './pages/ApiKeysPage';
+import { GuidePage } from './pages/GuidePage';
 import { useUser, store, tokenStorage } from './store';
 import { authApi } from './api';
 import type { RouteType } from './types'
@@ -101,7 +103,7 @@ function AppContent() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#0b0c0f',
+          background: '#F8F9FA',
         }}
       >
         <motion.div
@@ -111,8 +113,8 @@ function AppContent() {
             width: 60,
             height: 60,
             borderRadius: '50%',
-            border: '4px solid rgba(255,255,255,0.1)',
-            borderTopColor: '#f5d393',
+            border: '4px solid #E5E7EB',
+            borderTopColor: '#F5D393',
           }}
         />
       </div>
@@ -124,7 +126,15 @@ function AppContent() {
   }
 
   // Get current route from pathname
-  const currentRoute = location.pathname.split('/')[1] as RouteType || 'dashboard';
+  const pathSegments = location.pathname.split('/').filter(Boolean);
+  let currentRoute: RouteType = 'dashboard';
+  
+  // Handle nested routes like settings/api-keys
+  if (pathSegments.length >= 2 && pathSegments[0] === 'settings' && pathSegments[1] === 'api-keys') {
+    currentRoute = 'settings/api-keys';
+  } else if (pathSegments.length >= 1) {
+    currentRoute = pathSegments[0] as RouteType;
+  }
 
   return (
     <Layout 
@@ -157,6 +167,9 @@ function AppContent() {
           <Route path="/bidding" element={<BiddingManagementPage />} />
           <Route path="/bidding-settings" element={<BiddingSettingsPage />} />
           <Route path="/furniture" element={<FurniturePage />} />
+          <Route path="/api-keys" element={<ApiKeysPage />} />
+          <Route path="/settings/api-keys" element={<ApiKeysPage />} />
+          <Route path="/guide" element={<GuidePage />} />
           <Route path="/pricing-config" element={<PricingConfigPage />} />
           <Route path="/media" element={<MediaPage />} />
           <Route path="/blog-manager" element={<BlogManagerPage />} />

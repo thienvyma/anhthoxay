@@ -73,6 +73,9 @@ ai-sales-agents-platform-backup-*/
 *.pdf
 *.docx
 
+# API Documentation (sensitive - contains integration guides)
+docs/api/
+
 # Misc
 .turbo/
 .vercel/

@@ -4,7 +4,7 @@
  * Requirements: 3.2
  */
 
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { Input, TextArea } from '../../Input';
 import {
   InfoBanner,
@@ -99,7 +99,7 @@ export function VideoShowcaseForm({ data, updateField }: VideoShowcaseFormProps)
                 padding: '8px 16px',
                 fontSize: 13,
                 fontWeight: 500,
-                background: videoSource === source.key ? '#EF4444' : 'rgba(255,255,255,0.05)',
+                background: videoSource === source.key ? '#EF4444' : tokens.color.surfaceHover,
                 color: videoSource === source.key ? '#fff' : tokens.color.muted,
                 border: `1px solid ${videoSource === source.key ? '#EF4444' : tokens.color.border}`,
                 borderRadius: tokens.radius.sm,

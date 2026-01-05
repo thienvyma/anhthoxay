@@ -9,7 +9,7 @@
 
 import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Button } from '../../components/Button';
 import type { ProjectListItem } from './types';
 
@@ -43,7 +43,7 @@ export const ApprovalModal = memo(function ApprovalModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 10000 }}
+            style={{ position: 'fixed', inset: 0, background: tokens.color.overlay, zIndex: 10000 }}
           />
           <div
             style={{
@@ -99,7 +99,7 @@ export const ApprovalModal = memo(function ApprovalModal({
                 <div
                   style={{
                     padding: 16,
-                    background: 'rgba(255,255,255,0.02)',
+                    background: tokens.color.surfaceAlt,
                     borderRadius: tokens.radius.md,
                     border: `1px solid ${tokens.color.border}`,
                     marginBottom: 16,
@@ -173,7 +173,7 @@ export const ApprovalModal = memo(function ApprovalModal({
                     onClick={onConfirm}
                     disabled={saving}
                     fullWidth
-                    style={action === 'reject' ? { background: '#EF4444', borderColor: '#EF4444' } : undefined}
+                    style={action === 'reject' ? { background: tokens.color.error, borderColor: tokens.color.error } : undefined}
                   >
                     {saving ? 'Đang xử lý...' : action === 'approve' ? 'Duyệt' : 'Từ chối'}
                   </Button>

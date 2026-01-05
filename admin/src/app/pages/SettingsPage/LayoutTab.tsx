@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
+import { useResponsive } from '../../../hooks/useResponsive';
 import type { HeaderConfig, FooterConfig } from './types';
-import { glass } from './types';
 import { settingsApi, pagesApi } from '../../api';
 import { 
   HeaderEditor, 
@@ -35,12 +35,14 @@ export function LayoutTab({
   onShowMessage,
   onError,
 }: LayoutTabProps) {
+  const { isMobile } = useResponsive();
   const [activeSubTab, setActiveSubTab] = useState<LayoutSubTab>('header');
   const [savingHeader, setSavingHeader] = useState(false);
   const [savingFooter, setSavingFooter] = useState(false);
   const [savingMobile, setSavingMobile] = useState(false);
   const [mobileMenuConfig, setMobileMenuConfig] = useState<MobileMenuConfig>(defaultMobileMenuConfig);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Load header/footer config from API on mount
   useEffect(() => {
@@ -308,44 +310,141 @@ export function LayoutTab({
       exit={{ opacity: 0, y: -20 }}
       style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
     >
-      {/* Sub-tabs */}
-      <div style={{
-        display: 'flex',
-        gap: 4,
-        padding: 4,
-        background: glass.background,
-        borderRadius: tokens.radius.md,
-        border: glass.border,
-        position: 'relative',
-        zIndex: 1,
-      }}>
-        {SUB_TABS.map((tab) => (
+      {/* Sub-tabs - Responsive: dropdown on mobile, tabs on desktop */}
+      {isMobile ? (
+        // Mobile: Dropdown mode
+        <div style={{ position: 'relative', marginBottom: 8 }}>
           <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveSubTab(tab.id)}
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             style={{
-              flex: 1,
-              padding: '10px 16px',
-              background: activeSubTab === tab.id ? 'rgba(245,211,147,0.15)' : 'transparent',
-              border: activeSubTab === tab.id ? `1px solid ${tokens.color.primary}40` : '1px solid transparent',
-              borderRadius: tokens.radius.sm,
-              color: activeSubTab === tab.id ? tokens.color.primary : tokens.color.muted,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              transition: 'all 0.2s',
+              justifyContent: 'space-between',
+              width: '100%',
+              padding: '12px 16px',
+              backgroundColor: tokens.color.surface,
+              border: `1px solid ${tokens.color.border}`,
+              borderRadius: tokens.radius.md,
+              color: tokens.color.text,
+              fontSize: 14,
+              cursor: 'pointer',
+              minHeight: '44px',
             }}
           >
-            <i className={tab.icon} />
-            {tab.label}
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <i 
+                className={SUB_TABS.find(t => t.id === activeSubTab)?.icon || ''} 
+                style={{ fontSize: 18, color: tokens.color.primary }} 
+              />
+              {SUB_TABS.find(t => t.id === activeSubTab)?.label}
+            </span>
+            <i
+              className={isDropdownOpen ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'}
+              style={{ fontSize: 20, color: tokens.color.textMuted }}
+            />
           </button>
-        ))}
-      </div>
+
+          {/* Dropdown menu */}
+          {isDropdownOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                marginTop: 4,
+                backgroundColor: tokens.color.surface,
+                border: `1px solid ${tokens.color.border}`,
+                borderRadius: tokens.radius.md,
+                boxShadow: tokens.shadow.md,
+                zIndex: tokens.zIndex.dropdown,
+                overflow: 'hidden',
+              }}
+            >
+              {SUB_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveSubTab(tab.id);
+                    setIsDropdownOpen(false);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    width: '100%',
+                    padding: '12px 16px',
+                    backgroundColor: tab.id === activeSubTab ? tokens.color.surfaceHover : 'transparent',
+                    border: 'none',
+                    color: tokens.color.text,
+                    fontSize: 14,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    minHeight: '44px',
+                  }}
+                >
+                  <i className={tab.icon} style={{ fontSize: 18 }} />
+                  {tab.label}
+                  {tab.id === activeSubTab && (
+                    <i
+                      className="ri-check-line"
+                      style={{ marginLeft: 'auto', color: tokens.color.primary }}
+                    />
+                  )}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </div>
+      ) : (
+        // Desktop: Tab bar with border-bottom style (matching ResponsiveTabs)
+        <div style={{ position: 'relative' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: 4,
+              overflowX: 'auto',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              paddingBottom: 4,
+              borderBottom: `1px solid ${tokens.color.border}`,
+            }}
+          >
+            {SUB_TABS.map((tab) => {
+              const isActive = activeSubTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveSubTab(tab.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '12px 24px',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    borderBottom: `2px solid ${isActive ? tokens.color.primary : 'transparent'}`,
+                    color: isActive ? tokens.color.primary : tokens.color.text,
+                    fontSize: 14,
+                    fontWeight: isActive ? 500 : 400,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    minHeight: '44px',
+                    transition: 'all 0.2s',
+                    marginBottom: '-1px',
+                  }}
+                >
+                  <i className={tab.icon} style={{ fontSize: 18 }} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Header Tab Content */}
       {activeSubTab === 'header' && (

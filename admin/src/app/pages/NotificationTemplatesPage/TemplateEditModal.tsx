@@ -9,7 +9,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { notificationTemplatesApi, type NotificationTemplate, type RenderedTemplate } from '../../api';
 
 interface TemplateEditModalProps {
@@ -19,11 +19,11 @@ interface TemplateEditModalProps {
   onSave: (data: Partial<NotificationTemplate>) => Promise<void>;
 }
 
-// Glass effect styles
-const glass = {
+// Glass effect styles - will be applied with tokens in component
+const getGlassStyle = () => ({
   background: 'rgba(30, 30, 40, 0.95)',
-  border: '1px solid rgba(255, 255, 255, 0.08)',
-};
+  border: `1px solid ${tokens.color.border}`,
+});
 
 type TabType = 'email' | 'sms' | 'inapp' | 'preview';
 
@@ -97,7 +97,7 @@ export function TemplateEditModal({ template, typeLabel, onClose, onSave }: Temp
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0, 0, 0, 0.7)',
+        background: tokens.color.overlay,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -111,7 +111,7 @@ export function TemplateEditModal({ template, typeLabel, onClose, onSave }: Temp
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         style={{
-          ...glass,
+          ...getGlassStyle(),
           borderRadius: tokens.radius.xl,
           width: '100%',
           maxWidth: 900,
@@ -125,7 +125,7 @@ export function TemplateEditModal({ template, typeLabel, onClose, onSave }: Temp
         {/* Header */}
         <div style={{
           padding: '20px 24px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          borderBottom: `1px solid ${tokens.color.border}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -158,7 +158,7 @@ export function TemplateEditModal({ template, typeLabel, onClose, onSave }: Temp
           display: 'flex',
           gap: 4,
           padding: '12px 24px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          borderBottom: `1px solid ${tokens.color.border}`,
         }}>
           {tabs.map((tab) => (
             <button
@@ -200,8 +200,8 @@ export function TemplateEditModal({ template, typeLabel, onClose, onSave }: Temp
                   style={{
                     width: '100%',
                     padding: '10px 12px',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: tokens.color.surfaceHover,
+                    border: `1px solid ${tokens.color.border}`,
                     borderRadius: tokens.radius.md,
                     color: tokens.color.text,
                     fontSize: 14,
@@ -219,8 +219,8 @@ export function TemplateEditModal({ template, typeLabel, onClose, onSave }: Temp
                   style={{
                     width: '100%',
                     padding: '10px 12px',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: tokens.color.surfaceHover,
+                    border: `1px solid ${tokens.color.border}`,
                     borderRadius: tokens.radius.md,
                     color: tokens.color.text,
                     fontSize: 13,
@@ -246,8 +246,8 @@ export function TemplateEditModal({ template, typeLabel, onClose, onSave }: Temp
                 style={{
                   width: '100%',
                   padding: '10px 12px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: tokens.color.surfaceHover,
+                  border: `1px solid ${tokens.color.border}`,
                   borderRadius: tokens.radius.md,
                   color: tokens.color.text,
                   fontSize: 14,
@@ -274,8 +274,8 @@ export function TemplateEditModal({ template, typeLabel, onClose, onSave }: Temp
                   style={{
                     width: '100%',
                     padding: '10px 12px',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: tokens.color.surfaceHover,
+                    border: `1px solid ${tokens.color.border}`,
                     borderRadius: tokens.radius.md,
                     color: tokens.color.text,
                     fontSize: 14,
@@ -293,8 +293,8 @@ export function TemplateEditModal({ template, typeLabel, onClose, onSave }: Temp
                   style={{
                     width: '100%',
                     padding: '10px 12px',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: tokens.color.surfaceHover,
+                    border: `1px solid ${tokens.color.border}`,
                     borderRadius: tokens.radius.md,
                     color: tokens.color.text,
                     fontSize: 14,
@@ -326,8 +326,8 @@ export function TemplateEditModal({ template, typeLabel, onClose, onSave }: Temp
                         style={{
                           width: '100%',
                           padding: '8px 10px',
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          background: tokens.color.surfaceHover,
+                          border: `1px solid ${tokens.color.border}`,
                           borderRadius: tokens.radius.sm,
                           color: tokens.color.text,
                           fontSize: 13,
@@ -360,7 +360,7 @@ export function TemplateEditModal({ template, typeLabel, onClose, onSave }: Temp
               {preview && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
+                    background: tokens.color.surfaceAlt,
                     borderRadius: tokens.radius.md,
                     padding: 16,
                   }}>
@@ -384,7 +384,7 @@ export function TemplateEditModal({ template, typeLabel, onClose, onSave }: Temp
                   </div>
 
                   <div style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
+                    background: tokens.color.surfaceAlt,
                     borderRadius: tokens.radius.md,
                     padding: 16,
                   }}>
@@ -398,7 +398,7 @@ export function TemplateEditModal({ template, typeLabel, onClose, onSave }: Temp
                   </div>
 
                   <div style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
+                    background: tokens.color.surfaceAlt,
                     borderRadius: tokens.radius.md,
                     padding: 16,
                   }}>
@@ -422,7 +422,7 @@ export function TemplateEditModal({ template, typeLabel, onClose, onSave }: Temp
         {/* Footer */}
         <div style={{
           padding: '16px 24px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          borderTop: `1px solid ${tokens.color.border}`,
           display: 'flex',
           justifyContent: 'flex-end',
           gap: 12,
@@ -432,7 +432,7 @@ export function TemplateEditModal({ template, typeLabel, onClose, onSave }: Temp
             style={{
               padding: '10px 20px',
               background: 'transparent',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              border: `1px solid ${tokens.color.border}`,
               borderRadius: tokens.radius.md,
               color: tokens.color.text,
               fontSize: 14,

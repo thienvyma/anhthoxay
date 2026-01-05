@@ -8,7 +8,7 @@
 import React, { useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useResponsive } from '../../hooks/useResponsive';
-import { tokens } from '@app/shared';
+import { tokens } from '../../app/../theme';
 
 export interface ResponsiveModalProps {
   /** Whether the modal is open */

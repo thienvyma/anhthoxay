@@ -1,6 +1,6 @@
 /**
  * FurniturePage Components Index
- * Feature: furniture-quotation
+ * Feature: furniture-quotation, furniture-product-restructure
  */
 
 export { EntityColumn } from './EntityColumn';
@@ -18,3 +18,5 @@ export { CategoryForm } from './CategoryForm';
 export type { CategoryFormProps } from './CategoryForm';
 export { ProductForm } from './ProductForm';
 export type { ProductFormProps } from './ProductForm';
+export { VariantForm } from './VariantForm';
+export type { VariantFormProps } from './VariantForm';

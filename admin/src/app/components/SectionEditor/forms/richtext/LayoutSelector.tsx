@@ -4,7 +4,7 @@
  * Requirements: 4.2
  */
 
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../../theme';
 import { FormSection } from '../shared';
 
 const LAYOUTS = [
@@ -39,7 +39,7 @@ export function LayoutSelector({ layout, onChange }: LayoutSelectorProps) {
             onClick={() => onChange(opt.value)}
             style={{
               padding: '12px 16px',
-              background: layout === opt.value ? `${tokens.color.primary}20` : 'rgba(255,255,255,0.03)',
+              background: layout === opt.value ? `${tokens.color.primary}20` : tokens.color.surfaceAlt,
               border: `1px solid ${layout === opt.value ? tokens.color.primary : tokens.color.border}`,
               borderRadius: tokens.radius.md,
               color: layout === opt.value ? tokens.color.primary : tokens.color.text,

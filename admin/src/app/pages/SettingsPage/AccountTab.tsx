@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { accountApi, type SessionInfo } from '../../api';
 import { useUser } from '../../store';
 
@@ -10,8 +10,8 @@ interface AccountTabProps {
 }
 
 const glass = {
-  background: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: tokens.color.surfaceAlt,
+  border: `1px solid ${tokens.color.border}`,
 };
 
 export function AccountTab({ onShowMessage, onError }: AccountTabProps) {
@@ -182,6 +182,16 @@ export function AccountTab({ onShowMessage, onError }: AccountTabProps) {
           Sau khi đổi mật khẩu, tất cả các phiên đăng nhập khác sẽ bị đăng xuất.
         </p>
         <form onSubmit={handleChangePassword}>
+          {/* Hidden username field for accessibility - password managers need this */}
+          <input
+            type="text"
+            name="username"
+            autoComplete="username"
+            value={user?.email || ''}
+            readOnly
+            style={{ display: 'none' }}
+            aria-hidden="true"
+          />
           <div style={{ display: 'grid', gap: 16, maxWidth: 400 }}>
             <div>
               <label
@@ -196,6 +206,7 @@ export function AccountTab({ onShowMessage, onError }: AccountTabProps) {
               </label>
               <input
                 type="password"
+                autoComplete="current-password"
                 value={passwordForm.currentPassword}
                 onChange={(e) =>
                   setPasswordForm((prev) => ({ ...prev, currentPassword: e.target.value }))
@@ -204,8 +215,8 @@ export function AccountTab({ onShowMessage, onError }: AccountTabProps) {
                 style={{
                   width: '100%',
                   padding: '10px 12px',
-                  background: 'rgba(0,0,0,0.3)',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: tokens.color.inputBg,
+                  border: `1px solid ${tokens.color.inputBorder}`,
                   borderRadius: tokens.radius.md,
                   color: tokens.color.text,
                   fontSize: 14,
@@ -225,6 +236,7 @@ export function AccountTab({ onShowMessage, onError }: AccountTabProps) {
               </label>
               <input
                 type="password"
+                autoComplete="new-password"
                 value={passwordForm.newPassword}
                 onChange={(e) =>
                   setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))
@@ -234,8 +246,8 @@ export function AccountTab({ onShowMessage, onError }: AccountTabProps) {
                 style={{
                   width: '100%',
                   padding: '10px 12px',
-                  background: 'rgba(0,0,0,0.3)',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: tokens.color.inputBg,
+                  border: `1px solid ${tokens.color.inputBorder}`,
                   borderRadius: tokens.radius.md,
                   color: tokens.color.text,
                   fontSize: 14,
@@ -255,6 +267,7 @@ export function AccountTab({ onShowMessage, onError }: AccountTabProps) {
               </label>
               <input
                 type="password"
+                autoComplete="new-password"
                 value={passwordForm.confirmPassword}
                 onChange={(e) =>
                   setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))
@@ -263,8 +276,8 @@ export function AccountTab({ onShowMessage, onError }: AccountTabProps) {
                 style={{
                   width: '100%',
                   padding: '10px 12px',
-                  background: 'rgba(0,0,0,0.3)',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: tokens.color.inputBg,
+                  border: `1px solid ${tokens.color.inputBorder}`,
                   borderRadius: tokens.radius.md,
                   color: tokens.color.text,
                   fontSize: 14,
@@ -336,10 +349,10 @@ export function AccountTab({ onShowMessage, onError }: AccountTabProps) {
               whileTap={{ scale: 0.98 }}
               style={{
                 padding: '8px 16px',
-                background: 'rgba(239, 68, 68, 0.2)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
+                background: tokens.color.errorBg,
+                border: `1px solid ${tokens.color.error}40`,
                 borderRadius: tokens.radius.md,
-                color: '#ef4444',
+                color: tokens.color.error,
                 fontSize: 13,
                 cursor: 'pointer',
                 display: 'flex',
@@ -381,10 +394,10 @@ export function AccountTab({ onShowMessage, onError }: AccountTabProps) {
                   padding: 16,
                   background: session.isCurrent
                     ? 'rgba(245, 211, 147, 0.1)'
-                    : 'rgba(0,0,0,0.2)',
+                    : tokens.color.surfaceAlt,
                   border: session.isCurrent
                     ? `1px solid ${tokens.color.primary}40`
-                    : '1px solid rgba(255,255,255,0.05)',
+                    : `1px solid ${tokens.color.border}`,
                   borderRadius: tokens.radius.md,
                 }}
               >
@@ -396,7 +409,7 @@ export function AccountTab({ onShowMessage, onError }: AccountTabProps) {
                       borderRadius: tokens.radius.md,
                       background: session.isCurrent
                         ? tokens.color.primary
-                        : 'rgba(255,255,255,0.1)',
+                        : tokens.color.surfaceHover,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -439,9 +452,9 @@ export function AccountTab({ onShowMessage, onError }: AccountTabProps) {
                     style={{
                       padding: '8px 12px',
                       background: 'transparent',
-                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      border: `1px solid ${tokens.color.error}40`,
                       borderRadius: tokens.radius.sm,
-                      color: '#ef4444',
+                      color: tokens.color.error,
                       fontSize: 13,
                       cursor: 'pointer',
                     }}

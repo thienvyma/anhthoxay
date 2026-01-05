@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
@@ -70,8 +70,8 @@ export function FormulasTab({ formulas, unitPrices, onRefresh }: FormulasTabProp
           <div>
             <h4 style={{ color: tokens.color.primary, margin: '0 0 8px' }}>Hướng dẫn viết công thức</h4>
             <p style={{ color: tokens.color.muted, margin: 0, fontSize: 14, lineHeight: 1.6 }}>
-              Sử dụng các TAG từ bảng đơn giá và biến <code style={{ background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: 4 }}>DIEN_TICH</code> (diện tích khách nhập).<br />
-              Ví dụ: <code style={{ background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: 4 }}>DIEN_TICH * CONG_SON + DIEN_TICH * SON_LOT</code>
+              Sử dụng các TAG từ bảng đơn giá và biến <code style={{ background: tokens.color.surfaceHover, padding: '2px 6px', borderRadius: 4 }}>DIEN_TICH</code> (diện tích khách nhập).<br />
+              Ví dụ: <code style={{ background: tokens.color.surfaceHover, padding: '2px 6px', borderRadius: 4 }}>DIEN_TICH * CONG_SON + DIEN_TICH * SON_LOT</code>
             </p>
           </div>
         </div>
@@ -90,22 +90,22 @@ export function FormulasTab({ formulas, unitPrices, onRefresh }: FormulasTabProp
               <h3 style={{ color: tokens.color.text, margin: 0, fontSize: 18 }}>{item.name}</h3>
               <span style={{
                 padding: '4px 8px', borderRadius: 6,
-                background: item.isActive ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)',
-                color: item.isActive ? '#10b981' : '#ef4444', fontSize: 12,
+                background: item.isActive ? tokens.color.successBg : tokens.color.errorBg,
+                color: item.isActive ? tokens.color.success : tokens.color.error, fontSize: 12,
               }}>
                 {item.isActive ? 'Hoạt động' : 'Tắt'}
               </span>
             </div>
             {item.description && <p style={{ color: tokens.color.muted, margin: '0 0 12px', fontSize: 14 }}>{item.description}</p>}
             <div style={{
-              background: 'rgba(0,0,0,0.3)', padding: 12, borderRadius: 8, marginBottom: 16,
+              background: tokens.color.surfaceAlt, padding: 12, borderRadius: 8, marginBottom: 16,
               fontFamily: 'monospace', fontSize: 13, color: tokens.color.primary, overflowX: 'auto',
             }}>
               {item.expression}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <Button variant="outline" size="small" onClick={() => handleEdit(item)}><i className="ri-edit-line" /> Sửa</Button>
-              <Button variant="outline" size="small" onClick={() => handleDelete(item.id)} style={{ color: '#ef4444' }}><i className="ri-delete-bin-line" /> Xóa</Button>
+              <Button variant="outline" size="small" onClick={() => handleDelete(item.id)} style={{ color: tokens.color.error }}><i className="ri-delete-bin-line" /> Xóa</Button>
             </div>
           </Card>
         ))}
@@ -114,7 +114,7 @@ export function FormulasTab({ formulas, unitPrices, onRefresh }: FormulasTabProp
       <AnimatePresence>
         {isCreating && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={resetForm}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+            style={{ position: 'fixed', inset: 0, background: tokens.color.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} onClick={e => e.stopPropagation()}
               style={{ background: tokens.color.surface, borderRadius: 16, padding: 32, width: '100%', maxWidth: 600, maxHeight: '90vh', overflow: 'auto' }}>
               <h2 style={{ color: tokens.color.text, margin: '0 0 24px' }}>{editingItem ? 'Sửa công thức' : 'Thêm công thức mới'}</h2>
@@ -128,7 +128,7 @@ export function FormulasTab({ formulas, unitPrices, onRefresh }: FormulasTabProp
                     placeholder="VD: DIEN_TICH * CONG_SON"
                     style={{
                       width: '100%', padding: 12, borderRadius: 8, minHeight: 80, boxSizing: 'border-box',
-                      background: 'rgba(255,255,255,0.05)', border: `1px solid ${tokens.color.border}`,
+                      background: tokens.color.surfaceHover, border: `1px solid ${tokens.color.border}`,
                       color: tokens.color.text, fontFamily: 'monospace', fontSize: 14, resize: 'vertical',
                     }}
                   />

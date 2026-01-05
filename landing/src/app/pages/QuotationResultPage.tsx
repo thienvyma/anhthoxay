@@ -14,11 +14,20 @@ import { tokens, API_URL } from '@app/shared';
 // TYPES
 // ============================================
 
+/**
+ * Quotation item with material and Fit-in support
+ * 
+ * **Feature: furniture-product-mapping**
+ * **Validates: Requirements 8.3, 8.5**
+ */
 interface QuotationItem {
   productId: string;
   name: string;
-  price: number;
+  material?: string;              // Material variant
+  price: number;                  // Base price (calculatedPrice)
   quantity: number;
+  fitInSelected?: boolean;        // Whether Fit-in is selected
+  fitInFee?: number;              // Fit-in fee amount (if selected)
 }
 
 interface QuotationFee {
@@ -140,6 +149,16 @@ export function QuotationResultPage() {
       return [];
     }
   }, [quotation]);
+
+  // Calculate total Fit-in fees from items
+  const fitInFeesTotal = useMemo(() => {
+    return items.reduce((sum, item) => {
+      if (item.fitInSelected && item.fitInFee) {
+        return sum + (item.fitInFee * item.quantity);
+      }
+      return sum;
+    }, 0);
+  }, [items]);
 
   // Handle PDF download
   const handleDownloadPdf = useCallback(async () => {
@@ -471,6 +490,18 @@ export function QuotationResultPage() {
                           fontSize: '0.75rem',
                           fontWeight: 500,
                           color: '#666666',
+                          width: '100px',
+                        }}
+                      >
+                        Fit-in
+                      </th>
+                      <th
+                        style={{
+                          padding: '0.75rem 0',
+                          textAlign: 'right',
+                          fontSize: '0.75rem',
+                          fontWeight: 500,
+                          color: '#666666',
                           width: '120px',
                         }}
                       >
@@ -479,22 +510,49 @@ export function QuotationResultPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map((item, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid #E0E0E0' }}>
-                        <td style={{ padding: '0.75rem 0', color: '#333333' }}>
-                          {item.name}
-                        </td>
-                        <td style={{ padding: '0.75rem 0', textAlign: 'right', color: '#333333' }}>
-                          {item.quantity}
-                        </td>
-                        <td style={{ padding: '0.75rem 0', textAlign: 'right', color: '#666666' }}>
-                          {formatCurrency(item.price)}
-                        </td>
-                        <td style={{ padding: '0.75rem 0', textAlign: 'right', fontWeight: 600, color: '#333333' }}>
-                          {formatCurrency(item.price * item.quantity)}
-                        </td>
-                      </tr>
-                    ))}
+                    {items.map((item, idx) => {
+                      const itemTotal = item.price * item.quantity;
+                      const fitInTotal = item.fitInSelected && item.fitInFee ? item.fitInFee * item.quantity : 0;
+                      const totalWithFitIn = itemTotal + fitInTotal;
+                      
+                      return (
+                        <tr key={idx} style={{ borderBottom: '1px solid #E0E0E0' }}>
+                          <td style={{ padding: '0.75rem 0', color: '#333333' }}>
+                            <div>
+                              {item.name}
+                              {item.material && (
+                                <span style={{ 
+                                  display: 'block', 
+                                  fontSize: '0.75rem', 
+                                  color: '#666666',
+                                  marginTop: '0.25rem'
+                                }}>
+                                  Chất liệu: {item.material}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td style={{ padding: '0.75rem 0', textAlign: 'right', color: '#333333' }}>
+                            {item.quantity}
+                          </td>
+                          <td style={{ padding: '0.75rem 0', textAlign: 'right', color: '#666666' }}>
+                            {formatCurrency(item.price)}
+                          </td>
+                          <td style={{ padding: '0.75rem 0', textAlign: 'right', color: '#666666' }}>
+                            {item.fitInSelected && item.fitInFee ? (
+                              <span style={{ color: '#F5D393', fontWeight: 500 }}>
+                                +{formatCurrency(item.fitInFee)}
+                              </span>
+                            ) : (
+                              <span style={{ color: '#999999' }}>-</span>
+                            )}
+                          </td>
+                          <td style={{ padding: '0.75rem 0', textAlign: 'right', fontWeight: 600, color: '#333333' }}>
+                            {formatCurrency(totalWithFitIn)}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -532,6 +590,22 @@ export function QuotationResultPage() {
                   {formatCurrency(quotation.basePrice)}
                 </span>
               </div>
+
+              {/* Fit-in Fees Total */}
+              {fitInFeesTotal > 0 && (
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    padding: '0.5rem 0',
+                  }}
+                >
+                  <span style={{ color: '#666666' }}>Phí Fit-in:</span>
+                  <span style={{ color: '#F5D393', fontWeight: 500 }}>
+                    {formatCurrency(fitInFeesTotal)}
+                  </span>
+                </div>
+              )}
 
               {/* Fees */}
               {fees.map((fee, idx) => (

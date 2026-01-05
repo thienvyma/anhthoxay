@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { tokens, resolveMediaUrl } from '@app/shared';
+import { resolveMediaUrl } from '@app/shared';
+import { tokens } from '../../theme';
 
 interface MarkdownEditorProps {
   value: string;
@@ -122,7 +123,7 @@ export function MarkdownEditor({
       border: `1px solid ${tokens.color.border}`,
       borderRadius: '16px',
       overflow: 'hidden',
-      background: 'rgba(12,12,16,0.6)',
+      background: tokens.color.surfaceAlt,
     }}>
       {/* Toolbar */}
       <div style={{
@@ -131,7 +132,7 @@ export function MarkdownEditor({
         gap: '4px',
         padding: '12px 16px',
         borderBottom: `1px solid ${tokens.color.border}`,
-        background: 'rgba(0,0,0,0.2)',
+        background: tokens.color.surfaceAlt,
         flexWrap: 'wrap',
       }}>
         {TOOLBAR_BUTTONS.map((button, index) => {
@@ -164,7 +165,7 @@ export function MarkdownEditor({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'rgba(255,255,255,0.05)',
+                background: tokens.color.surfaceHover,
                 border: 'none',
                 borderRadius: '8px',
                 color: tokens.color.muted,
@@ -191,7 +192,7 @@ export function MarkdownEditor({
             onClick={() => setShowPreview(!showPreview)}
             style={{
               padding: '8px 16px',
-              background: showPreview ? tokens.color.primary : 'rgba(255,255,255,0.05)',
+              background: showPreview ? tokens.color.primary : tokens.color.surfaceHover,
               border: 'none',
               borderRadius: '8px',
               color: showPreview ? '#111' : tokens.color.muted,
@@ -260,7 +261,7 @@ export function MarkdownEditor({
       <div style={{
         padding: '12px 16px',
         borderTop: `1px solid ${tokens.color.border}`,
-        background: 'rgba(0,0,0,0.2)',
+        background: tokens.color.surfaceAlt,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',

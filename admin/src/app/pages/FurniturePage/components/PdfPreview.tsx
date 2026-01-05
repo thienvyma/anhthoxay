@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import type { FurniturePdfSettings } from '../types';
 
 interface PdfPreviewProps {
@@ -59,7 +59,7 @@ export function PdfPreview({ settings }: PdfPreviewProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: 'rgba(0,0,0,0.2)',
+          background: tokens.color.surfaceAlt,
         }}
       >
         <span style={{ color: tokens.color.muted, fontSize: 12, fontWeight: 500 }}>
@@ -136,7 +136,7 @@ export function PdfPreview({ settings }: PdfPreviewProps) {
           overflowY: 'auto',
           overflowX: 'hidden',
           padding: 16,
-          background: 'rgba(0,0,0,0.3)',
+          background: tokens.color.surfaceAlt,
         }}
       >
         <motion.div

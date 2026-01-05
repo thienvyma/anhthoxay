@@ -1,4 +1,4 @@
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 
 interface SelectOption {
   value: string;
@@ -34,9 +34,9 @@ export function Select({
       {label && (
         <label
           style={{
-            color: tokens.color.muted,
+            color: tokens.color.text,
             fontSize: 13,
-            marginBottom: 8,
+            marginBottom: 6,
             display: 'block',
             fontWeight: 500,
           }}
@@ -50,23 +50,30 @@ export function Select({
         disabled={disabled}
         style={{
           width: '100%',
-          padding: '12px 16px',
-          borderRadius: 8,
-          background: tokens.color.surface,
+          padding: '10px 14px',
+          borderRadius: tokens.radius.md,
+          background: tokens.color.background,
           border: `1px solid ${tokens.color.border}`,
           color: tokens.color.text,
           fontSize: 14,
           cursor: disabled ? 'not-allowed' : 'pointer',
           outline: 'none',
           appearance: 'none',
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'right 12px center',
           paddingRight: 36,
+          transition: 'border-color 0.15s ease',
+        }}
+        onFocus={(e) => {
+          e.target.style.borderColor = tokens.color.primary;
+        }}
+        onBlur={(e) => {
+          e.target.style.borderColor = tokens.color.border;
         }}
       >
         {placeholder && (
-          <option value="" disabled style={{ color: '#888' }}>
+          <option value="" disabled style={{ color: tokens.color.muted }}>
             {placeholder}
           </option>
         )}
@@ -75,8 +82,8 @@ export function Select({
             key={opt.value}
             value={opt.value}
             style={{
-              background: '#1a1b1e',
-              color: '#e5e5e5',
+              background: tokens.color.surface,
+              color: tokens.color.text,
               padding: '8px 12px',
             }}
           >

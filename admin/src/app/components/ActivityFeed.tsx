@@ -6,7 +6,7 @@
 
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 import { Card } from './Card';
 import type { ActivityItem, ActivityType } from '../api/dashboard';
 
@@ -33,7 +33,7 @@ const ACTIVITY_CONFIG: Record<ActivityType, ActivityConfig> = {
   },
   PROJECT: {
     icon: 'ri-building-line',
-    color: '#3b82f6',
+    color: tokens.color.info,
     bgColor: 'rgba(59,130,246,0.2)',
     getRoute: (id) => `/bidding?project=${id}`,
   },
@@ -45,7 +45,7 @@ const ACTIVITY_CONFIG: Record<ActivityType, ActivityConfig> = {
   },
   CONTRACTOR: {
     icon: 'ri-building-2-line',
-    color: '#f59e0b',
+    color: tokens.color.warning,
     bgColor: 'rgba(245,158,11,0.2)',
     getRoute: (id) => `/contractors?id=${id}`,
   },
@@ -106,7 +106,7 @@ export function ActivityFeed({ items, loading = false }: ActivityFeedProps) {
               width: 36,
               height: 36,
               borderRadius: tokens.radius.md,
-              background: 'rgba(255,255,255,0.1)',
+              background: tokens.color.surfaceHover,
               flexShrink: 0,
             }}
           />
@@ -115,7 +115,7 @@ export function ActivityFeed({ items, loading = false }: ActivityFeedProps) {
               style={{
                 width: '70%',
                 height: 14,
-                background: 'rgba(255,255,255,0.1)',
+                background: tokens.color.surfaceHover,
                 borderRadius: tokens.radius.sm,
                 marginBottom: 8,
               }}
@@ -124,7 +124,7 @@ export function ActivityFeed({ items, loading = false }: ActivityFeedProps) {
               style={{
                 width: '50%',
                 height: 12,
-                background: 'rgba(255,255,255,0.05)',
+                background: tokens.color.surfaceHover,
                 borderRadius: tokens.radius.sm,
               }}
             />
@@ -133,7 +133,7 @@ export function ActivityFeed({ items, loading = false }: ActivityFeedProps) {
             style={{
               width: 60,
               height: 12,
-              background: 'rgba(255,255,255,0.05)',
+              background: tokens.color.surfaceHover,
               borderRadius: tokens.radius.sm,
             }}
           />
@@ -181,7 +181,7 @@ export function ActivityFeed({ items, loading = false }: ActivityFeedProps) {
           transition: 'background 0.2s ease',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+          e.currentTarget.style.background = tokens.color.surfaceAlt;
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.background = 'transparent';

@@ -6,7 +6,7 @@
 
 import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
@@ -83,7 +83,7 @@ export const RegionModal = memo(function RegionModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9998 }}
+            style={{ position: 'fixed', inset: 0, background: tokens.color.overlay, zIndex: 9998 }}
           />
           <div
             style={{
@@ -192,7 +192,7 @@ export const RegionModal = memo(function RegionModal({
                     <div
                       style={{
                         padding: '12px 16px',
-                        background: 'rgba(12,12,16,0.6)',
+                        background: tokens.color.inputBg,
                         border: `1px solid ${tokens.color.border}`,
                         borderRadius: 12,
                         color: LEVEL_COLORS[formData.level],

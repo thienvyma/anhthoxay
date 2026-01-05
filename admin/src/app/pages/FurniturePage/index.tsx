@@ -7,10 +7,11 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { ResponsiveTabs, Tab } from '../../../components/responsive';
 import { ManagementTab } from './ManagementTab';
 import { CatalogTab } from './CatalogTab';
+import { MappingTab } from './MappingTab';
 import { SettingsTab } from './SettingsTab';
 import { PdfSettingsTab } from './PdfSettingsTab';
 import type {
@@ -21,19 +22,21 @@ import type {
   FurnitureLayout,
   FurnitureApartmentType,
   FurnitureCategory,
-  FurnitureProduct,
   FurnitureFee,
   FurniturePdfSettings,
+  FurnitureMaterial,
 } from './types';
 import {
   furnitureDevelopersApi,
   furnitureProjectsApi,
   furnitureBuildingsApi,
   furnitureCategoriesApi,
-  furnitureProductsApi,
+  furnitureProductBasesApi,
   furnitureFeesApi,
   furniturePdfSettingsApi,
+  furnitureMaterialsApi,
 } from '../../api/furniture';
+import type { ProductBaseWithDetails } from '../../api/furniture';
 
 export function FurniturePage() {
   const [activeTab, setActiveTab] = useState<TabType>('management');
@@ -46,7 +49,8 @@ export function FurniturePage() {
   const [layouts, setLayouts] = useState<FurnitureLayout[]>([]);
   const [apartmentTypes, setApartmentTypes] = useState<FurnitureApartmentType[]>([]);
   const [categories, setCategories] = useState<FurnitureCategory[]>([]);
-  const [products, setProducts] = useState<FurnitureProduct[]>([]);
+  const [productBases, setProductBases] = useState<ProductBaseWithDetails[]>([]);
+  const [materials, setMaterials] = useState<FurnitureMaterial[]>([]);
   const [fees, setFees] = useState<FurnitureFee[]>([]);
   const [pdfSettings, setPdfSettings] = useState<FurniturePdfSettings | null>(null);
 
@@ -62,7 +66,8 @@ export function FurniturePage() {
         projectsData,
         buildingsData,
         categoriesData,
-        productsData,
+        productBasesData,
+        materialsData,
         feesData,
         pdfSettingsData,
       ] = await Promise.all([
@@ -70,7 +75,8 @@ export function FurniturePage() {
         furnitureProjectsApi.list(),
         furnitureBuildingsApi.list(),
         furnitureCategoriesApi.list(),
-        furnitureProductsApi.list(),
+        furnitureProductBasesApi.list({ limit: 100 }),
+        furnitureMaterialsApi.list(),
         furnitureFeesApi.list(),
         furniturePdfSettingsApi.get().catch(() => null),
       ]);
@@ -79,7 +85,8 @@ export function FurniturePage() {
       setProjects(projectsData);
       setBuildings(buildingsData);
       setCategories(categoriesData);
-      setProducts(productsData);
+      setProductBases(productBasesData.products);
+      setMaterials(materialsData);
       setFees(feesData);
       setPdfSettings(pdfSettingsData);
 
@@ -103,8 +110,9 @@ export function FurniturePage() {
    * Requirements: 1.1
    * Tab 1: id='management', label='Quản lý', icon='ri-building-line'
    * Tab 2: id='catalog', label='Catalog', icon='ri-store-line'
-   * Tab 3: id='settings', label='Phí', icon='ri-money-dollar-circle-line'
-   * Tab 4: id='pdf', label='PDF', icon='ri-file-pdf-line'
+   * Tab 3: id='mapping', label='Ánh xạ', icon='ri-links-line'
+   * Tab 4: id='settings', label='Phí', icon='ri-money-dollar-circle-line'
+   * Tab 5: id='pdf', label='PDF', icon='ri-file-pdf-line'
    */
   const tabs: Tab[] = useMemo(
     () => [
@@ -130,7 +138,20 @@ export function FurniturePage() {
         content: (
           <CatalogTab
             categories={categories}
-            products={products}
+            productBases={productBases}
+            materials={materials}
+            onRefresh={fetchAllData}
+          />
+        ),
+      },
+      {
+        id: 'mapping',
+        label: 'Ánh xạ',
+        icon: 'ri-links-line',
+        content: (
+          <MappingTab
+            productBases={productBases}
+            categories={categories}
             onRefresh={fetchAllData}
           />
         ),
@@ -158,7 +179,7 @@ export function FurniturePage() {
         ),
       },
     ],
-    [developers, projects, buildings, layouts, apartmentTypes, categories, products, fees, pdfSettings, fetchAllData]
+    [developers, projects, buildings, layouts, apartmentTypes, categories, productBases, materials, fees, pdfSettings, fetchAllData]
   );
 
   // Loading state
@@ -172,7 +193,7 @@ export function FurniturePage() {
             width: 48,
             height: 48,
             borderRadius: '50%',
-            border: '3px solid rgba(255,255,255,0.1)',
+            border: `3px solid ${tokens.color.border}`,
             borderTopColor: tokens.color.primary,
           }}
         />

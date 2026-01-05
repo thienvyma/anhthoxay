@@ -4,7 +4,7 @@
  * Requirements: 3.2
  */
 
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../../theme';
 
 interface MapEmbedInstructionsProps {
   urlError: string | null;

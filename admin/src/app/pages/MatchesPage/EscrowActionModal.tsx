@@ -9,7 +9,7 @@
 
 import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import type { MatchListItem, EscrowAction } from './types';
@@ -54,7 +54,7 @@ export const EscrowActionModal = memo(function EscrowActionModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 10000 }}
+            style={{ position: 'fixed', inset: 0, background: tokens.color.overlay, zIndex: 10000 }}
           />
           <div
             style={{
@@ -119,7 +119,7 @@ export const EscrowActionModal = memo(function EscrowActionModal({
                 <div
                   style={{
                     padding: 16,
-                    background: 'rgba(255,255,255,0.02)',
+                    background: tokens.color.surfaceAlt,
                     borderRadius: tokens.radius.md,
                     border: `1px solid ${tokens.color.border}`,
                     marginBottom: 20,
@@ -226,13 +226,13 @@ export const EscrowActionModal = memo(function EscrowActionModal({
                   <div
                     style={{
                       padding: 12,
-                      background: 'rgba(239, 68, 68, 0.1)',
+                      background: tokens.color.errorBg,
                       borderRadius: tokens.radius.md,
-                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      border: `1px solid ${tokens.color.error}50`,
                       marginBottom: 20,
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#EF4444' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: tokens.color.error }}>
                       <i className="ri-error-warning-line" />
                       <span style={{ fontSize: 13, fontWeight: 500 }}>
                         {action === 'refund' 

@@ -1,5 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 
 interface LeadsBarChartProps {
   data: Record<string, number>;
@@ -35,7 +35,7 @@ export function LeadsBarChart({ data }: LeadsBarChartProps) {
   return (
     <ResponsiveContainer width="100%" height={250}>
       <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 20, left: 80, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" horizontal={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke={tokens.color.surfaceHover} horizontal={false} />
         <XAxis 
           type="number" 
           stroke={tokens.color.muted}

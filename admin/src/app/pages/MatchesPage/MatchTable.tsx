@@ -9,7 +9,7 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import type {
   MatchListItem,
   EscrowStatus,
@@ -193,17 +193,17 @@ const MatchRow = memo(function MatchRow({
                 icon="ri-check-line"
                 title="Duyệt kết nối"
                 onClick={() => onMatchAction(match, 'approve')}
-                color="#22C55E"
-                bgColor="rgba(34, 197, 94, 0.1)"
-                borderColor="rgba(34, 197, 94, 0.3)"
+                color={tokens.color.success}
+                bgColor={tokens.color.successBg}
+                borderColor={`${tokens.color.success}50`}
               />
               <ActionButton
                 icon="ri-close-line"
                 title="Từ chối kết nối"
                 onClick={() => onMatchAction(match, 'reject')}
-                color="#EF4444"
-                bgColor="rgba(239, 68, 68, 0.1)"
-                borderColor="rgba(239, 68, 68, 0.3)"
+                color={tokens.color.error}
+                bgColor={tokens.color.errorBg}
+                borderColor={`${tokens.color.error}50`}
               />
             </>
           )}
@@ -213,9 +213,9 @@ const MatchRow = memo(function MatchRow({
               icon="ri-check-double-line"
               title="Xác nhận đặt cọc"
               onClick={() => onEscrowAction(match, 'confirm')}
-              color="#3B82F6"
-              bgColor="rgba(59, 130, 246, 0.1)"
-              borderColor="rgba(59, 130, 246, 0.3)"
+              color={tokens.color.info}
+              bgColor={tokens.color.infoBg}
+              borderColor={`${tokens.color.info}50`}
             />
           )}
           {!isPendingMatch && availableActions.includes('release') && (
@@ -223,9 +223,9 @@ const MatchRow = memo(function MatchRow({
               icon="ri-hand-coin-line"
               title="Giải phóng"
               onClick={() => onEscrowAction(match, 'release')}
-              color="#22C55E"
-              bgColor="rgba(34, 197, 94, 0.1)"
-              borderColor="rgba(34, 197, 94, 0.3)"
+              color={tokens.color.success}
+              bgColor={tokens.color.successBg}
+              borderColor={`${tokens.color.success}50`}
             />
           )}
         </div>
@@ -284,7 +284,7 @@ function ActionButton({
   title,
   onClick,
   color,
-  bgColor = 'rgba(255,255,255,0.05)',
+  bgColor = tokens.color.surfaceHover,
   borderColor = tokens.color.border,
 }: {
   icon: string;

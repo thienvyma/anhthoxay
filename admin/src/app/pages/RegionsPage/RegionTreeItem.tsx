@@ -6,7 +6,7 @@
 
 import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import type { Region, RegionTreeNode } from './types';
 import { LEVEL_LABELS, LEVEL_COLORS } from './types';
 
@@ -47,11 +47,11 @@ export const RegionTreeItem = memo(function RegionTreeItem({
           padding: '10px 12px',
           marginLeft: level * 24,
           borderRadius: tokens.radius.md,
-          background: region.isActive ? 'transparent' : 'rgba(255,255,255,0.02)',
+          background: region.isActive ? 'transparent' : tokens.color.surfaceAlt,
           opacity: region.isActive ? 1 : 0.6,
           transition: 'background 0.2s',
         }}
-        whileHover={{ background: 'rgba(255,255,255,0.05)' }}
+        whileHover={{ background: tokens.color.surfaceHover }}
       >
         {/* Expand/Collapse Button */}
         <motion.button
@@ -99,8 +99,8 @@ export const RegionTreeItem = memo(function RegionTreeItem({
                 style={{
                   padding: '2px 6px',
                   borderRadius: 4,
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  color: '#EF4444',
+                  background: tokens.color.errorBg,
+                  color: tokens.color.error,
                   fontSize: 11,
                   fontWeight: 500,
                 }}
@@ -121,7 +121,7 @@ export const RegionTreeItem = memo(function RegionTreeItem({
             icon={region.isActive ? 'ri-toggle-fill' : 'ri-toggle-line'}
             title={region.isActive ? 'Tắt khu vực' : 'Bật khu vực'}
             onClick={() => onToggleActive(region)}
-            color={region.isActive ? '#10B981' : tokens.color.muted}
+            color={region.isActive ? tokens.color.success : tokens.color.muted}
           />
           {canAddChild && (
             <ActionButton

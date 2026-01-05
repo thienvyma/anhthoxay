@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens, resolveMediaUrl } from '@app/shared';
+import { resolveMediaUrl } from '@app/shared';
+import { tokens } from '../../theme';
 import { ImageDropzone } from './ImageDropzone';
 import { ImagePickerModal } from './ImagePickerModal';
 
@@ -88,7 +89,7 @@ export function OptimizedImageUpload({
             borderRadius: tokens.radius.lg,
             overflow: 'hidden',
             border: `1px solid ${tokens.color.border}`,
-            background: 'rgba(255,255,255,0.02)',
+            background: tokens.color.surfaceAlt,
             aspectRatio: aspectRatio,
           }}
         >
@@ -109,7 +110,7 @@ export function OptimizedImageUpload({
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'rgba(0,0,0,0.7)',
+              background: tokens.color.overlay,
               backdropFilter: 'blur(4px)',
               display: 'flex',
               alignItems: 'center',
@@ -175,7 +176,7 @@ export function OptimizedImageUpload({
           }}>
             <p style={{ 
               fontSize: 12, 
-              color: 'rgba(255,255,255,0.9)', 
+              color: tokens.color.text, 
               margin: 0,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -209,7 +210,7 @@ export function OptimizedImageUpload({
             onClick={() => setShowPicker(true)}
             style={{
               padding: '12px 16px',
-              background: 'rgba(255,255,255,0.05)',
+              background: tokens.color.surfaceHover,
               border: `1px solid ${tokens.color.border}`,
               borderRadius: tokens.radius.md,
               color: tokens.color.text,
@@ -234,7 +235,7 @@ export function OptimizedImageUpload({
             onClick={() => setShowUrlInput(!showUrlInput)}
             style={{
               padding: '12px 16px',
-              background: 'rgba(255,255,255,0.05)',
+              background: tokens.color.surfaceHover,
               border: `1px solid ${tokens.color.border}`,
               borderRadius: tokens.radius.md,
               color: tokens.color.text,
@@ -269,7 +270,7 @@ export function OptimizedImageUpload({
               display: 'flex', 
               gap: 8,
               padding: 16,
-              background: 'rgba(255,255,255,0.02)',
+              background: tokens.color.surfaceAlt,
               border: `1px solid ${tokens.color.border}`,
               borderRadius: tokens.radius.md,
             }}>
@@ -282,7 +283,7 @@ export function OptimizedImageUpload({
                 style={{
                   flex: 1,
                   padding: '10px 14px',
-                  background: 'rgba(255,255,255,0.03)',
+                  background: tokens.color.surfaceAlt,
                   border: `1px solid ${tokens.color.border}`,
                   borderRadius: tokens.radius.sm,
                   color: tokens.color.text,
@@ -300,7 +301,7 @@ export function OptimizedImageUpload({
                   padding: '10px 20px',
                   background: urlInput.trim() 
                     ? `linear-gradient(135deg, ${tokens.color.primary}, ${tokens.color.accent})`
-                    : 'rgba(255,255,255,0.05)',
+                    : tokens.color.surfaceHover,
                   color: urlInput.trim() ? '#111' : tokens.color.muted,
                   border: 'none',
                   borderRadius: tokens.radius.sm,

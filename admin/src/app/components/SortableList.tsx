@@ -16,7 +16,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 
 interface SortableItemProps {
   id: string;
@@ -54,7 +54,7 @@ function SortableItem({ id, children }: SortableItemProps) {
             width: 32,
             cursor: isDragging ? 'grabbing' : 'grab',
             color: tokens.color.muted,
-            background: 'rgba(255,255,255,0.03)',
+            background: tokens.color.surfaceAlt,
             borderRadius: `${tokens.radius.md} 0 0 ${tokens.radius.md}`,
             borderRight: `1px solid ${tokens.color.border}`,
             flexShrink: 0,
@@ -66,7 +66,7 @@ function SortableItem({ id, children }: SortableItemProps) {
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.color = tokens.color.muted;
-            e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+            e.currentTarget.style.background = tokens.color.surfaceAlt;
           }}
         >
           <i className="ri-draggable" style={{ fontSize: 16 }} />

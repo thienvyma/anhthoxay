@@ -4,7 +4,8 @@
  */
 
 import { motion } from 'framer-motion';
-import { tokens, resolveMediaUrl } from '@app/shared';
+import { resolveMediaUrl } from '@app/shared';
+import { tokens } from '../../theme';
 
 export interface ProductCardProps {
   id: string;
@@ -82,7 +83,7 @@ export function ProductCard({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: `linear-gradient(135deg, ${tokens.color.background}, ${tokens.color.surface})`,
+              background: tokens.color.background,
             }}
           >
             <i className="ri-image-line" style={{ fontSize: 48, color: tokens.color.muted, opacity: 0.5 }} />
@@ -115,7 +116,7 @@ export function ProductCard({
               left: 12,
               padding: '4px 10px',
               borderRadius: tokens.radius.sm,
-              background: 'rgba(0, 0, 0, 0.7)',
+              background: tokens.color.overlay,
               color: '#fff',
               fontSize: 11,
               fontWeight: 500,
@@ -216,7 +217,7 @@ export function ProductCard({
             style={{
               flex: 1,
               padding: '8px 12px',
-              background: 'rgba(255, 255, 255, 0.05)',
+              background: tokens.color.surfaceHover,
               border: `1px solid ${tokens.color.border}`,
               borderRadius: tokens.radius.sm,
               color: tokens.color.primary,
@@ -237,10 +238,10 @@ export function ProductCard({
             onClick={onDelete}
             style={{
               padding: '8px 12px',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
+              background: tokens.color.errorBg,
+              border: `1px solid ${tokens.color.error}40`,
               borderRadius: tokens.radius.sm,
-              color: '#ef4444',
+              color: tokens.color.error,
               fontSize: 13,
               cursor: 'pointer',
               display: 'flex',

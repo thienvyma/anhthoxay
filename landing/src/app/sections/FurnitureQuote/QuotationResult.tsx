@@ -50,8 +50,15 @@ export interface QuotationResultProps {
   onSuccess: (message: string) => void;
 }
 
+/**
+ * Quotation result data structure
+ * 
+ * **Feature: furniture-product-mapping**
+ * **Validates: Requirements 8.4**
+ */
 export interface QuotationResultData {
   basePrice: number;
+  fitInFeesTotal?: number;        // NEW: Total Fit-in fees
   fees: FeeBreakdown[];
   totalPrice: number;
 }
@@ -83,8 +90,11 @@ const calculateUnitNumber = (buildingCode: string, floor: number, axis: number):
 /**
  * Calculate quotation pricing
  * - basePrice = sum of item prices * quantities
+ * - fitInFeesTotal = sum of Fit-in fees for items with fitInSelected
  * - Apply FIXED fees directly, PERCENTAGE fees as basePrice * value / 100
- * **Validates: Requirements 4.5, 7.6**
+ * 
+ * **Feature: furniture-product-mapping**
+ * **Validates: Requirements 4.5, 7.6, 8.4**
  */
 const calculateQuotation = (
   items: QuotationItem[],
@@ -93,8 +103,16 @@ const calculateQuotation = (
   // Calculate base price
   const basePrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  // Filter active fees
-  const applicableFees = fees.filter((fee) => fee.isActive);
+  // Calculate Fit-in fees total - Requirements: 8.4
+  const fitInFeesTotal = items.reduce((sum, item) => {
+    if (item.fitInSelected && item.fitInFee) {
+      return sum + (item.fitInFee * item.quantity);
+    }
+    return sum;
+  }, 0);
+
+  // Filter active fees (excluding FIT_IN which is handled per-item)
+  const applicableFees = fees.filter((fee) => fee.isActive && fee.code !== 'FIT_IN');
 
   // Calculate fee amounts
   const feesBreakdown: FeeBreakdown[] = applicableFees.map((fee) => {
@@ -107,12 +125,13 @@ const calculateQuotation = (
     };
   });
 
-  // Calculate total
+  // Calculate total (basePrice + fitInFeesTotal + other fees)
   const totalFees = feesBreakdown.reduce((sum, fee) => sum + fee.amount, 0);
-  const totalPrice = basePrice + totalFees;
+  const totalPrice = basePrice + fitInFeesTotal + totalFees;
 
   return {
     basePrice,
+    fitInFeesTotal,
     fees: feesBreakdown,
     totalPrice,
   };
@@ -623,6 +642,8 @@ const SuccessView = memo(function SuccessView({
         )}
 
         {/* Price Breakdown Section */}
+        {/* **Feature: furniture-product-mapping** */}
+        {/* **Validates: Requirements 8.4** */}
         <div style={{ padding: '1.5rem' }}>
           <h3
             style={{
@@ -639,7 +660,7 @@ const SuccessView = memo(function SuccessView({
           </h3>
 
           <div style={{ maxWidth: '350px', marginLeft: 'auto' }}>
-            {/* Base Price */}
+            {/* Base Price - Product prices */}
             <div
               style={{
                 display: 'flex',
@@ -647,11 +668,25 @@ const SuccessView = memo(function SuccessView({
                 padding: '0.5rem 0',
               }}
             >
-              <span style={{ color: tokens.color.muted }}>Giá cơ bản:</span>
+              <span style={{ color: tokens.color.muted }}>Giá nội thất:</span>
               <span style={{ color: tokens.color.text }}>{formatCurrency(quotationResult.basePrice)}</span>
             </div>
 
-            {/* Fees */}
+            {/* Fit-in Fees Total - Requirements: 8.4 */}
+            {quotationResult.fitInFeesTotal && quotationResult.fitInFeesTotal > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '0.5rem 0',
+                }}
+              >
+                <span style={{ color: tokens.color.muted }}>Phí Fit-in:</span>
+                <span style={{ color: tokens.color.text }}>{formatCurrency(quotationResult.fitInFeesTotal)}</span>
+              </div>
+            )}
+
+            {/* Other Fees - Requirements: 8.4 */}
             {quotationResult.fees.map((fee, idx) => (
               <div
                 key={idx}

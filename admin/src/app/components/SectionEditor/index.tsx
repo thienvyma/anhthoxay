@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../theme';
 import { Button } from '../Button';
 import { ImagePickerModal } from '../ImagePickerModal';
 import { TemplatePicker } from '../TemplatePicker';
@@ -131,7 +131,7 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
         style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0,0,0,0.7)',
+          background: tokens.color.overlay,
           zIndex: 9998,
           backdropFilter: 'blur(4px)',
           display: 'flex',
@@ -166,7 +166,7 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
+              background: `linear-gradient(180deg, ${tokens.color.surfaceAlt} 0%, transparent 100%)`,
               flexShrink: 0,
             }}
           >
@@ -211,7 +211,7 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
                 onClick={() => setShowPreview(!showPreview)}
                 style={{
                   padding: '8px 16px',
-                  background: showPreview ? tokens.color.primary : 'rgba(255,255,255,0.05)',
+                  background: showPreview ? tokens.color.primary : tokens.color.surfaceHover,
                   color: showPreview ? '#111' : tokens.color.text,
                   border: `1px solid ${showPreview ? tokens.color.primary : tokens.color.border}`,
                   borderRadius: tokens.radius.md,
@@ -270,7 +270,7 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
                   borderLeft: `1px solid ${tokens.color.border}`,
                   padding: 24,
                   overflowY: 'auto',
-                  background: 'rgba(0,0,0,0.3)',
+                  background: tokens.color.surfaceAlt,
                 }}
               >
                 <div style={{ marginBottom: 16, color: tokens.color.muted, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>

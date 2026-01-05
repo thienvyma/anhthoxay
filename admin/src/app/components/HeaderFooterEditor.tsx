@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { tokens } from '@app/shared';
+import { tokens } from '../../theme';
 import { Button } from './Button';
 import { Input } from './Input';
 import { IconPicker } from './IconPicker';
@@ -188,7 +188,7 @@ export function HeaderFooterEditor({ type, config, onSave, onCancel }: HeaderFoo
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.8)',
+        background: tokens.color.overlay,
         backdropFilter: 'blur(16px)',
         display: 'flex',
         alignItems: 'center',
@@ -204,10 +204,10 @@ export function HeaderFooterEditor({ type, config, onSave, onCancel }: HeaderFoo
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: 'rgba(12,12,16,0.95)',
+          background: tokens.color.surface,
           backdropFilter: 'blur(24px)',
           borderRadius: tokens.radius.xl,
-          border: '1px solid rgba(255,255,255,0.1)',
+          border: `1px solid ${tokens.color.border}`,
           width: '100%',
           maxWidth: 900,
           maxHeight: '90vh',
@@ -219,7 +219,7 @@ export function HeaderFooterEditor({ type, config, onSave, onCancel }: HeaderFoo
         <div
           style={{
             padding: 24,
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            borderBottom: `1px solid ${tokens.color.border}`,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -269,7 +269,7 @@ export function HeaderFooterEditor({ type, config, onSave, onCancel }: HeaderFoo
         <div
           style={{
             padding: 24,
-            borderTop: '1px solid rgba(255,255,255,0.08)',
+            borderTop: `1px solid ${tokens.color.border}`,
             display: 'flex',
             justifyContent: 'flex-end',
             gap: 12,
@@ -343,7 +343,7 @@ function HeaderForm({ data, updateField, updateArrayItem, addArrayItem, removeAr
           </Button>
         </div>
         {headerData.links?.map((link, i) => (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 12, marginBottom: 12, padding: 16, background: 'rgba(255,255,255,0.02)', borderRadius: tokens.radius.md, border: '1px solid rgba(255,255,255,0.05)' }}>
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 12, marginBottom: 12, padding: 16, background: tokens.color.surfaceAlt, borderRadius: tokens.radius.md, border: `1px solid ${tokens.color.surfaceHover}` }}>
             <Input
               label="Label"
               value={link.label || ''}
@@ -447,7 +447,7 @@ function FooterForm({ data, updateField, updateArrayItem, addArrayItem, removeAr
           </Button>
         </div>
         {footerData.quickLinks?.map((link, i) => (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, marginBottom: 12, padding: 16, background: 'rgba(255,255,255,0.02)', borderRadius: tokens.radius.md, border: '1px solid rgba(255,255,255,0.05)' }}>
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, marginBottom: 12, padding: 16, background: tokens.color.surfaceAlt, borderRadius: tokens.radius.md, border: `1px solid ${tokens.color.surfaceHover}` }}>
             <Input
               label="Label"
               value={link.label || ''}
@@ -521,7 +521,7 @@ function FooterForm({ data, updateField, updateArrayItem, addArrayItem, removeAr
           </Button>
         </div>
         {footerData.socialLinks?.map((social, i) => (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 12, marginBottom: 12, padding: 16, background: 'rgba(255,255,255,0.02)', borderRadius: tokens.radius.md, border: '1px solid rgba(255,255,255,0.05)' }}>
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 12, marginBottom: 12, padding: 16, background: tokens.color.surfaceAlt, borderRadius: tokens.radius.md, border: `1px solid ${tokens.color.surfaceHover}` }}>
             <Input
               label="Platform"
               value={social.platform || ''}

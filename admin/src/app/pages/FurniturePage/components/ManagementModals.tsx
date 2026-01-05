@@ -4,7 +4,7 @@
  */
 
 import { useRef } from 'react';
-import { tokens } from '@app/shared';
+import { tokens } from '../../../../theme';
 import { ResponsiveModal } from '../../../../components/responsive';
 import { Button } from '../../../components/Button';
 import { Input, TextArea } from '../../../components/Input';
