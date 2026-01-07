@@ -2,10 +2,19 @@
 	"dependencies": {
 		"@hono/node-server": "^1.19.5",
 		"@prisma/client": "^5.22.0",
+		"@sentry/node": "^10.32.1",
 		"@types/pdfkit": "^0.17.4",
 		"bcrypt": "^6.0.0",
+		"bcryptjs": "^2.4.3",
+		"bullmq": "^5.66.4",
+		"googleapis": "^169.0.0",
 		"hono": "^4.9.10",
+		"ioredis": "^5.9.0",
+		"jsonwebtoken": "^9.0.3",
+		"opossum": "^9.0.0",
 		"pdfkit": "^0.17.2",
-		"sharp": "^0.34.4"
+		"redlock": "5.0.0-beta.2",
+		"sharp": "^0.34.4",
+		"zod": "^4.1.12"
 	}
 }

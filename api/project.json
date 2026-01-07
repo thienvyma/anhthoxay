@@ -34,7 +34,8 @@
           ".prisma/client",
           "hono",
           "@hono/node-server",
-          "sharp"
+          "sharp",
+          "zod"
         ]
       },
       "configurations": {
@@ -51,7 +52,8 @@
             ".prisma/client",
             "hono",
             "@hono/node-server",
-            "sharp"
+            "sharp",
+            "zod"
           ]
         }
       }
