@@ -3,7 +3,7 @@
 # Multi-stage build for production
 # ============================================
 
-# Stage 1: Build
+# Stage 1: Build (Alpine for smaller build context)
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -26,7 +26,8 @@ RUN pnpm install --no-frozen-lockfile
 # Copy source code
 COPY . .
 
-# Generate Prisma client
+# Generate Prisma client for linux-musl-openssl-3.0.x (Alpine) and debian-openssl-3.0.x
+ENV PRISMA_CLI_BINARY_TARGETS="linux-musl-openssl-3.0.x,debian-openssl-3.0.x"
 RUN pnpm db:generate
 
 # Increase Node.js memory limit for build
@@ -35,20 +36,24 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 # Build API with prune to generate proper package.json and pnpm-lock.yaml
 RUN pnpm nx run api:prune
 
-# Stage 2: Production
-FROM node:20-alpine AS runner
+# Stage 2: Production (Debian-slim for OpenSSL compatibility with Prisma)
+FROM node:20-slim AS runner
 
 WORKDIR /app
 
-# Install runtime dependencies for native modules and OpenSSL 1.1 for Prisma
-RUN apk add --no-cache libc6-compat openssl1.1-compat
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl \
+    ca-certificates \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Create non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 hono
+RUN groupadd --system --gid 1001 nodejs
+RUN useradd --system --uid 1001 --gid nodejs hono
 
 # Copy built application
 COPY --from=builder /app/dist/api ./
