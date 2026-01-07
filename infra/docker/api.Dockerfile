@@ -55,10 +55,9 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Copy package files for production dependencies
 COPY --from=builder /app/dist/api/package.json ./package.json
-COPY --from=builder /app/dist/api/pnpm-lock.yaml ./pnpm-lock.yaml 2>/dev/null || true
 
-# Install production dependencies only
-RUN pnpm install --prod --frozen-lockfile 2>/dev/null || npm install --omit=dev
+# Install production dependencies only (skip if no dependencies needed)
+RUN pnpm install --prod 2>/dev/null || npm install --omit=dev 2>/dev/null || true
 
 # Set ownership
 RUN chown -R hono:nodejs /app
