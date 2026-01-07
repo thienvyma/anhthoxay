@@ -47,7 +47,10 @@ RUN adduser --system --uid 1001 hono
 # Copy built files
 COPY --from=builder /app/dist/api ./dist/api
 COPY --from=builder /app/infra/prisma ./infra/prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+# Copy Prisma client (generated in pnpm store)
+COPY --from=builder /app/node_modules/.pnpm/@prisma+client*/node_modules/@prisma/client ./node_modules/@prisma/client
+COPY --from=builder /app/node_modules/.pnpm/@prisma+client*/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Copy package files for production dependencies
