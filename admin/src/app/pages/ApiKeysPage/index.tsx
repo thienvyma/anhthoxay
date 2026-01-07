@@ -54,8 +54,8 @@ export function ApiKeysPage() {
       });
       setApiKeys(result);
     } catch (error) {
-      console.error('Failed to load API keys:', error);
-      toast.error('Không thể tải danh sách API keys');
+      const errorMessage = error instanceof Error ? error.message : 'Không thể tải danh sách API keys';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -76,7 +76,6 @@ export function ApiKeysPage() {
       setShowKeyCreatedModal(true);
       toast.success('Đã tạo API key thành công!');
     } catch (error) {
-      console.error('Failed to create API key:', error);
       const errorMessage = error instanceof Error ? error.message : 'Không thể tạo API key';
       toast.error(errorMessage);
     } finally {
@@ -96,8 +95,7 @@ export function ApiKeysPage() {
           ? 'Đã bật API key'
           : 'Đã tắt API key'
       );
-    } catch (error) {
-      console.error('Failed to toggle API key status:', error);
+    } catch {
       toast.error('Không thể thay đổi trạng thái');
     }
   };
@@ -117,8 +115,7 @@ export function ApiKeysPage() {
       setShowDeleteModal(false);
       setDeletingApiKey(null);
       toast.success('Đã xóa API key');
-    } catch (error) {
-      console.error('Failed to delete API key:', error);
+    } catch {
       toast.error('Không thể xóa API key');
     } finally {
       setDeleting(false);
@@ -165,7 +162,6 @@ export function ApiKeysPage() {
       }
       return updated;
     } catch (error) {
-      console.error('Failed to update API key:', error);
       const errorMessage = error instanceof Error ? error.message : 'Không thể cập nhật API key';
       toast.error(errorMessage);
       throw error;
@@ -352,9 +348,9 @@ export function ApiKeysPage() {
           setShowEditModal(false);
           setEditingApiKey(null);
         }}
-        onSaved={(updated) => {
+        onSaved={() => {
           // Update is already handled in handleUpdateApiKey
-          console.log('API key updated:', updated.id);
+          // No additional action needed
         }}
         onSubmit={handleUpdateApiKey}
         saving={saving}

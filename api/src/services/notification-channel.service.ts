@@ -372,7 +372,8 @@ export class NotificationChannelService {
 
       if (this.emailConfig.provider === 'mock') {
         // Mock provider for development/testing
-        console.log(`[EMAIL MOCK] To: ${to}, Subject: ${subject}`);
+        // eslint-disable-next-line no-console -- Mock provider logging for development
+        console.info(`[EMAIL MOCK] To: ${to}, Subject: ${subject}`);
         return;
       }
 
@@ -412,7 +413,8 @@ export class NotificationChannelService {
     }
 
     // In production, this would use @sendgrid/mail
-    console.log(`[SENDGRID] Sending email to ${to}: ${subject}, HTML length: ${html.length}`);
+    // eslint-disable-next-line no-console -- Mock provider logging for development
+    console.info(`[SENDGRID] Sending email to ${to}: ${subject}, HTML length: ${html.length}`);
   }
 
   /**
@@ -426,7 +428,8 @@ export class NotificationChannelService {
   ): Promise<void> {
     // AWS SES implementation would go here
     // For now, we'll use a mock implementation
-    console.log(`[SES] Sending email to ${to}: ${subject}, HTML length: ${html.length}`);
+    // eslint-disable-next-line no-console -- Mock provider logging for development
+    console.info(`[SES] Sending email to ${to}: ${subject}, HTML length: ${html.length}`);
   }
 
   /**
@@ -529,7 +532,8 @@ export class NotificationChannelService {
     try {
       if (this.smsConfig.provider === 'mock') {
         // Mock provider for development/testing
-        console.log(`[SMS MOCK] To: ${to}, Message: ${message}`);
+        // eslint-disable-next-line no-console -- Mock provider logging for development
+        console.info(`[SMS MOCK] To: ${to}, Message: ${message}`);
         return;
       }
 
@@ -565,7 +569,8 @@ export class NotificationChannelService {
     }
 
     // In production, this would use twilio SDK
-    console.log(`[TWILIO] Sending SMS to ${to}: ${message}`);
+    // eslint-disable-next-line no-console -- Mock provider logging for development
+    console.info(`[TWILIO] Sending SMS to ${to}: ${message}`);
   }
 
   /**
@@ -577,7 +582,8 @@ export class NotificationChannelService {
     message: string
   ): Promise<void> {
     // Local Vietnam SMS provider implementation would go here
-    console.log(`[LOCAL SMS] Sending SMS to ${to}: ${message}`);
+    // eslint-disable-next-line no-console -- Mock provider logging for development
+    console.info(`[LOCAL SMS] Sending SMS to ${to}: ${message}`);
   }
 
   /**

@@ -1,5 +1,5 @@
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -402,16 +402,28 @@ model Formula {
 // ============================================
 
 model CustomerLead {
-  id            String  @id @default(cuid())
-  name          String
-  phone         String
-  email         String?
-  content       String
-  source        String  @default("CONTACT_FORM")
-  status        String  @default("NEW")
-  quoteData     String?
-  notes         String?
-  statusHistory String? // JSON array of status changes: [{from, to, changedAt, changedBy?}]
+  id              String  @id @default(cuid())
+  name            String
+  phone           String
+  normalizedPhone String? // Chuẩn hóa để so sánh (0xxxxxxxxx format)
+  email           String?
+  content         String
+  source          String  @default("CONTACT_FORM")
+  status          String  @default("NEW")
+  quoteData       String?
+  notes           String?
+  statusHistory   String? // JSON array of status changes: [{from, to, changedAt, changedBy?}]
+
+  // Duplicate management fields
+  submissionCount       Int       @default(1)      // Số lần submit (sau merge)
+  isPotentialDuplicate  Boolean   @default(false)  // Đánh dấu potential duplicate
+  hasRelatedLeads       Boolean   @default(false)  // Có leads cùng phone khác source
+  relatedLeadCount      Int       @default(0)      // Số leads liên quan
+  potentialDuplicateIds String?                    // JSON: ["id1", "id2"]
+
+  // Soft-delete for merged leads
+  mergedIntoId String?   // Reference to primary lead
+  mergedAt     DateTime? // When merged
 
   // Furniture Quotation System relation
   furnitureQuotations FurnitureQuotation[]
@@ -422,6 +434,11 @@ model CustomerLead {
   @@index([status])
   @@index([source])
   @@index([createdAt])
+  @@index([normalizedPhone])                       // Index for duplicate lookup
+  @@index([normalizedPhone, source])               // Composite index for same phone + source
+  @@index([isPotentialDuplicate])                  // Filter index
+  @@index([hasRelatedLeads])                       // Filter index
+  @@index([mergedIntoId])                          // Merged leads lookup
 }
 
 // ============================================

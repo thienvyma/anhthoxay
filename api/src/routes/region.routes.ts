@@ -16,6 +16,8 @@ import { createAuthMiddleware } from '../middleware/auth.middleware';
 import { validate, validateQuery, getValidatedBody, getValidatedQuery } from '../middleware/validation';
 import { successResponse, errorResponse } from '../utils/response';
 import { RegionService, RegionError } from '../services/region.service';
+import { cacheService, CacheKeys, CacheTTL } from '../services/cache.service';
+import { logger } from '../utils/logger';
 import {
   CreateRegionSchema,
   UpdateRegionSchema,
@@ -46,6 +48,7 @@ export function createRegionRoutes(prisma: PrismaClient) {
    * @route GET /api/regions
    * @description Get all regions (flat or tree structure)
    * @access Public
+   * @cache 10 minutes (TTL: 600 seconds)
    * @query flat - Return flat list instead of tree (default: false)
    * @query parentId - Filter by parent ID (for flat list)
    * @query level - Filter by level (1: Tỉnh/TP, 2: Quận/Huyện, 3: Phường/Xã)
@@ -54,7 +57,19 @@ export function createRegionRoutes(prisma: PrismaClient) {
   app.get('/', validateQuery(RegionQuerySchema), async (c) => {
     try {
       const query = getValidatedQuery<RegionQuery>(c);
-      const regions = await regionService.getAll(query);
+      const cacheKey = CacheKeys.regions(query.level?.toString());
+
+      const { data: regions, fromCache } = await cacheService.getOrSet(
+        cacheKey,
+        CacheTTL.regions,
+        async () => {
+          return regionService.getAll(query);
+        }
+      );
+
+      // Set cache status header
+      c.header('X-Cache-Status', fromCache ? 'HIT' : 'MISS');
+
       return successResponse(c, regions);
     } catch (error) {
       console.error('Get regions error:', error);
@@ -66,15 +81,27 @@ export function createRegionRoutes(prisma: PrismaClient) {
    * @route GET /api/regions/:id
    * @description Get region by ID
    * @access Public
+   * @cache 10 minutes (TTL: 600 seconds)
    */
   app.get('/:id', async (c) => {
     try {
       const id = c.req.param('id');
-      const region = await regionService.getById(id);
+      const cacheKey = `${CacheKeys.regions()}:${id}`;
+
+      const { data: region, fromCache } = await cacheService.getOrSet(
+        cacheKey,
+        CacheTTL.regions,
+        async () => {
+          return regionService.getById(id);
+        }
+      );
 
       if (!region) {
         return errorResponse(c, 'NOT_FOUND', 'Khu vực không tồn tại', 404);
       }
+
+      // Set cache status header
+      c.header('X-Cache-Status', fromCache ? 'HIT' : 'MISS');
 
       return successResponse(c, region);
     } catch (error) {
@@ -118,6 +145,11 @@ export function createAdminRegionRoutes(prisma: PrismaClient) {
       try {
         const data = getValidatedBody<CreateRegionInput>(c);
         const region = await regionService.create(data);
+        
+        // Invalidate regions cache
+        await cacheService.invalidateByPattern('cache:regions*');
+        logger.debug('Regions cache invalidated after create');
+        
         return successResponse(c, region, 201);
       } catch (error) {
         if (error instanceof RegionError) {
@@ -144,6 +176,11 @@ export function createAdminRegionRoutes(prisma: PrismaClient) {
         const id = c.req.param('id');
         const data = getValidatedBody<UpdateRegionInput>(c);
         const region = await regionService.update(id, data);
+        
+        // Invalidate regions cache
+        await cacheService.invalidateByPattern('cache:regions*');
+        logger.debug('Regions cache invalidated after update', { id });
+        
         return successResponse(c, region);
       } catch (error) {
         if (error instanceof RegionError) {
@@ -164,6 +201,11 @@ export function createAdminRegionRoutes(prisma: PrismaClient) {
     try {
       const id = c.req.param('id');
       const result = await regionService.delete(id);
+      
+      // Invalidate regions cache
+      await cacheService.invalidateByPattern('cache:regions*');
+      logger.debug('Regions cache invalidated after delete', { id });
+      
       return successResponse(c, result);
     } catch (error) {
       if (error instanceof RegionError) {

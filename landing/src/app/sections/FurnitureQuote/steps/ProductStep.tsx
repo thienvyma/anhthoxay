@@ -5,12 +5,13 @@
  * **Requirements: 3.4, 6.1, 6.2, 6.3, 6.9, 6.10, 7.1, 7.2, 7.3, 7.4, 7.5**
  */
 
-import { memo, useState } from 'react';
+import { memo, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokens, resolveMediaUrl } from '@app/shared';
 import { FurnitureCategory, FurnitureFee, ProductBaseGroup, ProductVariantForLanding } from '../../../api/furniture';
 import { Pagination, NavigationButtons } from '../components';
-import { ITEMS_PER_PAGE, formatCurrency } from '../constants';
+import { ITEMS_PER_PAGE } from '../constants';
+import { useDebounce } from '../../../hooks/useDebounce';
 import type { SelectedProduct } from '../types';
 
 interface ProductStepProps {
@@ -33,7 +34,8 @@ export const ProductStep = memo(function ProductStep({
   categories,
   productGroups,
   selectedProducts,
-  fitInFee,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  fitInFee: _fitInFee, // Kept for interface compatibility, prices hidden per Requirements 2.1
   currentPage,
   onProductSelect,
   onProductRemove,
@@ -42,22 +44,31 @@ export const ProductStep = memo(function ProductStep({
   onPageChange,
   onNext,
   onBack,
-  getProductDisplayPrice,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getProductDisplayPrice: _getProductDisplayPrice, // Kept for interface compatibility, prices hidden per Requirements 2.1
 }: ProductStepProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
-  // Filter product groups by category and search query
-  let filteredGroups = selectedCategory
-    ? productGroups.filter(g => g.categoryId === selectedCategory)
-    : productGroups;
   
-  if (searchQuery.trim()) {
-    const query = searchQuery.toLowerCase().trim();
-    filteredGroups = filteredGroups.filter(g => 
-      g.name.toLowerCase().includes(query)
-    );
-  }
+  // Debounce search query with 500ms delay (Requirement 9.2)
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+  const isSearching = searchQuery !== debouncedSearchQuery;
+
+  // Filter product groups by category and debounced search query
+  const filteredGroups = useMemo(() => {
+    let groups = selectedCategory
+      ? productGroups.filter(g => g.categoryId === selectedCategory)
+      : productGroups;
+    
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase().trim();
+      groups = groups.filter(g => 
+        g.name.toLowerCase().includes(query)
+      );
+    }
+    
+    return groups;
+  }, [productGroups, selectedCategory, debouncedSearchQuery]);
   
   const totalPages = Math.ceil(filteredGroups.length / ITEMS_PER_PAGE);
   const paginatedGroups = filteredGroups.slice(
@@ -77,36 +88,47 @@ export const ProductStep = memo(function ProductStep({
         Chọn nội thất
       </h3>
 
-      {/* Search Input */}
+      {/* Search Input with debounce indicator (Requirement 9.2, 9.5) */}
       <div style={{ marginBottom: '1rem' }}>
         <div style={{ position: 'relative' }}>
           <i 
-            className="ri-search-line" 
+            className={isSearching ? "ri-loader-4-line" : "ri-search-line"}
             style={{ 
               position: 'absolute', 
               left: '0.75rem', 
               top: '50%', 
               transform: 'translateY(-50%)', 
-              color: tokens.color.muted,
+              color: isSearching ? tokens.color.primary : tokens.color.muted,
               fontSize: '1rem',
+              animation: isSearching ? 'spin 1s linear infinite' : 'none',
             }} 
           />
+          <style>{`
+            @keyframes spin {
+              from { transform: translateY(-50%) rotate(0deg); }
+              to { transform: translateY(-50%) rotate(360deg); }
+            }
+          `}</style>
           <input
             type="text"
             placeholder="Tìm kiếm sản phẩm..."
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              onPageChange(1);
+              // Reset page when search changes (will apply after debounce)
+              if (e.target.value !== searchQuery) {
+                onPageChange(1);
+              }
             }}
             style={{
               width: '100%',
               padding: '0.75rem 0.75rem 0.75rem 2.5rem',
               borderRadius: tokens.radius.md,
-              border: `1px solid ${tokens.color.border}`,
+              border: `1px solid ${isSearching ? tokens.color.primary : tokens.color.border}`,
               background: tokens.color.background,
               color: tokens.color.text,
               fontSize: '0.875rem',
+              transition: 'border-color 0.2s ease',
             }}
           />
           {searchQuery && (
@@ -177,7 +199,7 @@ export const ProductStep = memo(function ProductStep({
       {/* Products Grid */}
       <AnimatePresence mode="wait">
         <motion.div
-          key={`${selectedCategory}-${currentPage}-${searchQuery}`}
+          key={`${selectedCategory}-${currentPage}-${debouncedSearchQuery}`}
           initial={{ opacity: 0, x: 10 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -10 }}
@@ -189,12 +211,10 @@ export const ProductStep = memo(function ProductStep({
               key={group.id}
               group={group}
               selectedProduct={selectedProducts.find((p) => p.productBaseId === group.id)}
-              fitInFee={fitInFee}
               onSelect={onProductSelect}
               onRemove={onProductRemove}
               onQuantityChange={onQuantityChange}
               onFitInToggle={onFitInToggle}
-              getProductDisplayPrice={getProductDisplayPrice}
             />
           ))}
         </motion.div>
@@ -217,7 +237,6 @@ export const ProductStep = memo(function ProductStep({
       {selectedProducts.length > 0 && (
         <SelectedSummary 
           products={selectedProducts} 
-          getProductDisplayPrice={getProductDisplayPrice} 
         />
       )}
 
@@ -236,23 +255,19 @@ export const ProductStep = memo(function ProductStep({
 interface ProductCardProps {
   group: ProductBaseGroup;
   selectedProduct: SelectedProduct | undefined;
-  fitInFee: FurnitureFee | null;
   onSelect: (productBaseId: string, productName: string, variant: ProductVariantForLanding, allowFitIn: boolean) => void;
   onRemove: (productBaseId: string) => void;
   onQuantityChange: (productBaseId: string, quantity: number) => void;
   onFitInToggle: (productBaseId: string) => void;
-  getProductDisplayPrice: (variant: ProductVariantForLanding, fitInSelected: boolean, quantity: number) => number;
 }
 
 const ProductCard = memo(function ProductCard({
   group,
   selectedProduct,
-  fitInFee,
   onSelect,
   onRemove,
   onQuantityChange,
   onFitInToggle,
-  getProductDisplayPrice,
 }: ProductCardProps) {
   const isSelected = !!selectedProduct;
   const displayVariant = selectedProduct?.variant || group.variants[0];
@@ -345,22 +360,14 @@ const ProductCard = memo(function ProductCard({
           </div>
         )}
         
-        {/* Price Display */}
-        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: tokens.color.primary, marginTop: '0.25rem' }}>
-          {isSelected && selectedProduct
-            ? formatCurrency(getProductDisplayPrice(selectedProduct.variant, selectedProduct.fitInSelected, selectedProduct.quantity))
-            : group.priceRange && group.priceRange.min !== group.priceRange.max
-              ? `${formatCurrency(group.priceRange.min)} - ${formatCurrency(group.priceRange.max)}`
-              : formatCurrency(displayVariant.calculatedPrice)
-          }
-        </div>
+        {/* Price Display - Hidden per Requirements 2.1, 2.4 */}
+        {/* Prices are now sent via email only */}
         
         {/* Selection Controls */}
         {isSelected && selectedProduct && (
           <SelectionControls
             product={selectedProduct}
             productBaseId={group.id}
-            fitInFee={fitInFee}
             onQuantityChange={onQuantityChange}
             onFitInToggle={onFitInToggle}
             onRemove={onRemove}
@@ -441,7 +448,7 @@ const MaterialSelector = memo(function MaterialSelector({
       >
         {variants.map((v) => (
           <option key={v.id} value={v.id} style={{ background: tokens.color.surface, color: tokens.color.text }}>
-            {v.materialName} - {formatCurrency(v.calculatedPrice)}
+            {v.materialName}
           </option>
         ))}
       </select>
@@ -472,7 +479,6 @@ const SingleMaterialDisplay = memo(function SingleMaterialDisplay({ materialName
 interface SelectionControlsProps {
   product: SelectedProduct;
   productBaseId: string;
-  fitInFee: FurnitureFee | null;
   onQuantityChange: (productBaseId: string, quantity: number) => void;
   onFitInToggle: (productBaseId: string) => void;
   onRemove: (productBaseId: string) => void;
@@ -481,7 +487,6 @@ interface SelectionControlsProps {
 const SelectionControls = memo(function SelectionControls({
   product,
   productBaseId,
-  fitInFee,
   onQuantityChange,
   onFitInToggle,
   onRemove,
@@ -521,11 +526,6 @@ const SelectionControls = memo(function SelectionControls({
           </div>
           <span style={{ fontSize: '0.75rem', color: tokens.color.text }}>
             Fit-in (lắp vừa sát trần)
-            {fitInFee && fitInFee.isActive && fitInFee.value > 0 && (
-              <span style={{ color: tokens.color.muted, marginLeft: '0.25rem' }}>
-                (+{formatCurrency(fitInFee.type === 'FIXED' ? fitInFee.value : product.variant.calculatedPrice * fitInFee.value / 100)})
-              </span>
-            )}
           </span>
         </div>
       )}
@@ -650,13 +650,10 @@ const EmptyState = memo(function EmptyState({ searchQuery }: { searchQuery: stri
 
 interface SelectedSummaryProps {
   products: SelectedProduct[];
-  getProductDisplayPrice: (variant: ProductVariantForLanding, fitInSelected: boolean, quantity: number) => number;
 }
 
-const SelectedSummary = memo(function SelectedSummary({ products, getProductDisplayPrice }: SelectedSummaryProps) {
-  const total = products.reduce((sum, p) => 
-    sum + getProductDisplayPrice(p.variant, p.fitInSelected, p.quantity), 0
-  );
+const SelectedSummary = memo(function SelectedSummary({ products }: SelectedSummaryProps) {
+  const totalQuantity = products.reduce((sum, p) => sum + p.quantity, 0);
 
   return (
     <div
@@ -669,16 +666,18 @@ const SelectedSummary = memo(function SelectedSummary({ products, getProductDisp
         marginTop: '1rem',
       }}
     >
-      <div style={{ fontSize: '0.875rem', color: tokens.color.muted }}>
-        Đã chọn {products.length} sản phẩm
+      <div style={{ fontSize: '0.875rem', color: tokens.color.text, fontWeight: 500 }}>
+        <i className="ri-shopping-cart-2-line" style={{ marginRight: '0.5rem', color: tokens.color.primary }} />
+        Đã chọn {products.length} sản phẩm ({totalQuantity} món)
         {products.some(p => p.fitInSelected) && (
           <span style={{ marginLeft: '0.5rem', color: tokens.color.primary }}>
             (có Fit-in)
           </span>
         )}
       </div>
-      <div style={{ fontSize: '1.25rem', fontWeight: 700, color: tokens.color.primary }}>
-        {formatCurrency(total)}
+      <div style={{ fontSize: '0.75rem', color: tokens.color.muted, marginTop: '0.5rem' }}>
+        <i className="ri-mail-line" style={{ marginRight: '0.25rem' }} />
+        Báo giá chi tiết sẽ được gửi qua email
       </div>
     </div>
   );

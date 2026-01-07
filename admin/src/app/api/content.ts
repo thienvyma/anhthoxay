@@ -263,6 +263,9 @@ export const blogCommentsApi = {
 interface LeadsListParams {
   search?: string;
   status?: string;
+  source?: string;
+  duplicateStatus?: 'all' | 'duplicates_only' | 'no_duplicates';
+  hasRelated?: boolean;
   page?: number;
   limit?: number;
 }
@@ -282,6 +285,17 @@ interface LeadsStatsResponse {
   conversionRate: number;
   totalLeads: number;
   newLeads: number;
+  duplicateSubmissionsBlocked?: number;
+}
+
+interface RelatedLeadsResponse {
+  bySource: Record<string, CustomerLead[]>;
+  totalCount: number;
+}
+
+interface MergeLeadsResponse {
+  primaryLead: CustomerLead;
+  mergedCount: number;
 }
 
 export const leadsApi = {
@@ -295,9 +309,24 @@ export const leadsApi = {
     return apiFetch<PaginatedLeadsResponse>(`/leads${query ? '?' + query : ''}`);
   },
 
+  // Get single lead by ID
+  get: (id: string) =>
+    apiFetch<CustomerLead>(`/leads/${id}`),
+
   // Get dashboard stats
   getStats: () =>
     apiFetch<LeadsStatsResponse>('/leads/stats'),
+
+  // Get related leads (same phone, different source)
+  getRelated: (id: string) =>
+    apiFetch<RelatedLeadsResponse>(`/leads/${id}/related`),
+
+  // Merge leads (Admin only)
+  merge: (primaryId: string, secondaryLeadIds: string[]) =>
+    apiFetch<MergeLeadsResponse>(`/leads/${primaryId}/merge`, {
+      method: 'POST',
+      body: { secondaryLeadIds },
+    }),
 
   // Export CSV - returns blob for download
   export: async (params?: { search?: string; status?: string }) => {

@@ -4,10 +4,11 @@
  * Requirements: 5.4, 5.5, 6.11
  */
 
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { tokens, API_URL } from '@app/shared';
 import { useToast } from '../../components/Toast';
+import { TurnstileWidget } from '../../components/TurnstileWidget';
 
 // ============================================
 // TYPES
@@ -35,7 +36,7 @@ export interface LeadData {
   id?: string;
   name: string;
   phone: string;
-  email?: string;
+  email: string; // Required for quotation email delivery
 }
 
 interface Props {
@@ -62,7 +63,7 @@ const validatePhone = (phone: string): boolean => {
 };
 
 const validateEmail = (email: string): boolean => {
-  if (!email || email.trim() === '') return true; // Optional field
+  if (!email || email.trim() === '') return false; // Required field for quotation email delivery
   return EMAIL_REGEX.test(email);
 };
 
@@ -91,7 +92,7 @@ const DEFAULT_FIELDS: FormFieldConfig[] = [
     label: 'Email',
     type: 'email',
     placeholder: 'email@example.com',
-    required: false,
+    required: true,
   },
 ];
 
@@ -126,6 +127,12 @@ const errorStyle: React.CSSProperties = {
   marginTop: '0.25rem',
 };
 
+const helperTextStyle: React.CSSProperties = {
+  fontSize: '0.75rem',
+  color: tokens.color.muted,
+  marginTop: '0.25rem',
+};
+
 // ============================================
 // LEAD FORM COMPONENT
 // ============================================
@@ -154,6 +161,36 @@ export const LeadForm = memo(function LeadForm({
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+  // Check if form is valid for enabling/disabling submit button
+  // Requirements: 4.2, 4.3 - Disable next button when email is invalid
+  const isFormValid = useMemo(() => {
+    // Check CAPTCHA if configured
+    if (import.meta.env.VITE_TURNSTILE_SITE_KEY && !turnstileToken) {
+      return false;
+    }
+
+    for (const field of fields) {
+      const value = formData[field.name]?.trim() || '';
+      
+      // Check required fields
+      if (field.required && !value) {
+        return false;
+      }
+      
+      // Validate phone format
+      if (field.type === 'phone' && value && !validatePhone(value)) {
+        return false;
+      }
+      
+      // Validate email format
+      if (field.type === 'email' && field.required && !validateEmail(value)) {
+        return false;
+      }
+    }
+    return true;
+  }, [fields, formData, turnstileToken]);
 
   // Update field value
   const updateField = useCallback((fieldName: string, value: string) => {
@@ -167,6 +204,37 @@ export const LeadForm = memo(function LeadForm({
       });
     }
   }, [errors]);
+
+  // Validate single field on blur
+  // Requirements: 4.2 - Show validation error for invalid format
+  const validateField = useCallback((field: FormFieldConfig) => {
+    const value = formData[field.name]?.trim() || '';
+    
+    // Check required fields
+    if (field.required && !value) {
+      setErrors(prev => ({ ...prev, [field.name]: `Vui lòng nhập ${field.label.toLowerCase()}` }));
+      return;
+    }
+    
+    // Validate phone format
+    if (field.type === 'phone' && value && !validatePhone(value)) {
+      setErrors(prev => ({ ...prev, [field.name]: 'Số điện thoại không hợp lệ (tối thiểu 10 số)' }));
+      return;
+    }
+    
+    // Validate email format
+    if (field.type === 'email' && value && !validateEmail(value)) {
+      setErrors(prev => ({ ...prev, [field.name]: 'Email không hợp lệ (ví dụ: ten@email.com)' }));
+      return;
+    }
+    
+    // Clear error if valid
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[field.name];
+      return newErrors;
+    });
+  }, [formData]);
 
   // Validate form
   // Requirements: 5.5 - Validate required fields, phone format, email format
@@ -209,6 +277,12 @@ export const LeadForm = memo(function LeadForm({
       return;
     }
 
+    // Validate CAPTCHA if configured
+    if (import.meta.env.VITE_TURNSTILE_SITE_KEY && !turnstileToken) {
+      toast.error('Vui lòng xác minh CAPTCHA');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -228,8 +302,6 @@ export const LeadForm = memo(function LeadForm({
 
       // Submit to leads API
       // Requirements: 5.5 - Set source = 'FURNITURE_QUOTE'
-      console.log('[LeadForm] Submitting to:', `${API_URL}/leads`);
-      console.log('[LeadForm] Payload:', { name: formData.name, phone: formData.phone, email: formData.email || undefined, content, source: 'FURNITURE_QUOTE' });
       
       const res = await fetch(`${API_URL}/leads`, {
         method: 'POST',
@@ -240,14 +312,12 @@ export const LeadForm = memo(function LeadForm({
           email: formData.email || undefined,
           content,
           source: 'FURNITURE_QUOTE',
+          turnstileToken: turnstileToken || undefined,
         }),
       });
-
-      console.log('[LeadForm] Response status:', res.status);
       
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        console.log('[LeadForm] Error response:', errorData);
         const errorMessage = errorData.error?.message || errorData.error || 'Có lỗi xảy ra. Vui lòng thử lại!';
         toast.error(errorMessage);
         setSubmitting(false);
@@ -255,9 +325,7 @@ export const LeadForm = memo(function LeadForm({
       }
 
       const result = await res.json();
-      console.log('[LeadForm] Success response:', result);
       const leadId = result.data?.id || result.id;
-      console.log('[LeadForm] Extracted leadId:', leadId);
 
       toast.success(successMessage);
 
@@ -267,14 +335,14 @@ export const LeadForm = memo(function LeadForm({
         id: leadId,
         name: formData.name,
         phone: formData.phone,
-        email: formData.email || undefined,
+        email: formData.email, // Required for quotation email delivery
       });
     } catch {
       toast.error('Có lỗi xảy ra. Vui lòng thử lại!');
     } finally {
       setSubmitting(false);
     }
-  }, [formData, fields, validateForm, onSubmit, successMessage, toast]);
+  }, [formData, fields, validateForm, onSubmit, successMessage, toast, turnstileToken]);
 
   // Render a form field
   // Requirements: 5.4 - Support types: text, phone, email, select, textarea
@@ -299,6 +367,7 @@ export const LeadForm = memo(function LeadForm({
           <textarea
             value={value}
             onChange={(e) => updateField(field.name, e.target.value)}
+            onBlur={() => validateField(field)}
             placeholder={field.placeholder}
             rows={3}
             style={{ ...fieldInputStyle, resize: 'vertical' }}
@@ -320,6 +389,7 @@ export const LeadForm = memo(function LeadForm({
           <select
             value={value}
             onChange={(e) => updateField(field.name, e.target.value)}
+            onBlur={() => validateField(field)}
             style={{ ...fieldInputStyle, cursor: 'pointer' }}
           >
             <option value="">{field.placeholder || 'Chọn...'}</option>
@@ -334,6 +404,7 @@ export const LeadForm = memo(function LeadForm({
 
     // Text, phone, email types
     const inputType = field.type === 'phone' ? 'tel' : field.type === 'email' ? 'email' : 'text';
+    const isEmailField = field.type === 'email';
     
     return (
       <div key={field.name} style={{ marginBottom: '1rem' }}>
@@ -345,10 +416,18 @@ export const LeadForm = memo(function LeadForm({
           type={inputType}
           value={value}
           onChange={(e) => updateField(field.name, e.target.value)}
+          onBlur={() => validateField(field)}
           placeholder={field.placeholder}
+          required={field.required}
           style={fieldInputStyle}
         />
         {hasError && <div style={errorStyle}>{error}</div>}
+        {isEmailField && !hasError && (
+          <div style={helperTextStyle}>
+            <i className="ri-mail-send-line" style={{ marginRight: '0.25rem' }} />
+            Báo giá chi tiết sẽ được gửi qua email này
+          </div>
+        )}
       </div>
     );
   };
@@ -377,23 +456,33 @@ export const LeadForm = memo(function LeadForm({
       <form onSubmit={handleSubmit}>
         {fields.map(renderField)}
 
+        {/* Turnstile CAPTCHA */}
+        <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+          <TurnstileWidget
+            onVerify={setTurnstileToken}
+            onError={() => setTurnstileToken(null)}
+            onExpire={() => setTurnstileToken(null)}
+            theme="light"
+          />
+        </div>
+
         {/* Submit Button */}
         <motion.button
           type="submit"
-          disabled={submitting}
-          whileHover={{ scale: submitting ? 1 : 1.02 }}
-          whileTap={{ scale: submitting ? 1 : 0.98 }}
+          disabled={submitting || !isFormValid}
+          whileHover={{ scale: (submitting || !isFormValid) ? 1 : 1.02 }}
+          whileTap={{ scale: (submitting || !isFormValid) ? 1 : 0.98 }}
           style={{
             width: '100%',
             padding: '0.875rem',
             borderRadius: tokens.radius.md,
             border: 'none',
-            background: submitting ? tokens.color.muted : tokens.color.primary,
+            background: (submitting || !isFormValid) ? tokens.color.muted : tokens.color.primary,
             color: '#111',
             fontSize: '1rem',
             fontWeight: 600,
-            cursor: submitting ? 'not-allowed' : 'pointer',
-            opacity: submitting ? 0.7 : 1,
+            cursor: (submitting || !isFormValid) ? 'not-allowed' : 'pointer',
+            opacity: (submitting || !isFormValid) ? 0.7 : 1,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

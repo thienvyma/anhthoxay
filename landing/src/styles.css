@@ -1448,3 +1448,47 @@ img {
     transform: none;
   }
 }
+
+
+/* ============================================
+   TURNSTILE CAPTCHA WIDGET STYLES
+   ============================================ */
+
+.turnstile-widget {
+  margin: 16px 0;
+}
+
+.turnstile-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.turnstile-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #ef4444;
+  font-size: 14px;
+}
+
+/* Responsive adjustments for Turnstile widget */
+@media (max-width: 480px) {
+  .turnstile-widget {
+    margin: 12px 0;
+  }
+  
+  .turnstile-widget > div {
+    transform: scale(0.9);
+    transform-origin: left center;
+  }
+}

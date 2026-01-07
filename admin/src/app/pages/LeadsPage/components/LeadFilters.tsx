@@ -11,6 +11,11 @@ export interface SourceStats {
   withoutFurnitureQuotation: number;
 }
 
+export interface DuplicateStats {
+  potentialDuplicates: number;
+  withRelatedLeads: number;
+}
+
 export interface LeadFiltersProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -21,6 +26,12 @@ export interface LeadFiltersProps {
   sourceStats: SourceStats;
   totalLeads: number;
   isMobile: boolean;
+  // Duplicate management filters
+  duplicateStatus: 'all' | 'duplicates_only' | 'no_duplicates';
+  onDuplicateStatusChange: (status: 'all' | 'duplicates_only' | 'no_duplicates') => void;
+  hasRelatedFilter: boolean | null;
+  onHasRelatedChange: (value: boolean | null) => void;
+  duplicateStats?: DuplicateStats;
 }
 
 export function LeadFilters({
@@ -33,6 +44,11 @@ export function LeadFilters({
   sourceStats,
   totalLeads,
   isMobile,
+  duplicateStatus,
+  onDuplicateStatusChange,
+  hasRelatedFilter,
+  onHasRelatedChange,
+  duplicateStats,
 }: LeadFiltersProps) {
   return (
     <>
@@ -87,7 +103,7 @@ export function LeadFilters({
         display: 'flex', 
         gap: 8, 
         flexWrap: 'wrap', 
-        marginBottom: 24,
+        marginBottom: 16,
         padding: 12,
         background: tokens.color.surfaceAlt,
         borderRadius: 8,
@@ -154,6 +170,65 @@ export function LeadFilters({
             </span>
           </div>
         )}
+      </div>
+
+      {/* Duplicate Management Filters */}
+      <div style={{ 
+        display: 'flex', 
+        gap: 8, 
+        flexWrap: 'wrap', 
+        marginBottom: 24,
+        padding: 12,
+        background: tokens.color.surfaceAlt,
+        borderRadius: 8,
+        border: `1px solid ${tokens.color.border}`,
+      }}>
+        <span style={{ color: tokens.color.muted, fontSize: 13, display: 'flex', alignItems: 'center', marginRight: 8 }}>
+          <i className="ri-file-copy-line" style={{ marginRight: 4 }} /> Trùng lặp:
+        </span>
+        <Button
+          variant={duplicateStatus === 'all' ? 'primary' : 'outline'}
+          size="small"
+          onClick={() => onDuplicateStatusChange('all')}
+        >
+          Tất cả
+        </Button>
+        <Button
+          variant={duplicateStatus === 'duplicates_only' ? 'primary' : 'outline'}
+          size="small"
+          onClick={() => onDuplicateStatusChange('duplicates_only')}
+          style={duplicateStatus === 'duplicates_only' ? { background: tokens.color.warning } : { borderColor: tokens.color.warning, color: tokens.color.warning }}
+        >
+          <i className="ri-error-warning-line" /> Có trùng lặp {duplicateStats?.potentialDuplicates ? `(${duplicateStats.potentialDuplicates})` : ''}
+        </Button>
+        <Button
+          variant={duplicateStatus === 'no_duplicates' ? 'primary' : 'outline'}
+          size="small"
+          onClick={() => onDuplicateStatusChange('no_duplicates')}
+        >
+          Không trùng
+        </Button>
+
+        <div style={{ width: 1, height: 24, background: tokens.color.border, margin: '0 8px' }} />
+
+        <span style={{ color: tokens.color.muted, fontSize: 13, display: 'flex', alignItems: 'center', marginRight: 8 }}>
+          <i className="ri-links-line" style={{ marginRight: 4 }} /> Liên quan:
+        </span>
+        <Button
+          variant={hasRelatedFilter === null ? 'primary' : 'outline'}
+          size="small"
+          onClick={() => onHasRelatedChange(null)}
+        >
+          Tất cả
+        </Button>
+        <Button
+          variant={hasRelatedFilter === true ? 'primary' : 'outline'}
+          size="small"
+          onClick={() => onHasRelatedChange(true)}
+          style={hasRelatedFilter === true ? { background: tokens.color.info } : { borderColor: tokens.color.info, color: tokens.color.info }}
+        >
+          <i className="ri-link" /> Có liên quan {duplicateStats?.withRelatedLeads ? `(${duplicateStats.withRelatedLeads})` : ''}
+        </Button>
       </div>
     </>
   );

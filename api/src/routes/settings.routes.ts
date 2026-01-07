@@ -14,6 +14,8 @@ import { z } from 'zod';
 import { createAuthMiddleware } from '../middleware/auth.middleware';
 import { validate, getValidatedBody } from '../middleware/validation';
 import { successResponse, errorResponse } from '../utils/response';
+import { cacheService, CacheKeys, CacheTTL } from '../services/cache.service';
+import { logger } from '../utils/logger';
 
 // ============================================
 // ZOD SCHEMAS
@@ -46,20 +48,32 @@ export function createSettingsRoutes(prisma: PrismaClient) {
    * @route GET /settings
    * @description Get all settings as key-value object
    * @access Public
+   * @cache 1 minute (TTL: 60 seconds)
    */
   app.get('/', async (c) => {
     try {
-      const settings = await prisma.settings.findMany();
-      const result: Record<string, Prisma.JsonValue> = {};
-      
-      settings.forEach((s) => {
-        try {
-          result[s.key] = JSON.parse(s.value) as Prisma.JsonValue;
-        } catch {
-          // If parsing fails, store as string
-          result[s.key] = s.value;
+      const { data: result, fromCache } = await cacheService.getOrSet(
+        CacheKeys.settings,
+        CacheTTL.settings,
+        async () => {
+          const settings = await prisma.settings.findMany();
+          const settingsObj: Record<string, Prisma.JsonValue> = {};
+          
+          settings.forEach((s) => {
+            try {
+              settingsObj[s.key] = JSON.parse(s.value) as Prisma.JsonValue;
+            } catch {
+              // If parsing fails, store as string
+              settingsObj[s.key] = s.value;
+            }
+          });
+          
+          return settingsObj;
         }
-      });
+      );
+
+      // Set cache status header
+      c.header('X-Cache-Status', fromCache ? 'HIT' : 'MISS');
       
       return successResponse(c, result);
     } catch (error) {
@@ -72,28 +86,42 @@ export function createSettingsRoutes(prisma: PrismaClient) {
    * @route GET /settings/:key
    * @description Get a single setting by key
    * @access Public
+   * @cache 1 minute (TTL: 60 seconds)
    * @returns { key, value } or { key, value: null } if not found
    */
   app.get('/:key', async (c) => {
     try {
       const key = c.req.param('key');
-      const setting = await prisma.settings.findUnique({ where: { key } });
+      const cacheKey = `${CacheKeys.settings}:${key}`;
+
+      const { data: result, fromCache } = await cacheService.getOrSet(
+        cacheKey,
+        CacheTTL.settings,
+        async () => {
+          const setting = await prisma.settings.findUnique({ where: { key } });
+          
+          // Return null value instead of 404 for non-existent settings
+          // This allows frontend to handle missing settings gracefully
+          if (!setting) {
+            return { key, value: null };
+          }
+          
+          let value: Prisma.JsonValue;
+          try {
+            value = JSON.parse(setting.value) as Prisma.JsonValue;
+          } catch {
+            // If parsing fails, return as string
+            value = setting.value;
+          }
+          
+          return { key, value };
+        }
+      );
+
+      // Set cache status header
+      c.header('X-Cache-Status', fromCache ? 'HIT' : 'MISS');
       
-      // Return null value instead of 404 for non-existent settings
-      // This allows frontend to handle missing settings gracefully
-      if (!setting) {
-        return successResponse(c, { key, value: null });
-      }
-      
-      let value: Prisma.JsonValue;
-      try {
-        value = JSON.parse(setting.value) as Prisma.JsonValue;
-      } catch {
-        // If parsing fails, return as string
-        value = setting.value;
-      }
-      
-      return successResponse(c, { key, value });
+      return successResponse(c, result);
     } catch (error) {
       console.error('Get setting error:', error);
       return errorResponse(c, 'INTERNAL_ERROR', 'Failed to get setting', 500);
@@ -128,6 +156,10 @@ export function createSettingsRoutes(prisma: PrismaClient) {
         } catch {
           value = setting.value;
         }
+        
+        // Invalidate settings cache (all settings and specific key)
+        await cacheService.invalidateByPattern('cache:settings*');
+        logger.debug('Settings cache invalidated', { key });
         
         return successResponse(c, value);
       } catch (error) {

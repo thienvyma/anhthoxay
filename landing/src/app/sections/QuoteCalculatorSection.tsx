@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokens, API_URL, resolveMediaUrl } from '@app/shared';
 import { useToast } from '../components/Toast';
 import { SaveQuoteModal } from '../components/SaveQuoteModal';
+import { useDebounce } from '../hooks/useDebounce';
+import { useLocalStoragePersistence, StorageKeys } from '../hooks/useLocalStoragePersistence';
 
 // Types
 interface Formula {
@@ -324,6 +326,18 @@ interface QuoteFormSectionData {
   successMessage?: string;
 }
 
+/**
+ * Persisted state for QuoteCalculator
+ * **Feature: production-scalability**
+ * **Validates: Requirements 10.1, 10.2**
+ */
+interface PersistedQuoteState {
+  selectedCategory: string | null;
+  area: number;
+  selectedMaterials: SelectedMaterial[];
+  currentStep: number;
+}
+
 
 // Main QuoteCalculatorSection Component
 export const QuoteCalculatorSection = memo(function QuoteCalculatorSection({ data }: Props) {
@@ -347,14 +361,64 @@ export const QuoteCalculatorSection = memo(function QuoteCalculatorSection({ dat
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Wizard states
+  // Track if restoration toast was shown
+  const restorationToastShown = useRef(false);
+
+  /**
+   * LocalStorage persistence for quote calculator state
+   * **Feature: production-scalability**
+   * **Validates: Requirements 10.1, 10.2, 10.4, 10.6**
+   */
+  const initialPersistedState: PersistedQuoteState = {
+    selectedCategory: null,
+    area: 0,
+    selectedMaterials: [],
+    currentStep: 1,
+  };
+
+  const [persistedState, setPersistedState, clearPersistedState, wasRestored] = useLocalStoragePersistence<PersistedQuoteState>(
+    initialPersistedState,
+    {
+      key: StorageKeys.quoteCalculator,
+      ttlHours: 24,
+      onRestore: () => {
+        // Show toast notification when restoring saved state (Requirement 10.6)
+        if (!restorationToastShown.current) {
+          restorationToastShown.current = true;
+          toast.info('Đã khôi phục tiến trình dự toán trước đó');
+        }
+      },
+    }
+  );
+
+  // Wizard states - derived from persisted state
   const [activeTab, setActiveTab] = useState<'calculator' | 'consultation'>(defaultTab);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [area, setArea] = useState<number>(0);
-  const [selectedMaterials, setSelectedMaterials] = useState<SelectedMaterial[]>([]);
+  const [currentStep, setCurrentStep] = useState(persistedState.currentStep);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(persistedState.selectedCategory);
+  const [area, setArea] = useState<number>(persistedState.area);
+  const [selectedMaterials, setSelectedMaterials] = useState<SelectedMaterial[]>(persistedState.selectedMaterials);
   const [quoteResult, setQuoteResult] = useState<QuoteResult | null>(null);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
+  
+  // Debounced area for real-time preview calculation (300ms delay per Requirement 9.1)
+  const debouncedArea = useDebounce(area, 300);
+  const [previewCost, setPreviewCost] = useState<number | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
+
+  /**
+   * Persist state changes to localStorage (Requirement 10.1)
+   */
+  useEffect(() => {
+    // Only persist if we have meaningful state (not initial empty state)
+    if (selectedCategory || area > 0 || selectedMaterials.length > 0 || currentStep > 1) {
+      setPersistedState({
+        selectedCategory,
+        area,
+        selectedMaterials,
+        currentStep: currentStep < 4 ? currentStep : 1, // Don't persist result step
+      });
+    }
+  }, [selectedCategory, area, selectedMaterials, currentStep, setPersistedState]);
 
   // Fetch data including QUOTE_FORM section for consultation tab
   useEffect(() => {
@@ -443,6 +507,44 @@ export const QuoteCalculatorSection = memo(function QuoteCalculatorSection({ dat
     setCurrentStep(totalSteps);
   }, [currentCategory, area, selectedMaterials, unitPrices, totalSteps]);
 
+  // Real-time preview calculation using debounced area (Requirement 9.1)
+  // Shows estimated cost while user is typing, with 300ms debounce
+  useEffect(() => {
+    if (!currentCategory || debouncedArea <= 0 || currentStep !== 2) {
+      setPreviewCost(null);
+      setIsCalculating(false);
+      return;
+    }
+
+    // Show calculating state when area changes but debounced value hasn't caught up
+    if (area !== debouncedArea) {
+      setIsCalculating(true);
+      return;
+    }
+
+    const formula = currentCategory.formula;
+    let basePrice = 0;
+
+    if (formula) {
+      const tagMatch = formula.expression.match(/\b([A-Z_]+)\b/g);
+      if (tagMatch) {
+        for (const tag of tagMatch) {
+          if (tag === 'DIEN_TICH') continue;
+          const unitPrice = unitPrices.find((p) => p.tag === tag);
+          if (unitPrice) {
+            basePrice = unitPrice.price;
+            break;
+          }
+        }
+      }
+    }
+    if (basePrice === 0) basePrice = 50000;
+
+    const estimatedCost = debouncedArea * basePrice * currentCategory.coefficient;
+    setPreviewCost(estimatedCost);
+    setIsCalculating(false);
+  }, [debouncedArea, area, currentCategory, unitPrices, currentStep]);
+
   // Handlers
   const handleCategorySelect = useCallback((id: string) => {
     setSelectedCategory(id);
@@ -481,7 +583,9 @@ export const QuoteCalculatorSection = memo(function QuoteCalculatorSection({ dat
     setArea(0);
     setSelectedMaterials([]);
     setQuoteResult(null);
-  }, []);
+    // Clear localStorage on reset (Requirement 10.3, 10.5)
+    clearPersistedState();
+  }, [clearPersistedState]);
 
   if (loading) {
     return (
@@ -577,7 +681,29 @@ export const QuoteCalculatorSection = memo(function QuoteCalculatorSection({ dat
                 {/* Step 1: Select Category */}
                 {currentStep === 1 && (
                   <motion.div key="step1" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                    <h3 style={{ margin: '0 0 1rem', fontSize: '1.1rem', fontWeight: 600, color: tokens.color.text }}>Chọn hạng mục thi công</h3>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: tokens.color.text }}>Chọn hạng mục thi công</h3>
+                      {/* Clear Form button (Requirement 10.5) - Show when there's data to clear */}
+                      {(wasRestored || selectedCategory || area > 0 || selectedMaterials.length > 0) && (
+                        <button
+                          onClick={handleReset}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            borderRadius: tokens.radius.sm,
+                            border: `1px solid ${tokens.color.border}`,
+                            background: 'transparent',
+                            color: tokens.color.textMuted,
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                          }}
+                        >
+                          <i className="ri-refresh-line" /> Làm mới
+                        </button>
+                      )}
+                    </div>
                     <div style={{ display: 'grid', gap: '0.75rem' }}>
                       {categories.map((cat) => (
                         <motion.div
@@ -615,7 +741,7 @@ export const QuoteCalculatorSection = memo(function QuoteCalculatorSection({ dat
                     <p style={{ margin: '0 0 1.5rem', fontSize: '0.875rem', color: tokens.color.textMuted }}>
                       Hạng mục: <strong style={{ color: tokens.color.primary }}>{currentCategory?.name}</strong>
                     </p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
                       <input
                         type="number"
                         min={0}
@@ -637,6 +763,45 @@ export const QuoteCalculatorSection = memo(function QuoteCalculatorSection({ dat
                       />
                       <span style={{ fontSize: '1.25rem', color: tokens.color.textMuted, fontWeight: 500 }}>m²</span>
                     </div>
+                    {/* Real-time preview cost with debounce indicator (Requirement 9.1, 9.5) */}
+                    {area > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        style={{
+                          padding: '0.75rem 1rem',
+                          background: `${tokens.color.primary}10`,
+                          borderRadius: tokens.radius.md,
+                          marginBottom: '1.5rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <span style={{ fontSize: '0.875rem', color: tokens.color.textMuted }}>
+                          Chi phí ước tính:
+                        </span>
+                        <span style={{ fontSize: '1rem', fontWeight: 600, color: tokens.color.primary, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          {isCalculating ? (
+                            <>
+                              <motion.i
+                                className="ri-loader-4-line"
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                                style={{ fontSize: '1rem' }}
+                              />
+                              <span style={{ color: tokens.color.textMuted, fontWeight: 400 }}>Đang tính...</span>
+                            </>
+                          ) : previewCost !== null ? (
+                            formatCurrency(previewCost)
+                          ) : (
+                            '—'
+                          )}
+                        </span>
+                      </motion.div>
+                    )}
+                    {area <= 0 && <div style={{ marginBottom: '1.5rem' }} />}
                     <div style={{ display: 'flex', gap: '0.75rem' }}>
                       <button onClick={() => setCurrentStep(1)} style={{ flex: 1, padding: '0.875rem', borderRadius: tokens.radius.md, border: `1px solid ${tokens.color.border}`, background: 'transparent', color: tokens.color.text, fontSize: '1rem', cursor: 'pointer' }}>
                         <i className="ri-arrow-left-line" /> Quay lại

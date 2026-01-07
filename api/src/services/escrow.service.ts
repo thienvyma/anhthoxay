@@ -10,6 +10,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { generateEscrowCode } from '../utils/code-generator';
+import { createLogger } from '../utils/logger';
 import { NotificationService } from './notification.service';
 import { NotificationChannelService } from './notification-channel.service';
 import { ScheduledNotificationService } from './scheduled-notification';
@@ -233,7 +234,16 @@ export class EscrowService {
       );
     } catch (error) {
       // Log but don't fail the escrow creation
-      console.error('Failed to schedule escrow pending reminder:', error);
+      const logger = createLogger();
+      logger.error('Failed to schedule escrow pending reminder', {
+        operation: 'escrow.create',
+        escrowId: escrow.id,
+        escrowCode: escrow.code,
+        projectId,
+        homeownerId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
     }
 
     return this.transformEscrow(escrow);
@@ -399,7 +409,14 @@ export class EscrowService {
       await this.scheduledNotificationService.cancelByEscrow(id);
     } catch (error) {
       // Log but don't fail the confirmation
-      console.error('Failed to cancel escrow pending reminders:', error);
+      const logger = createLogger();
+      logger.error('Failed to cancel escrow pending reminders', {
+        operation: 'escrow.confirmDeposit',
+        escrowId: id,
+        escrowCode: escrow.code,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
     }
 
     return this.transformEscrow(updated);
@@ -523,7 +540,18 @@ export class EscrowService {
       }
     } catch (error) {
       // Log error but don't fail the release
-      console.error('Failed to send ESCROW_RELEASED notifications:', error);
+      const logger = createLogger();
+      logger.error('Failed to send ESCROW_RELEASED notifications', {
+        operation: 'escrow.release',
+        escrowId: updated.id,
+        escrowCode: updated.code,
+        projectId: escrow.projectId,
+        projectCode: escrow.project?.code,
+        homeownerId: escrow.project?.ownerId,
+        contractorId: escrow.bid?.contractorId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
     }
 
     return this.transformEscrow(updated);

@@ -2,6 +2,33 @@ import { useState, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokens, API_URL } from '@app/shared';
 import { useToast } from './Toast';
+import { useFormValidation } from '../hooks/useFormValidation';
+import { z } from 'zod';
+
+// Validation schemas (same as @app/shared for consistency)
+// **Feature: production-scalability**
+// **Validates: Requirements 11.2, 11.3, 11.4, 11.7**
+const phoneSchema = z
+  .string()
+  .min(1, 'Số điện thoại là bắt buộc')
+  .regex(/^[0-9]{10,11}$/, 'Số điện thoại phải có 10-11 chữ số');
+
+const emailSchema = z
+  .string()
+  .email('Email không hợp lệ')
+  .optional()
+  .or(z.literal(''));
+
+const nameSchema = z
+  .string()
+  .min(2, 'Tên phải có ít nhất 2 ký tự')
+  .max(100, 'Tên không được quá 100 ký tự');
+
+const saveQuoteFormSchema = z.object({
+  name: nameSchema,
+  phone: phoneSchema,
+  email: emailSchema,
+});
 
 interface QuoteResult {
   categoryName: string;
@@ -30,12 +57,42 @@ export const SaveQuoteModal = memo(function SaveQuoteModal({
   const [form, setForm] = useState({ name: '', phone: '', email: '' });
   const [submitting, setSubmitting] = useState(false);
 
+  /**
+   * Form validation hook
+   * **Feature: production-scalability**
+   * **Validates: Requirements 11.1, 11.2, 11.3, 11.4, 11.5, 11.6**
+   */
+  const {
+    validateField,
+    validateAll,
+    getFieldError,
+    hasFieldError,
+    canSubmit,
+    reset: resetValidation,
+  } = useFormValidation<Record<string, unknown>>(saveQuoteFormSchema);
+
   const updateField = useCallback((field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
   }, []);
 
+  /**
+   * Handle field blur for validation
+   * **Validates: Requirements 11.1**
+   */
+  const handleFieldBlur = useCallback((field: string, value: string) => {
+    validateField(field, value);
+  }, [validateField]);
+
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate all fields before submission
+    // **Validates: Requirements 11.5, 11.6**
+    const isValid = validateAll(form);
+    if (!isValid) {
+      toast.error('Vui lòng kiểm tra lại thông tin');
+      return;
+    }
 
     if (!form.name.trim()) {
       toast.error('Vui lòng nhập họ tên');
@@ -71,6 +128,7 @@ export const SaveQuoteModal = memo(function SaveQuoteModal({
 
       toast.success('Đã lưu báo giá! Chúng tôi sẽ liên hệ bạn sớm.');
       setForm({ name: '', phone: '', email: '' });
+      resetValidation();
       onSuccess();
       onClose();
     } catch {
@@ -78,7 +136,7 @@ export const SaveQuoteModal = memo(function SaveQuoteModal({
     } finally {
       setSubmitting(false);
     }
-  }, [form, quoteResult, onSuccess, onClose, toast]);
+  }, [form, quoteResult, onSuccess, onClose, toast, validateAll, resetValidation]);
 
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('vi-VN', {
@@ -187,9 +245,28 @@ export const SaveQuoteModal = memo(function SaveQuoteModal({
                   type="text"
                   value={form.name}
                   onChange={e => updateField('name', e.target.value)}
+                  onBlur={e => handleFieldBlur('name', e.target.value)}
                   placeholder="Nhập họ tên của bạn"
-                  style={inputStyle}
+                  style={{
+                    ...inputStyle,
+                    borderColor: hasFieldError('name') ? tokens.color.error : tokens.color.border,
+                    boxShadow: hasFieldError('name') ? `0 0 0 2px ${tokens.color.error}20` : 'none',
+                  }}
                 />
+                {/* Error message display - Validates: Requirements 11.2, 11.4 */}
+                {getFieldError('name') && (
+                  <div style={{ 
+                    marginTop: '0.25rem', 
+                    fontSize: '0.75rem', 
+                    color: tokens.color.error,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                  }}>
+                    <i className="ri-error-warning-line" />
+                    {getFieldError('name')}
+                  </div>
+                )}
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
@@ -200,9 +277,28 @@ export const SaveQuoteModal = memo(function SaveQuoteModal({
                   type="tel"
                   value={form.phone}
                   onChange={e => updateField('phone', e.target.value)}
+                  onBlur={e => handleFieldBlur('phone', e.target.value)}
                   placeholder="0912 345 678"
-                  style={inputStyle}
+                  style={{
+                    ...inputStyle,
+                    borderColor: hasFieldError('phone') ? tokens.color.error : tokens.color.border,
+                    boxShadow: hasFieldError('phone') ? `0 0 0 2px ${tokens.color.error}20` : 'none',
+                  }}
                 />
+                {/* Error message display - Validates: Requirements 11.2 */}
+                {getFieldError('phone') && (
+                  <div style={{ 
+                    marginTop: '0.25rem', 
+                    fontSize: '0.75rem', 
+                    color: tokens.color.error,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                  }}>
+                    <i className="ri-error-warning-line" />
+                    {getFieldError('phone')}
+                  </div>
+                )}
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
@@ -211,9 +307,28 @@ export const SaveQuoteModal = memo(function SaveQuoteModal({
                   type="email"
                   value={form.email}
                   onChange={e => updateField('email', e.target.value)}
+                  onBlur={e => handleFieldBlur('email', e.target.value)}
                   placeholder="email@example.com"
-                  style={inputStyle}
+                  style={{
+                    ...inputStyle,
+                    borderColor: hasFieldError('email') ? tokens.color.error : tokens.color.border,
+                    boxShadow: hasFieldError('email') ? `0 0 0 2px ${tokens.color.error}20` : 'none',
+                  }}
                 />
+                {/* Error message display - Validates: Requirements 11.3 */}
+                {getFieldError('email') && (
+                  <div style={{ 
+                    marginTop: '0.25rem', 
+                    fontSize: '0.75rem', 
+                    color: tokens.color.error,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                  }}>
+                    <i className="ri-error-warning-line" />
+                    {getFieldError('email')}
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -233,22 +348,24 @@ export const SaveQuoteModal = memo(function SaveQuoteModal({
                 >
                   Hủy
                 </button>
+                {/* Submit Button - Validates: Requirements 11.5, 11.6 */}
                 <motion.button
                   type="submit"
-                  disabled={submitting}
-                  whileHover={{ scale: submitting ? 1 : 1.02 }}
-                  whileTap={{ scale: submitting ? 1 : 0.98 }}
+                  disabled={submitting || !canSubmit}
+                  whileHover={{ scale: (submitting || !canSubmit) ? 1 : 1.02 }}
+                  whileTap={{ scale: (submitting || !canSubmit) ? 1 : 0.98 }}
                   style={{
                     flex: 2,
                     padding: '0.875rem',
                     borderRadius: tokens.radius.md,
                     border: 'none',
-                    background: tokens.color.primary,
+                    background: (submitting || !canSubmit) ? `${tokens.color.primary}80` : tokens.color.primary,
                     color: '#111',
                     fontSize: '1rem',
                     fontWeight: 600,
-                    cursor: submitting ? 'not-allowed' : 'pointer',
-                    opacity: submitting ? 0.7 : 1,
+                    cursor: (submitting || !canSubmit) ? 'not-allowed' : 'pointer',
+                    opacity: (submitting || !canSubmit) ? 0.7 : 1,
+                    transition: 'all 0.2s ease',
                   }}
                 >
                   {submitting ? 'Đang lưu...' : 'Lưu & Đăng ký'}

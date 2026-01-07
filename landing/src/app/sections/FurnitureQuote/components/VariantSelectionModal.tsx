@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokens, resolveMediaUrl } from '@app/shared';
+import { useThrottledCallback } from '../../../hooks/useThrottle';
 import type { ProductBaseGroup, ProductVariantForLanding, FurnitureFee } from '../../../api/furniture';
 import type { SelectedProduct } from '../types';
 
@@ -66,14 +67,19 @@ export function VariantSelectionModal({
   const [fitInSelected, setFitInSelected] = useState(false);
   
   // Detect mobile viewport - Requirements: 7.9
+  // Throttled resize handler with 100ms interval (Requirement 9.3)
   const [isMobile, setIsMobile] = useState(false);
   
+  const checkMobile = useThrottledCallback(() => {
+    setIsMobile(window.innerWidth < 768);
+  }, 100);
+  
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
+    // Initial check
+    setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [checkMobile]);
   
   // Initialize state when modal opens or product changes
   useEffect(() => {

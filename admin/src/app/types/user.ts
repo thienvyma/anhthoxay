@@ -112,6 +112,7 @@ export interface CustomerLead {
   id: string;
   name: string;
   phone: string;
+  normalizedPhone: string | null;
   email: string | null;
   content: string;
   status: 'NEW' | 'CONTACTED' | 'CONVERTED' | 'CANCELLED';
@@ -119,8 +120,39 @@ export interface CustomerLead {
   quoteData: string | null;
   notes: string | null;
   statusHistory: string | null;
+  // Duplicate management fields
+  submissionCount: number;
+  isPotentialDuplicate: boolean;
+  hasRelatedLeads: boolean;
+  relatedLeadCount: number;
+  potentialDuplicateIds: string | null;
+  mergedIntoId: string | null;
+  mergedAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * Related lead info (grouped by source)
+ */
+export interface RelatedLeadsResult {
+  bySource: Record<string, CustomerLead[]>;
+  totalCount: number;
+}
+
+/**
+ * Merge leads input
+ */
+export interface MergeLeadsInput {
+  secondaryLeadIds: string[];
+}
+
+/**
+ * Merge leads result
+ */
+export interface MergeLeadsResult {
+  primaryLead: CustomerLead;
+  mergedCount: number;
 }
 
 /**

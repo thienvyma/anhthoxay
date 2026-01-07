@@ -10,6 +10,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { generateBidCode } from '../utils/code-generator';
+import { createLogger } from '../utils/logger';
 import { NotificationService } from './notification.service';
 import { NotificationChannelService } from './notification-channel.service';
 import type {
@@ -277,7 +278,17 @@ export class BidService {
       });
     } catch (error) {
       // Log error but don't fail the bid creation
-      console.error('Failed to send BID_RECEIVED notification:', error);
+      const logger = createLogger();
+      logger.error('Failed to send BID_RECEIVED notification', {
+        operation: 'bid.create',
+        bidId: bid.id,
+        bidCode: bid.code,
+        projectId: project.id,
+        projectCode: project.code,
+        homeownerId: project.ownerId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
     }
 
     return this.transformBid(bid);
@@ -716,7 +727,17 @@ export class BidService {
       });
     } catch (error) {
       // Log error but don't fail the bid approval
-      console.error('Failed to send BID_APPROVED notification:', error);
+      const logger = createLogger();
+      logger.error('Failed to send BID_APPROVED notification', {
+        operation: 'bid.approve',
+        bidId: updated.id,
+        bidCode: updated.code,
+        projectId: bid.project.id,
+        projectCode: bid.project.code,
+        contractorId: bid.contractorId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
     }
 
     return this.transformBid(updated);

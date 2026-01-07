@@ -5,6 +5,7 @@ import type { Context } from 'hono';
 import { AuthService, AuthError, type Role } from '../services/auth.service';
 import { createAuthMiddleware, getUser } from '../middleware/auth.middleware';
 import { loginRateLimiter, resetLimit, clearAllLimits } from '../middleware/rate-limiter';
+import { turnstileMiddleware } from '../middleware/turnstile';
 import { successResponse, errorResponse } from '../utils/response';
 
 // ============================================
@@ -98,8 +99,10 @@ export function createAuthRoutes(prisma: PrismaClient) {
 
   // ============================================
   // POST /auth/signup - Public registration for homeowner/contractor
+  // **Feature: production-scalability**
+  // **Validates: Requirements 3.3**
   // ============================================
-  app.post('/signup', loginRateLimiter(), async (c) => {
+  app.post('/signup', loginRateLimiter(), turnstileMiddleware(), async (c) => {
     try {
       const body = await c.req.json();
       const validated = RegisterSchema.parse(body);

@@ -11,7 +11,7 @@ import { tokens } from '@app/shared';
 import { useToast } from '../../components/Toast';
 import { StepIndicator, ConfirmationStep } from './components';
 import { LeadData } from './LeadForm';
-import { useFurnitureData, useSelections, useQuotation, usePagination } from './hooks';
+import { useFurnitureData, useSelections, useQuotation, usePagination, useCompanyLogo } from './hooks';
 import {
   DeveloperStep,
   ProjectStep,
@@ -33,9 +33,12 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
   const toast = useToast();
   const { title = 'Báo Giá Nội Thất', subtitle = 'Chọn căn hộ và nhận báo giá nội thất ngay', maxWidth = 900 } = data;
 
+  // Load quote logo from company settings
+  const quoteLogo = useCompanyLogo('quote');
+
   // UI states
   const [currentStep, setCurrentStep] = useState(1);
-  const [leadData, setLeadData] = useState<LeadData>({ name: '', phone: '' });
+  const [leadData, setLeadData] = useState<LeadData>({ name: '', phone: '', email: '' });
 
   // Custom hooks
   const { pageStates, setPage } = usePagination();
@@ -72,6 +75,9 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
     quotationResult,
     quotationId,
     submitting,
+    emailStatus,
+    emailError,
+    emailErrorCode,
     calculateQuotation,
     getProductDisplayPrice,
     resetQuotation,
@@ -136,7 +142,7 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
       toast.error('Vui lòng chọn ít nhất một sản phẩm');
       return;
     }
-    if (!leadData.id && (!leadData.name || !leadData.phone)) {
+    if (!leadData.id && (!leadData.name || !leadData.phone || !leadData.email)) {
       toast.error('Vui lòng quay lại bước 6 để nhập thông tin liên hệ');
       setCurrentStep(6);
       return;
@@ -162,7 +168,7 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
   const handleReset = useCallback(() => {
     setCurrentStep(1);
     resetSelections();
-    setLeadData({ name: '', phone: '' });
+    setLeadData({ name: '', phone: '', email: '' });
     resetQuotation();
   }, [resetSelections, resetQuotation]);
 
@@ -217,13 +223,31 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
   return (
     <section style={{ padding: '4rem 1rem' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        {/* Header */}
+        {/* Header with optional logo */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           style={{ textAlign: 'center', marginBottom: '2rem' }}
         >
+          {/* Quote Logo */}
+          {quoteLogo && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              style={{ marginBottom: '1.5rem' }}
+            >
+              <img
+                src={quoteLogo}
+                alt="Logo"
+                style={{
+                  height: 'clamp(50px, 8vw, 80px)',
+                  maxWidth: 'clamp(150px, 25vw, 250px)',
+                  objectFit: 'contain',
+                }}
+              />
+            </motion.div>
+          )}
           <h2 style={{ fontSize: 'clamp(1.75rem, 5vw, 2.5rem)', fontWeight: 700, color: tokens.color.text, marginBottom: '0.75rem' }}>
             {title}
           </h2>
@@ -352,8 +376,6 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
               <ConfirmationStep
                 products={selections.products}
                 productGroups={productGroups}
-                fitInFee={fitInFee}
-                otherFees={fees}
                 onVariantChange={(productBaseId, variant) => {
                   const group = productGroups.find(g => g.id === productBaseId);
                   if (group) {
@@ -373,11 +395,12 @@ export const FurnitureQuoteSection = memo(function FurnitureQuoteSection({ data 
             {/* Step 9: Quotation Result */}
             {currentStep === 9 && quotationResult && (
               <QuotationResultStep
-                selections={selections}
-                quotationResult={quotationResult}
                 quotationId={quotationId}
-                getProductDisplayPrice={getProductDisplayPrice}
+                recipientEmail={leadData.email}
                 onReset={handleReset}
+                initialEmailStatus={emailStatus}
+                initialEmailError={emailError}
+                initialErrorCode={emailErrorCode}
               />
             )}
           </AnimatePresence>

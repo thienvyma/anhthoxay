@@ -2,21 +2,26 @@
  * Google Sheets Integration Service
  * Handles OAuth2 flow and lead synchronization to Google Sheets
  * 
- * **Feature: security-hardening**
- * **Validates: Requirements 1.1, 1.2**
+ * **Feature: security-hardening, high-traffic-resilience**
+ * **Validates: Requirements 1.1, 1.2, 10.3**
  */
 
 import { google } from 'googleapis';
 import { prisma } from '../utils/prisma';
 import { encrypt, decrypt, isEncrypted } from '../utils/encryption';
+import { logger } from '../utils/logger';
 
 // Google OAuth2 configuration
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:4202/integrations/google/callback';
 
-// Scopes required for Google Sheets
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
+// Scopes required for Google Sheets and Gmail
+// _Requirements: 6.1 - Gmail send scope for quotation emails
+const SCOPES = [
+  'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/gmail.send',
+];
 
 // Retry configuration
 const RETRY_CONFIG = {
@@ -173,6 +178,7 @@ export class GoogleSheetsService {
           await this.oauth2Client.revokeCredentials();
         } catch (revokeError) {
           // Ignore revoke errors - token may already be invalid
+          // eslint-disable-next-line no-console -- Debug logging for token revoke errors
           console.debug('Token revoke skipped:', revokeError);
         }
       }
@@ -181,6 +187,7 @@ export class GoogleSheetsService {
       await prisma.integration.delete({
         where: { type: 'google_sheets' },
       }).catch((deleteError) => {
+        // eslint-disable-next-line no-console -- Debug logging for delete errors
         console.debug('Integration delete skipped:', deleteError);
       });
 
@@ -299,8 +306,14 @@ export class GoogleSheetsService {
 
   /**
    * Sync a lead to Google Sheets with retry logic
+   * 
+   * **Feature: high-traffic-resilience**
+   * **Validates: Requirements 10.3**
+   * 
+   * @param lead - Lead data to sync
+   * @param correlationId - Optional correlation ID for tracing
    */
-  async syncLeadToSheet(lead: LeadData): Promise<{ success: boolean; error?: string }> {
+  async syncLeadToSheet(lead: LeadData, correlationId?: string): Promise<{ success: boolean; error?: string }> {
     const integration = await prisma.integration.findUnique({
       where: { type: 'google_sheets' },
     });
@@ -337,6 +350,14 @@ export class GoogleSheetsService {
           lead.createdAt.toISOString(),
         ];
 
+        // Log with correlation ID for tracing
+        logger.info('Syncing lead to Google Sheets', {
+          leadId: lead.id,
+          spreadsheetId: config.spreadsheetId,
+          attempt: attempt + 1,
+          correlationId,
+        });
+
         // Append to sheet
         await sheets.spreadsheets.values.append({
           spreadsheetId: config.spreadsheetId,
@@ -351,10 +372,20 @@ export class GoogleSheetsService {
           data: { lastSyncAt: new Date(), errorCount: 0, lastError: null },
         });
 
+        logger.info('Lead synced to Google Sheets successfully', {
+          leadId: lead.id,
+          correlationId,
+        });
+
         return { success: true };
       } catch (error) {
         lastError = error as Error;
-        console.error(`Google Sheets sync attempt ${attempt + 1} failed:`, error);
+        logger.error('Google Sheets sync attempt failed', {
+          leadId: lead.id,
+          attempt: attempt + 1,
+          error: lastError.message,
+          correlationId,
+        });
 
         // Wait before retry (exponential backoff)
         if (attempt < RETRY_CONFIG.maxRetries - 1) {
@@ -374,6 +405,12 @@ export class GoogleSheetsService {
         errorCount: { increment: 1 },
         lastError: lastError?.message || 'Unknown error',
       },
+    });
+
+    logger.error('Google Sheets sync failed after all retries', {
+      leadId: lead.id,
+      error: lastError?.message,
+      correlationId,
     });
 
     return { success: false, error: lastError?.message || 'Sync failed after retries' };

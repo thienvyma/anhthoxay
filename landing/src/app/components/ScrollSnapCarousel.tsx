@@ -1,5 +1,6 @@
 import { ReactNode, useRef, useState, useEffect } from 'react';
 import { tokens } from '@app/shared';
+import { useThrottledCallback } from '../hooks/useThrottle';
 
 interface ScrollSnapCarouselProps {
   children: ReactNode[];
@@ -36,20 +37,24 @@ export function ScrollSnapCarousel({
   const slides = Array.from(children);
 
   // Detect current slide from scroll position
+  // Throttled scroll handler with 100ms interval (Requirement 9.3)
+  const handleScroll = useThrottledCallback(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+    
+    const scrollLeft = scrollContainer.scrollLeft;
+    const slideWidth = scrollContainer.clientWidth;
+    const newIndex = Math.round(scrollLeft / slideWidth);
+    setCurrentIndex(newIndex);
+  }, 100);
+
   useEffect(() => {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer) return;
 
-    const handleScroll = () => {
-      const scrollLeft = scrollContainer.scrollLeft;
-      const slideWidth = scrollContainer.clientWidth;
-      const newIndex = Math.round(scrollLeft / slideWidth);
-      setCurrentIndex(newIndex);
-    };
-
     scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
     return () => scrollContainer.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [handleScroll]);
 
   // Autoplay logic
   useEffect(() => {

@@ -54,3 +54,4 @@ export {
   formatDateForPrint,
   type PrintButtonProps,
 } from './PrintSupport';
+export { TurnstileWidget, type TurnstileWidgetProps } from './TurnstileWidget';

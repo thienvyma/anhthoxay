@@ -1,9 +1,16 @@
+import DOMPurify, { Config } from 'dompurify';
 import { resolveMediaUrl } from '@app/shared';
 import { SimpleMarkdown } from '../../utils/simpleMarkdown';
 import type { RichTextSectionProps } from './types';
 import { parseContent, getMaxWidth, getPadding, getVerticalPadding } from './utils';
 import { BlockRenderer } from './BlockRenderer';
 import { FullWidthLayout, SplitLayout, CenteredLayout, DefaultLayout } from './layouts';
+
+// Configure DOMPurify for rich text content
+const DOMPURIFY_CONFIG: Config = {
+  ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'a', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'img', 'div'],
+  ALLOWED_ATTR: ['href', 'target', 'rel', 'style', 'class', 'src', 'alt'],
+};
 
 export function RichTextSection({ data }: RichTextSectionProps) {
   const content = data.content || data.html || '';
@@ -32,7 +39,7 @@ export function RichTextSection({ data }: RichTextSectionProps) {
       {isBlocks ? (
         blocks.map((block) => <BlockRenderer key={block.id} block={block} textAlign={textAlign} />)
       ) : data.html ? (
-        <div dangerouslySetInnerHTML={{ __html: data.html }} />
+        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(data.html, DOMPURIFY_CONFIG) }} />
       ) : (
         <SimpleMarkdown>{content}</SimpleMarkdown>
       )}

@@ -22,6 +22,7 @@ export const menuItems: MenuItem[] = [
   { type: 'item', route: 'leads', icon: 'ri-contacts-book-line', label: 'Khách hàng' },
   { type: 'item', route: 'furniture', icon: 'ri-sofa-line', label: 'Nội thất' },
   { type: 'item', route: 'users', icon: 'ri-user-settings-line', label: 'Quản lý tài khoản' },
+  { type: 'item', route: 'rate-limits', icon: 'ri-shield-line', label: 'Rate Limit Monitor' },
   { type: 'item', route: 'guide', icon: 'ri-book-open-line', label: 'Hướng dẫn' },
   {
     type: 'dropdown',

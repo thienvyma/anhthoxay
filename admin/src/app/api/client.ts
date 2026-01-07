@@ -22,10 +22,8 @@ let refreshPromise: Promise<boolean> | null = null;
 
 async function refreshAccessToken(): Promise<boolean> {
   const refreshToken = tokenStorage.getRefreshToken();
-  console.log('🔄 Attempting token refresh:', { hasRefreshToken: !!refreshToken });
   
   if (!refreshToken) {
-    console.log('🔄 No refresh token available');
     return false;
   }
 
@@ -36,18 +34,13 @@ async function refreshAccessToken(): Promise<boolean> {
       body: JSON.stringify({ refreshToken }),
     });
 
-    console.log('🔄 Refresh response status:', response.status);
-
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('🔄 Refresh failed:', errorData);
       return false;
     }
 
     const json = await response.json();
     // Unwrap standardized response format
     const data = json.data || json;
-    console.log('🔄 Refresh successful, new tokens received');
     tokenStorage.setAccessToken(data.accessToken);
     tokenStorage.setRefreshToken(data.refreshToken);
     // Also save the new sessionId from token rotation
@@ -55,8 +48,7 @@ async function refreshAccessToken(): Promise<boolean> {
       tokenStorage.setSessionId(data.sessionId);
     }
     return true;
-  } catch (error) {
-    console.error('🔄 Refresh error:', error);
+  } catch {
     return false;
   }
 }

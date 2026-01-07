@@ -112,7 +112,7 @@ export function Footer({ config }: FooterProps) {
                 style={{ 
                   display: 'flex',
                   alignItems: 'flex-start',
-                  padding: 24,
+                  padding: 'clamp(16px, 3vw, 24px)',
                   background: 'linear-gradient(135deg, rgba(245,211,147,0.08), rgba(59,130,246,0.05))',
                   borderRadius: 16,
                   border: '1px solid rgba(245,211,147,0.15)',
@@ -123,7 +123,7 @@ export function Footer({ config }: FooterProps) {
                   src={resolveMediaUrl(brand.imageUrl)}
                   alt={brand.text || 'Anh Thợ Xây Logo'}
                   style={{
-                    height: 70,
+                    height: 'clamp(50px, 8vw, 70px)', // Responsive: 50px mobile, 70px desktop
                     width: 'auto',
                     maxWidth: '100%',
                     objectFit: 'contain',

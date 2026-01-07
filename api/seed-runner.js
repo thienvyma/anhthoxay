@@ -1,6 +1,7 @@
 const { execSync } = require('child_process');
 
-console.log('🚀 Running comprehensive database seed...');
+// eslint-disable-next-line no-console -- Seed script startup logging
+console.info('🚀 Running comprehensive database seed...');
 
 try {
   // Run the seed script
@@ -9,8 +10,13 @@ try {
     cwd: __dirname
   });
 
-  console.log('✅ Database seeding completed successfully!');
+  // eslint-disable-next-line no-console -- Seed script completion logging
+  console.info('✅ Database seeding completed successfully!');
 } catch (error) {
   console.error('❌ Seeding failed:', error.message);
   process.exit(1);
 }
+
+
+
+

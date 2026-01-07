@@ -112,4 +112,5 @@ export type RouteType =
   | 'bidding'
   | 'bidding-settings'
   | 'api-keys'
-  | 'guide';
+  | 'guide'
+  | 'rate-limits';

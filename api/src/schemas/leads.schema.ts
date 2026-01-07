@@ -38,12 +38,29 @@ export const updateLeadSchema = z.object({
 
 /**
  * Schema for lead list query parameters
+ * 
+ * **Feature: lead-duplicate-management**
+ * **Requirements: 8.1, 8.2**
  */
 export const leadsQuerySchema = z.object({
   search: z.string().optional(),
   status: z.enum(['NEW', 'CONTACTED', 'CONVERTED', 'CANCELLED']).optional(),
+  // Duplicate management filters (Requirements 8.1, 8.2)
+  duplicateStatus: z.enum(['all', 'duplicates_only', 'no_duplicates']).default('all'),
+  hasRelated: z.coerce.boolean().optional(),
+  source: z.enum(['QUOTE_FORM', 'CONTACT_FORM', 'FURNITURE_QUOTE']).optional(),
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+/**
+ * Schema for manual merge leads request
+ * 
+ * **Feature: lead-duplicate-management**
+ * **Requirements: 6.2, 6.3**
+ */
+export const mergeLeadsSchema = z.object({
+  secondaryLeadIds: z.array(z.string()).min(1, 'Phải có ít nhất một lead phụ để merge'),
 });
 
 // ============================================
@@ -53,3 +70,4 @@ export const leadsQuerySchema = z.object({
 export type CreateLeadInput = z.infer<typeof createLeadSchema>;
 export type UpdateLeadInput = z.infer<typeof updateLeadSchema>;
 export type LeadsQueryInput = z.infer<typeof leadsQuerySchema>;
+export type MergeLeadsInput = z.infer<typeof mergeLeadsSchema>;

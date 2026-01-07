@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { tokens } from '@app/shared';
 import { glassEffect } from '../styles/glassEffect';
 import { marketplaceAPI } from '../api';
+import { useDebounce } from '../hooks/useDebounce';
 import type { Project, Region, ServiceCategory } from '../api';
 
 interface MarketplaceSectionData {
@@ -65,6 +66,14 @@ export const MarketplaceSection = memo(function MarketplaceSection({ data }: Pro
   const [selectedRegion, setSelectedRegion] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedBudgetIndex, setSelectedBudgetIndex] = useState(0);
+  
+  // Debounce filter values with 500ms delay (Requirement 9.2)
+  const debouncedRegion = useDebounce(selectedRegion, 500);
+  const debouncedCategory = useDebounce(selectedCategory, 500);
+  const debouncedBudgetIndex = useDebounce(selectedBudgetIndex, 500);
+  const isFiltering = selectedRegion !== debouncedRegion || 
+                      selectedCategory !== debouncedCategory || 
+                      selectedBudgetIndex !== debouncedBudgetIndex;
 
   // Load filter options
   useEffect(() => {
@@ -83,19 +92,19 @@ export const MarketplaceSection = memo(function MarketplaceSection({ data }: Pro
     loadFilters();
   }, []);
 
-  // Load projects
+  // Load projects using debounced filter values
   const loadProjects = useCallback(async () => {
     setIsLoading(true);
     try {
       const result = await marketplaceAPI.getProjects({
         limit,
-        regionId: selectedRegion || undefined,
-        categoryId: selectedCategory || undefined,
+        regionId: debouncedRegion || undefined,
+        categoryId: debouncedCategory || undefined,
       });
 
       // Client-side budget filtering
       let filteredData = result.data;
-      const budgetRange = BUDGET_RANGES[selectedBudgetIndex];
+      const budgetRange = BUDGET_RANGES[debouncedBudgetIndex];
       if (budgetRange.min !== undefined || budgetRange.max !== undefined) {
         filteredData = result.data.filter((project) => {
           const projectBudget = project.budgetMax || project.budgetMin || 0;
@@ -113,7 +122,7 @@ export const MarketplaceSection = memo(function MarketplaceSection({ data }: Pro
     } finally {
       setIsLoading(false);
     }
-  }, [limit, selectedRegion, selectedCategory, selectedBudgetIndex]);
+  }, [limit, debouncedRegion, debouncedCategory, debouncedBudgetIndex]);
 
   useEffect(() => {
     loadProjects();
@@ -286,7 +295,7 @@ export const MarketplaceSection = memo(function MarketplaceSection({ data }: Pro
           </motion.div>
         )}
 
-        {/* Filters */}
+        {/* Filters with debounce indicator (Requirement 9.2, 9.5) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -297,8 +306,31 @@ export const MarketplaceSection = memo(function MarketplaceSection({ data }: Pro
             gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
             gap: 12,
             marginBottom: 32,
+            position: 'relative',
           }}
         >
+          {/* Filtering indicator */}
+          {isFiltering && (
+            <div
+              style={{
+                position: 'absolute',
+                top: -24,
+                right: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 12,
+                color: tokens.color.primary,
+              }}
+            >
+              <motion.i
+                className="ri-loader-4-line"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+              />
+              Đang lọc...
+            </div>
+          )}
           <select
             value={selectedRegion}
             onChange={(e) => setSelectedRegion(e.target.value)}

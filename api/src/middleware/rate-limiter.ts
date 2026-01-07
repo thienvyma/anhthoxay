@@ -1,4 +1,6 @@
 import type { Context, Next } from 'hono';
+import { logViolation } from '../services/rate-limit-monitoring.service';
+import { recordRateLimitViolation } from './ip-blocking';
 
 // ============================================
 // TYPES
@@ -116,6 +118,9 @@ function getClientIp(c: Context): string {
 /**
  * Rate limiter middleware factory
  * Default: 5 attempts per 15 minutes
+ * 
+ * **Feature: production-scalability**
+ * **Requirements: 7.1**
  */
 export function rateLimiter(options: RateLimiterOptions = {}) {
   const {
@@ -136,6 +141,32 @@ export function rateLimiter(options: RateLimiterOptions = {}) {
     if (!result.allowed) {
       const retryAfter = Math.ceil((result.resetAt.getTime() - Date.now()) / 1000);
       c.header('Retry-After', retryAfter.toString());
+
+      // Log violation for monitoring
+      // **Property 15: Rate limit violation logging**
+      // **Validates: Requirements 7.1**
+      const ip = getClientIp(c);
+      const path = c.req.path;
+      const userAgent = c.req.header('user-agent');
+      const user = c.get('user');
+      
+      // Fire and forget - don't block the response
+      logViolation({
+        ip,
+        path,
+        timestamp: Date.now(),
+        userAgent,
+        userId: user?.id,
+      }).catch(() => {
+        // Ignore errors in violation logging
+      });
+
+      // Record violation for IP blocking auto-block feature
+      // **Feature: high-traffic-resilience**
+      // **Requirements: 14.1**
+      recordRateLimitViolation(ip).catch(() => {
+        // Ignore errors in IP blocking
+      });
 
       return c.json(
         {

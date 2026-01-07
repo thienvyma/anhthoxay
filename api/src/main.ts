@@ -11,7 +11,6 @@
  * **Requirements: 1.1, 1.4**
  */
 
-import { hostname } from 'os';
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { User } from '@prisma/client';
@@ -23,11 +22,27 @@ import { prisma } from './utils/prisma';
 
 // Middleware imports
 import { rateLimiter } from './middleware/rate-limiter';
+import { 
+  loginEmergencyRateLimiter, 
+  formEmergencyRateLimiter, 
+  globalEmergencyRateLimiter 
+} from './middleware/emergency-rate-limiter';
+import { 
+  suspiciousActivityMiddleware, 
+  emergencyModeHeaderMiddleware 
+} from './middleware/suspicious-activity';
 import { securityHeaders } from './middleware/security-headers';
 import { correlationId } from './middleware/correlation-id';
 import { errorHandler } from './middleware/error-handler';
+import { responseTimeMonitoring } from './middleware/monitoring';
+import { prometheusMiddleware } from './middleware/prometheus';
 import { createCorsMiddleware } from './config/cors';
 import { successResponse } from './utils/response';
+
+// Config imports
+import { validateEnvironment } from './config/env-validation';
+import { getRedisClient, closeRedisConnection } from './config/redis';
+import { initSentry, flushSentry, captureException } from './config/sentry';
 
 // Route imports
 import { createAuthRoutes } from './routes/auth.routes';
@@ -68,9 +83,21 @@ import { createAdminDashboardRoutes } from './routes/dashboard.routes';
 import { createFurniturePublicRoutes, createFurnitureAdminRoutes } from './routes/furniture';
 import { createApiKeysRoutes } from './routes/api-keys.routes';
 import { createExternalApiRoutes } from './routes/external-api';
+import { createHealthRoutes } from './routes/health.routes';
+import { createCDNRoutes } from './routes/cdn.routes';
+import { createRateLimitRoutes } from './routes/rate-limit.routes';
+import { createMetricsRoutes } from './routes/metrics.routes';
+import { createQueueHealthRoutes } from './routes/queue-health.routes';
+import { createIPBlockingRoutes } from './routes/ip-blocking.routes';
+import { ipBlockingMiddleware } from './middleware/ip-blocking';
 
 // Service imports
 import { AuthService } from './services/auth.service';
+import { setShutdownState } from './services/health.service';
+import { getEmergencyModeService } from './services/emergency-mode.service';
+
+// Shutdown manager import
+import { ShutdownManager, registerSignalHandlers } from './utils/shutdown';
 
 // ============================================
 // ENVIRONMENT SETUP
@@ -90,27 +117,81 @@ function findProjectRoot(startPath: string): string {
   return startPath;
 }
 
-const projectRoot = findProjectRoot(process.cwd());
+// Try multiple strategies to find project root
+let projectRoot = findProjectRoot(process.cwd());
+
+// If running from dist folder, try to find root from __dirname
+if (!fs.existsSync(path.join(projectRoot, '.env'))) {
+  // __dirname might be dist/api/src, so go up 3 levels
+  const fromDirname = findProjectRoot(path.resolve(__dirname, '..', '..', '..'));
+  if (fs.existsSync(path.join(fromDirname, '.env'))) {
+    projectRoot = fromDirname;
+  }
+}
+
 const envPath = path.join(projectRoot, '.env');
 
-// Set DATABASE_URL to correct absolute path
-const dbPath = path.join(projectRoot, 'infra', 'prisma', 'dev.db');
-process.env.DATABASE_URL = `file:${dbPath}`;
-
-// Load other env vars from .env file
+// Load env vars from .env file
+// .env file takes precedence for DATABASE_URL to allow PostgreSQL configuration
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf-8');
   envContent.split('\n').forEach((line) => {
+    // Skip comments and empty lines
+    if (line.trim().startsWith('#') || !line.trim()) return;
+
     const match = line.match(/^([^=]+)=(.*)$/);
-    if (match && match[1] !== 'DATABASE_URL') {
-      process.env[match[1]] = match[2].replace(/^["']|["']$/g, '');
+    if (match) {
+      const key = match[1].trim();
+      let value = match[2].trim();
+      // Remove surrounding quotes
+      value = value.replace(/^["']|["']$/g, '');
+      // Set the env var (override existing for DATABASE_URL)
+      process.env[key] = value;
     }
   });
 }
 
-console.log('🔧 ANH THỢ XÂY API Starting...');
-console.log('📁 Project root:', projectRoot);
-console.log('🗄️ DATABASE_URL:', process.env.DATABASE_URL);
+// Handle DATABASE_URL for SQLite (file: prefix needs absolute path)
+// PostgreSQL URLs (postgresql://) are used as-is
+if (process.env.DATABASE_URL?.startsWith('file:')) {
+  const dbPath = path.join(projectRoot, 'infra', 'prisma', 'dev.db');
+  process.env.DATABASE_URL = `file:${dbPath}`;
+}
+
+// eslint-disable-next-line no-console -- Startup logging before logger initialization
+console.info('🔧 ANH THỢ XÂY API Starting...');
+// eslint-disable-next-line no-console -- Startup logging before logger initialization
+console.info('📁 Project root:', projectRoot);
+// eslint-disable-next-line no-console -- Startup logging before logger initialization
+console.info(
+  '🗄️ DATABASE_URL:',
+  process.env.DATABASE_URL?.startsWith('postgresql://')
+    ? process.env.DATABASE_URL.replace(/:[^:@]+@/, ':****@') // Hide password in logs
+    : process.env.DATABASE_URL
+);
+
+// ============================================
+// ENVIRONMENT VALIDATION
+// ============================================
+
+// Run environment validation before any initialization
+// This validates DATABASE_URL, JWT_SECRET, and other required variables
+// In production, missing required variables will cause the process to exit
+validateEnvironment();
+
+// Initialize Sentry error tracking (optional - requires SENTRY_DSN)
+// Must be initialized before other services to capture all errors
+initSentry();
+
+// Initialize Redis connection (optional - will log warning if not configured)
+const redis = getRedisClient();
+
+// Initialize Emergency Mode Service
+// Starts periodic check for auto-activation based on attack metrics
+// **Feature: high-traffic-resilience**
+// **Requirements: 14.5, 14.6**
+const emergencyModeService = getEmergencyModeService();
+emergencyModeService.startPeriodicCheck(30000); // Check every 30 seconds
 
 // ============================================
 // APP INITIALIZATION
@@ -128,6 +209,19 @@ app.use('*', securityHeaders());
 
 // Correlation ID middleware (for request tracing)
 app.use('*', correlationId());
+
+// Response time monitoring (adds X-Response-Time header, logs slow requests)
+app.use('*', responseTimeMonitoring({ slowThreshold: 500 }));
+
+// IP Blocking middleware (blocks IPs that exceed rate limit thresholds)
+// **Feature: high-traffic-resilience**
+// **Requirements: 14.1, 14.2**
+app.use('*', ipBlockingMiddleware());
+
+// Prometheus metrics middleware (records HTTP request metrics)
+// **Feature: production-scalability**
+// **Requirements: 12.2, 12.3**
+app.use('*', prometheusMiddleware());
 
 // CORS (using new config module)
 app.use('*', createCorsMiddleware());
@@ -151,24 +245,61 @@ app.use('*', async (c, next) => {
   await next();
 });
 
-// Rate limiting
+// Rate limiting - Use Redis if available, fallback to in-memory
+// In production, use emergency-aware rate limiters that apply stricter limits during attacks
+// **Feature: high-traffic-resilience**
+// **Requirements: 14.5, 14.6**
 const isDev = process.env.NODE_ENV !== 'production';
-app.use('/api/auth/login', rateLimiter({ windowMs: 1 * 60 * 1000, maxAttempts: isDev ? 100 : 20 }));
-app.use('/leads', rateLimiter({ windowMs: 60 * 1000, maxAttempts: isDev ? 100 : 30 }));
-app.use('*', rateLimiter({ windowMs: 60 * 1000, maxAttempts: isDev ? 500 : 200 }));
+const useRedisRateLimiter = redis !== null;
+
+// Suspicious activity detection middleware
+// Detects suspicious patterns (bots, rapid requests) and increases CAPTCHA challenge rate
+// **Feature: high-traffic-resilience**
+// **Requirements: 14.5**
+app.use('*', suspiciousActivityMiddleware({
+  checkUserAgent: true,
+  trackRapidRequests: true,
+  increaseCaptchaRate: true,
+  excludePaths: ['/health', '/health/live', '/health/ready', '/metrics'],
+}));
+
+// Emergency mode header middleware
+// Adds X-Emergency-Mode header when emergency mode is active
+// **Feature: high-traffic-resilience**
+// **Requirements: 14.5, 14.6**
+app.use('*', emergencyModeHeaderMiddleware());
+
+if (useRedisRateLimiter) {
+  // Redis-based rate limiting with emergency mode support (distributed, production-ready)
+  // In emergency mode, limits are automatically reduced (50% of normal) and windows extended (2x)
+  // **Feature: high-traffic-resilience**
+  // **Requirements: 14.5, 14.6**
+  app.use('/api/auth/login', loginEmergencyRateLimiter());
+  app.use('/leads', formEmergencyRateLimiter());
+  app.use('*', globalEmergencyRateLimiter());
+} else {
+  // In-memory rate limiting (single instance only, no emergency mode support)
+  app.use('/api/auth/login', rateLimiter({ windowMs: 1 * 60 * 1000, maxAttempts: isDev ? 100 : 20 }));
+  app.use('/leads', rateLimiter({ windowMs: 60 * 1000, maxAttempts: isDev ? 100 : 30 }));
+  app.use('*', rateLimiter({ windowMs: 60 * 1000, maxAttempts: isDev ? 500 : 200 }));
+}
 
 // ============================================
 // HEALTH CHECK & ROOT
 // ============================================
 
-app.get('/health', (c) => 
-  successResponse(c, { ok: true, service: 'ath-api', host: hostname() })
-);
+// Health check routes (comprehensive health, ready, live endpoints)
+app.route('/health', createHealthRoutes(prisma));
+
+// Prometheus metrics endpoint (for Prometheus scraping)
+// **Feature: production-scalability**
+// **Requirements: 12.1**
+app.route('/metrics', createMetricsRoutes());
 
 app.get('/', (c) =>
   successResponse(c, {
     message: 'Anh Thợ Xây API',
-    endpoints: ['/health', '/api/auth/login', '/pages/:slug', '/service-categories', '/materials', '/leads'],
+    endpoints: ['/health', '/health/ready', '/health/live', '/metrics', '/api/auth/login', '/pages/:slug', '/service-categories', '/materials', '/leads'],
   })
 );
 
@@ -283,12 +414,27 @@ app.route('/api/user/activity', createActivityRoutes(prisma));
 // Dashboard routes - Feature: admin-dashboard-enhancement
 app.route('/api/admin/dashboard', createAdminDashboardRoutes(prisma));
 
+// Rate Limit routes - Feature: production-scalability
+app.route('/api/admin/rate-limits', createRateLimitRoutes(prisma));
+
+// Queue Health routes - Feature: production-scalability
+// **Requirements: 13.3**
+app.route('/api/admin/queues', createQueueHealthRoutes(prisma));
+
 // Furniture routes - Feature: furniture-quotation
 app.route('/api/furniture', createFurniturePublicRoutes(prisma));
 app.route('/api/admin/furniture', createFurnitureAdminRoutes(prisma));
 
 // API Keys routes - Feature: admin-guide-api-keys
 app.route('/api/admin/api-keys', createApiKeysRoutes(prisma));
+
+// CDN routes - Feature: high-traffic-resilience
+// **Requirements: 2.4, 2.6**
+app.route('/api/admin/cdn', createCDNRoutes(prisma));
+
+// IP Blocking routes - Feature: high-traffic-resilience
+// **Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6**
+app.route('/api/admin/ip-blocking', createIPBlockingRoutes(prisma));
 
 // External API routes - Feature: admin-guide-api-keys (API Key authenticated)
 app.route('/api/external', createExternalApiRoutes(prisma));
@@ -304,10 +450,12 @@ app.onError(errorHandler());
 // ============================================
 
 const port = parseInt(process.env.PORT || '4202', 10);
-console.log(`🚀 Starting server on port ${port}...`);
+// eslint-disable-next-line no-console -- Startup logging
+console.info(`🚀 Starting server on port ${port}...`);
 
 const server = serve({ fetch: app.fetch, port }, (info) => {
-  console.log(`✅ ANH THỢ XÂY API running at http://localhost:${info.port}`);
+  // eslint-disable-next-line no-console -- Startup logging
+  console.info(`✅ ANH THỢ XÂY API running at http://localhost:${info.port}`);
 });
 
 // ============================================
@@ -315,62 +463,48 @@ const server = serve({ fetch: app.fetch, port }, (info) => {
 // ============================================
 
 /**
- * Graceful shutdown handler
- * Closes database connections and server on SIGTERM/SIGINT
+ * Graceful Shutdown Manager
+ * Handles connection draining and cleanup during deployment
  * 
- * **Feature: scalability-audit**
- * **Requirements: 8.4**
+ * **Feature: high-traffic-resilience**
+ * **Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6**
  */
-let isShuttingDown = false;
-
-async function gracefulShutdown(signal: string): Promise<void> {
-  // Prevent multiple shutdown attempts
-  if (isShuttingDown) {
-    console.log(`⚠️ Shutdown already in progress, ignoring ${signal}`);
-    return;
-  }
-  
-  isShuttingDown = true;
-  
-  console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
-  
-  const shutdownStart = Date.now();
-  
-  try {
-    // Close HTTP server first (stop accepting new connections)
-    console.log('📡 Closing HTTP server...');
-    server.close();
-    console.log('✅ HTTP server closed');
-    
-    // Close Prisma database connection
-    console.log('🗄️ Closing database connection...');
-    await prisma.$disconnect();
-    console.log('✅ Database connection closed');
-    
-    const shutdownDuration = Date.now() - shutdownStart;
-    console.log(`✅ Graceful shutdown completed in ${shutdownDuration}ms`);
-    
-    process.exit(0);
-  } catch (error) {
-    const shutdownDuration = Date.now() - shutdownStart;
-    console.error(`❌ Error during shutdown after ${shutdownDuration}ms:`, error);
-    process.exit(1);
-  }
-}
-
-// Register signal handlers
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-// Handle uncaught exceptions gracefully
-process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught Exception:', error);
-  gracefulShutdown('uncaughtException');
+const shutdownManager = new ShutdownManager({
+  timeout: 30000, // 30 seconds for in-flight requests
+  drainDelay: 5000, // 5 seconds for LB to stop routing
+  forceExitDelay: 35000, // 35 seconds total before force exit
 });
 
-// Handle unhandled promise rejections
+// Set the HTTP server for connection tracking
+shutdownManager.setServer(server);
+
+// Set callback to update health check state
+shutdownManager.setShutdownStateCallback(setShutdownState);
+
+// Register cleanup handlers
+shutdownManager.onShutdown('database', async () => {
+  await prisma.$disconnect();
+});
+
+shutdownManager.onShutdown('redis', async () => {
+  await closeRedisConnection();
+});
+
+shutdownManager.onShutdown('sentry', async () => {
+  await flushSentry();
+});
+
+shutdownManager.onShutdown('emergency-mode', async () => {
+  emergencyModeService.stopPeriodicCheck();
+});
+
+// Register signal handlers (SIGTERM, SIGINT, uncaughtException)
+registerSignalHandlers(shutdownManager);
+
+// Handle unhandled promise rejections (log but don't exit)
 process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  captureException(reason, { type: 'unhandledRejection' });
   // Don't exit on unhandled rejection, just log it
   // This allows the server to continue running
 });

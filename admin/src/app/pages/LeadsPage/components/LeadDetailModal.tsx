@@ -7,7 +7,7 @@ import { QuoteDataDisplay } from './QuoteDataDisplay';
 import { NotesEditor } from './NotesEditor';
 import { StatusHistory } from './StatusHistory';
 import { FurnitureQuotationHistory } from './FurnitureQuotationHistory';
-import { statusLabels } from '../types';
+import { statusLabels, sourceLabels } from '../types';
 import type { LeadDetailModalProps } from '../types';
 
 /**
@@ -46,6 +46,65 @@ export function LeadDetailModal({
       size="lg"
     >
       <div style={{ display: 'grid', gap: 20 }}>
+        {/* Duplicate/Related Indicators */}
+        {(lead.isPotentialDuplicate || lead.hasRelatedLeads || lead.submissionCount > 1) && (
+          <div style={{
+            display: 'flex',
+            gap: 8,
+            flexWrap: 'wrap',
+            padding: 12,
+            background: tokens.color.surfaceAlt,
+            borderRadius: 8,
+            border: `1px solid ${tokens.color.border}`,
+          }}>
+            {lead.isPotentialDuplicate && (
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '4px 10px',
+                borderRadius: 6,
+                background: `${tokens.color.warning}20`,
+                color: tokens.color.warning,
+                fontSize: 12,
+                fontWeight: 500,
+              }}>
+                <i className="ri-error-warning-fill" /> Có thể trùng lặp
+              </span>
+            )}
+            {lead.hasRelatedLeads && (
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '4px 10px',
+                borderRadius: 6,
+                background: `${tokens.color.info}20`,
+                color: tokens.color.info,
+                fontSize: 12,
+                fontWeight: 500,
+              }}>
+                <i className="ri-links-fill" /> {lead.relatedLeadCount} leads liên quan
+              </span>
+            )}
+            {lead.submissionCount > 1 && (
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '4px 10px',
+                borderRadius: 6,
+                background: `${tokens.color.primary}20`,
+                color: tokens.color.primary,
+                fontSize: 12,
+                fontWeight: 500,
+              }}>
+                <i className="ri-repeat-line" /> {lead.submissionCount} lần submit (đã gộp)
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Basic Info */}
         <ResponsiveGrid
           cols={{ mobile: 1, tablet: 2, desktop: 2 }}
@@ -61,6 +120,11 @@ export function LeadDetailModal({
               <a href={`tel:${lead.phone}`} style={{ color: tokens.color.primary }}>
                 {lead.phone}
               </a>
+              {lead.normalizedPhone && lead.normalizedPhone !== lead.phone && (
+                <span style={{ color: tokens.color.muted, fontSize: 12, marginLeft: 8 }}>
+                  → {lead.normalizedPhone}
+                </span>
+              )}
             </div>
           </div>
           {lead.email && (
@@ -75,7 +139,9 @@ export function LeadDetailModal({
           )}
           <div>
             <label style={{ color: tokens.color.muted, fontSize: 13 }}>Nguồn</label>
-            <div style={{ color: tokens.color.text, fontSize: 16, marginTop: 4 }}>{lead.source}</div>
+            <div style={{ color: tokens.color.text, fontSize: 16, marginTop: 4 }}>
+              {sourceLabels[lead.source] || lead.source}
+            </div>
           </div>
         </ResponsiveGrid>
 
@@ -90,6 +156,8 @@ export function LeadDetailModal({
             padding: 12,
             background: tokens.color.surfaceAlt,
             borderRadius: 8,
+            maxHeight: 300,
+            overflow: 'auto',
           }}>
             {lead.content}
           </div>

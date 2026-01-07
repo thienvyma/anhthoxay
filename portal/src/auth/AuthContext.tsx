@@ -21,6 +21,7 @@ export interface RegisterInput {
   name: string;
   phone?: string;
   accountType: 'homeowner' | 'contractor';
+  turnstileToken?: string;
 }
 
 interface AuthContextType {

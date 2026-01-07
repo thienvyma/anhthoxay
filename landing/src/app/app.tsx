@@ -52,6 +52,8 @@ function AppContent() {
   const [headerConfigFromSettings, setHeaderConfigFromSettings] = useState<HeaderConfig | null>(null);
   const [footerConfigFromSettings, setFooterConfigFromSettings] = useState<FooterConfig | null>(null);
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
+  // Logo from company settings (logos array with position)
+  const [companyLogos, setCompanyLogos] = useState<Array<{ position: string; url: string }>>([]);
 
   useEffect(() => {
     // Only use localStorage if page data is not available yet (fallback)
@@ -84,7 +86,7 @@ function AppContent() {
     }
   }, [page]);
 
-  // Load company settings for background image
+  // Load company settings for background image and logos
   useEffect(() => {
     fetch(`${API_URL}/settings/company`)
       .then((res) => {
@@ -95,6 +97,7 @@ function AppContent() {
         const data = json.data || json;
         const settings = data.value || data; // Handle both {key, value} and direct object
         
+        // Load background image
         if (settings.backgroundImage && settings.backgroundImage.trim()) {
           const bgUrl = resolveMediaUrl(settings.backgroundImage);
           
@@ -110,6 +113,33 @@ function AppContent() {
         } else {
           // Clear background image if it was deleted or is empty
           setBackgroundImage(null);
+        }
+        
+        // Load logos from company settings
+        if (settings.logos && Array.isArray(settings.logos)) {
+          setCompanyLogos(settings.logos);
+          
+          // Update favicon if available
+          const faviconLogo = settings.logos.find((l: { position: string; url: string }) => l.position === 'favicon');
+          if (faviconLogo && faviconLogo.url) {
+            // Remove existing favicons
+            const existingFavicons = document.querySelectorAll('link[rel*="icon"]');
+            existingFavicons.forEach(el => el.remove());
+            
+            // Add new favicon
+            const faviconUrl = resolveMediaUrl(faviconLogo.url);
+            const link = document.createElement('link');
+            link.rel = 'icon';
+            link.type = 'image/x-icon';
+            link.href = faviconUrl;
+            document.head.appendChild(link);
+            
+            // Also add apple-touch-icon for iOS
+            const appleLink = document.createElement('link');
+            appleLink.rel = 'apple-touch-icon';
+            appleLink.href = faviconUrl;
+            document.head.appendChild(appleLink);
+          }
         }
       })
       .catch(() => {
@@ -362,6 +392,19 @@ function AppContent() {
                   { label: 'Liên hệ', path: '/contact' },
                 ],
               });
+          
+          // Override logo with company settings logo (header position) if available
+          const headerLogo = companyLogos.find(l => l.position === 'header');
+          if (headerLogo && headerLogo.url) {
+            return {
+              ...headerConfig,
+              logo: {
+                ...headerConfig?.logo,
+                imageUrl: headerLogo.url,
+              },
+            };
+          }
+          
           return headerConfig;
         })()}
         mobileMenuComponent={(() => {
@@ -442,6 +485,19 @@ function AppContent() {
                 },
               });
 
+          // Override logo with company settings logo (footer position) if available
+          const footerLogo = companyLogos.find(l => l.position === 'footer');
+          if (footerLogo && footerLogo.url) {
+            footerConfig = {
+              ...footerConfig,
+              brand: {
+                ...footerConfig?.brand,
+                imageUrl: footerLogo.url,
+              },
+            };
+            return footerConfig;
+          }
+
           // Sync logo from header config (DB) if footer doesn't have one
           const headerConfigFromDB = page?.headerConfig 
             ? (typeof page.headerConfig === 'string' ? JSON.parse(page.headerConfig) : page.headerConfig)
@@ -451,14 +507,27 @@ function AppContent() {
           const footerHasLogo = footerConfig?.brand?.imageUrl && footerConfig.brand.imageUrl.trim();
           const headerHasLogo = headerConfigFromDB?.logo?.imageUrl && headerConfigFromDB.logo.imageUrl.trim();
           
-          if (footerConfig && !footerHasLogo && headerHasLogo) {
-            footerConfig = {
-              ...footerConfig,
-              brand: {
-                ...footerConfig.brand,
-                imageUrl: headerConfigFromDB.logo.imageUrl,
-              },
-            };
+          // Also check company settings header logo
+          const headerLogoFromSettings = companyLogos.find(l => l.position === 'header');
+          
+          if (footerConfig && !footerHasLogo) {
+            if (headerHasLogo) {
+              footerConfig = {
+                ...footerConfig,
+                brand: {
+                  ...footerConfig.brand,
+                  imageUrl: headerConfigFromDB.logo.imageUrl,
+                },
+              };
+            } else if (headerLogoFromSettings && headerLogoFromSettings.url) {
+              footerConfig = {
+                ...footerConfig,
+                brand: {
+                  ...footerConfig.brand,
+                  imageUrl: headerLogoFromSettings.url,
+                },
+              };
+            }
           }
 
           return footerConfig;

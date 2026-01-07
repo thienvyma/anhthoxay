@@ -21,10 +21,27 @@ export function isProduction(): boolean {
 /**
  * Build Content-Security-Policy header value
  * For API responses, use restrictive defaults
+ * For responses that may include HTML (error pages, etc.), allow basic resources
  * **Validates: Requirements 3.1, 3.3**
  */
 export function buildCSPHeader(): string {
-  return "default-src 'none'; frame-ancestors 'none'";
+  // Restrictive CSP for API responses
+  // - default-src 'self': Only allow resources from same origin
+  // - script-src 'self': Only allow scripts from same origin
+  // - style-src 'self' 'unsafe-inline': Allow inline styles for error pages
+  // - img-src 'self' data: https:: Allow images from same origin, data URIs, and HTTPS
+  // - font-src 'self' data:: Allow fonts from same origin and data URIs
+  // - connect-src 'self' https:: Allow connections to same origin and HTTPS
+  // - frame-ancestors 'none': Prevent embedding in iframes
+  return [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https:",
+    "frame-ancestors 'none'",
+  ].join('; ');
 }
 
 /**
@@ -84,6 +101,9 @@ export function securityHeaders(config?: Partial<SecurityHeadersConfig>) {
     // Permissions-Policy
     // **Validates: Requirements 3.6**
     c.header('Permissions-Policy', buildPermissionsPolicyHeader());
+
+    // Prevent Adobe Flash and PDF from loading data from this domain
+    c.header('X-Permitted-Cross-Domain-Policies', 'none');
 
     // For authenticated responses, prevent caching
     const authHeader = c.req.header('Authorization');

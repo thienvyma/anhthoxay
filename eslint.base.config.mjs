@@ -37,6 +37,15 @@ export default [
       '**/*.mjs',
     ],
     // Override or add rules here
-    rules: {},
+    rules: {
+      // Console statements: warn in development, error in production
+      // This helps catch debug statements before they reach production
+      'no-console': [
+        process.env.NODE_ENV === 'production' ? 'error' : 'warn',
+        {
+          allow: ['warn', 'error'], // Allow console.warn and console.error for legitimate logging
+        },
+      ],
+    },
   },
 ];

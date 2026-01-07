@@ -14,6 +14,8 @@ export default defineConfig(() => ({
     port: 4201,
     host: 'localhost',
     strictPort: true,
+    // Allow external tunnel domains for testing
+    allowedHosts: ['.ngrok-free.app', '.ngrok.io', '.trycloudflare.com'],
     fs: {
       allow: [__dirname, path.resolve(__dirname, '..'), path.resolve(__dirname, '..', '..')],
     },

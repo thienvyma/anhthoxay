@@ -20,6 +20,8 @@ import type { FurnitureQuotation, FurniturePdfSettings } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
 import * as path from 'path';
 import * as fs from 'fs';
+import https from 'https';
+import http from 'http';
 
 // ============================================
 // TYPES
@@ -138,23 +140,116 @@ function removeVietnameseDiacritics(str: string): string {
   return str.split('').map(char => diacriticsMap[char] || char).join('');
 }
 
+/**
+ * Download image from URL and return as Buffer
+ * Supports both http and https URLs
+ */
+async function downloadImage(url: string): Promise<Buffer | null> {
+  return new Promise((resolve) => {
+    try {
+      const protocol = url.startsWith('https') ? https : http;
+      
+      protocol.get(url, (response) => {
+        // Handle redirects
+        if (response.statusCode === 301 || response.statusCode === 302) {
+          const redirectUrl = response.headers.location;
+          if (redirectUrl) {
+            downloadImage(redirectUrl).then(resolve);
+            return;
+          }
+        }
+        
+        if (response.statusCode !== 200) {
+          console.warn(`Failed to download image: HTTP ${response.statusCode}`);
+          resolve(null);
+          return;
+        }
+        
+        const chunks: Buffer[] = [];
+        response.on('data', (chunk: Buffer) => chunks.push(chunk));
+        response.on('end', () => resolve(Buffer.concat(chunks)));
+        response.on('error', () => resolve(null));
+      }).on('error', (err) => {
+        console.warn('Failed to download image:', err.message);
+        resolve(null);
+      });
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Resolve media URL to full URL
+ * Handles relative paths and adds API base URL if needed
+ */
+function resolveLogoUrl(url: string): string {
+  if (!url) return '';
+  
+  // Already a full URL
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // Relative path - prepend API URL
+  const apiUrl = process.env.API_URL || process.env.VITE_API_URL || 'http://localhost:4202';
+  
+  // Handle /media/ paths
+  if (url.startsWith('/media/')) {
+    return `${apiUrl}${url}`;
+  }
+  
+  // Handle media/ paths without leading slash
+  if (url.startsWith('media/')) {
+    return `${apiUrl}/${url}`;
+  }
+  
+  return url;
+}
+
 // ============================================
 // PDF SERVICE
 // ============================================
 
 /**
  * Get PDF settings from database or use defaults
+ * Also fetches logo from company settings if not set in PDF settings
  */
 async function getPdfSettings(prisma?: PrismaClient): Promise<typeof DEFAULT_SETTINGS> {
   if (!prisma) return DEFAULT_SETTINGS;
 
   try {
     const settings = await prisma.furniturePdfSettings.findUnique({ where: { id: 'default' } });
+    let pdfSettings = DEFAULT_SETTINGS;
+    
     if (settings) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...rest } = settings;
-      return rest;
+      pdfSettings = rest;
     }
+    
+    // If no logo in PDF settings, try to get from company settings
+    if (!pdfSettings.companyLogo) {
+      try {
+        const companySetting = await prisma.settings.findUnique({ where: { key: 'company' } });
+        if (companySetting) {
+          const companyData = JSON.parse(companySetting.value);
+          // Look for 'pdf' position logo first, then 'header' as fallback
+          if (companyData.logos && Array.isArray(companyData.logos)) {
+            const pdfLogo = companyData.logos.find((l: { position: string; url: string }) => l.position === 'pdf');
+            const headerLogo = companyData.logos.find((l: { position: string; url: string }) => l.position === 'header');
+            const logoToUse = pdfLogo || headerLogo;
+            if (logoToUse && logoToUse.url) {
+              pdfSettings = { ...pdfSettings, companyLogo: logoToUse.url };
+            }
+          }
+        }
+      } catch {
+        // Ignore errors when fetching company settings
+      }
+    }
+    
+    return pdfSettings;
   } catch {
     // Ignore errors, use defaults
   }
@@ -181,6 +276,17 @@ export async function generateQuotationPDF(
     if (hasVietnameseFont) return text;
     return removeVietnameseDiacritics(text);
   };
+
+  // Pre-download logo if available (before entering Promise constructor)
+  let logoBuffer: Buffer | null = null;
+  if (settings.companyLogo) {
+    try {
+      const logoUrl = resolveLogoUrl(settings.companyLogo);
+      logoBuffer = await downloadImage(logoUrl);
+    } catch (logoError) {
+      console.warn('Failed to download logo:', logoError);
+    }
+  }
 
   return new Promise((resolve, reject) => {
     try {
@@ -243,27 +349,46 @@ export async function generateQuotationPDF(
       // HEADER
       // ============================================
 
+      const headerStartY = 50;
+      const textStartX = 50;
+      
+      // Add logo if pre-downloaded successfully
+      if (logoBuffer) {
+        try {
+          // Add logo to the right side of header
+          const logoHeight = 50;
+          const logoWidth = 120; // Max width
+          doc.image(logoBuffer, 475 - logoWidth, headerStartY, { 
+            fit: [logoWidth, logoHeight],
+            align: 'right',
+          });
+        } catch (logoError) {
+          console.warn('Failed to add logo to PDF:', logoError);
+        }
+      }
+
       // Company name (bold)
-      doc.font(fontNameBold).fontSize(companyNameSize).fillColor(primaryColor).text(processText(settings.companyName), 50, 50, { align: 'left' });
+      doc.font(fontNameBold).fontSize(companyNameSize).fillColor(primaryColor).text(processText(settings.companyName), textStartX, headerStartY, { align: 'left' });
 
       // Document title (bold)
       doc
         .font(fontNameBold)
         .fontSize(documentTitleSize)
         .fillColor(textColor)
-        .text(processText(settings.documentTitle), 50, 50 + companyNameSize + 10, { align: 'left' });
+        .text(processText(settings.documentTitle), textStartX, headerStartY + companyNameSize + 10, { align: 'left' });
 
-      // Date and Code (regular)
+      // Date and Code (regular) - positioned below logo area
       doc.font(fontName);
       const createdDate = new Date(quotation.createdAt);
-      doc.fontSize(bodyTextSize).fillColor(mutedColor).text(processText(`Ngày: ${createdDate.toLocaleDateString('vi-VN')}`), 400, 50, { align: 'right' });
+      const dateY = headerStartY + companyNameSize + documentTitleSize + 20;
+      doc.fontSize(bodyTextSize).fillColor(mutedColor).text(processText(`Ngày: ${createdDate.toLocaleDateString('vi-VN')}`), 400, dateY, { align: 'right' });
 
       if (settings.showQuotationCode) {
-        doc.text(processText(`Mã: ${quotation.id.slice(-8).toUpperCase()}`), 400, 50 + bodyTextSize + 5, { align: 'right' });
+        doc.text(processText(`Mã: ${quotation.id.slice(-8).toUpperCase()}`), 400, dateY + bodyTextSize + 5, { align: 'right' });
       }
 
       // Horizontal line
-      const headerEndY = 50 + companyNameSize + documentTitleSize + 30;
+      const headerEndY = headerStartY + companyNameSize + documentTitleSize + 50;
       doc.moveTo(50, headerEndY).lineTo(545, headerEndY).strokeColor(borderColor).stroke();
 
       // ============================================

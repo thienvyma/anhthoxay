@@ -15,8 +15,47 @@ export function getLeadTableColumns(leadsWithFurnitureQuotes?: Set<string>): Tab
       priority: 1,
       render: (_, row) => (
         <div>
-          <div style={{ color: tokens.color.text, fontWeight: 500 }}>{row.name}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ color: tokens.color.text, fontWeight: 500 }}>{row.name}</span>
+            {/* Duplicate indicators */}
+            {row.isPotentialDuplicate && (
+              <span 
+                title="Có thể trùng lặp"
+                style={{ 
+                  color: tokens.color.warning,
+                  fontSize: 14,
+                }}
+              >
+                <i className="ri-error-warning-fill" />
+              </span>
+            )}
+            {row.hasRelatedLeads && (
+              <span 
+                title={`Có ${row.relatedLeadCount} leads liên quan`}
+                style={{ 
+                  color: tokens.color.info,
+                  fontSize: 14,
+                }}
+              >
+                <i className="ri-links-fill" />
+              </span>
+            )}
+          </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+            {row.submissionCount > 1 && (
+              <span style={{ 
+                fontSize: 10, 
+                color: tokens.color.warning,
+                background: `${tokens.color.warning}20`,
+                padding: '2px 6px',
+                borderRadius: 4,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3,
+              }}>
+                <i className="ri-repeat-line" /> {row.submissionCount}x submit
+              </span>
+            )}
             {row.quoteData && row.source !== 'FURNITURE_QUOTE' && (
               <span style={{ 
                 fontSize: 10, 
@@ -43,6 +82,11 @@ export function getLeadTableColumns(leadsWithFurnitureQuotes?: Set<string>): Tab
         <div>
           <div style={{ color: tokens.color.text }}>{row.phone}</div>
           {row.email && <div style={{ color: tokens.color.muted, fontSize: 13 }}>{row.email}</div>}
+          {row.normalizedPhone && row.normalizedPhone !== row.phone && (
+            <div style={{ color: tokens.color.muted, fontSize: 11 }}>
+              → {row.normalizedPhone}
+            </div>
+          )}
         </div>
       ),
     },

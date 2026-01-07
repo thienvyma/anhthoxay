@@ -1,4 +1,11 @@
+import DOMPurify, { Config } from 'dompurify';
 import type { Block } from '../types';
+
+// Configure DOMPurify for paragraph content
+const DOMPURIFY_CONFIG: Config = {
+  ALLOWED_TAGS: ['br', 'strong', 'em', 'b', 'i', 'u', 'a', 'span'],
+  ALLOWED_ATTR: ['href', 'target', 'rel', 'style', 'class'],
+};
 
 interface ParagraphBlockProps {
   block: Block;
@@ -12,6 +19,8 @@ export function ParagraphBlock({ block, textAlign }: ParagraphBlockProps) {
   const paragraphAlign = (blockAlign as 'left' | 'center' | 'right') || 'left';
   const backgroundColor = data.backgroundColor as string | undefined;
   const textColor = data.textColor as string | undefined;
+
+  const sanitizedHtml = DOMPurify.sanitize(paragraphText, DOMPURIFY_CONFIG);
   
   return (
     <p 
@@ -24,7 +33,7 @@ export function ParagraphBlock({ block, textAlign }: ParagraphBlockProps) {
         borderRadius: backgroundColor ? 8 : undefined,
         margin: backgroundColor ? '20px 0' : undefined,
       }}
-      dangerouslySetInnerHTML={{ __html: paragraphText }}
+      dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
     />
   );
 }

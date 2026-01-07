@@ -1,5 +1,6 @@
 export * from './lib/shared';
 export * from './utils/imageOptimization';
+export * from './schemas';
 
 // API Configuration - centralized URL management
 // Import from config module instead of hardcoding

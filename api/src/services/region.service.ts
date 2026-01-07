@@ -5,9 +5,13 @@
  *
  * **Feature: bidding-phase1-foundation**
  * **Requirements: REQ-3.2**
+ *
+ * **Feature: high-traffic-resilience**
+ * **Requirements: 3.4, 3.6** - Uses read replica for list/get operations
  */
 
 import { PrismaClient } from '@prisma/client';
+import { dbRead, dbWrite, dbReadPrimary } from '../utils/db';
 import type { CreateRegionInput, UpdateRegionInput, RegionQuery } from '../schemas/region.schema';
 
 // ============================================
@@ -47,6 +51,10 @@ export class RegionService {
 
   /**
    * Get all regions (flat or tree structure)
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses read replica for better performance on list operations.
+   * **Validates: Requirements 3.4, 3.6**
    */
   async getAll(query: RegionQuery): Promise<Region[] | RegionTreeNode[]> {
     const { flat, parentId, level, isActive } = query;
@@ -57,10 +65,13 @@ export class RegionService {
       ...(isActive !== undefined && { isActive }),
     };
 
-    const regions = await this.prisma.region.findMany({
-      where,
-      orderBy: [{ level: 'asc' }, { order: 'asc' }, { name: 'asc' }],
-    });
+    // Use read replica for list operations
+    const regions = await dbRead((prisma) =>
+      prisma.region.findMany({
+        where,
+        orderBy: [{ level: 'asc' }, { order: 'asc' }, { name: 'asc' }],
+      })
+    );
 
     if (flat) {
       return regions;
@@ -72,20 +83,32 @@ export class RegionService {
 
   /**
    * Get region by ID
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses read replica for better performance.
+   * **Validates: Requirements 3.4, 3.6**
    */
   async getById(id: string): Promise<Region | null> {
-    return this.prisma.region.findUnique({
-      where: { id },
-    });
+    return dbRead((prisma) =>
+      prisma.region.findUnique({
+        where: { id },
+      })
+    );
   }
 
   /**
    * Get region by slug
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses read replica for better performance.
+   * **Validates: Requirements 3.4, 3.6**
    */
   async getBySlug(slug: string): Promise<Region | null> {
-    return this.prisma.region.findUnique({
-      where: { slug },
-    });
+    return dbRead((prisma) =>
+      prisma.region.findUnique({
+        where: { slug },
+      })
+    );
   }
 
   // ============================================
@@ -94,12 +117,18 @@ export class RegionService {
 
   /**
    * Create a new region
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for write operations.
+   * **Validates: Requirements 3.2**
    */
   async create(data: CreateRegionInput): Promise<Region> {
-    // Check if slug already exists
-    const existingSlug = await this.prisma.region.findUnique({
-      where: { slug: data.slug },
-    });
+    // Check if slug already exists - use primary for consistency after write
+    const existingSlug = await dbReadPrimary((prisma) =>
+      prisma.region.findUnique({
+        where: { slug: data.slug },
+      })
+    );
 
     if (existingSlug) {
       throw new RegionError('SLUG_EXISTS', 'Slug đã tồn tại');
@@ -108,9 +137,11 @@ export class RegionService {
     // If parentId is provided, validate it exists and set level
     let level = data.level;
     if (data.parentId) {
-      const parent = await this.prisma.region.findUnique({
-        where: { id: data.parentId },
-      });
+      const parent = await dbReadPrimary((prisma) =>
+        prisma.region.findUnique({
+          where: { id: data.parentId },
+        })
+      );
 
       if (!parent) {
         throw new RegionError('PARENT_NOT_FOUND', 'Khu vực cha không tồn tại');
@@ -123,26 +154,34 @@ export class RegionService {
       }
     }
 
-    return this.prisma.region.create({
-      data: {
-        name: data.name,
-        slug: data.slug,
-        parentId: data.parentId || null,
-        level,
-        isActive: data.isActive ?? true,
-        order: data.order ?? 0,
-      },
-    });
+    return dbWrite((prisma) =>
+      prisma.region.create({
+        data: {
+          name: data.name,
+          slug: data.slug,
+          parentId: data.parentId || null,
+          level,
+          isActive: data.isActive ?? true,
+          order: data.order ?? 0,
+        },
+      })
+    );
   }
 
   /**
    * Update an existing region
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for write operations.
+   * **Validates: Requirements 3.2**
    */
   async update(id: string, data: UpdateRegionInput): Promise<Region> {
-    // Check if region exists
-    const existing = await this.prisma.region.findUnique({
-      where: { id },
-    });
+    // Check if region exists - use primary for consistency
+    const existing = await dbReadPrimary((prisma) =>
+      prisma.region.findUnique({
+        where: { id },
+      })
+    );
 
     if (!existing) {
       throw new RegionError('REGION_NOT_FOUND', 'Khu vực không tồn tại');
@@ -150,9 +189,11 @@ export class RegionService {
 
     // Check if new slug already exists (if changing slug)
     if (data.slug && data.slug !== existing.slug) {
-      const existingSlug = await this.prisma.region.findUnique({
-        where: { slug: data.slug },
-      });
+      const existingSlug = await dbReadPrimary((prisma) =>
+        prisma.region.findUnique({
+          where: { slug: data.slug },
+        })
+      );
 
       if (existingSlug) {
         throw new RegionError('SLUG_EXISTS', 'Slug đã tồn tại');
@@ -167,9 +208,11 @@ export class RegionService {
       }
 
       if (data.parentId) {
-        const parent = await this.prisma.region.findUnique({
-          where: { id: data.parentId },
-        });
+        const parent = await dbReadPrimary((prisma) =>
+          prisma.region.findUnique({
+            where: { id: data.parentId },
+          })
+        );
 
         if (!parent) {
           throw new RegionError('PARENT_NOT_FOUND', 'Khu vực cha không tồn tại');
@@ -191,28 +234,36 @@ export class RegionService {
       }
     }
 
-    return this.prisma.region.update({
-      where: { id },
-      data: {
-        ...(data.name !== undefined && { name: data.name }),
-        ...(data.slug !== undefined && { slug: data.slug }),
-        ...(data.parentId !== undefined && { parentId: data.parentId || null }),
-        ...(level !== undefined && { level }),
-        ...(data.isActive !== undefined && { isActive: data.isActive }),
-        ...(data.order !== undefined && { order: data.order }),
-      },
-    });
+    return dbWrite((prisma) =>
+      prisma.region.update({
+        where: { id },
+        data: {
+          ...(data.name !== undefined && { name: data.name }),
+          ...(data.slug !== undefined && { slug: data.slug }),
+          ...(data.parentId !== undefined && { parentId: data.parentId || null }),
+          ...(level !== undefined && { level }),
+          ...(data.isActive !== undefined && { isActive: data.isActive }),
+          ...(data.order !== undefined && { order: data.order }),
+        },
+      })
+    );
   }
 
   /**
    * Delete a region
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for write operations.
+   * **Validates: Requirements 3.2**
    */
   async delete(id: string): Promise<{ success: boolean; message: string }> {
-    // Check if region exists
-    const existing = await this.prisma.region.findUnique({
-      where: { id },
-      include: { children: true },
-    });
+    // Check if region exists - use primary for consistency
+    const existing = await dbReadPrimary((prisma) =>
+      prisma.region.findUnique({
+        where: { id },
+        include: { children: true },
+      })
+    );
 
     if (!existing) {
       throw new RegionError('REGION_NOT_FOUND', 'Khu vực không tồn tại');
@@ -223,9 +274,11 @@ export class RegionService {
       throw new RegionError('HAS_CHILDREN', 'Không thể xóa khu vực có khu vực con. Vui lòng xóa các khu vực con trước.');
     }
 
-    await this.prisma.region.delete({
-      where: { id },
-    });
+    await dbWrite((prisma) =>
+      prisma.region.delete({
+        where: { id },
+      })
+    );
 
     return {
       success: true,
@@ -284,6 +337,9 @@ export class RegionService {
 
   /**
    * Check for circular reference when updating parent
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for consistency during write operations.
    */
   private async checkCircularReference(regionId: string, newParentId: string): Promise<boolean> {
     let currentId: string | null = newParentId;
@@ -300,10 +356,13 @@ export class RegionService {
 
       visited.add(currentId);
 
-      const region = await this.prisma.region.findUnique({
-        where: { id: currentId },
-        select: { parentId: true },
-      });
+      const idToQuery = currentId;
+      const region = await dbReadPrimary((prisma) =>
+        prisma.region.findUnique({
+          where: { id: idToQuery },
+          select: { parentId: true },
+        })
+      );
 
       currentId = region?.parentId || null;
     }

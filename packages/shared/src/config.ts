@@ -27,10 +27,10 @@ const DEFAULT_PORTAL_URL = 'http://localhost:4203';
  */
 function getEnvVar(key: string): string | undefined {
   // Try Vite's import.meta.env first (browser/Vite context)
-  // @ts-expect-error - import.meta.env is Vite-specific
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    // @ts-expect-error - import.meta.env is Vite-specific
-    const viteValue = import.meta.env[key];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const meta = typeof import.meta !== 'undefined' ? (import.meta as any) : undefined;
+  if (meta?.env) {
+    const viteValue = meta.env[key];
     if (viteValue) return viteValue;
   }
   

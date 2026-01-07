@@ -10,3 +10,4 @@ export { useFurnitureData } from './useFurnitureData';
 export { useSelections } from './useSelections';
 export { useQuotation } from './useQuotation';
 export { usePagination } from './usePagination';
+export { useCompanyLogo } from './useCompanyLogo';

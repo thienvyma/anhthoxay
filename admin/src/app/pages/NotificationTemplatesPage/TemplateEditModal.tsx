@@ -9,8 +9,15 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import DOMPurify, { Config } from 'dompurify';
 import { tokens } from '../../../theme';
 import { notificationTemplatesApi, type NotificationTemplate, type RenderedTemplate } from '../../api';
+
+// Configure DOMPurify for email preview
+const DOMPURIFY_CONFIG: Config = {
+  ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'a', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'div', 'table', 'tr', 'td', 'th', 'thead', 'tbody', 'img'],
+  ALLOWED_ATTR: ['href', 'target', 'rel', 'style', 'class', 'src', 'alt', 'width', 'height'],
+};
 
 interface TemplateEditModalProps {
   template: NotificationTemplate;
@@ -379,7 +386,7 @@ export function TemplateEditModal({ template, typeLabel, onClose, onSave }: Temp
                         padding: 12,
                         borderRadius: tokens.radius.sm,
                       }}
-                      dangerouslySetInnerHTML={{ __html: preview.emailBody }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(preview.emailBody, DOMPURIFY_CONFIG) }}
                     />
                   </div>
 

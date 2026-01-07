@@ -15,6 +15,33 @@ import {
   type RankingQuery,
   type FeaturedQuery,
 } from '../schemas/ranking.schema';
+import { createLogger } from '../utils/logger';
+
+// ============================================
+// CONSTANTS
+// ============================================
+
+const CHUNK_SIZE = 50;
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+/**
+ * Split an array into chunks of specified size
+ * Used for batch processing to avoid memory issues and database overload
+ * 
+ * @param array - The array to split
+ * @param size - Maximum size of each chunk
+ * @returns Array of chunks
+ */
+function chunkArray<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+}
 
 // ============================================
 // TYPES
@@ -167,8 +194,11 @@ export class RankingService {
   /**
    * Recalculate scores for all contractors
    * Requirements: 7.5 - Update scores daily via scheduled job
+   * Requirements: 1.1, 1.2, 1.4 - Use batch processing with chunking, continue on individual failures
    */
   async recalculateAllScores(): Promise<void> {
+    const logger = createLogger();
+    
     // Get all verified contractors
     const contractors = await this.prisma.user.findMany({
       where: {
@@ -178,81 +208,131 @@ export class RankingService {
       select: { id: true },
     });
 
-    // Calculate scores for each contractor
+    logger.info('Starting score recalculation', { 
+      totalContractors: contractors.length,
+      chunkSize: CHUNK_SIZE,
+    });
+
+    // Calculate scores using batch processing with chunking
     const scores: Array<{
       contractorId: string;
       score: RankingScore;
       stats: { totalProjects: number; completedProjects: number; totalReviews: number; averageRating: number; averageResponseTime: number };
     }> = [];
 
-    for (const contractor of contractors) {
-      try {
-        const score = await this.calculateScore(contractor.id);
-        const stats = await this.getContractorStatsInternal(contractor.id);
-        scores.push({
-          contractorId: contractor.id,
-          score,
-          stats: {
-            totalProjects: stats.totalProjects,
-            completedProjects: stats.completedProjects,
-            totalReviews: stats.totalReviews,
-            averageRating: stats.averageRating,
-            averageResponseTime: stats.averageResponseTime,
-          },
-        });
-      } catch (error) {
-        console.error(`Failed to calculate score for contractor ${contractor.id}:`, error);
+    // Process contractors in chunks to avoid memory issues
+    const chunks = chunkArray(contractors, CHUNK_SIZE);
+    
+    for (const chunk of chunks) {
+      // Process each chunk in parallel using Promise.all
+      const chunkResults = await Promise.all(
+        chunk.map(async (contractor) => {
+          try {
+            const score = await this.calculateScore(contractor.id);
+            const stats = await this.getContractorStatsInternal(contractor.id);
+            return {
+              contractorId: contractor.id,
+              score,
+              stats: {
+                totalProjects: stats.totalProjects,
+                completedProjects: stats.completedProjects,
+                totalReviews: stats.totalReviews,
+                averageRating: stats.averageRating,
+                averageResponseTime: stats.averageResponseTime,
+              },
+            };
+          } catch (error) {
+            // Log error and continue processing other contractors (Requirements: 1.4)
+            logger.error('Failed to calculate score for contractor', {
+              contractorId: contractor.id,
+              operation: 'recalculateAllScores',
+              error: error instanceof Error ? error.message : String(error),
+              stack: error instanceof Error ? error.stack : undefined,
+            });
+            return null;
+          }
+        })
+      );
+
+      // Filter out failed calculations and add successful ones to scores
+      for (const result of chunkResults) {
+        if (result !== null) {
+          scores.push(result);
+        }
       }
     }
+
+    logger.info('Score calculation completed', {
+      successfulCalculations: scores.length,
+      failedCalculations: contractors.length - scores.length,
+    });
 
     // Sort by total score descending
     scores.sort((a, b) => b.score.totalScore - a.score.totalScore);
 
-    // Update rankings in database
-    for (let i = 0; i < scores.length; i++) {
-      const { contractorId, score, stats } = scores[i];
-      const newRank = i + 1;
+    // Update rankings in database using batch processing
+    const updateChunks = chunkArray(scores, CHUNK_SIZE);
+    
+    for (const updateChunk of updateChunks) {
+      await Promise.all(
+        updateChunk.map(async ({ contractorId, score, stats }) => {
+          // Calculate the actual rank based on position in sorted scores array
+          const globalIndex = scores.findIndex(s => s.contractorId === contractorId);
+          const newRank = globalIndex + 1;
 
-      // Get existing ranking to preserve previousRank
-      const existing = await this.prisma.contractorRanking.findUnique({
-        where: { contractorId },
-      });
+          try {
+            // Get existing ranking to preserve previousRank
+            const existing = await this.prisma.contractorRanking.findUnique({
+              where: { contractorId },
+            });
 
-      await this.prisma.contractorRanking.upsert({
-        where: { contractorId },
-        create: {
-          contractorId,
-          ratingScore: score.ratingScore,
-          projectsScore: score.projectsScore,
-          responseScore: score.responseScore,
-          verificationScore: score.verificationScore,
-          totalScore: score.totalScore,
-          rank: newRank,
-          previousRank: null,
-          totalProjects: stats.totalProjects,
-          completedProjects: stats.completedProjects,
-          totalReviews: stats.totalReviews,
-          averageRating: stats.averageRating,
-          averageResponseTime: stats.averageResponseTime,
-          calculatedAt: new Date(),
-        },
-        update: {
-          ratingScore: score.ratingScore,
-          projectsScore: score.projectsScore,
-          responseScore: score.responseScore,
-          verificationScore: score.verificationScore,
-          totalScore: score.totalScore,
-          previousRank: existing?.rank ?? null,
-          rank: newRank,
-          totalProjects: stats.totalProjects,
-          completedProjects: stats.completedProjects,
-          totalReviews: stats.totalReviews,
-          averageRating: stats.averageRating,
-          averageResponseTime: stats.averageResponseTime,
-          calculatedAt: new Date(),
-        },
-      });
+            await this.prisma.contractorRanking.upsert({
+              where: { contractorId },
+              create: {
+                contractorId,
+                ratingScore: score.ratingScore,
+                projectsScore: score.projectsScore,
+                responseScore: score.responseScore,
+                verificationScore: score.verificationScore,
+                totalScore: score.totalScore,
+                rank: newRank,
+                previousRank: null,
+                totalProjects: stats.totalProjects,
+                completedProjects: stats.completedProjects,
+                totalReviews: stats.totalReviews,
+                averageRating: stats.averageRating,
+                averageResponseTime: stats.averageResponseTime,
+                calculatedAt: new Date(),
+              },
+              update: {
+                ratingScore: score.ratingScore,
+                projectsScore: score.projectsScore,
+                responseScore: score.responseScore,
+                verificationScore: score.verificationScore,
+                totalScore: score.totalScore,
+                previousRank: existing?.rank ?? null,
+                rank: newRank,
+                totalProjects: stats.totalProjects,
+                completedProjects: stats.completedProjects,
+                totalReviews: stats.totalReviews,
+                averageRating: stats.averageRating,
+                averageResponseTime: stats.averageResponseTime,
+                calculatedAt: new Date(),
+              },
+            });
+          } catch (error) {
+            logger.error('Failed to update ranking for contractor', {
+              contractorId,
+              operation: 'recalculateAllScores.updateRanking',
+              error: error instanceof Error ? error.message : String(error),
+              stack: error instanceof Error ? error.stack : undefined,
+            });
+          }
+        })
+      );
     }
+
+    logger.info('Ranking update completed', { totalUpdated: scores.length });
   }
 
   /**
@@ -544,83 +624,147 @@ export class RankingService {
   /**
    * Get monthly statistics for a contractor
    * Requirements: 6.4 - Monthly statistics
+   * Requirements: 1.3 - Use aggregated queries instead of per-month loops
    */
   async getMonthlyStats(contractorId: string, months = 6): Promise<MonthlyStats[]> {
-    const result: MonthlyStats[] = [];
     const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
+    const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-    for (let i = 0; i < months; i++) {
-      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
-      const monthKey = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}`;
-
-      // Get projects completed in this month
-      const projectsCompleted = await this.prisma.project.count({
+    // Fetch all data in parallel using Promise.all with aggregated queries
+    const [completedProjects, reviews, bidsSubmitted, bidsWon] = await Promise.all([
+      // Get all completed projects in the date range
+      this.prisma.project.findMany({
         where: {
           selectedBid: {
             contractorId,
           },
           status: 'COMPLETED',
           updatedAt: {
-            gte: monthStart,
-            lte: monthEnd,
+            gte: startDate,
+            lte: endDate,
           },
         },
-      });
-
-      // Get reviews received in this month
-      const reviews = await this.prisma.review.findMany({
+        select: { updatedAt: true },
+      }),
+      // Get all reviews in the date range
+      this.prisma.review.findMany({
         where: {
           contractorId,
           isDeleted: false,
           createdAt: {
-            gte: monthStart,
-            lte: monthEnd,
+            gte: startDate,
+            lte: endDate,
           },
         },
-        select: { rating: true },
-      });
-
-      const reviewsReceived = reviews.length;
-      const averageRating = reviewsReceived > 0
-        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewsReceived
-        : 0;
-
-      // Get bids submitted in this month
-      const bidsSubmitted = await this.prisma.bid.count({
+        select: { rating: true, createdAt: true },
+      }),
+      // Get all bids submitted in the date range
+      this.prisma.bid.findMany({
         where: {
           contractorId,
           createdAt: {
-            gte: monthStart,
-            lte: monthEnd,
+            gte: startDate,
+            lte: endDate,
           },
         },
-      });
-
-      // Get bids won in this month
-      const bidsWon = await this.prisma.bid.count({
+        select: { createdAt: true },
+      }),
+      // Get all bids won in the date range
+      this.prisma.bid.findMany({
         where: {
           contractorId,
           status: 'SELECTED',
           updatedAt: {
-            gte: monthStart,
-            lte: monthEnd,
+            gte: startDate,
+            lte: endDate,
           },
         },
-      });
+        select: { updatedAt: true },
+      }),
+    ]);
 
-      result.push({
-        month: monthKey,
-        projectsCompleted,
-        reviewsReceived,
-        averageRating: Math.round(averageRating * 10) / 10,
-        bidsSubmitted,
-        bidsWon,
+    // Group results by month in application code
+    const monthlyData = new Map<string, {
+      projectsCompleted: number;
+      reviews: number[];
+      bidsSubmitted: number;
+      bidsWon: number;
+    }>();
+
+    // Initialize all months
+    for (let i = 0; i < months; i++) {
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
+      monthlyData.set(monthKey, {
+        projectsCompleted: 0,
+        reviews: [],
+        bidsSubmitted: 0,
+        bidsWon: 0,
       });
     }
 
-    // Return in chronological order (oldest first)
-    return result.reverse();
+    // Helper function to get month key from date
+    const getMonthKey = (date: Date): string => {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    };
+
+    // Group completed projects by month
+    for (const project of completedProjects) {
+      const monthKey = getMonthKey(project.updatedAt);
+      const data = monthlyData.get(monthKey);
+      if (data) {
+        data.projectsCompleted++;
+      }
+    }
+
+    // Group reviews by month
+    for (const review of reviews) {
+      const monthKey = getMonthKey(review.createdAt);
+      const data = monthlyData.get(monthKey);
+      if (data) {
+        data.reviews.push(review.rating);
+      }
+    }
+
+    // Group bids submitted by month
+    for (const bid of bidsSubmitted) {
+      const monthKey = getMonthKey(bid.createdAt);
+      const data = monthlyData.get(monthKey);
+      if (data) {
+        data.bidsSubmitted++;
+      }
+    }
+
+    // Group bids won by month
+    for (const bid of bidsWon) {
+      const monthKey = getMonthKey(bid.updatedAt);
+      const data = monthlyData.get(monthKey);
+      if (data) {
+        data.bidsWon++;
+      }
+    }
+
+    // Convert to result array
+    const result: MonthlyStats[] = [];
+    for (const [month, data] of monthlyData) {
+      const reviewsReceived = data.reviews.length;
+      const averageRating = reviewsReceived > 0
+        ? data.reviews.reduce((sum, r) => sum + r, 0) / reviewsReceived
+        : 0;
+
+      result.push({
+        month,
+        projectsCompleted: data.projectsCompleted,
+        reviewsReceived,
+        averageRating: Math.round(averageRating * 10) / 10,
+        bidsSubmitted: data.bidsSubmitted,
+        bidsWon: data.bidsWon,
+      });
+    }
+
+    // Sort by month (oldest first) and return
+    return result.sort((a, b) => a.month.localeCompare(b.month));
   }
 
 

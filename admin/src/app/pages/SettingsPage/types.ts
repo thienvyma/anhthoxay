@@ -98,7 +98,75 @@ export interface FooterConfig {
   copyright?: { text?: string };
 }
 
-export type SettingsTab = 'account' | 'layout' | 'company' | 'promo' | 'integrations';
+export type SettingsTab = 'account' | 'layout' | 'company' | 'promo' | 'email' | 'integrations';
+
+// Email Settings - Tùy chỉnh nội dung email báo giá
+export interface EmailSettings {
+  // Brand
+  brandName: string;
+  tagline: string;
+  subjectTemplate: string;
+  
+  // Greeting & Intro
+  greetingTemplate: string;
+  introText: string;
+  
+  // Info Box Labels
+  infoBoxTitle: string;
+  labelProject: string;
+  labelBuilding: string;
+  labelUnit: string;
+  labelApartmentType: string;
+  
+  // Attachment & Disclaimer
+  attachmentNotice: string;
+  disclaimerText: string;
+  
+  // CTA
+  ctaQuestion: string;
+  ctaButtonText: string;
+  ctaButtonLink: string;
+  
+  // Signature
+  signatureClosing: string;
+  signatureTeam: string;
+  
+  // Footer
+  footerCopyright: string;
+  footerWebsite: string;
+  footerHotline: string;
+  spamNotice: string;
+}
+
+export const defaultEmailSettings: EmailSettings = {
+  brandName: 'ANH THỢ XÂY',
+  tagline: 'Đối tác tin cậy cho ngôi nhà của bạn',
+  subjectTemplate: '[ANH THỢ XÂY] Báo giá nội thất - Căn hộ {{unitNumber}}',
+  
+  greetingTemplate: 'Xin chào {{leadName}},',
+  introText: 'Cảm ơn bạn đã sử dụng dịch vụ báo giá nội thất của {{brandName}}. Chúng tôi đã chuẩn bị báo giá chi tiết cho căn hộ của bạn.',
+  
+  infoBoxTitle: '📍 Thông tin căn hộ',
+  labelProject: 'Dự án',
+  labelBuilding: 'Tòa nhà',
+  labelUnit: 'Căn hộ',
+  labelApartmentType: 'Loại căn hộ',
+  
+  attachmentNotice: 'Vui lòng xem file PDF đính kèm để biết chi tiết báo giá đầy đủ bao gồm danh sách sản phẩm, giá từng hạng mục và tổng chi phí.',
+  disclaimerText: 'Báo giá này chỉ mang tính chất tham khảo. Giá thực tế có thể thay đổi tùy theo thời điểm, nguồn cung vật liệu và điều kiện thi công cụ thể. Vui lòng liên hệ với chúng tôi để được tư vấn chi tiết.',
+  
+  ctaQuestion: 'Bạn có câu hỏi hoặc cần tư vấn thêm?',
+  ctaButtonText: 'Liên hệ ngay',
+  ctaButtonLink: 'https://anhthoxay.com/lien-he',
+  
+  signatureClosing: 'Trân trọng,',
+  signatureTeam: 'Đội ngũ tư vấn nội thất',
+  
+  footerCopyright: '© {{year}} ANH THỢ XÂY - Đối tác tin cậy cho ngôi nhà của bạn',
+  footerWebsite: 'anhthoxay.com',
+  footerHotline: '1900-xxxx',
+  spamNotice: '📧 Nếu bạn không thấy email này trong hộp thư đến, vui lòng kiểm tra thư mục Spam hoặc Quảng cáo.',
+};
 
 // Glass Morphism Design Tokens (Light Mode for Admin)
 export const glass = {

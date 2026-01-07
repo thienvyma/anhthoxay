@@ -1,22 +1,21 @@
 /**
- * ConfirmationStep Component - Step 7.5
+ * ConfirmationStep Component - Step 8
  * Display detailed summary of selected products before quotation
+ * Prices are hidden - quotation will be sent via email
  * 
- * **Feature: furniture-product-restructure**
- * **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9, 8.10**
+ * **Feature: furniture-quotation-email**
+ * **Validates: Requirements 2.2 (Hide prices in Step 8)**
  */
 
 import { memo, useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokens } from '@app/shared';
 import type { SelectedProduct } from '../types';
-import type { FurnitureFee, ProductBaseGroup, ProductVariantForLanding } from '../../../api/furniture';
+import type { ProductBaseGroup, ProductVariantForLanding } from '../../../api/furniture';
 
 interface Props {
   products: SelectedProduct[];
   productGroups: ProductBaseGroup[];
-  fitInFee: FurnitureFee | null;
-  otherFees: FurnitureFee[];
   onVariantChange: (productBaseId: string, variant: ProductVariantForLanding) => void;
   onRemove: (productBaseId: string) => void;
   onQuantityChange: (productBaseId: string, quantity: number) => void;
@@ -33,19 +32,9 @@ interface UndoState {
   timeoutId: NodeJS.Timeout;
 }
 
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0,
-  }).format(value);
-};
-
 export const ConfirmationStep = memo(function ConfirmationStep({
   products,
   productGroups,
-  fitInFee,
-  otherFees,
   onVariantChange,
   onRemove,
   onQuantityChange,
@@ -66,27 +55,6 @@ export const ConfirmationStep = memo(function ConfirmationStep({
       }
     };
   }, [undoState]);
-
-  /**
-   * Calculate Fit-in fee for a product
-   * **Validates: Requirements 8.2, 11.3**
-   */
-  const calculateFitInFee = useCallback((product: SelectedProduct): number => {
-    if (!product.fitInSelected || !fitInFee) return 0;
-    return fitInFee.type === 'FIXED'
-      ? fitInFee.value * product.quantity
-      : (product.variant.calculatedPrice * fitInFee.value / 100) * product.quantity;
-  }, [fitInFee]);
-
-  /**
-   * Calculate line total for a product
-   * **Validates: Requirements 8.2, 11.4**
-   */
-  const calculateLineTotal = useCallback((product: SelectedProduct): number => {
-    const basePrice = product.variant.calculatedPrice * product.quantity;
-    const fitIn = calculateFitInFee(product);
-    return basePrice + fitIn;
-  }, [calculateFitInFee]);
 
   /**
    * Handle remove with undo functionality
@@ -126,24 +94,6 @@ export const ConfirmationStep = memo(function ConfirmationStep({
     // Clear undo state
     setUndoState(null);
   }, [undoState]);
-
-  // Calculate totals
-  // **Validates: Requirements 8.5, 11.5**
-  const subtotal = products.reduce((sum, p) => sum + p.variant.calculatedPrice * p.quantity, 0);
-  const fitInFeesTotal = products.reduce((sum, p) => sum + calculateFitInFee(p), 0);
-  
-  // Calculate other fees (excluding FIT_IN)
-  const otherFeesBreakdown = otherFees
-    .filter(f => f.isActive && f.code !== 'FIT_IN')
-    .map(f => ({
-      name: f.name,
-      type: f.type,
-      value: f.value,
-      amount: f.type === 'FIXED' ? f.value : (subtotal * f.value / 100),
-    }));
-  
-  const otherFeesTotal = otherFeesBreakdown.reduce((sum, f) => sum + f.amount, 0);
-  const grandTotal = subtotal + fitInFeesTotal + otherFeesTotal;
 
   const isEmpty = products.length === 0;
 
@@ -253,14 +203,11 @@ export const ConfirmationStep = memo(function ConfirmationStep({
         </div>
       )}
 
-      {/* Products List - Requirements: 8.1, 8.2 */}
+      {/* Products List - Requirements: 2.2 (prices hidden) */}
       {!isEmpty && (
         <div style={{ marginBottom: '1rem' }}>
           <AnimatePresence mode="popLayout">
             {products.map((product) => {
-              const lineTotal = calculateLineTotal(product);
-              const fitIn = calculateFitInFee(product);
-
               return (
                 <motion.div
                   key={product.productBaseId}
@@ -335,7 +282,7 @@ export const ConfirmationStep = memo(function ConfirmationStep({
                                   >
                                     {variants.map((v) => (
                                       <option key={v.id} value={v.id}>
-                                        {v.materialName} - {formatCurrency(v.calculatedPrice)}
+                                        {v.materialName}
                                       </option>
                                     ))}
                                   </select>
@@ -417,83 +364,64 @@ export const ConfirmationStep = memo(function ConfirmationStep({
                     </button>
                   </div>
 
-                  {/* Price Details */}
+                  {/* Quantity Section - No prices shown */}
                   <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(3, 1fr)', 
-                    gap: '0.75rem', 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
                     fontSize: '0.8rem',
                     padding: '0.75rem',
                     background: tokens.color.background,
                     borderRadius: tokens.radius.sm,
                     marginTop: '0.5rem',
                   }}>
-                    <div>
-                      <div style={{ color: tokens.color.muted, marginBottom: '0.25rem', fontSize: '0.7rem', textTransform: 'uppercase' }}>Đơn giá</div>
-                      <div style={{ color: tokens.color.text, fontWeight: 600 }}>
-                        {formatCurrency(product.variant.calculatedPrice)}
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ color: tokens.color.muted, marginBottom: '0.25rem', fontSize: '0.7rem', textTransform: 'uppercase' }}>Số lượng</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <button
-                          onClick={() => onQuantityChange(product.productBaseId, product.quantity - 1)}
-                          disabled={product.quantity <= 1}
-                          style={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: '50%',
-                            border: `1px solid ${tokens.color.border}`,
-                            background: 'transparent',
-                            color: product.quantity <= 1 ? tokens.color.muted : tokens.color.text,
-                            cursor: product.quantity <= 1 ? 'not-allowed' : 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            opacity: product.quantity <= 1 ? 0.5 : 1,
-                            padding: 0,
-                          }}
-                        >
-                          <i className="ri-subtract-line" style={{ fontSize: '0.7rem' }} />
-                        </button>
-                        <span style={{ fontWeight: 700, minWidth: 24, textAlign: 'center', fontSize: '0.9rem' }}>{product.quantity}</span>
-                        <button
-                          onClick={() => onQuantityChange(product.productBaseId, product.quantity + 1)}
-                          disabled={product.quantity >= 99}
-                          style={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: '50%',
-                            border: `1px solid ${tokens.color.border}`,
-                            background: 'transparent',
-                            color: product.quantity >= 99 ? tokens.color.muted : tokens.color.text,
-                            cursor: product.quantity >= 99 ? 'not-allowed' : 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            opacity: product.quantity >= 99 ? 0.5 : 1,
-                            padding: 0,
-                          }}
-                        >
-                          <i className="ri-add-line" style={{ fontSize: '0.7rem' }} />
-                        </button>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ color: tokens.color.muted, marginBottom: '0.25rem', fontSize: '0.7rem', textTransform: 'uppercase' }}>Thành tiền</div>
-                      <div style={{ color: tokens.color.primary, fontWeight: 700, fontSize: '0.95rem' }}>
-                        {formatCurrency(lineTotal)}
-                      </div>
-                      {fitIn > 0 && (
-                        <div style={{ fontSize: '0.65rem', color: tokens.color.success, marginTop: '0.15rem' }}>
-                          (đã gồm Fit-in +{formatCurrency(fitIn)})
-                        </div>
-                      )}
+                    <div style={{ color: tokens.color.muted, fontSize: '0.75rem', textTransform: 'uppercase' }}>Số lượng</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <button
+                        onClick={() => onQuantityChange(product.productBaseId, product.quantity - 1)}
+                        disabled={product.quantity <= 1}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: '50%',
+                          border: `1px solid ${tokens.color.border}`,
+                          background: 'transparent',
+                          color: product.quantity <= 1 ? tokens.color.muted : tokens.color.text,
+                          cursor: product.quantity <= 1 ? 'not-allowed' : 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          opacity: product.quantity <= 1 ? 0.5 : 1,
+                          padding: 0,
+                        }}
+                      >
+                        <i className="ri-subtract-line" style={{ fontSize: '0.8rem' }} />
+                      </button>
+                      <span style={{ fontWeight: 700, minWidth: 32, textAlign: 'center', fontSize: '1rem' }}>{product.quantity}</span>
+                      <button
+                        onClick={() => onQuantityChange(product.productBaseId, product.quantity + 1)}
+                        disabled={product.quantity >= 99}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: '50%',
+                          border: `1px solid ${tokens.color.border}`,
+                          background: 'transparent',
+                          color: product.quantity >= 99 ? tokens.color.muted : tokens.color.text,
+                          cursor: product.quantity >= 99 ? 'not-allowed' : 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          opacity: product.quantity >= 99 ? 0.5 : 1,
+                          padding: 0,
+                        }}
+                      >
+                        <i className="ri-add-line" style={{ fontSize: '0.8rem' }} />
+                      </button>
                     </div>
                   </div>
                   
-                  {/* Fit-in Toggle - Always show if product allows, price only if configured */}
+                  {/* Fit-in Toggle - No price shown */}
                   {product.allowFitIn && (
                     <div style={{ marginTop: '0.75rem' }}>
                       <div
@@ -501,7 +429,6 @@ export const ConfirmationStep = memo(function ConfirmationStep({
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'space-between',
                           padding: '0.5rem 0.75rem',
                           borderRadius: tokens.radius.sm,
                           background: product.fitInSelected ? `${tokens.color.success}10` : 'transparent',
@@ -530,12 +457,6 @@ export const ConfirmationStep = memo(function ConfirmationStep({
                             Dịch vụ Fit-in (lắp vừa sát trần)
                           </span>
                         </div>
-                        {fitInFee && fitInFee.isActive && fitInFee.value > 0 && (
-                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: product.fitInSelected ? tokens.color.success : tokens.color.muted }}>
-                            +{formatCurrency(calculateFitInFee({ ...product, fitInSelected: true, quantity: 1 }))}
-                            {fitInFee.type === 'PERCENTAGE' && <span style={{ fontWeight: 400 }}> ({fitInFee.value}%)</span>}
-                          </span>
-                        )}
                       </div>
                     </div>
                   )}
@@ -572,7 +493,7 @@ export const ConfirmationStep = memo(function ConfirmationStep({
         </button>
       )}
 
-      {/* Totals Section - Requirements: 8.5 */}
+      {/* Product Summary - No prices shown (Requirements: 2.2) */}
       {!isEmpty && (
         <div
           style={{
@@ -583,60 +504,42 @@ export const ConfirmationStep = memo(function ConfirmationStep({
             marginBottom: '1rem',
           }}
         >
-          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: tokens.color.primary, marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            <i className="ri-money-dollar-circle-line" style={{ marginRight: '0.35rem' }} />
-            TỔNG KẾT
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            fontSize: '0.875rem',
+          }}>
+            <span style={{ color: tokens.color.muted }}>
+              <i className="ri-shopping-bag-line" style={{ marginRight: '0.35rem' }} />
+              Tổng số sản phẩm:
+            </span>
+            <span style={{ color: tokens.color.primary, fontWeight: 700, fontSize: '1rem' }}>
+              {products.length} sản phẩm
+            </span>
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.875rem' }}>
-            {/* Subtotal */}
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: tokens.color.muted }}>Tạm tính ({products.length} sản phẩm):</span>
-              <span style={{ color: tokens.color.text, fontWeight: 500 }}>{formatCurrency(subtotal)}</span>
-            </div>
-
-            {/* Fit-in Fees */}
-            {fitInFeesTotal > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: tokens.color.muted }}>
-                  <i className="ri-tools-line" style={{ marginRight: '0.25rem' }} />
-                  Phí Fit-in:
-                </span>
-                <span style={{ color: tokens.color.text, fontWeight: 500 }}>{formatCurrency(fitInFeesTotal)}</span>
-              </div>
-            )}
-
-            {/* Other Fees */}
-            {otherFeesBreakdown.map((fee, idx) => (
-              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: tokens.color.muted }}>
-                  {fee.name}{fee.type === 'PERCENTAGE' ? ` (${fee.value}%)` : ''}:
-                </span>
-                <span style={{ color: tokens.color.text, fontWeight: 500 }}>{formatCurrency(fee.amount)}</span>
-              </div>
-            ))}
-
-            {/* Grand Total */}
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingTop: '0.75rem',
-                marginTop: '0.5rem',
-                borderTop: `2px solid ${tokens.color.primary}`,
-              }}
-            >
-              <span style={{ fontWeight: 700, color: tokens.color.primary }}>TỔNG CỘNG:</span>
-              <span style={{ fontSize: '1.25rem', fontWeight: 700, color: tokens.color.primary }}>
-                {formatCurrency(grandTotal)}
-              </span>
+          <div style={{ 
+            marginTop: '0.75rem',
+            padding: '0.75rem',
+            borderRadius: tokens.radius.sm,
+            background: `${tokens.color.primary}10`,
+            border: `1px solid ${tokens.color.primary}30`,
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.5rem',
+              fontSize: '0.8rem',
+              color: tokens.color.text,
+            }}>
+              <i className="ri-mail-send-line" style={{ color: tokens.color.primary }} />
+              <span>Báo giá chi tiết sẽ được gửi qua email sau khi xác nhận</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Navigation Buttons - Requirements: 8.6, 8.7 */}
+      {/* Navigation Buttons - Requirements: 2.2 */}
       <div style={{ display: 'flex', gap: '0.75rem' }}>
         <button
           onClick={onBack}
@@ -691,8 +594,8 @@ export const ConfirmationStep = memo(function ConfirmationStep({
             </>
           ) : (
             <>
-              <i className="ri-check-double-line" />
-              Xác nhận & Nhận báo giá
+              <i className="ri-mail-send-line" />
+              Xác nhận & Gửi báo giá qua Email
             </>
           )}
         </motion.button>

@@ -2,6 +2,43 @@ import { useState, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
 import { tokens, API_URL } from '@app/shared';
 import { useToast } from '../components/Toast';
+import { TurnstileWidget } from '../components/TurnstileWidget';
+import { useFormValidation } from '../hooks/useFormValidation';
+import { z } from 'zod';
+
+// Validation schemas (same as @app/shared for consistency)
+// **Feature: production-scalability**
+// **Validates: Requirements 11.2, 11.3, 11.4, 11.7**
+const phoneSchema = z
+  .string()
+  .min(1, 'Số điện thoại là bắt buộc')
+  .regex(/^[0-9]{10,11}$/, 'Số điện thoại phải có 10-11 chữ số');
+
+const emailSchema = z
+  .string()
+  .email('Email không hợp lệ')
+  .optional()
+  .or(z.literal(''));
+
+const nameSchema = z
+  .string()
+  .min(2, 'Tên phải có ít nhất 2 ký tự')
+  .max(100, 'Tên không được quá 100 ký tự');
+
+const contentSchema = z
+  .string()
+  .min(10, 'Nội dung phải có ít nhất 10 ký tự')
+  .max(2000, 'Nội dung không được quá 2000 ký tự')
+  .optional()
+  .or(z.literal(''));
+
+const quoteFormSchema = z.object({
+  name: nameSchema,
+  phone: phoneSchema,
+  email: emailSchema,
+  content: contentSchema,
+  address: z.string().optional(),
+});
 
 interface CustomField {
   _id: string;
@@ -58,15 +95,46 @@ export const QuoteFormSection = memo(function QuoteFormSection({ data, noPadding
     address: '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+  /**
+   * Form validation hook
+   * **Feature: production-scalability**
+   * **Validates: Requirements 11.1, 11.2, 11.3, 11.4, 11.5, 11.6**
+   */
+  const {
+    validateField,
+    validateAll,
+    getFieldError,
+    hasFieldError,
+    canSubmit,
+    reset: resetValidation,
+  } = useFormValidation<Record<string, unknown>>(quoteFormSchema);
 
   const updateField = useCallback((field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
   }, []);
 
+  /**
+   * Handle field blur for validation
+   * **Validates: Requirements 11.1**
+   */
+  const handleFieldBlur = useCallback((field: string, value: string) => {
+    validateField(field, value);
+  }, [validateField]);
+
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate required fields
+    // Validate all fields before submission
+    // **Validates: Requirements 11.5, 11.6**
+    const isValid = validateAll(form);
+    if (!isValid) {
+      toast.error('Vui lòng kiểm tra lại thông tin');
+      return;
+    }
+
+    // Validate required fields (legacy check for backward compatibility)
     if (showNameField && !form.name.trim()) {
       toast.error('Vui lòng nhập họ tên');
       return;
@@ -82,6 +150,12 @@ export const QuoteFormSection = memo(function QuoteFormSection({ data, noPadding
         toast.error(`Vui lòng nhập ${field.label}`);
         return;
       }
+    }
+
+    // Validate CAPTCHA if configured
+    if (import.meta.env.VITE_TURNSTILE_SITE_KEY && !turnstileToken) {
+      toast.error('Vui lòng xác minh CAPTCHA');
+      return;
     }
 
     setSubmitting(true);
@@ -106,6 +180,7 @@ export const QuoteFormSection = memo(function QuoteFormSection({ data, noPadding
           email: form.email || undefined,
           content: content.trim() || 'Yêu cầu tư vấn từ form báo giá',
           source: 'QUOTE_FORM',
+          turnstileToken: turnstileToken || undefined,
         }),
       });
 
@@ -119,12 +194,14 @@ export const QuoteFormSection = memo(function QuoteFormSection({ data, noPadding
 
       toast.success(successMessage);
       setForm({ name: '', phone: '', email: '', content: '', address: '' });
+      setTurnstileToken(null);
+      resetValidation();
     } catch {
       toast.error('Có lỗi xảy ra. Vui lòng thử lại!');
     } finally {
       setSubmitting(false);
     }
-  }, [form, showNameField, showPhoneField, showAddressField, customFields, successMessage, toast]);
+  }, [form, showNameField, showPhoneField, showAddressField, customFields, successMessage, toast, turnstileToken, validateAll, resetValidation]);
 
   // Layout styles - synced with ConsultationForm in QuotePage
   const getContainerStyle = (): React.CSSProperties => {
@@ -191,6 +268,17 @@ export const QuoteFormSection = memo(function QuoteFormSection({ data, noPadding
     required?: boolean,
     options?: string
   ) => {
+    const fieldError = getFieldError(name);
+    const hasError = hasFieldError(name);
+
+    // Error style for invalid fields
+    // **Validates: Requirements 11.5, 11.6**
+    const errorInputStyle: React.CSSProperties = {
+      ...inputStyle,
+      borderColor: hasError ? tokens.color.error : tokens.color.border,
+      boxShadow: hasError ? `0 0 0 2px ${tokens.color.error}20` : 'none',
+    };
+
     if (type === 'textarea') {
       return (
         <div key={name} style={{ marginBottom: '1rem' }}>
@@ -200,10 +288,25 @@ export const QuoteFormSection = memo(function QuoteFormSection({ data, noPadding
           <textarea
             value={form[name] || ''}
             onChange={(e) => updateField(name, e.target.value)}
+            onBlur={(e) => handleFieldBlur(name, e.target.value)}
             placeholder={placeholder}
             rows={3}
-            style={{ ...inputStyle, resize: 'vertical' }}
+            style={{ ...errorInputStyle, resize: 'vertical' }}
           />
+          {/* Error message display - Validates: Requirements 11.2, 11.3, 11.4 */}
+          {fieldError && (
+            <div style={{ 
+              marginTop: '0.25rem', 
+              fontSize: '0.75rem', 
+              color: tokens.color.error,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem',
+            }}>
+              <i className="ri-error-warning-line" />
+              {fieldError}
+            </div>
+          )}
         </div>
       );
     }
@@ -218,13 +321,27 @@ export const QuoteFormSection = memo(function QuoteFormSection({ data, noPadding
           <select
             value={form[name] || ''}
             onChange={(e) => updateField(name, e.target.value)}
-            style={{ ...inputStyle, cursor: 'pointer' }}
+            onBlur={(e) => handleFieldBlur(name, e.target.value)}
+            style={{ ...errorInputStyle, cursor: 'pointer' }}
           >
             <option value="">{placeholder || 'Chọn...'}</option>
             {optionList.map((opt, i) => (
               <option key={i} value={opt}>{opt}</option>
             ))}
           </select>
+          {fieldError && (
+            <div style={{ 
+              marginTop: '0.25rem', 
+              fontSize: '0.75rem', 
+              color: tokens.color.error,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem',
+            }}>
+              <i className="ri-error-warning-line" />
+              {fieldError}
+            </div>
+          )}
         </div>
       );
     }
@@ -238,9 +355,24 @@ export const QuoteFormSection = memo(function QuoteFormSection({ data, noPadding
           type={type}
           value={form[name] || ''}
           onChange={(e) => updateField(name, e.target.value)}
+          onBlur={(e) => handleFieldBlur(name, e.target.value)}
           placeholder={placeholder}
-          style={inputStyle}
+          style={errorInputStyle}
         />
+        {/* Error message display - Validates: Requirements 11.2, 11.3, 11.4 */}
+        {fieldError && (
+          <div style={{ 
+            marginTop: '0.25rem', 
+            fontSize: '0.75rem', 
+            color: tokens.color.error,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+          }}>
+            <i className="ri-error-warning-line" />
+            {fieldError}
+          </div>
+        )}
       </div>
     );
   };
@@ -296,23 +428,36 @@ export const QuoteFormSection = memo(function QuoteFormSection({ data, noPadding
             )
           )}
 
+          {/* Turnstile CAPTCHA */}
+          <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+            <TurnstileWidget
+              onVerify={setTurnstileToken}
+              onError={() => setTurnstileToken(null)}
+              onExpire={() => setTurnstileToken(null)}
+              theme="light"
+            />
+          </div>
+
           {/* Submit Button - synced with ConsultationForm style */}
+          {/* **Feature: production-scalability** */}
+          {/* **Validates: Requirements 11.5, 11.6** */}
           <motion.button
             type="submit"
-            disabled={submitting}
-            whileHover={{ scale: submitting ? 1 : 1.02 }}
-            whileTap={{ scale: submitting ? 1 : 0.98 }}
+            disabled={submitting || !canSubmit}
+            whileHover={{ scale: (submitting || !canSubmit) ? 1 : 1.02 }}
+            whileTap={{ scale: (submitting || !canSubmit) ? 1 : 0.98 }}
             style={{
               width: '100%',
               padding: '0.875rem',
               borderRadius: tokens.radius.md,
               border: 'none',
-              background: buttonColor,
+              background: (submitting || !canSubmit) ? `${buttonColor}80` : buttonColor,
               color: '#fff',
               fontSize: '1rem',
               fontWeight: 600,
-              cursor: submitting ? 'not-allowed' : 'pointer',
-              opacity: submitting ? 0.7 : 1,
+              cursor: (submitting || !canSubmit) ? 'not-allowed' : 'pointer',
+              opacity: (submitting || !canSubmit) ? 0.7 : 1,
+              transition: 'all 0.2s ease',
             }}
           >
             {submitting ? 'Đang gửi...' : buttonText}

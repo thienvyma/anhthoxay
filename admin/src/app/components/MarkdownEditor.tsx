@@ -1,7 +1,14 @@
 import { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import DOMPurify, { Config } from 'dompurify';
 import { resolveMediaUrl } from '@app/shared';
 import { tokens } from '../../theme';
+
+// Configure DOMPurify for markdown preview
+const DOMPURIFY_CONFIG: Config = {
+  ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'del', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'a', 'img'],
+  ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'style', 'class'],
+};
 
 interface MarkdownEditorProps {
   value: string;
@@ -222,7 +229,10 @@ export function MarkdownEditor({
             overflow: 'auto',
           }}
           dangerouslySetInnerHTML={{
-            __html: simpleMarkdownToHtml(value) || '<p style="color: #666;">Chưa có nội dung...</p>'
+            __html: DOMPurify.sanitize(
+              simpleMarkdownToHtml(value) || '<p style="color: #666;">Chưa có nội dung...</p>',
+              DOMPURIFY_CONFIG
+            )
           }}
         />
       ) : (

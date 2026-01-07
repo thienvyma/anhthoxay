@@ -19,6 +19,8 @@ import { z } from 'zod';
 import { createAuthMiddleware } from '../middleware/auth.middleware';
 import { validate, getValidatedBody } from '../middleware/validation';
 import { successResponse, errorResponse } from '../utils/response';
+import { cacheService, CacheKeys, CacheTTL } from '../services/cache.service';
+import { logger } from '../utils/logger';
 
 // ============================================
 // TYPES
@@ -171,26 +173,36 @@ export function createPricingRoutes(prisma: PrismaClient) {
    * @route GET /service-categories
    * @description Get all active service categories with formulas and material categories
    * @access Public
+   * @cache 5 minutes (TTL: 300 seconds)
    */
   app.get('/service-categories', async (c) => {
     try {
-      const categories = await prisma.serviceCategory.findMany({
-        where: { isActive: true },
-        orderBy: { order: 'asc' },
-        include: {
-          formula: true,
-          materialCategories: { include: { materialCategory: true } },
-        },
-      });
+      const { data: categories, fromCache } = await cacheService.getOrSet(
+        CacheKeys.serviceCategories,
+        CacheTTL.serviceCategories,
+        async () => {
+          const cats = await prisma.serviceCategory.findMany({
+            where: { isActive: true },
+            orderBy: { order: 'asc' },
+            include: {
+              formula: true,
+              materialCategories: { include: { materialCategory: true } },
+            },
+          });
 
-      // Transform to include materialCategoryIds array
-      const result = categories.map(cat => ({
-        ...cat,
-        materialCategoryIds: cat.materialCategories.map(mc => mc.materialCategoryId),
-        allowMaterials: cat.materialCategories.length > 0,
-      }));
+          // Transform to include materialCategoryIds array
+          return cats.map(cat => ({
+            ...cat,
+            materialCategoryIds: cat.materialCategories.map(mc => mc.materialCategoryId),
+            allowMaterials: cat.materialCategories.length > 0,
+          }));
+        }
+      );
 
-      return successResponse(c, result);
+      // Set cache status header
+      c.header('X-Cache-Status', fromCache ? 'HIT' : 'MISS');
+
+      return successResponse(c, categories);
     } catch (error) {
       console.error('Get service categories error:', error);
       return errorResponse(c, 'INTERNAL_ERROR', 'Failed to get service categories', 500);
@@ -254,6 +266,10 @@ export function createPricingRoutes(prisma: PrismaClient) {
         });
       }
 
+      // Invalidate service categories cache
+      await cacheService.invalidate(CacheKeys.serviceCategories);
+      logger.debug('Service categories cache invalidated after create');
+
       return successResponse(c, {
         ...category,
         materialCategoryIds: materialCategoryIds || [],
@@ -303,6 +319,10 @@ export function createPricingRoutes(prisma: PrismaClient) {
         }
       }
 
+      // Invalidate service categories cache
+      await cacheService.invalidate(CacheKeys.serviceCategories);
+      logger.debug('Service categories cache invalidated after update', { id });
+
       return successResponse(c, {
         ...category,
         materialCategoryIds: materialCategoryIds || [],
@@ -326,6 +346,10 @@ export function createPricingRoutes(prisma: PrismaClient) {
       // Delete relations first
       await prisma.serviceCategoryMaterialCategory.deleteMany({ where: { serviceCategoryId: id } });
       await prisma.serviceCategory.delete({ where: { id } });
+
+      // Invalidate service categories cache
+      await cacheService.invalidate(CacheKeys.serviceCategories);
+      logger.debug('Service categories cache invalidated after delete', { id });
 
       return successResponse(c, { ok: true });
     } catch (error) {
@@ -525,15 +549,28 @@ export function createPricingRoutes(prisma: PrismaClient) {
    * @route GET /materials
    * @description Get all active materials, optionally filtered by category
    * @access Public
+   * @cache 5 minutes (TTL: 300 seconds)
    */
   app.get('/materials', async (c) => {
     try {
       const categoryId = c.req.query('categoryId');
-      const materials = await prisma.material.findMany({
-        where: { isActive: true, ...(categoryId ? { categoryId } : {}) },
-        orderBy: [{ order: 'asc' }],
-        include: { category: true },
-      });
+      const cacheKey = CacheKeys.materials(categoryId);
+
+      const { data: materials, fromCache } = await cacheService.getOrSet(
+        cacheKey,
+        CacheTTL.materials,
+        async () => {
+          return prisma.material.findMany({
+            where: { isActive: true, ...(categoryId ? { categoryId } : {}) },
+            orderBy: [{ order: 'asc' }],
+            include: { category: true },
+          });
+        }
+      );
+
+      // Set cache status header
+      c.header('X-Cache-Status', fromCache ? 'HIT' : 'MISS');
+
       return successResponse(c, materials);
     } catch (error) {
       console.error('Get materials error:', error);
@@ -553,6 +590,11 @@ export function createPricingRoutes(prisma: PrismaClient) {
         data: body,
         include: { category: true },
       });
+
+      // Invalidate materials cache (all and by category)
+      await cacheService.invalidateByPattern('cache:materials:*');
+      logger.debug('Materials cache invalidated after create');
+
       return successResponse(c, material, 201);
     } catch (error) {
       console.error('Create material error:', error);
@@ -574,6 +616,11 @@ export function createPricingRoutes(prisma: PrismaClient) {
         data: body,
         include: { category: true },
       });
+
+      // Invalidate materials cache (all and by category)
+      await cacheService.invalidateByPattern('cache:materials:*');
+      logger.debug('Materials cache invalidated after update', { id });
+
       return successResponse(c, material);
     } catch (error) {
       console.error('Update material error:', error);
@@ -590,6 +637,11 @@ export function createPricingRoutes(prisma: PrismaClient) {
     try {
       const id = c.req.param('id');
       await prisma.material.delete({ where: { id } });
+
+      // Invalidate materials cache (all and by category)
+      await cacheService.invalidateByPattern('cache:materials:*');
+      logger.debug('Materials cache invalidated after delete', { id });
+
       return successResponse(c, { ok: true });
     } catch (error) {
       console.error('Delete material error:', error);

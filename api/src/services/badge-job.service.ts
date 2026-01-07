@@ -10,6 +10,9 @@
 
 import { PrismaClient } from '@prisma/client';
 import { BadgeService } from './badge.service';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger();
 
 // ============================================
 // TYPES
@@ -67,21 +70,23 @@ export class BadgeJobService {
           badgesAwarded += awarded.length;
 
           if (awarded.length > 0) {
-            console.log(
-              `[BadgeJob] Awarded ${awarded.length} badge(s) to contractor ${contractor.name} (${contractor.id})`
+            logger.info(
+              `Awarded ${awarded.length} badge(s) to contractor ${contractor.name} (${contractor.id})`,
+              { operation: 'BadgeJob', contractorId: contractor.id, badgesAwarded: awarded.length }
             );
           }
         } catch (error) {
           const errorMessage = `Failed to check badges for contractor ${contractor.id}: ${error instanceof Error ? error.message : 'Unknown error'}`;
           errors.push(errorMessage);
-          console.error(`[BadgeJob] ${errorMessage}`);
+          logger.error(errorMessage, { operation: 'BadgeJob', contractorId: contractor.id });
         }
       }
 
       const completedAt = new Date();
 
-      console.log(
-        `[BadgeJob] Completed: ${contractorsChecked} contractors checked, ${badgesAwarded} badges awarded`
+      logger.info(
+        `Badge job completed: ${contractorsChecked} contractors checked, ${badgesAwarded} badges awarded`,
+        { operation: 'BadgeJob', contractorsChecked, badgesAwarded }
       );
 
       return {
@@ -97,7 +102,7 @@ export class BadgeJobService {
       const completedAt = new Date();
       const errorMessage = `Badge job failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
       errors.push(errorMessage);
-      console.error(`[BadgeJob] ${errorMessage}`);
+      logger.error(errorMessage, { operation: 'BadgeJob' });
 
       return {
         success: false,

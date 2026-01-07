@@ -318,18 +318,25 @@ describe('Informational: Full Portal Pages Scan', () => {
     const allMatches = getAllHardcodedColorMatches(results);
     const filesWithHardcodedColors = results.filter(r => r.hasHardcodedColors);
     
-    // Log summary for visibility
+    // Log summary for visibility (using console.info for informational output)
     if (filesWithHardcodedColors.length > 0) {
-      console.log(`\n📊 Full Portal Scan Summary:`);
-      console.log(`   Total files with hardcoded colors: ${filesWithHardcodedColors.length}`);
-      console.log(`   Total hardcoded color instances: ${allMatches.length}`);
-      console.log(`\n   Files needing refactoring:`);
+      // eslint-disable-next-line no-console -- Test informational output
+      console.info(`\n📊 Full Portal Scan Summary:`);
+      // eslint-disable-next-line no-console -- Test informational output
+      console.info(`   Total files with hardcoded colors: ${filesWithHardcodedColors.length}`);
+      // eslint-disable-next-line no-console -- Test informational output
+      console.info(`   Total hardcoded color instances: ${allMatches.length}`);
+      // eslint-disable-next-line no-console -- Test informational output
+      console.info(`\n   Files needing refactoring:`);
       filesWithHardcodedColors.forEach(r => {
-        console.log(`   - ${path.relative(process.cwd(), r.file)} (${r.matches.length} matches)`);
+        // eslint-disable-next-line no-console -- Test informational output
+        console.info(`   - ${path.relative(process.cwd(), r.file)} (${r.matches.length} matches)`);
       });
-      console.log('');
+      // eslint-disable-next-line no-console -- Test informational output
+      console.info('');
     } else {
-      console.log(`\n✅ All portal pages are free of hardcoded colors!\n`);
+      // eslint-disable-next-line no-console -- Test informational output
+      console.info(`\n✅ All portal pages are free of hardcoded colors!\n`);
     }
     
     // This test always passes - it's informational only
@@ -342,20 +349,36 @@ describe('Informational: Full Portal Pages Scan', () => {
 // ============================================
 
 describe('Hardcoded Color Detection Logic', () => {
+  // Use unique temp files per test to avoid race conditions on Windows
+  let testCounter = 0;
+  
+  const createTempFile = (content: string): string => {
+    const tempFile = path.join(__dirname, `__test_temp_${Date.now()}_${testCounter++}__.tsx`);
+    fs.writeFileSync(tempFile, content);
+    return tempFile;
+  };
+  
+  const cleanupTempFile = (tempFile: string): void => {
+    try {
+      if (fs.existsSync(tempFile)) {
+        fs.unlinkSync(tempFile);
+      }
+    } catch {
+      // Ignore cleanup errors on Windows
+    }
+  };
+
   it('should detect hex colors in style objects', () => {
     fc.assert(
       fc.property(hexColorArb, stylePropertyArb, (color, property) => {
         const testContent = `<div style={{ ${property}: '${color}' }} />`;
-        
-        // Write to temp file and scan
-        const tempFile = path.join(__dirname, '__test_temp__.tsx');
-        fs.writeFileSync(tempFile, testContent);
+        const tempFile = createTempFile(testContent);
         
         try {
           const result = scanFileForHardcodedColors(tempFile);
           return result.hasHardcodedColors === true && result.matches.length > 0;
         } finally {
-          fs.unlinkSync(tempFile);
+          cleanupTempFile(tempFile);
         }
       }),
       { numRuns: 20 }
@@ -366,16 +389,13 @@ describe('Hardcoded Color Detection Logic', () => {
     fc.assert(
       fc.property(cssVariableArb, stylePropertyArb, (cssVar, property) => {
         const testContent = `<div style={{ ${property}: '${cssVar}' }} />`;
-        
-        // Write to temp file and scan
-        const tempFile = path.join(__dirname, '__test_temp__.tsx');
-        fs.writeFileSync(tempFile, testContent);
+        const tempFile = createTempFile(testContent);
         
         try {
           const result = scanFileForHardcodedColors(tempFile);
           return result.hasHardcodedColors === false && result.matches.length === 0;
         } finally {
-          fs.unlinkSync(tempFile);
+          cleanupTempFile(tempFile);
         }
       }),
       { numRuns: 20 }
@@ -386,9 +406,7 @@ describe('Hardcoded Color Detection Logic', () => {
     fc.assert(
       fc.property(hexColorArb, (color) => {
         const testContent = `<div style={{ color: '${color}' }} />`;
-        
-        const tempFile = path.join(__dirname, '__test_temp__.tsx');
-        fs.writeFileSync(tempFile, testContent);
+        const tempFile = createTempFile(testContent);
         
         try {
           const result = scanFileForHardcodedColors(tempFile);
@@ -397,7 +415,7 @@ describe('Hardcoded Color Detection Logic', () => {
           }
           return false;
         } finally {
-          fs.unlinkSync(tempFile);
+          cleanupTempFile(tempFile);
         }
       }),
       { numRuns: 20 }

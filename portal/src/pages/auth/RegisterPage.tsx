@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../auth/AuthContext';
 import { useToast } from '../../components/Toast';
+import { TurnstileWidget } from '../../components/TurnstileWidget';
 
 type AccountType = 'homeowner' | 'contractor';
 
@@ -19,6 +20,7 @@ export function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPendingMessage, setShowPendingMessage] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   
   const { register } = useAuth();
   const { showToast } = useToast();
@@ -49,6 +51,12 @@ export function RegisterPage() {
       return;
     }
 
+    // Validate CAPTCHA if configured
+    if (import.meta.env.VITE_TURNSTILE_SITE_KEY && !turnstileToken) {
+      showToast('Vui lòng xác minh CAPTCHA', 'warning');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const result = await register({
@@ -57,6 +65,7 @@ export function RegisterPage() {
         phone,
         password,
         accountType,
+        turnstileToken: turnstileToken || undefined,
       });
 
       if (result.autoApproved) {
@@ -390,6 +399,16 @@ export function RegisterPage() {
               required
               autoComplete="new-password"
               aria-required="true"
+            />
+          </div>
+
+          {/* Turnstile CAPTCHA */}
+          <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'center' }}>
+            <TurnstileWidget
+              onVerify={setTurnstileToken}
+              onError={() => setTurnstileToken(null)}
+              onExpire={() => setTurnstileToken(null)}
+              theme="auto"
             />
           </div>
 

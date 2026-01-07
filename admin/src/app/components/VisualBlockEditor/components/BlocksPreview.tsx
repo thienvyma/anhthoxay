@@ -1,5 +1,12 @@
+import DOMPurify, { Config } from 'dompurify';
 import { tokens } from '../../../../theme';
 import type { Block } from '../types';
+
+// Configure DOMPurify for block content
+const DOMPURIFY_CONFIG: Config = {
+  ALLOWED_TAGS: ['br', 'strong', 'em', 'b', 'i', 'u', 'a', 'span'],
+  ALLOWED_ATTR: ['href', 'target', 'rel', 'style', 'class'],
+};
 
 interface BlocksPreviewProps {
   blocks: Block[];
@@ -44,7 +51,7 @@ function BlockPreviewItem({ block }: { block: Block }) {
             borderRadius: data.backgroundColor ? 8 : undefined,
             textAlign: (data.align as 'left' | 'center' | 'right') || 'left',
           }}
-          dangerouslySetInnerHTML={{ __html: (data.text as string) || '' }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((data.text as string) || '', DOMPURIFY_CONFIG) }}
         />
       );
 

@@ -14,6 +14,8 @@ export default defineConfig(() => ({
     port: 4200,
     host: 'localhost',
     strictPort: true,
+    // Allow external tunnel domains for testing
+    allowedHosts: ['.ngrok-free.app', '.ngrok.io', '.trycloudflare.com'],
     fs: {
       // Fix Vite 403 fs-allow by explicitly allowing project dir
       allow: [__dirname, path.resolve(__dirname, '..'), path.resolve(__dirname, '..', '..')],

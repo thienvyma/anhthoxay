@@ -516,6 +516,13 @@ Khi thêm route mới, cập nhật danh sách này:
 ### User Routes - Activity (Authenticated)
 - `GET /api/user/activity` - Lịch sử hoạt động của user
 
+### Admin Routes - CDN Management (requireRole('ADMIN'))
+- `GET /api/admin/cdn/status` - Trạng thái cấu hình CDN
+- `POST /api/admin/cdn/purge` - Purge specific paths từ CDN cache
+- `POST /api/admin/cdn/purge-media` - Purge media files từ CDN cache
+- `POST /api/admin/cdn/purge-api` - Purge API response cache từ CDN
+- `POST /api/admin/cdn/purge-all` - Purge ALL CDN cache (use with caution!)
+
 ### Admin Routes - API Key Management (requireRole('ADMIN'))
 - `GET /api/admin/api-keys` - Danh sách tất cả API keys
 - `POST /api/admin/api-keys` - Tạo API key mới

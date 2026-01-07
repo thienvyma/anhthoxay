@@ -1,22 +1,32 @@
 /**
  * useQuotation Hook
- * Manages quotation calculation and submission
+ * Manages quotation calculation, submission, and email delivery
  * 
- * **Feature: codebase-refactor-large-files**
- * **Requirements: 3.2, 3.3**
+ * **Feature: codebase-refactor-large-files, furniture-quotation-email**
+ * **Requirements: 3.1, 3.2, 3.3, 3.4, 6.2, 8.4, 1.3**
  */
 
 import { useState, useCallback } from 'react';
 import { resolveMediaUrl } from '@app/shared';
-import { furnitureAPI, FurnitureFee, QuotationItem, ProductVariantForLanding } from '../../../api/furniture';
+import { furnitureAPI, FurnitureFee, QuotationItem, ProductVariantForLanding, SendEmailResponse } from '../../../api/furniture';
 import type { Selections, QuotationResultData } from '../types';
 import type { LeadData } from '../LeadForm';
+
+/**
+ * Email send status for tracking
+ * _Requirements: 3.3, 3.4_
+ */
+export type EmailSendStatus = 'idle' | 'sending' | 'sent' | 'error' | 'rate_limited';
 
 export interface UseQuotationReturn {
   quotationResult: QuotationResultData | null;
   quotationId: string | null;
   submitting: boolean;
+  emailStatus: EmailSendStatus;
+  emailError: string | null;
+  emailErrorCode: string | null;
   calculateQuotation: () => Promise<boolean>;
+  sendEmail: (quotationId: string) => Promise<SendEmailResponse>;
   getProductDisplayPrice: (variant: ProductVariantForLanding, fitInSelected: boolean, quantity: number) => number;
   resetQuotation: () => void;
 }
@@ -32,6 +42,63 @@ export function useQuotation(
   const [quotationResult, setQuotationResult] = useState<QuotationResultData | null>(null);
   const [quotationId, setQuotationId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<EmailSendStatus>('idle');
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailErrorCode, setEmailErrorCode] = useState<string | null>(null);
+
+  /**
+   * Send quotation email via API
+   * 
+   * **Feature: furniture-quotation-email**
+   * **Validates: Requirements 3.1, 3.3, 3.4, 6.2, 8.4, 1.3**
+   * 
+   * @param quotationIdToSend - The quotation ID to send email for
+   * @returns SendEmailResponse with success status
+   */
+  const sendEmail = useCallback(async (quotationIdToSend: string): Promise<SendEmailResponse> => {
+    setEmailStatus('sending');
+    setEmailError(null);
+    setEmailErrorCode(null);
+
+    try {
+      const result = await furnitureAPI.sendQuotationEmail(quotationIdToSend);
+
+      if (result.success) {
+        setEmailStatus('sent');
+        return result;
+      } else if (result.error?.code === 'EMAIL_RATE_LIMITED') {
+        // _Requirements: 1.3_
+        setEmailStatus('rate_limited');
+        setEmailError(result.error.message);
+        setEmailErrorCode(result.error.code);
+        return result;
+      } else if (result.error?.code === 'GMAIL_NOT_CONFIGURED') {
+        // _Requirements: 6.2_
+        setEmailStatus('error');
+        setEmailError('Hệ thống email chưa được cấu hình. Vui lòng liên hệ bộ phận hỗ trợ.');
+        setEmailErrorCode(result.error.code);
+        return result;
+      } else {
+        // _Requirements: 3.4, 8.4_
+        setEmailStatus('error');
+        setEmailError(result.error?.message || 'Không thể gửi email. Vui lòng thử lại.');
+        setEmailErrorCode(result.error?.code || 'EMAIL_SEND_FAILED');
+        return result;
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Có lỗi xảy ra khi gửi email';
+      setEmailStatus('error');
+      setEmailError(errorMessage);
+      setEmailErrorCode('EMAIL_SEND_FAILED');
+      return {
+        success: false,
+        error: {
+          code: 'EMAIL_SEND_FAILED',
+          message: errorMessage,
+        },
+      };
+    }
+  }, []);
 
   const getProductDisplayPrice = useCallback((
     variant: ProductVariantForLanding, 
@@ -139,7 +206,23 @@ export function useQuotation(
         
         setQuotationId(quotation.id);
         setQuotationResult({ basePrice, fitInFeesTotal, fees: feesBreakdown, totalPrice });
-        onSuccess('Báo giá đã được tạo thành công!');
+        
+        // Send email after successful quotation creation
+        // **Feature: furniture-quotation-email**
+        // **Validates: Requirements 3.1**
+        if (quotation.id && leadData.email) {
+          // Trigger email send asynchronously (don't block the UI)
+          sendEmail(quotation.id).then((emailResult) => {
+            if (emailResult.success) {
+              onSuccess('Báo giá đã được gửi đến email của bạn!');
+            } else {
+              // Email failed but quotation was created - show partial success
+              onSuccess('Báo giá đã được tạo. Vui lòng kiểm tra email hoặc thử gửi lại.');
+            }
+          });
+        } else {
+          onSuccess('Báo giá đã được tạo thành công!');
+        }
         return true;
       }
 
@@ -152,18 +235,25 @@ export function useQuotation(
     } finally {
       setSubmitting(false);
     }
-  }, [selections, fees, fitInFee, leadData, onError, onSuccess]);
+  }, [selections, fees, fitInFee, leadData, onError, onSuccess, sendEmail]);
 
   const resetQuotation = useCallback(() => {
     setQuotationResult(null);
     setQuotationId(null);
+    setEmailStatus('idle');
+    setEmailError(null);
+    setEmailErrorCode(null);
   }, []);
 
   return {
     quotationResult,
     quotationId,
     submitting,
+    emailStatus,
+    emailError,
+    emailErrorCode,
     calculateQuotation,
+    sendEmail,
     getProductDisplayPrice,
     resetQuotation,
   };

@@ -16,6 +16,7 @@ import { createAuthMiddleware, getUser } from '../middleware/auth.middleware';
 import { validate, validateQuery, getValidatedBody, getValidatedQuery } from '../middleware/validation';
 import { successResponse, errorResponse } from '../utils/response';
 import { rateLimiter } from '../middleware/rate-limiter';
+import { cache } from '../middleware/cache';
 
 // ============================================
 // ZOD SCHEMAS
@@ -271,10 +272,11 @@ export function createBlogRoutes(prisma: PrismaClient) {
    * @route GET /blog/posts
    * @description Get all blog posts with optional filtering
    * @access Public
+   * @cache 5 minutes
    * @query status - Filter by status (DRAFT, PUBLISHED, ARCHIVED)
    * @query categoryId - Filter by category ID
    */
-  app.get('/posts', validateQuery(BlogPostFilterSchema), async (c) => {
+  app.get('/posts', cache({ ttl: 300, keyPrefix: 'cache:blog:posts' }), validateQuery(BlogPostFilterSchema), async (c) => {
     try {
       const filter = getValidatedQuery<BlogPostFilter>(c);
       const where: Prisma.BlogPostWhereInput = {};

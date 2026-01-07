@@ -241,6 +241,24 @@ export interface FurnitureQuotation {
   createdAt: string;
 }
 
+/**
+ * Response from send quotation email API
+ * 
+ * **Feature: furniture-quotation-email**
+ * **Validates: Requirements 8.3, 8.4**
+ */
+export interface SendEmailResponse {
+  success: boolean;
+  sentAt?: string;
+  recipientEmail?: string;
+  messageId?: string;
+  error?: {
+    code: string;
+    message: string;
+    retryAfter?: number;
+  };
+}
+
 // ============================================
 // API HELPER
 // ============================================
@@ -427,6 +445,57 @@ export const furnitureAPI = {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(blobUrl);
+  },
+
+  /**
+   * Send quotation PDF via email
+   * 
+   * **Feature: furniture-quotation-email**
+   * **Validates: Requirements 3.1, 8.1**
+   * 
+   * @param quotationId - The quotation ID to send email for
+   * @returns SendEmailResponse with success status and recipient email
+   */
+  sendQuotationEmail: async (quotationId: string): Promise<SendEmailResponse> => {
+    const url = `${API_URL}/api/furniture/quotations/${quotationId}/send-email`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const json = await response.json();
+
+    // Handle rate limit error
+    if (response.status === 429) {
+      return {
+        success: false,
+        error: {
+          code: 'EMAIL_RATE_LIMITED',
+          message: json.error?.message || 'Bạn đã gửi quá nhiều email. Vui lòng thử lại sau.',
+          retryAfter: json.error?.retryAfter,
+        },
+      };
+    }
+
+    // Handle other errors
+    if (!response.ok) {
+      return {
+        success: false,
+        error: {
+          code: json.error?.code || 'EMAIL_SEND_FAILED',
+          message: json.error?.message || 'Không thể gửi email. Vui lòng thử lại.',
+        },
+      };
+    }
+
+    // Unwrap standardized response format
+    if (json && typeof json === 'object' && 'success' in json && 'data' in json) {
+      return json.data as SendEmailResponse;
+    }
+
+    return json as SendEmailResponse;
   },
 };
 

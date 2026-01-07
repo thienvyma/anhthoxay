@@ -3,9 +3,10 @@
  * 
  * Handles media asset operations including upload, retrieval, and deletion.
  * Supports image optimization with Sharp and tracks media usage across the system.
+ * Uses content-hash based filenames for CDN cache busting.
  * 
- * **Feature: api-refactoring**
- * **Requirements: 1.1, 1.2, 1.3, 3.5, 6.1, 6.2**
+ * **Feature: api-refactoring, high-traffic-resilience**
+ * **Requirements: 1.1, 1.2, 1.3, 2.3, 3.5, 6.1, 6.2**
  */
 
 import { Hono } from 'hono';
@@ -15,6 +16,7 @@ import path from 'path';
 import sharp from 'sharp';
 import { createAuthMiddleware } from '../middleware/auth.middleware';
 import { successResponse, errorResponse } from '../utils/response';
+import { generateContentHashFilename } from '../utils/content-hash';
 
 // ============================================
 // TYPES
@@ -92,6 +94,9 @@ export function createMediaRoutes(prisma: PrismaClient, mediaDir?: string) {
    * @route POST /media
    * @description Upload a new media file for gallery (creates MediaAsset record)
    * @access Admin, Manager
+   * 
+   * **Feature: high-traffic-resilience**
+   * **Requirements: 2.3** - Uses content hash for cache busting
    */
   app.post('/', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
     try {
@@ -121,7 +126,13 @@ export function createMediaRoutes(prisma: PrismaClient, mediaDir?: string) {
       if (mimeType.startsWith('image/')) {
         const optimized = await sharp(buffer).webp({ quality: 85 }).toBuffer();
         const metadata = await sharp(buffer).metadata();
-        const filename = `${id}.webp`;
+        
+        // Generate content-hash based filename for cache busting
+        // **Requirements: 2.3**
+        const { filename } = generateContentHashFilename(optimized, {
+          mimeType: 'image/webp',
+          originalFilename: file.name,
+        });
         
         fs.writeFileSync(path.join(resolvedMediaDir, filename), optimized);
         
@@ -139,9 +150,11 @@ export function createMediaRoutes(prisma: PrismaClient, mediaDir?: string) {
         return successResponse(c, asset, 201);
       }
 
-      // Non-image files
-      const ext = (file.name?.split('.').pop() || 'bin').toLowerCase();
-      const filename = `${id}.${ext}`;
+      // Non-image files - use content hash
+      const { filename } = generateContentHashFilename(buffer, {
+        mimeType,
+        originalFilename: file.name,
+      });
       
       fs.writeFileSync(path.join(resolvedMediaDir, filename), buffer);
       
@@ -164,6 +177,9 @@ export function createMediaRoutes(prisma: PrismaClient, mediaDir?: string) {
    * @route POST /media/upload-file
    * @description Upload file only (NO MediaAsset record) - for furniture, materials, etc.
    * @access Admin, Manager
+   * 
+   * **Feature: high-traffic-resilience**
+   * **Requirements: 2.3** - Uses content hash for cache busting
    */
   app.post('/upload-file', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
     try {
@@ -186,14 +202,19 @@ export function createMediaRoutes(prisma: PrismaClient, mediaDir?: string) {
         return errorResponse(c, 'VALIDATION_ERROR', 'Unsupported file format', 400);
       }
 
-      const id = crypto.randomUUID();
       const mimeType = file.type || 'application/octet-stream';
 
       // Optimize images to WebP
       if (mimeType.startsWith('image/')) {
         const optimized = await sharp(buffer).webp({ quality: 85 }).toBuffer();
         const metadata = await sharp(buffer).metadata();
-        const filename = `${id}.webp`;
+        
+        // Generate content-hash based filename for cache busting
+        // **Requirements: 2.3**
+        const { filename } = generateContentHashFilename(optimized, {
+          mimeType: 'image/webp',
+          originalFilename: file.name,
+        });
         
         fs.writeFileSync(path.join(resolvedMediaDir, filename), optimized);
         
@@ -207,9 +228,11 @@ export function createMediaRoutes(prisma: PrismaClient, mediaDir?: string) {
         }, 201);
       }
 
-      // Non-image files
-      const ext = (file.name?.split('.').pop() || 'bin').toLowerCase();
-      const filename = `${id}.${ext}`;
+      // Non-image files - use content hash
+      const { filename } = generateContentHashFilename(buffer, {
+        mimeType,
+        originalFilename: file.name,
+      });
       
       fs.writeFileSync(path.join(resolvedMediaDir, filename), buffer);
       

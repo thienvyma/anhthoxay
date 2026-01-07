@@ -12,6 +12,9 @@
  *
  * **Feature: api-refactoring**
  * **Requirements: 2.1, 2.2, 2.3**
+ *
+ * **Feature: high-traffic-resilience**
+ * **Requirements: 3.4, 3.6** - Uses read replica for list/get operations
  */
 
 import {
@@ -23,6 +26,7 @@ import {
   Material,
   Formula,
 } from '@prisma/client';
+import { dbRead, dbWrite, dbReadPrimary } from '../utils/db';
 
 // ============================================
 // TYPES & INTERFACES
@@ -224,32 +228,45 @@ export class PricingService {
 
   /**
    * Get all active service categories with formulas and material categories
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses read replica for better performance on list operations.
+   * **Validates: Requirements 3.4, 3.6**
    */
   async getAllServiceCategories(): Promise<ServiceCategoryResult[]> {
-    const categories = await this.prisma.serviceCategory.findMany({
-      where: { isActive: true },
-      orderBy: { order: 'asc' },
-      include: {
-        formula: true,
-        materialCategories: { include: { materialCategory: true } },
-      },
-    });
+    const categories = await dbRead((prisma) =>
+      prisma.serviceCategory.findMany({
+        where: { isActive: true },
+        orderBy: { order: 'asc' },
+        include: {
+          formula: true,
+          materialCategories: { include: { materialCategory: true } },
+        },
+      })
+    );
 
     return categories.map(transformServiceCategory);
   }
 
   /**
    * Get a single service category by ID
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses read replica for better performance.
+   * **Validates: Requirements 3.4, 3.6**
+   *
    * @throws PricingServiceError if not found
    */
   async getServiceCategoryById(id: string): Promise<ServiceCategoryResult> {
-    const category = await this.prisma.serviceCategory.findUnique({
-      where: { id },
-      include: {
-        formula: true,
-        materialCategories: { include: { materialCategory: true } },
-      },
-    });
+    const category = await dbRead((prisma) =>
+      prisma.serviceCategory.findUnique({
+        where: { id },
+        include: {
+          formula: true,
+          materialCategories: { include: { materialCategory: true } },
+        },
+      })
+    );
 
     if (!category) {
       throw new PricingServiceError('NOT_FOUND', 'Service category not found', 404);
@@ -260,6 +277,11 @@ export class PricingService {
 
   /**
    * Create a new service category
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for write operations.
+   * **Validates: Requirements 3.2**
+   *
    * @throws PricingServiceError if name already exists
    */
   async createServiceCategory(
@@ -269,19 +291,23 @@ export class PricingService {
     const slug = generateSlug(input.name);
 
     try {
-      const category = await this.prisma.serviceCategory.create({
-        data: { ...categoryData, slug },
-        include: { formula: true },
-      });
+      const category = await dbWrite((prisma) =>
+        prisma.serviceCategory.create({
+          data: { ...categoryData, slug },
+          include: { formula: true },
+        })
+      );
 
       // Create material category relations
       if (materialCategoryIds && materialCategoryIds.length > 0) {
-        await this.prisma.serviceCategoryMaterialCategory.createMany({
-          data: materialCategoryIds.map((mcId) => ({
-            serviceCategoryId: category.id,
-            materialCategoryId: mcId,
-          })),
-        });
+        await dbWrite((prisma) =>
+          prisma.serviceCategoryMaterialCategory.createMany({
+            data: materialCategoryIds.map((mcId) => ({
+              serviceCategoryId: category.id,
+              materialCategoryId: mcId,
+            })),
+          })
+        );
       }
 
       return {
@@ -305,6 +331,11 @@ export class PricingService {
 
   /**
    * Update a service category
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for write operations.
+   * **Validates: Requirements 3.2**
+   *
    * @throws PricingServiceError if not found
    */
   async updateServiceCategory(
@@ -320,26 +351,32 @@ export class PricingService {
     }
 
     try {
-      const category = await this.prisma.serviceCategory.update({
-        where: { id },
-        data: updateData,
-        include: { formula: true },
-      });
+      const category = await dbWrite((prisma) =>
+        prisma.serviceCategory.update({
+          where: { id },
+          data: updateData,
+          include: { formula: true },
+        })
+      );
 
       // Update material category relations if provided
       if (materialCategoryIds !== undefined) {
         // Delete existing relations
-        await this.prisma.serviceCategoryMaterialCategory.deleteMany({
-          where: { serviceCategoryId: id },
-        });
+        await dbWrite((prisma) =>
+          prisma.serviceCategoryMaterialCategory.deleteMany({
+            where: { serviceCategoryId: id },
+          })
+        );
         // Create new relations
         if (materialCategoryIds.length > 0) {
-          await this.prisma.serviceCategoryMaterialCategory.createMany({
-            data: materialCategoryIds.map((mcId) => ({
-              serviceCategoryId: id,
-              materialCategoryId: mcId,
-            })),
-          });
+          await dbWrite((prisma) =>
+            prisma.serviceCategoryMaterialCategory.createMany({
+              data: materialCategoryIds.map((mcId) => ({
+                serviceCategoryId: id,
+                materialCategoryId: mcId,
+              })),
+            })
+          );
         }
       }
 
@@ -360,15 +397,24 @@ export class PricingService {
 
   /**
    * Delete a service category
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for write operations.
+   * **Validates: Requirements 3.2**
+   *
    * @throws PricingServiceError if not found
    */
   async deleteServiceCategory(id: string): Promise<void> {
     try {
       // Delete relations first
-      await this.prisma.serviceCategoryMaterialCategory.deleteMany({
-        where: { serviceCategoryId: id },
-      });
-      await this.prisma.serviceCategory.delete({ where: { id } });
+      await dbWrite((prisma) =>
+        prisma.serviceCategoryMaterialCategory.deleteMany({
+          where: { serviceCategoryId: id },
+        })
+      );
+      await dbWrite((prisma) =>
+        prisma.serviceCategory.delete({ where: { id } })
+      );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
@@ -385,21 +431,34 @@ export class PricingService {
 
   /**
    * Get all active unit prices
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses read replica for better performance on list operations.
+   * **Validates: Requirements 3.4, 3.6**
    */
   async getAllUnitPrices(): Promise<UnitPrice[]> {
-    return this.prisma.unitPrice.findMany({
-      where: { isActive: true },
-      orderBy: { category: 'asc' },
-    });
+    return dbRead((prisma) =>
+      prisma.unitPrice.findMany({
+        where: { isActive: true },
+        orderBy: { category: 'asc' },
+      })
+    );
   }
 
   /**
    * Create a new unit price
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for write operations.
+   * **Validates: Requirements 3.2**
+   *
    * @throws PricingServiceError if tag already exists
    */
   async createUnitPrice(input: CreateUnitPriceInput): Promise<UnitPrice> {
     try {
-      return await this.prisma.unitPrice.create({ data: input });
+      return await dbWrite((prisma) =>
+        prisma.unitPrice.create({ data: input })
+      );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
@@ -416,14 +475,21 @@ export class PricingService {
 
   /**
    * Update a unit price
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for write operations.
+   * **Validates: Requirements 3.2**
+   *
    * @throws PricingServiceError if not found
    */
   async updateUnitPrice(id: string, input: UpdateUnitPriceInput): Promise<UnitPrice> {
     try {
-      return await this.prisma.unitPrice.update({
-        where: { id },
-        data: input,
-      });
+      return await dbWrite((prisma) =>
+        prisma.unitPrice.update({
+          where: { id },
+          data: input,
+        })
+      );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
@@ -436,11 +502,18 @@ export class PricingService {
 
   /**
    * Delete a unit price
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for write operations.
+   * **Validates: Requirements 3.2**
+   *
    * @throws PricingServiceError if not found
    */
   async deleteUnitPrice(id: string): Promise<void> {
     try {
-      await this.prisma.unitPrice.delete({ where: { id } });
+      await dbWrite((prisma) =>
+        prisma.unitPrice.delete({ where: { id } })
+      );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
@@ -457,24 +530,37 @@ export class PricingService {
 
   /**
    * Get all active material categories with material count
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses read replica for better performance on list operations.
+   * **Validates: Requirements 3.4, 3.6**
    */
   async getAllMaterialCategories(): Promise<MaterialCategoryWithCount[]> {
-    return this.prisma.materialCategory.findMany({
-      where: { isActive: true },
-      orderBy: { order: 'asc' },
-      include: { _count: { select: { materials: true } } },
-    });
+    return dbRead((prisma) =>
+      prisma.materialCategory.findMany({
+        where: { isActive: true },
+        orderBy: { order: 'asc' },
+        include: { _count: { select: { materials: true } } },
+      })
+    );
   }
 
   /**
    * Get a single material category with its materials
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses read replica for better performance.
+   * **Validates: Requirements 3.4, 3.6**
+   *
    * @throws PricingServiceError if not found
    */
   async getMaterialCategoryById(id: string): Promise<MaterialCategoryWithMaterials> {
-    const category = await this.prisma.materialCategory.findUnique({
-      where: { id },
-      include: { materials: true },
-    });
+    const category = await dbRead((prisma) =>
+      prisma.materialCategory.findUnique({
+        where: { id },
+        include: { materials: true },
+      })
+    );
 
     if (!category) {
       throw new PricingServiceError('NOT_FOUND', 'Material category not found', 404);
@@ -485,6 +571,11 @@ export class PricingService {
 
   /**
    * Create a new material category
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for write operations.
+   * **Validates: Requirements 3.2**
+   *
    * @throws PricingServiceError if name already exists
    */
   async createMaterialCategory(
@@ -493,9 +584,11 @@ export class PricingService {
     const slug = generateSlug(input.name);
 
     try {
-      return await this.prisma.materialCategory.create({
-        data: { ...input, slug },
-      });
+      return await dbWrite((prisma) =>
+        prisma.materialCategory.create({
+          data: { ...input, slug },
+        })
+      );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
@@ -512,6 +605,11 @@ export class PricingService {
 
   /**
    * Update a material category
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for write operations.
+   * **Validates: Requirements 3.2**
+   *
    * @throws PricingServiceError if not found
    */
   async updateMaterialCategory(
@@ -524,10 +622,12 @@ export class PricingService {
     }
 
     try {
-      return await this.prisma.materialCategory.update({
-        where: { id },
-        data: updateData,
-      });
+      return await dbWrite((prisma) =>
+        prisma.materialCategory.update({
+          where: { id },
+          data: updateData,
+        })
+      );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
@@ -540,11 +640,18 @@ export class PricingService {
 
   /**
    * Delete a material category (only if no materials exist)
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for write operations.
+   * **Validates: Requirements 3.2**
+   *
    * @throws PricingServiceError if not found or has materials
    */
   async deleteMaterialCategory(id: string): Promise<void> {
-    // Check if category has materials
-    const count = await this.prisma.material.count({ where: { categoryId: id } });
+    // Check if category has materials - use primary for consistency
+    const count = await dbReadPrimary((prisma) =>
+      prisma.material.count({ where: { categoryId: id } })
+    );
     if (count > 0) {
       throw new PricingServiceError(
         'CONFLICT',
@@ -554,7 +661,9 @@ export class PricingService {
     }
 
     try {
-      await this.prisma.materialCategory.delete({ where: { id } });
+      await dbWrite((prisma) =>
+        prisma.materialCategory.delete({ where: { id } })
+      );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
@@ -571,27 +680,44 @@ export class PricingService {
 
   /**
    * Get all active materials, optionally filtered by category
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses read replica for better performance on list operations.
+   * **Validates: Requirements 3.4, 3.6**
    */
   async getAllMaterials(categoryId?: string): Promise<MaterialWithCategory[]> {
-    return this.prisma.material.findMany({
-      where: { isActive: true, ...(categoryId ? { categoryId } : {}) },
-      orderBy: [{ order: 'asc' }],
-      include: { category: true },
-    });
+    return dbRead((prisma) =>
+      prisma.material.findMany({
+        where: { isActive: true, ...(categoryId ? { categoryId } : {}) },
+        orderBy: [{ order: 'asc' }],
+        include: { category: true },
+      })
+    );
   }
 
   /**
    * Create a new material
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for write operations.
+   * **Validates: Requirements 3.2**
    */
   async createMaterial(input: CreateMaterialInput): Promise<MaterialWithCategory> {
-    return this.prisma.material.create({
-      data: input,
-      include: { category: true },
-    });
+    return dbWrite((prisma) =>
+      prisma.material.create({
+        data: input,
+        include: { category: true },
+      })
+    );
   }
 
   /**
    * Update a material
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for write operations.
+   * **Validates: Requirements 3.2**
+   *
    * @throws PricingServiceError if not found
    */
   async updateMaterial(
@@ -599,11 +725,13 @@ export class PricingService {
     input: UpdateMaterialInput
   ): Promise<MaterialWithCategory> {
     try {
-      return await this.prisma.material.update({
-        where: { id },
-        data: input,
-        include: { category: true },
-      });
+      return await dbWrite((prisma) =>
+        prisma.material.update({
+          where: { id },
+          data: input,
+          include: { category: true },
+        })
+      );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
@@ -616,11 +744,18 @@ export class PricingService {
 
   /**
    * Delete a material
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for write operations.
+   * **Validates: Requirements 3.2**
+   *
    * @throws PricingServiceError if not found
    */
   async deleteMaterial(id: string): Promise<void> {
     try {
-      await this.prisma.material.delete({ where: { id } });
+      await dbWrite((prisma) =>
+        prisma.material.delete({ where: { id } })
+      );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
@@ -637,28 +772,47 @@ export class PricingService {
 
   /**
    * Get all active formulas
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses read replica for better performance on list operations.
+   * **Validates: Requirements 3.4, 3.6**
    */
   async getAllFormulas(): Promise<Formula[]> {
-    return this.prisma.formula.findMany({ where: { isActive: true } });
+    return dbRead((prisma) =>
+      prisma.formula.findMany({ where: { isActive: true } })
+    );
   }
 
   /**
    * Create a new formula
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for write operations.
+   * **Validates: Requirements 3.2**
    */
   async createFormula(input: CreateFormulaInput): Promise<Formula> {
-    return this.prisma.formula.create({ data: input });
+    return dbWrite((prisma) =>
+      prisma.formula.create({ data: input })
+    );
   }
 
   /**
    * Update a formula
+   *
+   * **Feature: high-traffic-resilience**
+   * Uses primary database for write operations.
+   * **Validates: Requirements 3.2**
+   *
    * @throws PricingServiceError if not found
    */
   async updateFormula(id: string, input: UpdateFormulaInput): Promise<Formula> {
     try {
-      return await this.prisma.formula.update({
-        where: { id },
-        data: input,
-      });
+      return await dbWrite((prisma) =>
+        prisma.formula.update({
+          where: { id },
+          data: input,
+        })
+      );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {

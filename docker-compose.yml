@@ -1,0 +1,42 @@
+# Docker Compose for ANH THỢ XÂY Development Environment
+# PostgreSQL + Redis for production-ready setup
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: ath-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: anhthoxay
+      POSTGRES_PASSWORD: anhthoxay_dev_2024
+      POSTGRES_DB: anhthoxay_dev
+    ports:
+      - "5433:5432"  # Use 5433 if 5432 is already in use
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U anhthoxay -d anhthoxay_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: ath-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"  # Use 6380 if 6379 is already in use
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes
+
+volumes:
+  postgres_data:
+  redis_data:

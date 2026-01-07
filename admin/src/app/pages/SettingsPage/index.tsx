@@ -15,6 +15,7 @@ import { CompanyTab } from './CompanyTab';
 import { PromoTab } from './PromoTab';
 import { AccountTab } from './AccountTab';
 import { GoogleSheetsTab } from './GoogleSheetsTab';
+import { EmailSettingsTab } from './EmailSettingsTab';
 import {
   type SettingsTab,
   type CompanySettings,
@@ -143,6 +144,17 @@ export function SettingsPage() {
           <PromoTab
             settings={promoSettings}
             onChange={setPromoSettings}
+            onShowMessage={showSavedMessage}
+            onError={handleError}
+          />
+        ),
+      },
+      {
+        id: 'email',
+        label: 'Email',
+        icon: 'ri-mail-settings-line',
+        content: (
+          <EmailSettingsTab
             onShowMessage={showSavedMessage}
             onError={handleError}
           />

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, useScroll, useSpring } from 'framer-motion';
+import { useThrottledCallback } from '../hooks/useThrottle';
 
 /**
  * ReadingProgressBar Component
@@ -62,23 +63,24 @@ export function ReadingProgressIndicator({ totalMinutes }: ReadingProgressIndica
   const [progress, setProgress] = useState(0);
   const [show, setShow] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-      const scrollTop = window.scrollY;
-      const totalScroll = documentHeight - windowHeight;
-      const currentProgress = (scrollTop / totalScroll) * 100;
-      
-      setProgress(Math.min(100, Math.max(0, currentProgress)));
-      setShow(scrollTop > 300); // Show after scrolling 300px
-    };
+  // Throttled scroll handler with 100ms interval (Requirement 9.3)
+  const handleScroll = useThrottledCallback(() => {
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    const scrollTop = window.scrollY;
+    const totalScroll = documentHeight - windowHeight;
+    const currentProgress = (scrollTop / totalScroll) * 100;
+    
+    setProgress(Math.min(100, Math.max(0, currentProgress)));
+    setShow(scrollTop > 300); // Show after scrolling 300px
+  }, 100);
 
-    window.addEventListener('scroll', handleScroll);
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll(); // Initial call
     
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [handleScroll]);
 
   const minutesRemaining = Math.ceil((totalMinutes * (100 - progress)) / 100);
 

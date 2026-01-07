@@ -1,3 +1,4 @@
+import DOMPurify, { Config } from 'dompurify';
 import { resolveMediaUrl } from '@app/shared';
 import type { PreviewProps } from './types';
 import { 
@@ -9,6 +10,12 @@ import {
   maxWidthMap,
 } from './richtext';
 import type { Block } from './richtext';
+
+// Configure DOMPurify for rich text preview
+const DOMPURIFY_CONFIG: Config = {
+  ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'a', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'img', 'div'],
+  ALLOWED_ATTR: ['href', 'target', 'rel', 'style', 'class', 'src', 'alt'],
+};
 
 export function RichTextPreview({ data }: PreviewProps) {
   const content = data.content || data.html || '';
@@ -52,7 +59,7 @@ export function RichTextPreview({ data }: PreviewProps) {
             maxWidth: previewMaxWidth,
             margin: textAlign === 'center' ? '0 auto' : textAlign === 'right' ? '0 0 0 auto' : '0',
           }} 
-          dangerouslySetInnerHTML={{ __html: content }} 
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content, DOMPURIFY_CONFIG) }} 
         />
       );
     }

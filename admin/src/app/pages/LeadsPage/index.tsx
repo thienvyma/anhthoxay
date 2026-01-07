@@ -13,8 +13,9 @@ import {
   LeadStats,
   BulkDeleteModal,
   LeadPagination,
+  RelatedLeadsModal,
 } from './components';
-import type { SourceStats } from './components';
+import type { SourceStats, DuplicateStats } from './components';
 import { useBulkSelection, useSelectedLeadQuotations } from './hooks';
 import type { CustomerLead } from './types';
 
@@ -44,13 +45,19 @@ export function LeadsPage() {
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [leadsWithFurnitureQuotes, setLeadsWithFurnitureQuotes] = useState<Set<string>>(new Set());
   
+  // Duplicate management state
+  const [duplicateStatus, setDuplicateStatus] = useState<'all' | 'duplicates_only' | 'no_duplicates'>('all');
+  const [hasRelatedFilter, setHasRelatedFilter] = useState<boolean | null>(null);
+  const [relatedLeadsModalLead, setRelatedLeadsModalLead] = useState<CustomerLead | null>(null);
+  const [duplicateStats, setDuplicateStats] = useState<DuplicateStats>({ potentialDuplicates: 0, withRelatedLeads: 0 });
+  
   const debouncedSearch = useDebounce(searchQuery, 500);
   const columns = useMemo(() => getLeadTableColumns(leadsWithFurnitureQuotes), [leadsWithFurnitureQuotes]);
   
   // Use extracted hooks - memoize clearOnChange dependencies
   const clearOnChangeDeps = useMemo(
-    () => [currentPage, filterStatus, filterSource, debouncedSearch],
-    [currentPage, filterStatus, filterSource, debouncedSearch]
+    () => [currentPage, filterStatus, filterSource, debouncedSearch, duplicateStatus, hasRelatedFilter],
+    [currentPage, filterStatus, filterSource, debouncedSearch, duplicateStatus, hasRelatedFilter]
   );
   const { selectedIds, toggleSelectAll, toggleSelectOne, clearSelection, selectedCount } = useBulkSelection(
     leads,
@@ -76,21 +83,24 @@ export function LeadsPage() {
       const response = await leadsApi.list({
         search: debouncedSearch || undefined,
         status: filterStatus || undefined,
+        source: filterSource || undefined,
+        duplicateStatus: duplicateStatus !== 'all' ? duplicateStatus : undefined,
+        hasRelated: hasRelatedFilter !== null ? hasRelatedFilter : undefined,
         page: pageToFetch,
         limit: 20,
       });
       
-      let filteredData = response.data;
-      if (filterSource) {
-        filteredData = response.data.filter(lead => lead.source === filterSource);
-      }
-      
-      setLeads(filteredData);
+      setLeads(response.data);
       setTotalPages(response.totalPages);
-      setTotal(filterSource ? filteredData.length : response.total);
+      setTotal(response.total);
+      
+      // Calculate duplicate stats from response
+      const potentialDuplicates = response.data.filter(l => l.isPotentialDuplicate).length;
+      const withRelatedLeads = response.data.filter(l => l.hasRelatedLeads).length;
+      setDuplicateStats({ potentialDuplicates, withRelatedLeads });
       
       // Check which leads have furniture quotations - batch check instead of individual calls
-      const leadsToCheck = filteredData.filter(l => l.source === 'FURNITURE_QUOTE');
+      const leadsToCheck = response.data.filter(l => l.source === 'FURNITURE_QUOTE');
       if (leadsToCheck.length > 0) {
         try {
           const { furnitureQuotationsApi } = await import('../../api/furniture');
@@ -123,7 +133,7 @@ export function LeadsPage() {
       setLoading(false);
       isFetchingRef.current = false;
     }
-  }, [debouncedSearch, filterStatus, filterSource, currentPage]);
+  }, [debouncedSearch, filterStatus, filterSource, duplicateStatus, hasRelatedFilter, currentPage]);
 
   // Single useEffect for all fetch triggers
   useEffect(() => {
@@ -136,7 +146,7 @@ export function LeadsPage() {
     
     // For subsequent changes, reset page if filters changed
     fetchLeads(true);
-  }, [debouncedSearch, filterStatus, filterSource]);
+  }, [debouncedSearch, filterStatus, filterSource, duplicateStatus, hasRelatedFilter]);
 
   // Separate effect for page changes only
   useEffect(() => {
@@ -192,6 +202,16 @@ export function LeadsPage() {
       console.error('Export failed:', error);
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleMergeLeads = async (primaryId: string, secondaryIds: string[]) => {
+    try {
+      await leadsApi.merge(primaryId, secondaryIds);
+      fetchLeads();
+    } catch (error) {
+      console.error('Merge failed:', error);
+      throw error;
     }
   };
 
@@ -316,6 +336,11 @@ export function LeadsPage() {
         sourceStats={sourceStats}
         totalLeads={leads.length}
         isMobile={isMobile}
+        duplicateStatus={duplicateStatus}
+        onDuplicateStatusChange={setDuplicateStatus}
+        hasRelatedFilter={hasRelatedFilter}
+        onHasRelatedChange={setHasRelatedFilter}
+        duplicateStats={duplicateStats}
       />
 
       <LeadStats stats={stats} isMobile={isMobile} />
@@ -333,9 +358,27 @@ export function LeadsPage() {
         onToggleSelect={toggleSelectOne}
         onToggleSelectAll={toggleSelectAll}
         actions={(lead) => (
-          <Button variant="outline" size="small" onClick={() => setSelectedLead(lead)}>
-            {isMobile ? <i className="ri-eye-line" /> : <><i className="ri-eye-line" /> Chi tiết</>}
-          </Button>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {(lead.hasRelatedLeads || lead.isPotentialDuplicate) && (
+              <Button 
+                variant="outline" 
+                size="small" 
+                onClick={(e) => {
+                  e?.stopPropagation();
+                  setRelatedLeadsModalLead(lead);
+                }}
+                style={{ 
+                  borderColor: lead.isPotentialDuplicate ? tokens.color.warning : tokens.color.info,
+                  color: lead.isPotentialDuplicate ? tokens.color.warning : tokens.color.info,
+                }}
+              >
+                <i className={lead.isPotentialDuplicate ? 'ri-git-merge-line' : 'ri-links-line'} />
+              </Button>
+            )}
+            <Button variant="outline" size="small" onClick={() => setSelectedLead(lead)}>
+              {isMobile ? <i className="ri-eye-line" /> : <><i className="ri-eye-line" /> Chi tiết</>}
+            </Button>
+          </div>
         )}
       />
 
@@ -354,6 +397,16 @@ export function LeadsPage() {
         onDelete={deleteLead}
         furnitureQuotations={furnitureQuotations}
         loadingQuotations={loadingQuotations}
+      />
+
+      <RelatedLeadsModal
+        lead={relatedLeadsModalLead}
+        onClose={() => setRelatedLeadsModalLead(null)}
+        onMerge={handleMergeLeads}
+        onViewLead={(lead) => {
+          setRelatedLeadsModalLead(null);
+          setSelectedLead(lead);
+        }}
       />
     </div>
   );

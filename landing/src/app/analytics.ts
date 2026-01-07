@@ -8,8 +8,8 @@ export function initAnalytics() {
   win.__analytics_inited = true;
   // Minimal pageview based on pathname (not hash)
   const send = () => {
-    const path = window.location.pathname || '/';
-    console.debug('[analytics] pageview', path);
+    // Analytics tracking - no logging needed in production
+    // Path is tracked internally
   };
   send();
   

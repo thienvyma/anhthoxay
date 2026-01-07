@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { AuthError } from '../services/auth.service';
 import { createLogger } from '../utils/logger';
 import { getCorrelationId } from './correlation-id';
+import { captureException, setUser } from '../config/sentry';
 
 /**
  * Centralized error handler for Hono
@@ -17,6 +18,7 @@ import { getCorrelationId } from './correlation-id';
  * 
  * Always includes correlationId in response for debugging
  * Stack trace included in dev mode only
+ * Captures errors to Sentry in production
  * 
  * @example
  * ```ts
@@ -37,17 +39,31 @@ export function errorHandler() {
       errorName: err.name,
     });
 
-    // Handle Zod validation errors
+    // Set user context for Sentry if available
+    const user = c.get('user');
+    if (user) {
+      setUser({ id: user.id, email: user.email, role: user.role });
+    }
+
+    // Handle Zod validation errors (don't send to Sentry - client errors)
     if (err instanceof ZodError) {
       return c.json({
         error: 'Validation failed',
-        details: err.flatten(),
+        details: err.format(),
         correlationId,
       }, 400);
     }
 
-    // Handle AuthError (custom auth errors)
+    // Handle AuthError (custom auth errors - don't send to Sentry for 4xx)
     if (err instanceof AuthError) {
+      // Only capture 5xx auth errors to Sentry
+      if (err.statusCode >= 500) {
+        captureException(err, {
+          correlationId,
+          path: c.req.path,
+          method: c.req.method,
+        });
+      }
       return c.json({
         error: { code: err.code, message: err.message },
         correlationId,
@@ -68,7 +84,21 @@ export function errorHandler() {
           correlationId,
         }, 409);
       }
+      // Capture other Prisma errors to Sentry
+      captureException(err, {
+        correlationId,
+        path: c.req.path,
+        method: c.req.method,
+        prismaCode: err.code,
+      });
     }
+
+    // Capture all 500 errors to Sentry
+    captureException(err, {
+      correlationId,
+      path: c.req.path,
+      method: c.req.method,
+    });
 
     // Generic error response
     // Include stack trace in development mode for debugging

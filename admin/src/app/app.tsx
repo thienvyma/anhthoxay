@@ -28,6 +28,7 @@ import { BiddingSettingsPage } from './pages/BiddingSettingsPage';
 import { FurniturePage } from './pages/FurniturePage';
 import { ApiKeysPage } from './pages/ApiKeysPage';
 import { GuidePage } from './pages/GuidePage';
+import { RateLimitPage } from './pages/RateLimitPage';
 import { useUser, store, tokenStorage } from './store';
 import { authApi } from './api';
 import type { RouteType } from './types'
@@ -170,6 +171,7 @@ function AppContent() {
           <Route path="/api-keys" element={<ApiKeysPage />} />
           <Route path="/settings/api-keys" element={<ApiKeysPage />} />
           <Route path="/guide" element={<GuidePage />} />
+          <Route path="/rate-limits" element={<RateLimitPage />} />
           <Route path="/pricing-config" element={<PricingConfigPage />} />
           <Route path="/media" element={<MediaPage />} />
           <Route path="/blog-manager" element={<BlogManagerPage />} />

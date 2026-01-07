@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import DOMPurify, { Config } from 'dompurify';
 import { tokens } from '../../theme';
+
+// Configure DOMPurify for rich text preview
+const DOMPURIFY_CONFIG: Config = {
+  ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'code'],
+  ALLOWED_ATTR: ['href', 'target', 'rel', 'style', 'class'],
+};
 
 interface RichTextEditorProps {
   value: string;
@@ -272,7 +279,10 @@ export function RichTextEditor({ value, onChange, label, placeholder, rows = 10 
                 lineHeight: 1.7,
               }}
               dangerouslySetInnerHTML={{ 
-                __html: renderPreview(value) || '<p style="color: #6b7280; font-style: italic;">Preview will appear here...</p>' 
+                __html: DOMPurify.sanitize(
+                  renderPreview(value) || '<p style="color: #6b7280; font-style: italic;">Preview will appear here...</p>',
+                  DOMPURIFY_CONFIG
+                )
               }}
             />
           </motion.div>

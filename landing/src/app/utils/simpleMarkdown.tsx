@@ -4,6 +4,14 @@
  * ~2KB vs react-markdown's 80KB!
  */
 
+import DOMPurify, { Config } from 'dompurify';
+
+// Configure DOMPurify for markdown output
+const DOMPURIFY_CONFIG: Config = {
+  ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'a', 'h1', 'h2', 'h3', 'ul', 'ol', 'li'],
+  ALLOWED_ATTR: ['href', 'target', 'rel'],
+};
+
 interface ParseOptions {
   sanitize?: boolean;
 }
@@ -66,10 +74,11 @@ export function parseSimpleMarkdown(markdown: string, options: ParseOptions = {}
  */
 export function SimpleMarkdown({ children }: { children: string }) {
   const html = parseSimpleMarkdown(children, { sanitize: true });
+  const sanitizedHtml = DOMPurify.sanitize(html, DOMPURIFY_CONFIG);
   
   return (
     <div 
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
       style={{
         // Preserve markdown-like styling
         lineHeight: 1.7,

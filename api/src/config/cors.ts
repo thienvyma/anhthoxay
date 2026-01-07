@@ -47,6 +47,12 @@ const DEFAULT_DEV_ORIGINS = [
   'http://localhost:4203',  // Portal
 ];
 
+/** Ngrok domain pattern for validation */
+const NGROK_DOMAIN_PATTERN = /^https:\/\/[a-z0-9-]+\.ngrok(-free)?\.app$/;
+
+/** Cloudflare Tunnel domain pattern for validation */
+const CLOUDFLARE_TUNNEL_PATTERN = /^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/;
+
 /** Environment variable name for CORS origins */
 const CORS_ORIGINS_ENV = 'CORS_ORIGINS';
 
@@ -55,9 +61,40 @@ const CORS_ORIGINS_ENV = 'CORS_ORIGINS';
 // ============================================
 
 /**
+ * Check if origin is a valid ngrok URL
+ * 
+ * @param origin - The origin string to check
+ * @returns true if valid ngrok origin
+ */
+export function isNgrokOrigin(origin: string): boolean {
+  return NGROK_DOMAIN_PATTERN.test(origin);
+}
+
+/**
+ * Check if origin is a valid Cloudflare Tunnel URL
+ * 
+ * @param origin - The origin string to check
+ * @returns true if valid Cloudflare Tunnel origin
+ */
+export function isCloudflareOrigin(origin: string): boolean {
+  return CLOUDFLARE_TUNNEL_PATTERN.test(origin);
+}
+
+/**
+ * Check if origin is a valid tunnel URL (ngrok or Cloudflare)
+ * 
+ * @param origin - The origin string to check
+ * @returns true if valid tunnel origin
+ */
+export function isTunnelOrigin(origin: string): boolean {
+  return isNgrokOrigin(origin) || isCloudflareOrigin(origin);
+}
+
+/**
  * Validate that a string is a valid URL origin for CORS
  * 
  * Only HTTP and HTTPS protocols are allowed for CORS origins.
+ * Special handling for ngrok URLs.
  * 
  * @param origin - The origin string to validate
  * @returns true if valid HTTP/HTTPS origin, false otherwise
@@ -197,6 +234,9 @@ export default {
   getCorsConfig,
   createCorsMiddleware,
   isValidOrigin,
+  isNgrokOrigin,
+  isCloudflareOrigin,
+  isTunnelOrigin,
   parseOrigins,
   validateOrigins,
   CorsValidationError,

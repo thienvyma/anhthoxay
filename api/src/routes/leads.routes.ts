@@ -4,8 +4,8 @@
  * Handles CRUD operations for customer leads.
  * Includes search, filtering, pagination, stats, and CSV export.
  * 
- * **Feature: api-refactoring**
- * **Requirements: 1.1, 1.2, 1.3, 3.5, 5.1, 6.1, 6.2**
+ * **Feature: lead-duplicate-management, high-traffic-resilience**
+ * **Requirements: 1.1-1.4, 2.1-2.5, 3.1-3.3, 4.1, 4.3, 10.3**
  */
 
 import { Hono } from 'hono';
@@ -16,6 +16,10 @@ import { validate, validateQuery, getValidatedBody, getValidatedQuery } from '..
 import { successResponse, paginatedResponse, errorResponse } from '../utils/response';
 import { googleSheetsService } from '../services/google-sheets.service';
 import { rateLimiter } from '../middleware/rate-limiter';
+import { turnstileMiddleware } from '../middleware/turnstile';
+import { LeadsService, LeadsServiceError } from '../services/leads.service';
+import { getCorrelationId } from '../middleware/correlation-id';
+import { logger } from '../utils/logger';
 
 // ============================================
 // TYPES
@@ -56,11 +60,28 @@ export const updateLeadSchema = z.object({
 });
 
 /**
+ * Schema for manual merge leads request
+ * 
+ * **Feature: lead-duplicate-management**
+ * **Requirements: 6.2, 6.3**
+ */
+export const mergeLeadsSchema = z.object({
+  secondaryLeadIds: z.array(z.string()).min(1, 'Phải có ít nhất một lead phụ để merge'),
+});
+
+/**
  * Schema for lead list query parameters
+ * 
+ * **Feature: lead-duplicate-management**
+ * **Requirements: 8.1, 8.2**
  */
 export const leadsQuerySchema = z.object({
   search: z.string().optional(),
   status: z.enum(['NEW', 'CONTACTED', 'CONVERTED', 'CANCELLED']).optional(),
+  // Duplicate management filters (Requirements 8.1, 8.2)
+  duplicateStatus: z.enum(['all', 'duplicates_only', 'no_duplicates']).default('all'),
+  hasRelated: z.coerce.boolean().optional(),
+  source: z.enum(['QUOTE_FORM', 'CONTACT_FORM', 'FURNITURE_QUOTE']).optional(),
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
@@ -77,6 +98,7 @@ export const leadsQuerySchema = z.object({
 export function createLeadsRoutes(prisma: PrismaClient) {
   const app = new Hono();
   const { authenticate, requireRole } = createAuthMiddleware(prisma);
+  const leadsService = new LeadsService(prisma);
 
   // ============================================
   // PUBLIC ROUTES
@@ -84,35 +106,60 @@ export function createLeadsRoutes(prisma: PrismaClient) {
 
   /**
    * @route POST /leads
-   * @description Create a new customer lead (public endpoint)
-   * @access Public (with rate limiting)
+   * @description Create a new customer lead with auto-merge and duplicate detection
+   * @access Public (with rate limiting and CAPTCHA verification)
+   * 
+   * Auto-merge behavior:
+   * - Same phone + same source + status NEW + within 1 hour → merge into existing
+   * - Same phone + different source → create new, mark as related
+   * - Same phone + same source (outside time window) → create new, mark as potential duplicate
+   * 
+   * **Feature: production-scalability, high-traffic-resilience**
+   * **Validates: Requirements 3.1, 10.3**
    */
-  app.post('/', rateLimiter({ maxAttempts: 5, windowMs: 60 * 1000 }), validate(createLeadSchema), async (c) => {
+  app.post('/', rateLimiter({ maxAttempts: 5, windowMs: 60 * 1000 }), turnstileMiddleware(), validate(createLeadSchema), async (c) => {
     try {
       const body = getValidatedBody<z.infer<typeof createLeadSchema>>(c);
+      const correlationId = getCorrelationId(c);
 
-      const lead = await prisma.customerLead.create({
-        data: {
-          name: body.name,
-          phone: body.phone,
-          email: body.email || null,
-          content: body.content,
-          source: body.source,
-          quoteData: body.quoteData,
-        },
+      const result = await leadsService.createLead({
+        name: body.name,
+        phone: body.phone,
+        email: body.email || null,
+        content: body.content,
+        source: body.source,
+        quoteData: body.quoteData,
       });
 
-      // Async sync to Google Sheets (don't block response)
+      // Async sync to Google Sheets with correlation ID (don't block response)
+      // **Feature: high-traffic-resilience**
+      // **Validates: Requirements 10.3**
       googleSheetsService.isSyncEnabled().then(async (enabled) => {
         if (enabled) {
-          const syncResult = await googleSheetsService.syncLeadToSheet(lead);
+          const syncResult = await googleSheetsService.syncLeadToSheet(result.lead, correlationId);
           if (!syncResult.success) {
-            console.error('Google Sheets sync failed:', syncResult.error);
+            logger.error('Google Sheets sync failed', {
+              leadId: result.lead.id,
+              error: syncResult.error,
+              correlationId,
+            });
           }
         }
-      }).catch(err => console.error('Google Sheets sync check failed:', err));
+      }).catch(err => {
+        logger.error('Google Sheets sync check failed', {
+          error: err instanceof Error ? err.message : 'Unknown error',
+          correlationId,
+        });
+      });
 
-      return successResponse(c, lead, 201);
+      // Return with merge info for debugging/logging
+      return successResponse(c, {
+        ...result.lead,
+        _meta: {
+          wasMerged: result.wasMerged,
+          mergedIntoId: result.mergedIntoId,
+        },
+      }, 201);
     } catch (error) {
       console.error('Lead creation error:', error);
       return errorResponse(c, 'INTERNAL_ERROR', 'Failed to create lead', 500);
@@ -127,40 +174,33 @@ export function createLeadsRoutes(prisma: PrismaClient) {
    * @route GET /leads
    * @description Get all leads with search, filter, and pagination
    * @access Admin, Manager
+   * 
+   * **Feature: lead-duplicate-management**
+   * **Requirements: 8.1, 8.2, 8.3**
+   * 
+   * Query params:
+   * - search: search by name, phone, email
+   * - status: filter by lead status
+   * - duplicateStatus: 'all' | 'duplicates_only' | 'no_duplicates'
+   * - hasRelated: filter by hasRelatedLeads
+   * - source: filter by lead source
+   * - page, limit: pagination
    */
   app.get('/', authenticate(), requireRole('ADMIN', 'MANAGER'), validateQuery(leadsQuerySchema), async (c) => {
     try {
-      const { search, status, page, limit } = getValidatedQuery<z.infer<typeof leadsQuerySchema>>(c);
-      const skip = (page - 1) * limit;
+      const { search, status, duplicateStatus, hasRelated, source, page, limit } = getValidatedQuery<z.infer<typeof leadsQuerySchema>>(c);
 
-      // Build where clause
-      const where: Prisma.CustomerLeadWhereInput = {};
+      const result = await leadsService.getLeads({
+        search,
+        status,
+        duplicateStatus,
+        hasRelated,
+        source,
+        page,
+        limit,
+      });
 
-      if (status) {
-        where.status = status;
-      }
-
-      if (search) {
-        const searchLower = search.toLowerCase();
-        where.OR = [
-          { name: { contains: searchLower } },
-          { phone: { contains: searchLower } },
-          { email: { contains: searchLower } },
-        ];
-      }
-
-      // Get total count and data
-      const [total, leads] = await Promise.all([
-        prisma.customerLead.count({ where }),
-        prisma.customerLead.findMany({
-          where,
-          orderBy: { createdAt: 'desc' },
-          skip,
-          take: limit,
-        }),
-      ]);
-
-      return paginatedResponse(c, leads, { total, page, limit });
+      return paginatedResponse(c, result.leads, { total: result.total, page: result.page, limit: result.limit });
     } catch (error) {
       console.error('Get leads error:', error);
       return errorResponse(c, 'INTERNAL_ERROR', 'Failed to get leads', 500);
@@ -169,63 +209,13 @@ export function createLeadsRoutes(prisma: PrismaClient) {
 
   /**
    * @route GET /leads/stats
-   * @description Get dashboard statistics for leads
+   * @description Get dashboard statistics for leads (excludes merged leads)
    * @access Admin, Manager
    */
   app.get('/stats', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
     try {
-      // Get all leads for stats
-      const leads = await prisma.customerLead.findMany({
-        select: { status: true, source: true, createdAt: true },
-      });
-
-      // Daily leads for last 30 days
-      const dailyLeadsMap = new Map<string, number>();
-      for (let i = 0; i < 30; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-        dailyLeadsMap.set(dateStr, 0);
-      }
-
-      leads.forEach(lead => {
-        const dateStr = lead.createdAt.toISOString().split('T')[0];
-        if (dailyLeadsMap.has(dateStr)) {
-          dailyLeadsMap.set(dateStr, (dailyLeadsMap.get(dateStr) || 0) + 1);
-        }
-      });
-
-      const dailyLeads = Array.from(dailyLeadsMap.entries())
-        .map(([date, count]) => ({ date, count }))
-        .sort((a, b) => a.date.localeCompare(b.date));
-
-      // Status distribution
-      const byStatus: Record<string, number> = {};
-      leads.forEach(lead => {
-        byStatus[lead.status] = (byStatus[lead.status] || 0) + 1;
-      });
-
-      // Source distribution
-      const bySource: Record<string, number> = {};
-      leads.forEach(lead => {
-        bySource[lead.source] = (bySource[lead.source] || 0) + 1;
-      });
-
-      // Conversion rate: CONVERTED / (total - CANCELLED)
-      const totalNonCancelled = leads.filter(l => l.status !== 'CANCELLED').length;
-      const converted = byStatus['CONVERTED'] || 0;
-      const conversionRate = totalNonCancelled > 0
-        ? Math.round((converted / totalNonCancelled) * 100 * 100) / 100
-        : 0;
-
-      return successResponse(c, {
-        dailyLeads,
-        byStatus,
-        bySource,
-        conversionRate,
-        totalLeads: leads.length,
-        newLeads: byStatus['NEW'] || 0,
-      });
+      const stats = await leadsService.getStats();
+      return successResponse(c, stats);
     } catch (error) {
       console.error('Leads stats error:', error);
       return errorResponse(c, 'INTERNAL_ERROR', 'Failed to get stats', 500);
@@ -234,8 +224,11 @@ export function createLeadsRoutes(prisma: PrismaClient) {
 
   /**
    * @route GET /leads/export
-   * @description Export leads to CSV
+   * @description Export leads to CSV (excludes merged leads)
    * @access Admin, Manager
+   * 
+   * **Feature: lead-duplicate-management**
+   * **Requirements: 8.3**
    */
   app.get('/export', 
     authenticate(), 
@@ -243,16 +236,46 @@ export function createLeadsRoutes(prisma: PrismaClient) {
     validateQuery(z.object({
       search: z.string().optional(),
       status: z.enum(['NEW', 'CONTACTED', 'CONVERTED', 'CANCELLED']).optional(),
+      duplicateStatus: z.enum(['all', 'duplicates_only', 'no_duplicates']).default('all'),
+      hasRelated: z.coerce.boolean().optional(),
+      source: z.enum(['QUOTE_FORM', 'CONTACT_FORM', 'FURNITURE_QUOTE']).optional(),
     })),
     async (c) => {
     try {
       // Apply same filters as list
-      const query = getValidatedQuery<{ search?: string; status?: string }>(c);
+      const query = getValidatedQuery<{ 
+        search?: string; 
+        status?: string;
+        duplicateStatus?: 'all' | 'duplicates_only' | 'no_duplicates';
+        hasRelated?: boolean;
+        source?: string;
+      }>(c);
       const search = query.search?.toLowerCase();
       const status = query.status;
+      const duplicateStatus = query.duplicateStatus || 'all';
+      const hasRelated = query.hasRelated;
+      const source = query.source;
 
-      const where: Prisma.CustomerLeadWhereInput = {};
+      const where: Prisma.CustomerLeadWhereInput = {
+        // Exclude merged leads by default
+        mergedIntoId: null,
+      };
+      
       if (status) where.status = status;
+      if (source) where.source = source;
+      
+      // Duplicate status filter
+      if (duplicateStatus === 'duplicates_only') {
+        where.isPotentialDuplicate = true;
+      } else if (duplicateStatus === 'no_duplicates') {
+        where.isPotentialDuplicate = false;
+      }
+      
+      // Has related filter
+      if (hasRelated !== undefined) {
+        where.hasRelatedLeads = hasRelated;
+      }
+      
       if (search) {
         where.OR = [
           { name: { contains: search } },
@@ -266,8 +289,8 @@ export function createLeadsRoutes(prisma: PrismaClient) {
         orderBy: { createdAt: 'desc' },
       });
 
-      // Generate CSV
-      const headers = ['name', 'phone', 'email', 'content', 'status', 'source', 'createdAt'];
+      // Generate CSV with duplicate management fields
+      const headers = ['name', 'phone', 'email', 'content', 'status', 'source', 'submissionCount', 'isPotentialDuplicate', 'hasRelatedLeads', 'relatedLeadCount', 'createdAt'];
       const csvRows = [headers.join(',')];
 
       leads.forEach(lead => {
@@ -278,6 +301,10 @@ export function createLeadsRoutes(prisma: PrismaClient) {
           `"${(lead.content || '').replace(/"/g, '""')}"`,
           `"${lead.status}"`,
           `"${lead.source}"`,
+          `"${lead.submissionCount}"`,
+          `"${lead.isPotentialDuplicate}"`,
+          `"${lead.hasRelatedLeads}"`,
+          `"${lead.relatedLeadCount}"`,
           `"${lead.createdAt.toISOString()}"`,
         ];
         csvRows.push(row.join(','));
@@ -299,8 +326,14 @@ export function createLeadsRoutes(prisma: PrismaClient) {
 
   /**
    * @route GET /leads/:id
-   * @description Get a single lead by ID
+   * @description Get a single lead by ID with related leads count and merge info
    * @access Admin, Manager
+   * 
+   * **Feature: lead-duplicate-management**
+   * **Requirements: 5.1, 6.6**
+   * 
+   * If the lead has been merged into another lead, returns redirect info
+   * to the primary lead instead of the merged lead data.
    */
   app.get('/:id', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
     try {
@@ -311,10 +344,56 @@ export function createLeadsRoutes(prisma: PrismaClient) {
         return errorResponse(c, 'NOT_FOUND', 'Lead not found', 404);
       }
 
-      return successResponse(c, lead);
+      // Handle merged lead access (Requirements 6.6)
+      // Return redirect info to primary lead
+      if (lead.mergedIntoId) {
+        return successResponse(c, {
+          ...lead,
+          _redirect: {
+            isMerged: true,
+            mergedIntoId: lead.mergedIntoId,
+            mergedAt: lead.mergedAt,
+            message: 'Lead này đã được merge vào lead khác',
+          },
+        });
+      }
+
+      // Include relatedLeadCount in response (Requirements 5.1)
+      return successResponse(c, {
+        ...lead,
+        relatedLeadCount: lead.relatedLeadCount,
+      });
     } catch (error) {
       console.error('Get lead error:', error);
       return errorResponse(c, 'INTERNAL_ERROR', 'Failed to get lead', 500);
+    }
+  });
+
+  /**
+   * @route GET /leads/:id/related
+   * @description Get all related leads for a given lead (same phone, any source)
+   * @access Admin, Manager
+   * 
+   * **Feature: lead-duplicate-management**
+   * **Requirements: 5.1, 5.2, 5.3**
+   * 
+   * Returns leads grouped by source with:
+   * - source: lead source
+   * - status: lead status
+   * - contentPreview: first 100 chars of content
+   * - createdAt: creation date
+   */
+  app.get('/:id/related', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const id = c.req.param('id');
+      const result = await leadsService.getRelatedLeads(id);
+      return successResponse(c, result);
+    } catch (error) {
+      if (error instanceof LeadsServiceError) {
+        return errorResponse(c, error.code, error.message, error.statusCode);
+      }
+      console.error('Get related leads error:', error);
+      return errorResponse(c, 'INTERNAL_ERROR', 'Failed to get related leads', 500);
     }
   });
 
@@ -370,6 +449,47 @@ export function createLeadsRoutes(prisma: PrismaClient) {
     } catch (error) {
       console.error('Lead update error:', error);
       return errorResponse(c, 'INTERNAL_ERROR', 'Failed to update lead', 500);
+    }
+  });
+
+  /**
+   * @route POST /leads/:id/merge
+   * @description Manually merge duplicate leads into a primary lead
+   * @access Admin, Manager
+   * 
+   * **Feature: lead-duplicate-management**
+   * **Requirements: 6.2, 6.3**
+   * 
+   * Request body:
+   * - secondaryLeadIds: array of lead IDs to merge into the primary lead
+   * 
+   * Merge behavior:
+   * - All leads must have the same source
+   * - Content from secondary leads is appended with timestamps
+   * - Submission counts are summed
+   * - Secondary leads are soft-deleted (mergedIntoId set)
+   */
+  app.post('/:id/merge', authenticate(), requireRole('ADMIN', 'MANAGER'), validate(mergeLeadsSchema), async (c) => {
+    try {
+      const primaryLeadId = c.req.param('id');
+      const body = getValidatedBody<z.infer<typeof mergeLeadsSchema>>(c);
+
+      const result = await leadsService.mergeLeads({
+        primaryLeadId,
+        secondaryLeadIds: body.secondaryLeadIds,
+      });
+
+      return successResponse(c, {
+        primaryLead: result.primaryLead,
+        mergedCount: result.mergedCount,
+        message: `Đã merge ${result.mergedCount} lead thành công`,
+      });
+    } catch (error) {
+      if (error instanceof LeadsServiceError) {
+        return errorResponse(c, error.code, error.message, error.statusCode);
+      }
+      console.error('Lead merge error:', error);
+      return errorResponse(c, 'INTERNAL_ERROR', 'Failed to merge leads', 500);
     }
   });
 
