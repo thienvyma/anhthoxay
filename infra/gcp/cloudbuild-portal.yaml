@@ -19,8 +19,8 @@ steps:
       - 'infra/docker/frontend.Dockerfile'
       - '--build-arg'
       - 'APP_NAME=portal'
-      - '--build-arg'
-      - 'VITE_API_URL=${_API_URL}'
+      - '--build-arg=VITE_API_URL=${_API_URL}'
+      - '--no-cache'
       - '.'
 
   # Step 2: Push to Artifact Registry

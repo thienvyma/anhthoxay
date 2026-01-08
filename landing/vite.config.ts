@@ -1,16 +1,31 @@
 /// <reference types='vitest' />
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import path from 'path';
 import react from '@vitejs/plugin-react';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 
-export default defineConfig(() => ({
-  root: __dirname,
-  cacheDir: '../node_modules/.vite/landing',
-  // Load .env from workspace root
-  envDir: path.resolve(__dirname, '..'),
-  server: {
+export default defineConfig(({ mode }) => {
+  // Load env from workspace root
+  const env = loadEnv(mode, path.resolve(__dirname, '..'), '');
+  
+  // Get API URL from env or process.env (for Docker build)
+  const apiUrl = process.env.VITE_API_URL || env.VITE_API_URL || 'http://localhost:4202';
+  const portalUrl = process.env.VITE_PORTAL_URL || env.VITE_PORTAL_URL || 'http://localhost:4203';
+  
+  console.log(`[Vite] Building with VITE_API_URL=${apiUrl}`);
+  
+  return {
+    root: __dirname,
+    cacheDir: '../node_modules/.vite/landing',
+    // Load .env from workspace root
+    envDir: path.resolve(__dirname, '..'),
+    // Define env vars for build-time replacement in all modules including packages
+    define: {
+      'import.meta.env.VITE_API_URL': JSON.stringify(apiUrl),
+      'import.meta.env.VITE_PORTAL_URL': JSON.stringify(portalUrl),
+    },
+    server: {
     port: 4200,
     host: 'localhost',
     strictPort: true,
@@ -54,4 +69,5 @@ export default defineConfig(() => ({
       provider: 'v8' as const,
     },
   },
-}));
+  };
+});

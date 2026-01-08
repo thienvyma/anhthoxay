@@ -26,15 +26,23 @@ RUN pnpm install --no-frozen-lockfile
 # Copy source code
 COPY . .
 
+# Debug: Print the API URL being used
+RUN echo "Building ${APP_NAME} with VITE_API_URL=${VITE_API_URL}"
+
+# Create .env file for Vite to read during build
+# This ensures VITE_API_URL is available to Vite's env system
+RUN echo "VITE_API_URL=${VITE_API_URL}" > .env
+
 # Set environment for build - MUST be before RUN build command
 # Vite reads VITE_* env vars at build time
 ENV VITE_API_URL=${VITE_API_URL}
 
-# Debug: Print the API URL being used
-RUN echo "Building with VITE_API_URL=${VITE_API_URL}"
-
-# Build the app
+# Build the app with explicit env var
 RUN VITE_API_URL=${VITE_API_URL} pnpm nx build ${APP_NAME} --configuration=production
+
+# Verify the build contains correct API URL (debug)
+RUN echo "Checking built files for API URL..." && \
+    grep -r "api.noithatnhanh.vn" dist/${APP_NAME}/ || echo "WARNING: Production API URL not found in build!"
 
 # Stage 2: Serve with nginx
 FROM nginx:alpine AS runner
