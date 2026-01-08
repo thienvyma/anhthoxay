@@ -42,7 +42,7 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
       - '--set-env-vars'
-      - 'NODE_ENV=production,CORS_ORIGINS=https://noithatnhanh.vn,https://admin.noithatnhanh.vn,https://portal.noithatnhanh.vn'
+      - '^@^NODE_ENV=production@CORS_ORIGINS=https://noithatnhanh.vn,https://admin.noithatnhanh.vn,https://portal.noithatnhanh.vn'
       - '--set-secrets'
       - 'DATABASE_URL=DATABASE_URL:latest,JWT_SECRET=JWT_SECRET:latest,ENCRYPTION_KEY=ENCRYPTION_KEY:latest,REDIS_URL=REDIS_URL:latest'
       - '--min-instances'
