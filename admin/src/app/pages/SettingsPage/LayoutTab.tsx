@@ -24,9 +24,6 @@ interface LayoutTabProps {
 // Sub-tabs for Layout
 type LayoutSubTab = 'header' | 'footer' | 'mobile';
 
-// ATH pages list
-const ATH_PAGES = ['home', 'about', 'contact', 'blog', 'bao-gia', 'noi-that'];
-
 export function LayoutTab({
   headerConfig,
   footerConfig,
@@ -44,14 +41,35 @@ export function LayoutTab({
   const [isLoading, setIsLoading] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  // Load all pages from API (dynamic, not hardcoded)
+  const loadAllPages = useCallback(async () => {
+    try {
+      const pages = await pagesApi.list();
+      return pages;
+    } catch (err) {
+      console.warn('Failed to load pages list:', err);
+      return [];
+    }
+  }, []);
+
   // Load header/footer config from API on mount
   useEffect(() => {
     const loadConfigs = async () => {
       try {
         setIsLoading(true);
-        const page = await pagesApi.get('home');
         
-        const headerConfigStr = page?.headerConfig as string | undefined;
+        // Load all pages first
+        const pages = await loadAllPages();
+        
+        // Get home page for header/footer config (source of truth)
+        const homePage = pages.find(p => p.slug === 'home');
+        if (!homePage) {
+          console.warn('Home page not found');
+          setIsLoading(false);
+          return;
+        }
+        
+        const headerConfigStr = homePage?.headerConfig as string | undefined;
         if (headerConfigStr && typeof headerConfigStr === 'string') {
           try {
             const parsed = JSON.parse(headerConfigStr);
@@ -83,7 +101,7 @@ export function LayoutTab({
           }
         }
         
-        const footerConfigStr = page?.footerConfig as string | undefined;
+        const footerConfigStr = homePage?.footerConfig as string | undefined;
         if (footerConfigStr && typeof footerConfigStr === 'string') {
           try {
             const parsed = JSON.parse(footerConfigStr);
@@ -118,7 +136,7 @@ export function LayoutTab({
     };
     
     loadConfigs();
-  }, [onHeaderChange, onFooterChange]);
+  }, [onHeaderChange, onFooterChange, loadAllPages]);
 
   // Load mobile menu config from API on mount
   useEffect(() => {
@@ -153,27 +171,15 @@ export function LayoutTab({
     { id: 'mobile', label: 'Mobile Menu', icon: 'ri-smartphone-line' },
   ];
 
-  // Helper function to ensure page exists before updating
-  const ensurePageExists = useCallback(async (slug: string) => {
-    try {
-      await pagesApi.get(slug);
-    } catch {
-      const titleMap: Record<string, string> = {
-        home: 'Trang chủ',
-        about: 'Giới thiệu',
-        contact: 'Liên hệ',
-        blog: 'Blog',
-        'bao-gia': 'Báo giá',
-        'noi-that': 'Nội thất',
-      };
-      await pagesApi.create({ slug, title: titleMap[slug] || slug });
-    }
-  }, []);
-
-  // Save header config to all pages
+  // Save header config to ALL pages (dynamic list from API)
   const handleSaveHeader = useCallback(async () => {
     try {
       setSavingHeader(true);
+      
+      // Refresh pages list to get latest
+      const pages = await loadAllPages();
+      const pageSlugs = pages.map(p => p.slug);
+      
       const landingHeaderConfig = {
         logo: {
           text: headerConfig.logo?.text || 'Anh Thợ Xây',
@@ -205,23 +211,28 @@ export function LayoutTab({
       };
       const headerConfigStr = JSON.stringify(landingHeaderConfig);
 
-      await Promise.all(ATH_PAGES.map((slug) => ensurePageExists(slug)));
+      // Save to ALL pages (not hardcoded list)
       await Promise.all(
-        ATH_PAGES.map((slug) => pagesApi.update(slug, { headerConfig: headerConfigStr }))
+        pageSlugs.map((slug) => pagesApi.update(slug, { headerConfig: headerConfigStr }))
       );
-      onShowMessage('✅ Header đã được lưu!');
+      onShowMessage(`✅ Header đã được lưu cho ${pageSlugs.length} trang!`);
     } catch (error) {
       console.error('Error saving header:', error);
       onError('Lưu header thất bại.');
     } finally {
       setSavingHeader(false);
     }
-  }, [headerConfig, onShowMessage, onError, ensurePageExists]);
+  }, [headerConfig, onShowMessage, onError, loadAllPages]);
 
-  // Save footer config to all pages
+  // Save footer config to ALL pages (dynamic list from API)
   const handleSaveFooter = useCallback(async () => {
     try {
       setSavingFooter(true);
+      
+      // Refresh pages list to get latest
+      const pages = await loadAllPages();
+      const pageSlugs = pages.map(p => p.slug);
+      
       const landingFooterConfig = {
         brand: {
           text: footerConfig.brand?.text || 'Anh Thợ Xây',
@@ -244,18 +255,18 @@ export function LayoutTab({
       };
       const footerConfigStr = JSON.stringify(landingFooterConfig);
 
-      await Promise.all(ATH_PAGES.map((slug) => ensurePageExists(slug)));
+      // Save to ALL pages (not hardcoded list)
       await Promise.all(
-        ATH_PAGES.map((slug) => pagesApi.update(slug, { footerConfig: footerConfigStr }))
+        pageSlugs.map((slug) => pagesApi.update(slug, { footerConfig: footerConfigStr }))
       );
-      onShowMessage('✅ Footer đã được lưu!');
+      onShowMessage(`✅ Footer đã được lưu cho ${pageSlugs.length} trang!`);
     } catch (error) {
       console.error('Error saving footer:', error);
       onError('Lưu footer thất bại.');
     } finally {
       setSavingFooter(false);
     }
-  }, [footerConfig, onShowMessage, onError, ensurePageExists]);
+  }, [footerConfig, onShowMessage, onError, loadAllPages]);
 
   // Save mobile menu config
   const handleSaveMobileMenu = useCallback(async () => {
