@@ -11,6 +11,7 @@ import { SectionsList } from '../components/SectionsList';
 import { PageSelectorBar } from '../components/PageSelectorBar';
 import { useToast } from '../components/Toast';
 import { useResponsive } from '../../hooks/useResponsive';
+import { addPageToHeaderNav, removePageFromHeaderNav } from '../utils/headerSync';
 
 export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
   const toast = useToast();
@@ -70,11 +71,17 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
 
   async function handleCreatePage(data: { slug: string; title: string }) {
     const newPage = await pagesApi.create(data);
+    
+    // Auto-sync: Add new page to header navigation
+    await addPageToHeaderNav(data.slug, data.title);
+    
     // Refresh pages list and select the new page
     await loadPages();
     if (newPage) {
       await loadPage(newPage.slug);
     }
+    
+    toast.success(`Trang "${data.title}" đã được tạo và thêm vào menu!`);
   }
 
   async function handleEditPage(slug: string, data: { title: string }) {
@@ -85,8 +92,14 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
 
   async function handleDeletePage(slug: string) {
     await pagesApi.delete(slug);
+    
+    // Auto-sync: Remove page from header navigation
+    await removePageFromHeaderNav(slug);
+    
     // Refresh pages list after deletion
     await loadPages();
+    
+    toast.success('Trang đã được xóa và gỡ khỏi menu!');
   }
 
   async function handleDeleteSection(sectionId: string) {
