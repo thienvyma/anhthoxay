@@ -7,7 +7,7 @@
 FROM node:20-alpine AS builder
 
 ARG APP_NAME=landing
-ARG VITE_API_URL
+ARG VITE_API_URL=http://localhost:4202
 
 WORKDIR /app
 
@@ -20,17 +20,21 @@ COPY ${APP_NAME}/package.json ./${APP_NAME}/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/ui/package.json ./packages/ui/
 
-# Install dependencies (không dùng frozen-lockfile vì CI có thể có version khác)
+# Install dependencies
 RUN pnpm install --no-frozen-lockfile
 
 # Copy source code
 COPY . .
 
-# Set environment for build
+# Set environment for build - MUST be before RUN build command
+# Vite reads VITE_* env vars at build time
 ENV VITE_API_URL=${VITE_API_URL}
 
+# Debug: Print the API URL being used
+RUN echo "Building with VITE_API_URL=${VITE_API_URL}"
+
 # Build the app
-RUN pnpm nx build ${APP_NAME} --configuration=production
+RUN VITE_API_URL=${VITE_API_URL} pnpm nx build ${APP_NAME} --configuration=production
 
 # Stage 2: Serve with nginx
 FROM nginx:alpine AS runner
