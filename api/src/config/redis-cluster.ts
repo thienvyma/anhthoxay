@@ -136,8 +136,6 @@ class RedisClusterClientImpl implements RedisClusterClient {
   private config: RedisClusterConfig;
   private connected = false;
   private currentMode: RedisMode | 'memory' = 'memory';
-  private reconnecting = false;
-  private reconnectAttempts = 0;
 
   constructor(config: RedisClusterConfig) {
     this.config = config;
@@ -239,8 +237,6 @@ class RedisClusterClientImpl implements RedisClusterClient {
   }
 
   private retryStrategy(times: number): number | null {
-    this.reconnectAttempts = times;
-    
     if (times > this.config.maxRetries) {
       logger.warn('[REDIS_CLUSTER] Max retries exceeded, falling back to memory', {
         attempts: times,
@@ -261,8 +257,6 @@ class RedisClusterClientImpl implements RedisClusterClient {
   private setupEventHandlers(client: Redis): void {
     client.on('connect', () => {
       this.connected = true;
-      this.reconnecting = false;
-      this.reconnectAttempts = 0;
       logger.info('[REDIS_CLUSTER] Connected to Redis (single node)');
     });
 
@@ -271,7 +265,7 @@ class RedisClusterClientImpl implements RedisClusterClient {
       logger.info('[REDIS_CLUSTER] Redis ready');
     });
 
-    client.on('error', (err) => {
+    client.on('error', (err: Error) => {
       logger.error('[REDIS_CLUSTER] Redis error', { error: err.message });
       // Don't set connected to false immediately - let retry strategy handle it
     });
@@ -282,7 +276,6 @@ class RedisClusterClientImpl implements RedisClusterClient {
     });
 
     client.on('reconnecting', () => {
-      this.reconnecting = true;
       logger.info('[REDIS_CLUSTER] Reconnecting to Redis...');
     });
 
@@ -295,8 +288,6 @@ class RedisClusterClientImpl implements RedisClusterClient {
   private setupClusterEventHandlers(cluster: Cluster): void {
     cluster.on('connect', () => {
       this.connected = true;
-      this.reconnecting = false;
-      this.reconnectAttempts = 0;
       logger.info('[REDIS_CLUSTER] Connected to Redis cluster');
     });
 
@@ -305,7 +296,7 @@ class RedisClusterClientImpl implements RedisClusterClient {
       logger.info('[REDIS_CLUSTER] Redis cluster ready');
     });
 
-    cluster.on('error', (err) => {
+    cluster.on('error', (err: Error) => {
       logger.error('[REDIS_CLUSTER] Redis cluster error', { error: err.message });
     });
 

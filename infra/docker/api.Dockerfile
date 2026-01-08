@@ -61,9 +61,14 @@ COPY --from=builder /app/dist/api ./
 # Copy Prisma schema (needed for migrations)
 COPY --from=builder /app/infra/prisma ./infra/prisma
 
-# Copy Prisma client from node_modules (stable location, not version-dependent)
+# Copy Prisma client from node_modules
+# The generated client is in node_modules/.pnpm/@prisma+client*/node_modules/.prisma
+# We need to copy both @prisma/client and the generated .prisma folder
 COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+# Copy generated Prisma client (may be in different locations depending on pnpm version)
+# Try multiple possible locations
+COPY --from=builder /app/node_modules/.pnpm/@prisma+client*/node_modules/.prisma ./node_modules/.prisma
 
 # Install production dependencies using the pruned lockfile
 RUN pnpm install --prod --no-frozen-lockfile

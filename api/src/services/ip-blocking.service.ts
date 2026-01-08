@@ -332,6 +332,7 @@ class IPBlockingService {
 
   /**
    * Get list of all blocked IPs
+   * Uses SCAN instead of KEYS to avoid blocking Redis in production
    * 
    * @returns Array of blocked IP records
    * 
@@ -345,32 +346,39 @@ class IPBlockingService {
     }
 
     try {
-      const keys = await redis.keys(`${BLOCKED_IP_KEY_PREFIX}:*`);
       const blockedIPs: BlockedIP[] = [];
       const now = Date.now();
+      let cursor = '0';
+      const pattern = `${BLOCKED_IP_KEY_PREFIX}:*`;
+      
+      // Use SCAN to iterate through keys without blocking
+      do {
+        const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+        cursor = nextCursor;
+        
+        for (const key of keys) {
+          const record = await redis.get(key);
+          if (record) {
+            const blocked: BlockedIPRecord = JSON.parse(record);
+            
+            // Skip expired entries
+            if (blocked.expiresAt <= now) {
+              await redis.del(key);
+              continue;
+            }
 
-      for (const key of keys) {
-        const record = await redis.get(key);
-        if (record) {
-          const blocked: BlockedIPRecord = JSON.parse(record);
-          
-          // Skip expired entries
-          if (blocked.expiresAt <= now) {
-            await redis.del(key);
-            continue;
+            blockedIPs.push({
+              ip: blocked.ip,
+              reason: blocked.reason,
+              blockedAt: new Date(blocked.blockedAt),
+              expiresAt: new Date(blocked.expiresAt),
+              violationCount: blocked.violationCount,
+              blockedBy: blocked.blockedBy,
+              isEmergencyBlock: blocked.isEmergencyBlock,
+            });
           }
-
-          blockedIPs.push({
-            ip: blocked.ip,
-            reason: blocked.reason,
-            blockedAt: new Date(blocked.blockedAt),
-            expiresAt: new Date(blocked.expiresAt),
-            violationCount: blocked.violationCount,
-            blockedBy: blocked.blockedBy,
-            isEmergencyBlock: blocked.isEmergencyBlock,
-          });
         }
-      }
+      } while (cursor !== '0');
 
       return blockedIPs.sort((a, b) => b.blockedAt.getTime() - a.blockedAt.getTime());
     } catch (error) {
@@ -614,6 +622,7 @@ class IPBlockingService {
 
   /**
    * Clear all blocked IPs and violations (for testing)
+   * Uses SCAN instead of KEYS to avoid blocking Redis in production
    */
   async clearAll(): Promise<void> {
     inMemoryBlockedIPs.clear();
@@ -624,13 +633,26 @@ class IPBlockingService {
     if (!redis || !isRedisConnected()) return;
 
     try {
-      const blockedKeys = await redis.keys(`${BLOCKED_IP_KEY_PREFIX}:*`);
-      const violationKeys = await redis.keys(`${IP_VIOLATIONS_KEY_PREFIX}:*`);
+      const keysToDelete: string[] = [EMERGENCY_MODE_KEY];
       
-      const allKeys = [...blockedKeys, ...violationKeys, EMERGENCY_MODE_KEY];
+      // Scan for blocked IP keys
+      let cursor = '0';
+      do {
+        const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', `${BLOCKED_IP_KEY_PREFIX}:*`, 'COUNT', 100);
+        cursor = nextCursor;
+        keysToDelete.push(...keys);
+      } while (cursor !== '0');
       
-      if (allKeys.length > 0) {
-        await redis.del(...allKeys);
+      // Scan for violation keys
+      cursor = '0';
+      do {
+        const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', `${IP_VIOLATIONS_KEY_PREFIX}:*`, 'COUNT', 100);
+        cursor = nextCursor;
+        keysToDelete.push(...keys);
+      } while (cursor !== '0');
+      
+      if (keysToDelete.length > 0) {
+        await redis.del(...keysToDelete);
       }
     } catch (error) {
       logger.error('[IP_BLOCKING] Failed to clear all data', {

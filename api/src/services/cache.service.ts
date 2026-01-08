@@ -240,6 +240,7 @@ export class CacheService {
 
   /**
    * Invalidate all cache entries matching a pattern
+   * Uses SCAN instead of KEYS to avoid blocking Redis in production
    *
    * @param pattern - Pattern to match (e.g., 'cache:materials:*')
    * @returns Number of keys invalidated
@@ -252,13 +253,24 @@ export class CacheService {
     }
 
     try {
-      const keys = await redis.keys(pattern);
-      if (keys.length > 0) {
-        await redis.del(...keys);
-        logger.info('Cache invalidated by pattern', { pattern, count: keys.length });
-        return keys.length;
+      let cursor = '0';
+      let totalDeleted = 0;
+      
+      // Use SCAN to iterate through keys without blocking
+      do {
+        const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+        cursor = nextCursor;
+        
+        if (keys.length > 0) {
+          await redis.del(...keys);
+          totalDeleted += keys.length;
+        }
+      } while (cursor !== '0');
+      
+      if (totalDeleted > 0) {
+        logger.info('Cache invalidated by pattern', { pattern, count: totalDeleted });
       }
-      return 0;
+      return totalDeleted;
     } catch (error) {
       logger.error('Cache pattern invalidation error', {
         pattern,

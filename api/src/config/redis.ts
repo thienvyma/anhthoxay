@@ -152,4 +152,5 @@ export async function testRedisConnection(): Promise<boolean> {
   }
 }
 
-export { redisClient };
+// Note: Use getRedisClient() instead of direct redisClient access
+// to ensure proper initialization and connection handling

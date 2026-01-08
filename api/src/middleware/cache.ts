@@ -112,6 +112,7 @@ export async function invalidateCache(key: string): Promise<void> {
 
 /**
  * Invalidate all cache entries with a specific prefix
+ * Uses SCAN instead of KEYS to avoid blocking Redis in production
  */
 export async function invalidateCacheByPrefix(prefix: string): Promise<number> {
   const redis = getRedisClient();
@@ -121,13 +122,25 @@ export async function invalidateCacheByPrefix(prefix: string): Promise<number> {
   }
 
   try {
-    const keys = await redis.keys(`${prefix}:*`);
-    if (keys.length > 0) {
-      await redis.del(...keys);
-      logger.info(`Invalidated ${keys.length} cache entries`, { prefix });
-      return keys.length;
+    let cursor = '0';
+    let totalDeleted = 0;
+    const pattern = `${prefix}:*`;
+    
+    // Use SCAN to iterate through keys without blocking
+    do {
+      const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      cursor = nextCursor;
+      
+      if (keys.length > 0) {
+        await redis.del(...keys);
+        totalDeleted += keys.length;
+      }
+    } while (cursor !== '0');
+    
+    if (totalDeleted > 0) {
+      logger.info(`Invalidated ${totalDeleted} cache entries`, { prefix });
     }
-    return 0;
+    return totalDeleted;
   } catch (error) {
     logger.error('Cache prefix invalidation error', {
       error: error instanceof Error ? error.message : 'Unknown error',

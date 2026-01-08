@@ -50,12 +50,32 @@ export class LocalStorage implements IStorage {
   }
 
   /**
-   * Get full file path
+   * Get full file path with path traversal protection
    */
   private getFilePath(key: string): string {
     // Sanitize key to prevent directory traversal
-    const sanitizedKey = key.replace(/\.\./g, '').replace(/^\/+/, '');
-    return path.join(this.baseDir, sanitizedKey);
+    // 1. Remove any path traversal sequences
+    // 2. Remove leading slashes
+    // 3. Normalize path separators
+    const sanitizedKey = key
+      .replace(/\.\./g, '')           // Remove ..
+      .replace(/^\/+/, '')            // Remove leading slashes
+      .replace(/\\/g, '/')            // Normalize to forward slashes
+      .split('/')
+      .filter(segment => segment !== '' && segment !== '.' && segment !== '..')
+      .join('/');
+    
+    const fullPath = path.join(this.baseDir, sanitizedKey);
+    
+    // Verify the resolved path is within baseDir (defense in depth)
+    const resolvedPath = path.resolve(fullPath);
+    const resolvedBaseDir = path.resolve(this.baseDir);
+    
+    if (!resolvedPath.startsWith(resolvedBaseDir + path.sep) && resolvedPath !== resolvedBaseDir) {
+      throw new StorageError('INVALID_PATH', 'Invalid file path: path traversal detected');
+    }
+    
+    return resolvedPath;
   }
 
   /**

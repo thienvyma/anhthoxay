@@ -97,8 +97,12 @@ export function getClusterConfig(): ClusterConfig {
   
   const instanceId = process.env.INSTANCE_ID || generateInstanceId();
   
-  const shutdownTimeout = parseInt(process.env.SHUTDOWN_TIMEOUT || '30000', 10);
-  const drainTimeout = parseInt(process.env.DRAIN_TIMEOUT || '25000', 10);
+  const shutdownTimeoutRaw = parseInt(process.env.SHUTDOWN_TIMEOUT || '30000', 10);
+  const drainTimeoutRaw = parseInt(process.env.DRAIN_TIMEOUT || '25000', 10);
+  
+  // Validate parsed values, fallback to defaults if NaN
+  const shutdownTimeout = Number.isNaN(shutdownTimeoutRaw) ? 30000 : shutdownTimeoutRaw;
+  const drainTimeout = Number.isNaN(drainTimeoutRaw) ? 25000 : drainTimeoutRaw;
 
   clusterConfig = {
     instanceId,

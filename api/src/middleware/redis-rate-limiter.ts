@@ -256,6 +256,7 @@ export async function clearRateLimit(key: string): Promise<void> {
 /**
  * Clear all rate limits with a specific prefix
  * Use with caution - mainly for testing
+ * Uses SCAN instead of KEYS to avoid blocking Redis in production
  */
 export async function clearAllRateLimits(prefix = 'ratelimit'): Promise<void> {
   const redis = getRedisClient();
@@ -266,10 +267,23 @@ export async function clearAllRateLimits(prefix = 'ratelimit'): Promise<void> {
   }
 
   try {
-    const keys = await redis.keys(`${prefix}:*`);
-    if (keys.length > 0) {
-      await redis.del(...keys);
-      logger.info(`Cleared ${keys.length} rate limit keys`);
+    let cursor = '0';
+    let totalDeleted = 0;
+    const pattern = `${prefix}:*`;
+    
+    // Use SCAN to iterate through keys without blocking
+    do {
+      const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      cursor = nextCursor;
+      
+      if (keys.length > 0) {
+        await redis.del(...keys);
+        totalDeleted += keys.length;
+      }
+    } while (cursor !== '0');
+    
+    if (totalDeleted > 0) {
+      logger.info(`Cleared ${totalDeleted} rate limit keys`);
     }
   } catch (error) {
     logger.error('Failed to clear rate limits', {

@@ -7,8 +7,8 @@ import { authApi } from '../api';
 import { store } from '../store';
 
 export function LoginPage() {
-  const [email, setEmail] = useState('admin@anhthoxay.vn');
-  const [password, setPassword] = useState('Admin@123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -136,26 +136,6 @@ export function LoginPage() {
             Sign In
           </Button>
         </form>
-
-        {/* Info */}
-        <div
-          style={{
-            marginTop: 24,
-            padding: 16,
-            background: tokens.color.warningBg,
-            border: `1px solid ${tokens.color.warning}40`,
-            borderRadius: tokens.radius.md,
-            fontSize: 13,
-            color: tokens.color.textMuted,
-          }}
-        >
-          <div style={{ color: tokens.color.warning, fontWeight: 600, marginBottom: 8 }}>
-            <i className="ri-information-line" style={{ marginRight: 4 }} />
-            Demo Credentials
-          </div>
-          <div>Email: admin@anhthoxay.vn</div>
-          <div>Password: Admin@123</div>
-        </div>
       </motion.div>
     </div>
   );

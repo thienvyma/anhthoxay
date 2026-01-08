@@ -82,9 +82,20 @@ export class TurnstileService {
    * ```
    */
   async verify(token: string, ip?: string): Promise<TurnstileVerificationResult> {
-    // Skip verification if not configured (development mode)
+    // SECURITY: In production, Turnstile MUST be configured
+    // Fail closed - reject requests if not configured in production
+    const isProduction = process.env.NODE_ENV === 'production';
+    
     if (!this.isConfigured || !this.secretKey) {
-      logger.warn('Turnstile verification skipped - not configured');
+      if (isProduction) {
+        logger.error('Turnstile verification failed - not configured in production');
+        return {
+          success: false,
+          errorCodes: ['not-configured'],
+        };
+      }
+      // Only skip in development
+      logger.warn('Turnstile verification skipped - not configured (development mode)');
       return { success: true };
     }
 

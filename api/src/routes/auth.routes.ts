@@ -350,5 +350,58 @@ export function createAuthRoutes(prisma: PrismaClient) {
     });
   }
 
+  // ============================================
+  // POST /auth/setup - One-time admin setup (requires SETUP_SECRET)
+  // This endpoint creates the first admin user if none exists
+  // Remove this endpoint after initial setup!
+  // ============================================
+  app.post('/setup', async (c) => {
+    try {
+      const body = await c.req.json();
+      const { setupSecret, email, password, name } = body;
+
+      // Verify setup secret from environment
+      const expectedSecret = process.env.SETUP_SECRET;
+      if (!expectedSecret || setupSecret !== expectedSecret) {
+        return errorResponse(c, 'FORBIDDEN', 'Invalid setup secret', 403);
+      }
+
+      // Check if admin already exists
+      const existingAdmin = await prisma.user.findFirst({
+        where: { role: 'ADMIN' },
+      });
+
+      if (existingAdmin) {
+        return errorResponse(c, 'CONFLICT', 'Admin user already exists', 409);
+      }
+
+      // Validate input
+      if (!email || !password) {
+        return errorResponse(c, 'VALIDATION_ERROR', 'Email and password are required', 400);
+      }
+
+      // Create admin user
+      const user = await authService.register({
+        email,
+        password,
+        name: name || 'Admin',
+        role: 'ADMIN' as Role,
+        accountType: 'user',
+      });
+
+      return successResponse(c, {
+        message: 'Admin user created successfully. Please remove SETUP_SECRET from environment.',
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        },
+      }, 201);
+    } catch (error) {
+      return handleError(c, error);
+    }
+  });
+
   return app;
 }

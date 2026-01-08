@@ -102,13 +102,57 @@ export function resetLimit(key: string): void {
 
 /**
  * Get client IP from request
+ * 
+ * SECURITY NOTE: x-forwarded-for can be spoofed by clients.
+ * This should only be trusted when behind a trusted reverse proxy
+ * (e.g., Cloud Run, nginx, load balancer) that overwrites this header.
+ * 
+ * For Cloud Run: The first IP in x-forwarded-for is set by Google's load balancer
+ * and can be trusted. Additional IPs may be spoofed.
  */
 function getClientIp(c: Context): string {
-  return (
-    c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
-    c.req.header('x-real-ip') ||
-    'unknown'
-  );
+  // In production behind a trusted proxy, use x-forwarded-for
+  // The proxy should be configured to overwrite (not append) this header
+  const forwardedFor = c.req.header('x-forwarded-for');
+  
+  if (forwardedFor) {
+    // Take only the first IP (set by the trusted proxy)
+    // Additional IPs in the chain may be spoofed by the client
+    const firstIp = forwardedFor.split(',')[0]?.trim();
+    if (firstIp && isValidIp(firstIp)) {
+      return firstIp;
+    }
+  }
+  
+  // Fallback to x-real-ip (set by some proxies like nginx)
+  const realIp = c.req.header('x-real-ip');
+  if (realIp && isValidIp(realIp)) {
+    return realIp;
+  }
+  
+  return 'unknown';
+}
+
+/**
+ * Basic IP address validation
+ * Prevents header injection attacks
+ */
+function isValidIp(ip: string): boolean {
+  // IPv4 pattern
+  const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+  // IPv6 pattern (simplified)
+  const ipv6Pattern = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/;
+  
+  if (ipv4Pattern.test(ip)) {
+    // Validate each octet is 0-255
+    const octets = ip.split('.');
+    return octets.every(octet => {
+      const num = parseInt(octet, 10);
+      return num >= 0 && num <= 255;
+    });
+  }
+  
+  return ipv6Pattern.test(ip);
 }
 
 // ============================================
