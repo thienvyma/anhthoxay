@@ -149,12 +149,12 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
             width: showPreview ? 'min(1400px, 100%)' : 'min(900px, 100%)',
             height: 'min(90vh, 100%)',
             maxHeight: '90vh',
-            background: 'rgba(20,21,26,0.98)',
+            background: tokens.color.surface,
             border: `1px solid ${tokens.color.border}`,
             borderRadius: tokens.radius.lg,
             display: 'flex',
             flexDirection: 'column',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+            boxShadow: tokens.shadow.lg,
             overflow: 'hidden',
           }}
         >
@@ -166,7 +166,7 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              background: `linear-gradient(180deg, ${tokens.color.surfaceAlt} 0%, transparent 100%)`,
+              background: tokens.color.surfaceAlt,
               flexShrink: 0,
             }}
           >
@@ -189,7 +189,7 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
                   onClick={() => setShowTemplatePicker(true)}
                   style={{
                     padding: '8px 16px',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    background: tokens.color.info,
                     color: '#fff',
                     border: 'none',
                     borderRadius: tokens.radius.md,
@@ -254,7 +254,7 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
                 padding: 28,
                 overflowY: 'auto',
                 overflowX: 'hidden',
-                background: 'rgba(0,0,0,0.1)',
+                background: tokens.color.background,
               }}
             >
               {renderFormFields(kind, formData, updateField, addArrayItem, removeArrayItem, setImagePickerField)}
@@ -277,7 +277,7 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
                   <i className="ri-eye-line" />
                   Live Preview
                 </div>
-                <div style={{ background: '#fff', borderRadius: tokens.radius.md, padding: 32, minHeight: 300 }}>
+                <div style={{ background: tokens.color.surface, borderRadius: tokens.radius.md, padding: 32, minHeight: 300, border: `1px solid ${tokens.color.border}` }}>
                   {renderPreview(kind, formData)}
                 </div>
               </motion.div>

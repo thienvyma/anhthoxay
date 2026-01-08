@@ -73,7 +73,12 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
     const newPage = await pagesApi.create(data);
     
     // Auto-sync: Add new page to header navigation
-    await addPageToHeaderNav(data.slug, data.title);
+    let headerSyncSuccess = false;
+    try {
+      headerSyncSuccess = await addPageToHeaderNav(data.slug, data.title);
+    } catch (err) {
+      console.error('[SectionsPage] Failed to sync header nav:', err);
+    }
     
     // Refresh pages list and select the new page
     await loadPages();
@@ -81,7 +86,11 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
       await loadPage(newPage.slug);
     }
     
-    toast.success(`Trang "${data.title}" đã được tạo và thêm vào menu!`);
+    if (headerSyncSuccess) {
+      toast.success(`Trang "${data.title}" đã được tạo và thêm vào menu!`);
+    } else {
+      toast.success(`Trang "${data.title}" đã được tạo nhưng không thể thêm vào menu. Vui lòng thêm thủ công trong Settings > Layout.`);
+    }
   }
 
   async function handleEditPage(slug: string, data: { title: string }) {
@@ -94,12 +103,21 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
     await pagesApi.delete(slug);
     
     // Auto-sync: Remove page from header navigation
-    await removePageFromHeaderNav(slug);
+    let headerSyncSuccess = false;
+    try {
+      headerSyncSuccess = await removePageFromHeaderNav(slug);
+    } catch (err) {
+      console.error('[SectionsPage] Failed to remove page from header nav:', err);
+    }
     
     // Refresh pages list after deletion
     await loadPages();
     
-    toast.success('Trang đã được xóa và gỡ khỏi menu!');
+    if (headerSyncSuccess) {
+      toast.success('Trang đã được xóa và gỡ khỏi menu!');
+    } else {
+      toast.success('Trang đã được xóa nhưng không thể gỡ khỏi menu. Vui lòng xóa thủ công trong Settings > Layout.');
+    }
   }
 
   async function handleDeleteSection(sectionId: string) {

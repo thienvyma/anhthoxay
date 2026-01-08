@@ -27,8 +27,8 @@ export function ArraySection({
   return (
     <div
       style={{
-        background: 'rgba(245, 211, 147, 0.1)',
-        border: '1px solid rgba(245, 211, 147, 0.3)',
+        background: `${tokens.color.primary}15`,
+        border: `1px solid ${tokens.color.primary}30`,
         borderRadius: tokens.radius.md,
         padding: 16,
       }}
@@ -78,8 +78,8 @@ export function ArraySection({
               onClick={() => onRemove(idx)}
               style={{
                 padding: 6,
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
+                background: `${tokens.color.error}15`,
+                border: `1px solid ${tokens.color.error}30`,
                 borderRadius: tokens.radius.sm,
                 color: tokens.color.error,
                 cursor: 'pointer',

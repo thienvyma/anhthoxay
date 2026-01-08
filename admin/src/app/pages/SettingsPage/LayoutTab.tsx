@@ -42,14 +42,10 @@ export function LayoutTab({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Load all pages from API (dynamic, not hardcoded)
+  // Throws on API failure so callers can handle appropriately
   const loadAllPages = useCallback(async () => {
-    try {
-      const pages = await pagesApi.list();
-      return pages;
-    } catch (err) {
-      console.warn('Failed to load pages list:', err);
-      return [];
-    }
+    const pages = await pagesApi.list();
+    return pages;
   }, []);
 
   // Load header/footer config from API on mount
@@ -59,12 +55,20 @@ export function LayoutTab({
         setIsLoading(true);
         
         // Load all pages first
-        const pages = await loadAllPages();
+        let pages;
+        try {
+          pages = await loadAllPages();
+        } catch (err) {
+          console.error('Failed to load pages:', err);
+          onError('Không thể tải danh sách trang. Vui lòng thử lại.');
+          setIsLoading(false);
+          return;
+        }
         
         // Get home page for header/footer config (source of truth)
         const homePage = pages.find(p => p.slug === 'home');
         if (!homePage) {
-          console.warn('Home page not found');
+          onError('Không tìm thấy trang chủ (home). Vui lòng tạo trang home trước.');
           setIsLoading(false);
           return;
         }
@@ -177,8 +181,22 @@ export function LayoutTab({
       setSavingHeader(true);
       
       // Refresh pages list to get latest
-      const pages = await loadAllPages();
+      let pages;
+      try {
+        pages = await loadAllPages();
+      } catch (err) {
+        console.error('Failed to load pages for header save:', err);
+        onError('Không thể tải danh sách trang. Vui lòng thử lại.');
+        return;
+      }
+      
       const pageSlugs = pages.map(p => p.slug);
+      
+      // Check if there are any pages to save to
+      if (pageSlugs.length === 0) {
+        onError('Không có trang nào để lưu header. Vui lòng tạo ít nhất một trang.');
+        return;
+      }
       
       const landingHeaderConfig = {
         logo: {
@@ -211,11 +229,28 @@ export function LayoutTab({
       };
       const headerConfigStr = JSON.stringify(landingHeaderConfig);
 
-      // Save to ALL pages (not hardcoded list)
-      await Promise.all(
+      // Save to ALL pages with Promise.allSettled to handle partial failures
+      const results = await Promise.allSettled(
         pageSlugs.map((slug) => pagesApi.update(slug, { headerConfig: headerConfigStr }))
       );
-      onShowMessage(`✅ Header đã được lưu cho ${pageSlugs.length} trang!`);
+      
+      // Count successes and failures
+      const successes = results.filter(r => r.status === 'fulfilled').length;
+      const failures = results.filter(r => r.status === 'rejected');
+      
+      if (failures.length > 0) {
+        const failedSlugs = pageSlugs.filter((_, i) => results[i].status === 'rejected');
+        console.error('Failed to save header to pages:', failedSlugs, failures.map(f => (f as PromiseRejectedResult).reason));
+        
+        if (successes > 0) {
+          onShowMessage(`⚠️ Header đã lưu cho ${successes}/${pageSlugs.length} trang.`);
+          onError(`Không thể lưu cho: ${failedSlugs.join(', ')}`);
+        } else {
+          onError('Lưu header thất bại cho tất cả các trang.');
+        }
+      } else {
+        onShowMessage(`✅ Header đã được lưu cho ${successes} trang!`);
+      }
     } catch (error) {
       console.error('Error saving header:', error);
       onError('Lưu header thất bại.');
@@ -230,8 +265,22 @@ export function LayoutTab({
       setSavingFooter(true);
       
       // Refresh pages list to get latest
-      const pages = await loadAllPages();
+      let pages;
+      try {
+        pages = await loadAllPages();
+      } catch (err) {
+        console.error('Failed to load pages for footer save:', err);
+        onError('Không thể tải danh sách trang. Vui lòng thử lại.');
+        return;
+      }
+      
       const pageSlugs = pages.map(p => p.slug);
+      
+      // Check if there are any pages to save to
+      if (pageSlugs.length === 0) {
+        onError('Không có trang nào để lưu footer. Vui lòng tạo ít nhất một trang.');
+        return;
+      }
       
       const landingFooterConfig = {
         brand: {
@@ -255,11 +304,28 @@ export function LayoutTab({
       };
       const footerConfigStr = JSON.stringify(landingFooterConfig);
 
-      // Save to ALL pages (not hardcoded list)
-      await Promise.all(
+      // Save to ALL pages with Promise.allSettled to handle partial failures
+      const results = await Promise.allSettled(
         pageSlugs.map((slug) => pagesApi.update(slug, { footerConfig: footerConfigStr }))
       );
-      onShowMessage(`✅ Footer đã được lưu cho ${pageSlugs.length} trang!`);
+      
+      // Count successes and failures
+      const successes = results.filter(r => r.status === 'fulfilled').length;
+      const failures = results.filter(r => r.status === 'rejected');
+      
+      if (failures.length > 0) {
+        const failedSlugs = pageSlugs.filter((_, i) => results[i].status === 'rejected');
+        console.error('Failed to save footer to pages:', failedSlugs, failures.map(f => (f as PromiseRejectedResult).reason));
+        
+        if (successes > 0) {
+          onShowMessage(`⚠️ Footer đã lưu cho ${successes}/${pageSlugs.length} trang.`);
+          onError(`Không thể lưu cho: ${failedSlugs.join(', ')}`);
+        } else {
+          onError('Lưu footer thất bại cho tất cả các trang.');
+        }
+      } else {
+        onShowMessage(`✅ Footer đã được lưu cho ${successes} trang!`);
+      }
     } catch (error) {
       console.error('Error saving footer:', error);
       onError('Lưu footer thất bại.');

@@ -17,8 +17,8 @@ export function InfoBanner({ icon, color, title, description }: InfoBannerProps)
   return (
     <div
       style={{
-        background: `linear-gradient(135deg, ${color}20 0%, ${color}10 100%)`,
-        border: `1px solid ${color}50`,
+        background: `${color}15`,
+        border: `1px solid ${color}40`,
         borderRadius: tokens.radius.md,
         padding: '12px 16px',
         display: 'flex',

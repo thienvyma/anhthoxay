@@ -52,15 +52,28 @@ function parseHeaderConfig(headerConfigStr: string | undefined): {
 
   try {
     const parsed = JSON.parse(headerConfigStr);
-    const navigation: HeaderNavItem[] =
-      parsed.links?.map(
-        (link: { href: string; label: string; icon?: string; highlight?: boolean }) => ({
-          label: link.label,
-          route: link.href,
-          icon: link.icon || '',
-          highlight: link.highlight || false,
-        })
-      ) || [];
+    
+    // Type guard: ensure parsed.links is an array before mapping
+    type ParsedLink = { href: string; label: string; icon?: string; highlight?: boolean };
+    
+    const navigation: HeaderNavItem[] = Array.isArray(parsed.links)
+      ? parsed.links
+          .filter((link: unknown): link is ParsedLink => {
+            // Validate each link has required properties
+            return (
+              typeof link === 'object' &&
+              link !== null &&
+              typeof (link as Record<string, unknown>).href === 'string' &&
+              typeof (link as Record<string, unknown>).label === 'string'
+            );
+          })
+          .map((link: ParsedLink) => ({
+            label: link.label,
+            route: link.href,
+            icon: link.icon || '',
+            highlight: link.highlight || false,
+          }))
+      : [];
 
     return { navigation, raw: parsed };
   } catch {
@@ -104,6 +117,9 @@ export async function addPageToHeaderNav(
     return true;
   }
 
+  // Store original configs for potential rollback
+  const originalConfigs: Map<string, string | undefined> = new Map();
+
   try {
     // Get current header config from home page (source of truth)
     const homePage = await pagesApi.get('home');
@@ -136,11 +152,60 @@ export async function addPageToHeaderNav(
     // Serialize and save to all pages
     const headerConfigStr = serializeHeaderConfig(headerData.navigation, headerData.raw);
 
-    // Get all pages and update their headerConfig
+    // Get all pages and update their headerConfig with retry logic
     const allPages = await pagesApi.list();
-    await Promise.all(
-      allPages.map((page) => pagesApi.update(page.slug, { headerConfig: headerConfigStr }))
-    );
+    
+    // Store original configs for rollback
+    for (const page of allPages) {
+      originalConfigs.set(page.slug, page.headerConfig as string | undefined);
+    }
+    
+    // Update pages sequentially with retry
+    const failedSlugs: string[] = [];
+    const succeededSlugs: string[] = [];
+    
+    for (const page of allPages) {
+      let success = false;
+      let lastError: unknown;
+      
+      // Retry up to 3 times with exponential backoff
+      for (let attempt = 0; attempt < 3 && !success; attempt++) {
+        try {
+          if (attempt > 0) {
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
+          }
+          await pagesApi.update(page.slug, { headerConfig: headerConfigStr });
+          success = true;
+          succeededSlugs.push(page.slug);
+        } catch (err) {
+          lastError = err;
+          console.warn(`[HeaderSync] Retry ${attempt + 1}/3 failed for page "${page.slug}":`, err);
+        }
+      }
+      
+      if (!success) {
+        console.error(`[HeaderSync] Failed to update page "${page.slug}" after 3 attempts:`, lastError);
+        failedSlugs.push(page.slug);
+      }
+    }
+    
+    // If any updates failed, attempt rollback for succeeded pages
+    if (failedSlugs.length > 0) {
+      console.error(`[HeaderSync] Failed to add nav to pages: ${failedSlugs.join(', ')}`);
+      
+      // Rollback succeeded pages
+      for (const slug of succeededSlugs) {
+        const originalConfig = originalConfigs.get(slug);
+        try {
+          await pagesApi.update(slug, { headerConfig: originalConfig || '' });
+          console.warn(`[HeaderSync] Rolled back page "${slug}"`);
+        } catch (rollbackErr) {
+          console.error(`[HeaderSync] Failed to rollback page "${slug}":`, rollbackErr);
+        }
+      }
+      
+      return false;
+    }
 
     console.warn(`[HeaderSync] Added "${pageTitle}" to header navigation`);
     return true;
@@ -157,6 +222,9 @@ export async function addPageToHeaderNav(
  * @returns Promise<boolean> - true if sync was successful
  */
 export async function removePageFromHeaderNav(pageSlug: string): Promise<boolean> {
+  // Store original configs for potential rollback
+  const originalConfigs: Map<string, string | undefined> = new Map();
+
   try {
     // Get current header config from home page (source of truth)
     const homePage = await pagesApi.get('home');
@@ -180,11 +248,60 @@ export async function removePageFromHeaderNav(pageSlug: string): Promise<boolean
     // Serialize and save to all pages
     const headerConfigStr = serializeHeaderConfig(headerData.navigation, headerData.raw);
 
-    // Get all pages and update their headerConfig
+    // Get all pages and update their headerConfig with retry logic
     const allPages = await pagesApi.list();
-    await Promise.all(
-      allPages.map((page) => pagesApi.update(page.slug, { headerConfig: headerConfigStr }))
-    );
+    
+    // Store original configs for rollback
+    for (const page of allPages) {
+      originalConfigs.set(page.slug, page.headerConfig as string | undefined);
+    }
+    
+    // Update pages sequentially with retry
+    const failedSlugs: string[] = [];
+    const succeededSlugs: string[] = [];
+    
+    for (const page of allPages) {
+      let success = false;
+      let lastError: unknown;
+      
+      // Retry up to 3 times with exponential backoff
+      for (let attempt = 0; attempt < 3 && !success; attempt++) {
+        try {
+          if (attempt > 0) {
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
+          }
+          await pagesApi.update(page.slug, { headerConfig: headerConfigStr });
+          success = true;
+          succeededSlugs.push(page.slug);
+        } catch (err) {
+          lastError = err;
+          console.warn(`[HeaderSync] Retry ${attempt + 1}/3 failed for page "${page.slug}":`, err);
+        }
+      }
+      
+      if (!success) {
+        console.error(`[HeaderSync] Failed to update page "${page.slug}" after 3 attempts:`, lastError);
+        failedSlugs.push(page.slug);
+      }
+    }
+    
+    // If any updates failed, attempt rollback for succeeded pages
+    if (failedSlugs.length > 0) {
+      console.error(`[HeaderSync] Failed to remove nav from pages: ${failedSlugs.join(', ')}`);
+      
+      // Rollback succeeded pages
+      for (const slug of succeededSlugs) {
+        const originalConfig = originalConfigs.get(slug);
+        try {
+          await pagesApi.update(slug, { headerConfig: originalConfig || '' });
+          console.warn(`[HeaderSync] Rolled back page "${slug}"`);
+        } catch (rollbackErr) {
+          console.error(`[HeaderSync] Failed to rollback page "${slug}":`, rollbackErr);
+        }
+      }
+      
+      return false;
+    }
 
     console.warn(`[HeaderSync] Removed "${pageSlug}" from header navigation`);
     return true;

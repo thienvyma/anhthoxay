@@ -15,8 +15,7 @@
   },
   "devDependencies": {
     "@testing-library/react": "^16.1.0",
-    "@types/dompurify": "^3.2.0",
     "fast-check": "^4.4.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.5"
   }
 }
