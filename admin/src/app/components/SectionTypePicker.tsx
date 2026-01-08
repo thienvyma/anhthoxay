@@ -268,6 +268,14 @@ const sectionTypes: Array<{
     color: '#8b5cf6',
     category: 'other',
   },
+  {
+    type: 'LEGAL_CONTENT',
+    icon: 'ri-shield-check-line',
+    label: 'Chính Sách & Điều Khoản',
+    description: 'Privacy Policy & Terms of Use',
+    color: '#10b981',
+    category: 'other',
+  },
 ];
 
 export function SectionTypePicker({ onSelect, onCancel }: SectionTypePickerProps) {
