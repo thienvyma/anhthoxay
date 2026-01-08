@@ -232,6 +232,62 @@ export function getDefaultData(sectionKind: SectionKind): Record<string, unknown
         buttonText: 'Tiếp tục',
         successMessage: 'Cảm ơn bạn! Chúng tôi sẽ liên hệ sớm.',
       };
+    case 'LEGAL_CONTENT':
+      return {
+        documentType: 'privacy_policy',
+        companyName: 'Nội Thất Nhanh',
+        companyAddress: '123 Đường ABC, Quận 1, TP. Hồ Chí Minh',
+        companyEmail: 'contact@noithatnhanh.vn',
+        companyPhone: '+84 123 456 789',
+        effectiveDate: new Date().toISOString().split('T')[0],
+        lastUpdated: new Date().toISOString().split('T')[0],
+        // Privacy Policy sections
+        privacyPolicy: {
+          introduction: 'Chúng tôi cam kết bảo vệ quyền riêng tư của bạn. Chính sách này giải thích cách chúng tôi thu thập, sử dụng và bảo vệ thông tin cá nhân của bạn.',
+          dataCollection: [
+            { _id: generateUniqueId(), title: 'Thông tin cá nhân', description: 'Họ tên, số điện thoại, email, địa chỉ khi bạn đăng ký tài khoản hoặc gửi yêu cầu báo giá.' },
+            { _id: generateUniqueId(), title: 'Thông tin dự án', description: 'Chi tiết về công trình, diện tích, yêu cầu thiết kế và ngân sách dự kiến.' },
+            { _id: generateUniqueId(), title: 'Thông tin kỹ thuật', description: 'Địa chỉ IP, loại trình duyệt, thiết bị sử dụng và thời gian truy cập.' },
+          ],
+          dataUsage: [
+            { _id: generateUniqueId(), title: 'Cung cấp dịch vụ', description: 'Xử lý yêu cầu báo giá, kết nối với nhà thầu phù hợp và hỗ trợ khách hàng.' },
+            { _id: generateUniqueId(), title: 'Cải thiện trải nghiệm', description: 'Phân tích hành vi người dùng để nâng cao chất lượng dịch vụ và giao diện.' },
+            { _id: generateUniqueId(), title: 'Liên lạc', description: 'Gửi thông báo về dự án, khuyến mãi và cập nhật dịch vụ (có thể hủy đăng ký).' },
+          ],
+          dataProtection: 'Chúng tôi áp dụng các biện pháp bảo mật tiêu chuẩn ngành bao gồm mã hóa SSL, tường lửa và kiểm soát truy cập để bảo vệ dữ liệu của bạn.',
+          dataSharing: 'Chúng tôi không bán hoặc cho thuê thông tin cá nhân. Dữ liệu chỉ được chia sẻ với nhà thầu khi bạn đồng ý kết nối, hoặc khi pháp luật yêu cầu.',
+          userRights: [
+            { _id: generateUniqueId(), title: 'Quyền truy cập', description: 'Bạn có quyền yêu cầu xem thông tin cá nhân chúng tôi lưu trữ về bạn.' },
+            { _id: generateUniqueId(), title: 'Quyền chỉnh sửa', description: 'Bạn có thể cập nhật hoặc sửa đổi thông tin cá nhân bất cứ lúc nào.' },
+            { _id: generateUniqueId(), title: 'Quyền xóa', description: 'Bạn có thể yêu cầu xóa tài khoản và dữ liệu liên quan.' },
+            { _id: generateUniqueId(), title: 'Quyền từ chối', description: 'Bạn có thể từ chối nhận email marketing bất cứ lúc nào.' },
+          ],
+          cookies: 'Chúng tôi sử dụng cookies để cải thiện trải nghiệm duyệt web. Bạn có thể tắt cookies trong cài đặt trình duyệt, nhưng một số tính năng có thể bị ảnh hưởng.',
+        },
+        // Terms of Use sections
+        termsOfUse: {
+          introduction: 'Bằng việc sử dụng website và dịch vụ của chúng tôi, bạn đồng ý tuân thủ các điều khoản sau đây.',
+          serviceDescription: 'Nội Thất Nhanh là nền tảng kết nối chủ nhà với nhà thầu nội thất uy tín. Chúng tôi cung cấp công cụ báo giá, quản lý dự án và hệ thống đánh giá.',
+          userObligations: [
+            { _id: generateUniqueId(), title: 'Thông tin chính xác', description: 'Cung cấp thông tin trung thực khi đăng ký và sử dụng dịch vụ.' },
+            { _id: generateUniqueId(), title: 'Bảo mật tài khoản', description: 'Giữ bí mật thông tin đăng nhập và chịu trách nhiệm về hoạt động tài khoản.' },
+            { _id: generateUniqueId(), title: 'Sử dụng hợp pháp', description: 'Không sử dụng dịch vụ cho mục đích bất hợp pháp hoặc gây hại.' },
+            { _id: generateUniqueId(), title: 'Tôn trọng người khác', description: 'Không đăng nội dung xúc phạm, spam hoặc quấy rối người dùng khác.' },
+          ],
+          intellectualProperty: 'Tất cả nội dung trên website bao gồm logo, thiết kế, văn bản và hình ảnh thuộc sở hữu của Nội Thất Nhanh hoặc đối tác được cấp phép.',
+          liability: [
+            { _id: generateUniqueId(), title: 'Giới hạn trách nhiệm', description: 'Chúng tôi không chịu trách nhiệm về chất lượng công việc của nhà thầu. Mọi thỏa thuận là giữa chủ nhà và nhà thầu.' },
+            { _id: generateUniqueId(), title: 'Tranh chấp', description: 'Chúng tôi hỗ trợ giải quyết tranh chấp nhưng quyết định cuối cùng thuộc về các bên liên quan.' },
+            { _id: generateUniqueId(), title: 'Gián đoạn dịch vụ', description: 'Chúng tôi không đảm bảo dịch vụ hoạt động liên tục 100% và không chịu trách nhiệm về thiệt hại do gián đoạn.' },
+          ],
+          paymentTerms: 'Thanh toán được thực hiện trực tiếp giữa chủ nhà và nhà thầu. Nội Thất Nhanh có thể thu phí dịch vụ theo quy định công khai trên website.',
+          termination: 'Chúng tôi có quyền đình chỉ hoặc chấm dứt tài khoản vi phạm điều khoản mà không cần thông báo trước.',
+          disputeResolution: 'Mọi tranh chấp sẽ được giải quyết theo pháp luật Việt Nam. Tòa án có thẩm quyền là Tòa án nhân dân TP. Hồ Chí Minh.',
+          changes: 'Chúng tôi có quyền cập nhật điều khoản bất cứ lúc nào. Thay đổi sẽ có hiệu lực ngay khi đăng tải trên website.',
+        },
+        showTableOfContents: true,
+        layout: 'tabs',
+      };
     default:
       return {};
   }

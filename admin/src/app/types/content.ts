@@ -35,6 +35,7 @@ export type SectionKind =
   | 'ABOUT'
   | 'FAQ'
   | 'FURNITURE_QUOTE'
+  | 'LEGAL_CONTENT'
   // Legacy sections (kept for backward compatibility, not shown in UI)
   | 'GALLERY'
   | 'GALLERY_SLIDESHOW'

@@ -36,6 +36,7 @@ import { FeaturedSlideshowForm } from './FeaturedSlideshowForm';
 import { MediaGalleryForm } from './MediaGalleryForm';
 import { VideoShowcaseForm } from './VideoShowcaseForm';
 import { FurnitureQuoteForm } from './FurnitureQuoteForm';
+import { LegalContentForm } from './LegalContentForm';
 
 // Re-export types
 export type { DataRecord, UpdateFieldFn, AddArrayItemFn, RemoveArrayItemFn, OnImagePickFn };
@@ -201,6 +202,16 @@ export function renderFormFields(
     case 'FURNITURE_QUOTE':
       return (
         <FurnitureQuoteForm
+          data={data}
+          updateField={updateField}
+          addArrayItem={addArrayItem}
+          removeArrayItem={removeArrayItem}
+        />
+      );
+
+    case 'LEGAL_CONTENT':
+      return (
+        <LegalContentForm
           data={data}
           updateField={updateField}
           addArrayItem={addArrayItem}

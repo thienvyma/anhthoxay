@@ -182,17 +182,18 @@ async function downloadImage(url: string): Promise<Buffer | null> {
 /**
  * Resolve media URL to full URL
  * Handles relative paths and adds API base URL if needed
+ * Also handles GCS public URLs
  */
 function resolveLogoUrl(url: string): string {
   if (!url) return '';
   
-  // Already a full URL
+  // Already a full URL (http/https or GCS)
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
   }
   
-  // Relative path - prepend API URL
-  const apiUrl = process.env.API_URL || process.env.VITE_API_URL || 'http://localhost:4202';
+  // Get API URL from environment
+  const apiUrl = process.env.API_URL || 'https://api.noithatnhanh.vn';
   
   // Handle /media/ paths
   if (url.startsWith('/media/')) {
@@ -204,7 +205,12 @@ function resolveLogoUrl(url: string): string {
     return `${apiUrl}/${url}`;
   }
   
-  return url;
+  // For other relative paths, prepend API URL
+  if (url.startsWith('/')) {
+    return `${apiUrl}${url}`;
+  }
+  
+  return `${apiUrl}/${url}`;
 }
 
 // ============================================
@@ -282,10 +288,18 @@ export async function generateQuotationPDF(
   if (settings.companyLogo) {
     try {
       const logoUrl = resolveLogoUrl(settings.companyLogo);
+      console.log('[PDF] Attempting to download logo from:', logoUrl);
       logoBuffer = await downloadImage(logoUrl);
+      if (logoBuffer) {
+        console.log('[PDF] Logo downloaded successfully, size:', logoBuffer.length, 'bytes');
+      } else {
+        console.warn('[PDF] Logo download returned null');
+      }
     } catch (logoError) {
-      console.warn('Failed to download logo:', logoError);
+      console.warn('[PDF] Failed to download logo:', logoError);
     }
+  } else {
+    console.log('[PDF] No company logo configured');
   }
 
   return new Promise((resolve, reject) => {

@@ -2,15 +2,16 @@
  * Media Service Module
  *
  * Handles business logic for media asset operations including upload,
- * deletion, and file serving. Uses storage abstraction for cloud compatibility.
+ * deletion, and file serving. Uses IStorage abstraction for persistent storage.
  *
- * **Feature: media-gallery-isolation**
- * **Requirements: 1.1, 1.2, 1.3**
+ * **Feature: media-gallery-isolation, high-traffic-resilience**
+ * **Requirements: 1.1, 1.2, 1.3, 1.5**
  */
 
 import { PrismaClient, MediaAsset } from '@prisma/client';
 import sharp from 'sharp';
-import { getStorage, getStorageType, IStorage } from './storage';
+import { getStorage, IStorage, StorageError } from './storage';
+import { logger } from '../utils/logger';
 
 // ============================================
 // TYPES & INTERFACES
@@ -42,6 +43,7 @@ export class MediaServiceError extends Error {
   }
 }
 
+
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
@@ -67,10 +69,6 @@ export function getMimeType(filename: string): string {
       return 'image/svg+xml';
     case 'pdf':
       return 'application/pdf';
-    case 'doc':
-      return 'application/msword';
-    case 'docx':
-      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     default:
       return 'application/octet-stream';
   }
@@ -83,8 +81,11 @@ export function getMimeType(filename: string): string {
 export class MediaService {
   private storage: IStorage;
 
-  constructor(private prisma: PrismaClient) {
+  constructor(
+    private prisma: PrismaClient,
+  ) {
     this.storage = getStorage();
+    logger.info('MediaService initialized', { storageType: this.storage.getType() });
   }
 
   // ============================================
@@ -109,67 +110,74 @@ export class MediaService {
 
   /**
    * Upload a media file (images are optimized to WebP)
+   * Files are stored in cloud storage (S3/R2) for persistence
    */
   async uploadMedia(input: UploadFileInput): Promise<UploadResult> {
     const { buffer, mimeType, filename } = input;
     const id = crypto.randomUUID();
 
-    // Optimize images to WebP
-    if (mimeType.startsWith('image/') && !mimeType.includes('svg')) {
-      const optimized = await sharp(buffer).webp({ quality: 85 }).toBuffer();
-      const metadata = await sharp(buffer).metadata();
-      const webpFilename = `${id}.webp`;
+    try {
+      // Optimize images to WebP
+      if (mimeType.startsWith('image/') && !mimeType.includes('svg')) {
+        const optimized = await sharp(buffer).webp({ quality: 85 }).toBuffer();
+        const metadata = await sharp(buffer).metadata();
+        const webpFilename = `${id}.webp`;
 
-      // Upload to storage
-      const storageFile = await this.storage.upload(webpFilename, optimized, {
-        contentType: 'image/webp',
-        cacheControl: 'public, max-age=31536000',
+        // Upload to cloud storage
+        const storageFile = await this.storage.upload(webpFilename, optimized, {
+          contentType: 'image/webp',
+          isPublic: true,
+          cacheControl: 'public, max-age=31536000', // 1 year cache
+        });
+
+        const asset = await this.prisma.mediaAsset.create({
+          data: {
+            id,
+            url: storageFile.url,
+            mimeType: 'image/webp',
+            width: metadata.width || null,
+            height: metadata.height || null,
+            size: optimized.length,
+          },
+        });
+
+        logger.info('Media uploaded', { id, type: 'image/webp', size: optimized.length });
+        return { asset };
+      }
+
+      // Non-image files (or SVG)
+      const ext = (filename?.split('.').pop() || 'bin').toLowerCase();
+      const savedFilename = `${id}.${ext}`;
+
+      // Upload to cloud storage
+      const storageFile = await this.storage.upload(savedFilename, buffer, {
+        contentType: mimeType,
         isPublic: true,
-        metadata: {
-          originalName: filename || 'unknown',
-          width: String(metadata.width || 0),
-          height: String(metadata.height || 0),
-        },
+        cacheControl: 'public, max-age=31536000',
       });
 
       const asset = await this.prisma.mediaAsset.create({
         data: {
           id,
           url: storageFile.url,
-          mimeType: 'image/webp',
-          width: metadata.width || null,
-          height: metadata.height || null,
-          size: optimized.length,
+          mimeType,
+          size: buffer.length,
         },
       });
 
+      logger.info('Media uploaded', { id, type: mimeType, size: buffer.length });
       return { asset };
+    } catch (error) {
+      logger.error('Media upload failed', { 
+        id, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+      
+      if (error instanceof StorageError) {
+        throw new MediaServiceError(error.code, error.message, error.statusCode);
+      }
+      throw new MediaServiceError('UPLOAD_FAILED', 'Failed to upload media', 500);
     }
-
-    // Non-image files (or SVG)
-    const ext = (filename?.split('.').pop() || 'bin').toLowerCase();
-    const savedFilename = `${id}.${ext}`;
-
-    // Upload to storage
-    const storageFile = await this.storage.upload(savedFilename, buffer, {
-      contentType: mimeType,
-      cacheControl: 'public, max-age=31536000',
-      isPublic: true,
-      metadata: {
-        originalName: filename || 'unknown',
-      },
-    });
-
-    const asset = await this.prisma.mediaAsset.create({
-      data: {
-        id,
-        url: storageFile.url,
-        mimeType,
-        size: buffer.length,
-      },
-    });
-
-    return { asset };
   }
 
   /**
@@ -183,16 +191,28 @@ export class MediaService {
       throw new MediaServiceError('NOT_FOUND', 'Media asset not found', 404);
     }
 
-    // Extract filename from URL
-    const filename = this.extractFilenameFromUrl(asset.url);
-    
-    if (filename) {
-      // Delete file from storage
-      await this.storage.delete(filename);
-    }
+    try {
+      // Extract filename from URL
+      const filename = this.extractFilenameFromUrl(asset.url);
+      
+      if (filename) {
+        // Delete from cloud storage
+        await this.storage.delete(filename);
+        logger.info('Media file deleted from storage', { id, filename });
+      }
 
-    // Delete from database
-    await this.prisma.mediaAsset.delete({ where: { id } });
+      // Delete from database
+      await this.prisma.mediaAsset.delete({ where: { id } });
+      logger.info('Media asset deleted', { id });
+    } catch (error) {
+      logger.error('Media delete failed', { 
+        id, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+      
+      // Still delete from database even if storage delete fails
+      await this.prisma.mediaAsset.delete({ where: { id } });
+    }
   }
 
   /**
@@ -200,20 +220,17 @@ export class MediaService {
    */
   private extractFilenameFromUrl(url: string): string | null {
     try {
-      // Handle both relative and absolute URLs
+      // Handle both full URLs and relative paths
       if (url.startsWith('/media/')) {
         return url.replace('/media/', '');
       }
       
-      // For absolute URLs (S3/R2), extract the key
       const urlObj = new URL(url);
       const pathname = urlObj.pathname;
-      
-      // Remove leading slash and bucket name if present
-      const parts = pathname.split('/').filter(Boolean);
+      const parts = pathname.split('/');
       return parts[parts.length - 1] || null;
     } catch {
-      // If URL parsing fails, try simple extraction
+      // If URL parsing fails, try to extract filename directly
       const parts = url.split('/');
       return parts[parts.length - 1] || null;
     }
@@ -225,25 +242,30 @@ export class MediaService {
 
   /**
    * Get file buffer and content type by filename
+   * Downloads from cloud storage
    * @throws MediaServiceError if file not found
    */
   async getFile(filename: string): Promise<{ buffer: Buffer; contentType: string }> {
-    const buffer = await this.storage.download(filename);
+    try {
+      const buffer = await this.storage.download(filename);
+      
+      if (!buffer) {
+        throw new MediaServiceError('NOT_FOUND', 'File not found', 404);
+      }
 
-    if (!buffer) {
+      const contentType = getMimeType(filename);
+      return { buffer, contentType };
+    } catch (error) {
+      if (error instanceof MediaServiceError) {
+        throw error;
+      }
+      
+      logger.error('File download failed', { 
+        filename, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
       throw new MediaServiceError('NOT_FOUND', 'File not found', 404);
     }
-
-    const contentType = getMimeType(filename);
-
-    return { buffer, contentType };
-  }
-
-  /**
-   * Check if file exists
-   */
-  async fileExists(filename: string): Promise<boolean> {
-    return this.storage.exists(filename);
   }
 
   /**
@@ -254,9 +276,16 @@ export class MediaService {
   }
 
   /**
-   * Get storage type (for debugging/info)
+   * Check if storage is available
+   */
+  async isStorageAvailable(): Promise<boolean> {
+    return this.storage.isAvailable();
+  }
+
+  /**
+   * Get storage type
    */
   getStorageType(): 'local' | 's3' | 'r2' {
-    return getStorageType();
+    return this.storage.getType();
   }
 }

@@ -256,9 +256,10 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
               <img
                 src={resolveMediaUrl(logo.imageUrl)}
                 alt={logo.text || 'Nội Thất Nhanh Logo'}
+                className="header-logo-img"
                 style={{
-                  height: 'clamp(32px, 5vw, 45px)', // Responsive height: 32px mobile, 45px desktop
-                  maxWidth: 'clamp(120px, 20vw, 180px)', // Responsive width: 120px mobile, 180px desktop
+                  height: 'clamp(38px, 8vw, 48px)', // Responsive height: 38px mobile min, 48px desktop
+                  maxWidth: 'clamp(140px, 25vw, 200px)', // Responsive width: 140px mobile min, 200px desktop
                   objectFit: 'contain',
                 }}
               />

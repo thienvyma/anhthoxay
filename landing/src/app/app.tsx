@@ -149,24 +149,19 @@ function AppContent() {
 
   // Apply background image to body element
   useEffect(() => {
-    if (backgroundImage) {
-      document.body.style.backgroundImage = `
-        linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.6) 100%),
-        url("${backgroundImage}")
-      `;
-      document.body.style.backgroundSize = 'cover';
-      document.body.style.backgroundPosition = 'center';
-      document.body.style.backgroundAttachment = 'fixed';
-    } else {
-      // Default background - elegant interior design theme
-      document.body.style.backgroundImage = `
-        linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.65) 100%),
-        url("https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1920&q=40")
-      `;
-      document.body.style.backgroundSize = 'cover';
-      document.body.style.backgroundPosition = 'center';
-      document.body.style.backgroundAttachment = 'fixed';
-    }
+    // Use CSS custom property for background image
+    // This allows the ::before pseudo-element to use it
+    const bgUrl = backgroundImage || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1920&q=40';
+    
+    // Set CSS custom property for background
+    document.documentElement.style.setProperty('--bg-image', `url("${bgUrl}")`);
+    
+    // Add class to enable fixed background layer
+    document.body.classList.add('has-fixed-bg');
+    
+    return () => {
+      document.body.classList.remove('has-fixed-bg');
+    };
   }, [backgroundImage]);
 
   // Function to fetch page data

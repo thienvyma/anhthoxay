@@ -22,13 +22,8 @@ html {
 body {
   margin: 0;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-  /* Fixed background that doesn't scroll */
+  /* Base background color */
   background: #0b0c0f;
-  /* Background image will be set by JavaScript from settings */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
   min-height: 100vh;
   color: var(--text);
   /* Performance optimization */
@@ -36,6 +31,29 @@ body {
   -moz-osx-font-smoothing: grayscale;
   /* Prevent layout shift while loading */
   will-change: auto;
+  /* Position relative for pseudo-element */
+  position: relative;
+}
+
+/* Fixed background layer using pseudo-element
+   This works on iOS Safari where background-attachment: fixed doesn't */
+body.has-fixed-bg::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  /* Background image from CSS custom property */
+  background-image: 
+    linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.6) 100%),
+    var(--bg-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* Ensure it stays behind content */
+  pointer-events: none;
 }
 
 a { color: var(--text); }
@@ -363,10 +381,8 @@ img {
 
 /* Tablet and below */
 @media (max-width: 1024px) {
-  body {
-    /* Disable fixed background on mobile for better performance */
-    background-attachment: scroll;
-  }
+  /* Fixed background layer works on all devices now */
+  /* No need to change background-attachment */
 }
 
 /* Mobile Menu Toggle Button - Hidden by default */
@@ -438,6 +454,18 @@ img {
 @media (max-width: 768px) {
   html {
     font-size: 14px;
+  }
+  
+  /* Mobile background - fixed layer works on iOS now */
+  body.has-fixed-bg::before {
+    /* Ensure fixed positioning works on mobile */
+    position: fixed;
+  }
+  
+  /* Header logo - larger on mobile for better visibility */
+  .header-logo-img {
+    height: 42px !important;
+    max-width: 160px !important;
   }
 
   /* Hide desktop navigation items on mobile - ONLY in header, not mobile menu panel */

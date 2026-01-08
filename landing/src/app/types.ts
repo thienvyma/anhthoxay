@@ -33,6 +33,7 @@ export type SectionKind =
   | 'ABOUT'
   | 'FAQ'
   | 'FURNITURE_QUOTE'
+  | 'LEGAL_CONTENT'
   // Legacy sections (kept for backward compatibility)
   | 'GALLERY'
   | 'GALLERY_SLIDESHOW'

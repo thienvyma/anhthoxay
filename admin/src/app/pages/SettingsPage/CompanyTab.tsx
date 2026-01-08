@@ -22,12 +22,11 @@ export function CompanyTab({ settings, onChange, onShowMessage, onError }: Compa
   const [uploadingAdminBg, setUploadingAdminBg] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState<LogoPosition | null>(null);
 
-  // Logo position labels
+  // Logo position labels (removed 'quote' - deprecated)
   const logoPositions: { value: LogoPosition; label: string; icon: string; description: string }[] = [
     { value: 'header', label: 'Header', icon: 'ri-layout-top-line', description: 'Logo hiển thị trên header' },
     { value: 'footer', label: 'Footer', icon: 'ri-layout-bottom-line', description: 'Logo hiển thị ở footer' },
-    { value: 'pdf', label: 'PDF / Báo giá', icon: 'ri-file-pdf-line', description: 'Logo trong file PDF xuất ra' },
-    { value: 'quote', label: 'Báo giá Web', icon: 'ri-price-tag-3-line', description: 'Logo trên trang báo giá' },
+    { value: 'pdf', label: 'PDF / Báo giá', icon: 'ri-file-pdf-line', description: 'Logo trong file PDF báo giá' },
     { value: 'favicon', label: 'Favicon', icon: 'ri-window-line', description: 'Icon tab trình duyệt (32x32px)' },
   ];
 

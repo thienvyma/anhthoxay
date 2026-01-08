@@ -203,6 +203,7 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
     { kind: 'BANNER', icon: 'ri-notification-line', label: 'Thông Báo', description: 'Banner thông báo' },
     { kind: 'QUOTE_CALCULATOR', icon: 'ri-calculator-line', label: 'Dự Toán & Tư Vấn', description: 'Wizard dự toán chi phí xây dựng' },
     { kind: 'QUOTE_FORM', icon: 'ri-file-list-3-line', label: 'Form Báo Giá', description: 'Form đăng ký tư vấn' },
+    { kind: 'LEGAL_CONTENT', icon: 'ri-shield-check-line', label: 'Chính Sách & Điều Khoản', description: 'Privacy Policy & Terms of Use' },
   ];
 
   if (loading) {

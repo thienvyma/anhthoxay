@@ -415,13 +415,29 @@ gcloud sql instances describe ntn-db --format='value(connectionName)'
 
 ---
 
-## 📊 Bước 10: Setup Google Integration (Sheets + Gmail)
+## � Biước 10: Setup Google Integration (Sheets + Gmail)
 
 Tính năng này cho phép:
 - **Google Sheets**: Đồng bộ leads vào spreadsheet
 - **Gmail**: Gửi email báo giá với PDF đính kèm
 
-### 10.1 Tạo OAuth Credentials trên Google Cloud Console
+### 10.1 Chạy script tự động
+
+```bash
+# Từ thư mục root của project
+chmod +x infra/gcp/setup-google-integration.sh
+./infra/gcp/setup-google-integration.sh
+```
+
+Script sẽ hướng dẫn bạn:
+1. Tạo OAuth Credentials trên Google Cloud Console
+2. Nhập Client ID và Client Secret
+3. Tự động lưu vào Secret Manager
+4. Cập nhật Cloud Run với các secrets
+
+### 10.2 Hoặc setup thủ công
+
+#### Bước 1: Tạo OAuth Credentials
 
 1. Vào [Google Cloud Console > APIs & Services > Credentials](https://console.cloud.google.com/apis/credentials)
 2. Click **"Create Credentials"** > **"OAuth client ID"**
@@ -430,93 +446,52 @@ Tính năng này cho phép:
 5. Thêm **Authorized redirect URIs**:
    ```
    https://api.noithatnhanh.vn/integrations/google/callback
+   http://localhost:4202/integrations/google/callback
    ```
-   ⚠️ **QUAN TRỌNG**: URI phải chính xác, bao gồm cả `/integrations/google/callback`
 6. Click **"Create"** và copy **Client ID** + **Client Secret**
 
-### 10.2 Enable APIs
+#### Bước 2: Enable APIs
 
 ```bash
 gcloud services enable sheets.googleapis.com gmail.googleapis.com
 ```
 
-### 10.3 Tạo Secrets trong Secret Manager
+#### Bước 3: Tạo Secrets
 
 ```bash
-# Tạo encryption key (BẮT BUỘC cho mã hóa OAuth tokens)
+# Tạo encryption key
 ENCRYPTION_KEY=$(openssl rand -base64 32)
 
 # Lưu vào Secret Manager
-echo -n "YOUR_GOOGLE_CLIENT_ID" | gcloud secrets create GOOGLE_CLIENT_ID --data-file=-
-echo -n "YOUR_GOOGLE_CLIENT_SECRET" | gcloud secrets create GOOGLE_CLIENT_SECRET --data-file=-
-
-# Nếu chưa có ENCRYPTION_KEY
-echo -n "$ENCRYPTION_KEY" | gcloud secrets create ENCRYPTION_KEY --data-file=-
-
-# Cấp quyền cho Cloud Run service account
-PROJECT_NUMBER=$(gcloud projects describe $(gcloud config get-value project) --format='value(projectNumber)')
-CLOUD_RUN_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
-
-for SECRET in GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET ENCRYPTION_KEY; do
-  gcloud secrets add-iam-policy-binding $SECRET \
-    --member="serviceAccount:$CLOUD_RUN_SA" \
-    --role="roles/secretmanager.secretAccessor"
-done
+echo -n "YOUR_CLIENT_ID" | gcloud secrets create google-client-id --data-file=-
+echo -n "YOUR_CLIENT_SECRET" | gcloud secrets create google-client-secret --data-file=-
+echo -n "$ENCRYPTION_KEY" | gcloud secrets create encryption-key --data-file=-
 ```
 
-### 10.4 Cập nhật Cloud Run
+#### Bước 4: Cập nhật Cloud Run
 
 ```bash
-gcloud run services update ntn-api \
+gcloud run services update api \
   --region=asia-southeast1 \
-  --update-secrets="GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest,GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest,ENCRYPTION_KEY=ENCRYPTION_KEY:latest" \
-  --update-env-vars="GOOGLE_REDIRECT_URI=https://api.noithatnhanh.vn/integrations/google/callback,ADMIN_URL=https://admin.noithatnhanh.vn"
+  --set-secrets="GOOGLE_CLIENT_ID=google-client-id:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest,ENCRYPTION_KEY=encryption-key:latest" \
+  --set-env-vars="GOOGLE_REDIRECT_URI=https://api.noithatnhanh.vn/integrations/google/callback"
 ```
 
-### 10.5 Cấu hình OAuth Consent Screen (nếu chưa có)
-
-1. Vào [OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent)
-2. Chọn **External** (hoặc Internal nếu dùng Google Workspace)
-3. Điền thông tin:
-   - App name: `NỘI THẤT NHANH`
-   - User support email: email của bạn
-   - Developer contact: email của bạn
-4. Thêm scopes:
-   - `https://www.googleapis.com/auth/spreadsheets`
-   - `https://www.googleapis.com/auth/gmail.send`
-5. Thêm test users (nếu app chưa được verify)
-
-### 10.6 Kết nối trong Admin
+### 10.3 Kết nối trong Admin
 
 1. Vào **Admin > Settings > Tích hợp**
 2. Click **"Kết nối Google Sheets"**
 3. Đăng nhập Google và cấp quyền
-4. Sau khi redirect về, nhập **Spreadsheet ID** (lấy từ URL của Google Sheet)
+4. Nhập **Spreadsheet ID** (lấy từ URL của Google Sheet)
 5. Bật **"Tự động đồng bộ leads mới"**
 6. Click **"Lưu cài đặt"**
 
-### 10.7 Troubleshooting
+### 10.4 Kiểm tra kết nối
 
-**Lỗi "redirect_uri_mismatch":**
-- Kiểm tra URI trong Google Console phải chính xác: `https://api.noithatnhanh.vn/integrations/google/callback`
-- Không có trailing slash `/` ở cuối
-
-**Lỗi "No refresh token received":**
-- Vào [Google Account Permissions](https://myaccount.google.com/permissions)
-- Revoke access cho app
-- Thử kết nối lại
-
-**Lỗi "Failed to connect":**
 ```bash
-# Kiểm tra logs
-gcloud run services logs read ntn-api --region=asia-southeast1 --limit=50 | grep -i google
-
-# Kiểm tra secrets đã được mount
-gcloud run services describe ntn-api --region=asia-southeast1 --format='yaml(spec.template.spec.containers[0].env)'
+# Xem logs để debug
+gcloud run services logs read api --region=asia-southeast1 --limit=50 | grep -i google
 ```
-
-**Lỗi "Encryption key not configured":**
-- Đảm bảo `ENCRYPTION_KEY` secret đã được tạo và mount vào Cloud Run
 
 ---
 
@@ -539,20 +514,11 @@ gcloud storage buckets add-iam-policy-binding gs://ntn-media-bucket \
   --role=roles/storage.objectViewer
 ```
 
-### 11.2 Tạo Service Account và HMAC Key
+### 11.2 Tạo HMAC Key cho S3-compatible API
 
 ```bash
-# Tạo service account cho storage
-gcloud iam service-accounts create ntn-storage-sa \
-  --display-name="NTN Storage Service Account"
-
-# Lấy email của service account
-SA_EMAIL="ntn-storage-sa@$(gcloud config get-value project).iam.gserviceaccount.com"
-
-# Cấp quyền Storage Admin cho service account
-gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
-  --member="serviceAccount:$SA_EMAIL" \
-  --role="roles/storage.objectAdmin"
+# Lấy service account email
+SA_EMAIL=$(gcloud iam service-accounts list --format='value(email)' | head -1)
 
 # Tạo HMAC key
 gcloud storage hmac create $SA_EMAIL
@@ -560,14 +526,12 @@ gcloud storage hmac create $SA_EMAIL
 # Output sẽ có:
 # accessId: GOOG1E...
 # secret: ...
-# ⚠️ LƯU LẠI 2 GIÁ TRỊ NÀY! Secret chỉ hiển thị 1 lần!
+# Lưu lại 2 giá trị này!
 ```
 
 ### 11.3 Thêm Secrets vào Secret Manager
 
 ```bash
-# Thay YOUR_ACCESS_ID và YOUR_SECRET bằng giá trị từ bước 11.2
-
 # Tạo secrets
 echo -n "ntn-media-bucket" | gcloud secrets create s3-bucket --data-file=-
 echo -n "asia-southeast1" | gcloud secrets create s3-region --data-file=-
@@ -575,16 +539,6 @@ echo -n "https://storage.googleapis.com" | gcloud secrets create s3-endpoint --d
 echo -n "GOOG1E_YOUR_ACCESS_ID" | gcloud secrets create s3-access-key-id --data-file=-
 echo -n "YOUR_SECRET_KEY" | gcloud secrets create s3-secret-access-key --data-file=-
 echo -n "https://storage.googleapis.com/ntn-media-bucket" | gcloud secrets create s3-public-url --data-file=-
-
-# Cấp quyền cho Cloud Run service account
-PROJECT_NUMBER=$(gcloud projects describe $(gcloud config get-value project) --format='value(projectNumber)')
-CLOUD_RUN_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
-
-for SECRET in s3-bucket s3-region s3-endpoint s3-access-key-id s3-secret-access-key s3-public-url; do
-  gcloud secrets add-iam-policy-binding $SECRET \
-    --member="serviceAccount:$CLOUD_RUN_SA" \
-    --role="roles/secretmanager.secretAccessor"
-done
 ```
 
 ### 11.4 Cập nhật Cloud Run với Storage Secrets
@@ -592,8 +546,8 @@ done
 ```bash
 gcloud run services update ntn-api \
   --region=asia-southeast1 \
-  --update-secrets="S3_BUCKET=s3-bucket:latest,S3_REGION=s3-region:latest,S3_ENDPOINT=s3-endpoint:latest,S3_ACCESS_KEY_ID=s3-access-key-id:latest,S3_SECRET_ACCESS_KEY=s3-secret-access-key:latest,S3_PUBLIC_URL=s3-public-url:latest" \
-  --update-env-vars="S3_FORCE_PATH_STYLE=true"
+  --set-secrets="S3_BUCKET=s3-bucket:latest,S3_REGION=s3-region:latest,S3_ENDPOINT=s3-endpoint:latest,S3_ACCESS_KEY_ID=s3-access-key-id:latest,S3_SECRET_ACCESS_KEY=s3-secret-access-key:latest,S3_PUBLIC_URL=s3-public-url:latest" \
+  --set-env-vars="S3_FORCE_PATH_STYLE=true"
 ```
 
 ### 11.5 Kiểm tra Storage
@@ -603,59 +557,6 @@ gcloud run services update ntn-api \
 gcloud run services logs read ntn-api --region=asia-southeast1 --limit=20 | grep -i storage
 
 # Nên thấy: "Using S3/R2 storage" thay vì "Using local filesystem storage"
-
-# Hoặc gọi API endpoint (cần auth)
-curl -H "Authorization: Bearer YOUR_TOKEN" \
-  https://ntn-api-xxxxx-as.a.run.app/media/storage-info
-```
-
-### 11.6 Migrate Media Files (nếu có)
-
-Nếu bạn đã có media files trên local, cần upload lên Cloud Storage:
-
-```bash
-# Upload tất cả files từ .media folder
-gsutil -m cp -r .media/* gs://ntn-media-bucket/
-
-# Hoặc dùng gcloud storage
-gcloud storage cp -r .media/* gs://ntn-media-bucket/
-```
-
-### 11.7 Cấu hình CORS cho Bucket (nếu cần)
-
-```bash
-# Tạo file cors.json
-cat > cors.json << 'EOF'
-[
-  {
-    "origin": ["https://noithatnhanh.vn", "https://admin.noithatnhanh.vn", "https://portal.noithatnhanh.vn"],
-    "method": ["GET", "HEAD"],
-    "responseHeader": ["Content-Type", "Cache-Control"],
-    "maxAgeSeconds": 3600
-  }
-]
-EOF
-
-# Apply CORS config
-gcloud storage buckets update gs://ntn-media-bucket --cors-file=cors.json
-```
-
-### 11.8 Tối ưu với Cloud CDN (Optional)
-
-Để tăng tốc độ load media files:
-
-```bash
-# Tạo backend bucket
-gcloud compute backend-buckets create ntn-media-backend \
-  --gcs-bucket-name=ntn-media-bucket \
-  --enable-cdn
-
-# Tạo URL map
-gcloud compute url-maps create ntn-media-lb \
-  --default-backend-bucket=ntn-media-backend
-
-# Tạo HTTPS proxy (cần SSL certificate)
-# Xem thêm: https://cloud.google.com/cdn/docs/setting-up-cdn-with-bucket
 ```
 
 ---

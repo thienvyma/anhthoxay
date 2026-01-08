@@ -1,15 +1,131 @@
 # Daily Changelog
 
-## 2026-01-08
+## 2026-01-09
 
-### Task: Setup Cloud Storage for Media (Bước 11)
+### Task: Fix Mobile Background với Fixed Pseudo-Element
 
 **✏️ Modified:**
-- `api/src/services/media.service.ts` - Refactored to use storage abstraction instead of direct fs operations. Now supports local, S3, and R2 storage.
-- `api/src/routes/media.routes.ts` - Refactored to use storage abstraction. Added `/media/storage-info` endpoint for debugging. Removed direct fs dependency.
-- `docs/DEPLOYMENT_GCP.md` - Enhanced Bước 11 with detailed instructions: Service Account creation, HMAC key setup, Secret Manager configuration, CORS setup, and Cloud CDN optimization.
+- `landing/src/app/app.tsx` - Sử dụng CSS custom property và class thay vì inline background styles
+- `landing/src/styles.css` - Thêm `body.has-fixed-bg::before` pseudo-element với `position: fixed` để tạo fixed background layer hoạt động trên iOS Safari
 
-**Details:** Media files are now stored using a unified storage interface that auto-selects between local filesystem (development) and S3-compatible storage (production). This ensures files persist across Cloud Run container restarts.
+**🔧 Giải pháp:**
+- iOS Safari không hỗ trợ `background-attachment: fixed` trên mobile
+- Thay vì dùng background trực tiếp trên body, tạo pseudo-element `::before` với `position: fixed`
+- Pseudo-element này nằm phía sau content (`z-index: -1`) và giữ nguyên vị trí khi scroll
+- Hoạt động trên tất cả browsers bao gồm iOS Safari
+
+---
+
+### Task: Thêm Section LEGAL_CONTENT (Privacy Policy & Terms of Use)
+
+**🆕 Created:**
+- `admin/src/app/components/SectionEditor/forms/LegalContentForm.tsx` - Form editor cho Privacy Policy & Terms of Use
+- `admin/src/app/components/SectionEditor/previews/LegalContentPreview.tsx` - Preview component với tabs/stacked layout
+- `landing/src/app/sections/LegalContent.tsx` - Landing page section component với responsive design
+
+**✏️ Modified:**
+- `admin/src/app/types/content.ts` - Thêm `LEGAL_CONTENT` vào SectionKind
+- `admin/src/app/components/SectionEditor/defaults.ts` - Thêm default data với nội dung mẫu đầy đủ
+- `admin/src/app/components/SectionEditor/forms/index.tsx` - Import và route LegalContentForm
+- `admin/src/app/components/SectionEditor/previews/index.tsx` - Import và route LegalContentPreview
+- `admin/src/app/pages/SectionsPage.tsx` - Thêm vào danh sách section types
+- `landing/src/app/types.ts` - Thêm `LEGAL_CONTENT` vào SectionKind
+- `landing/src/app/sections/render.tsx` - Register LegalContent component
+
+**📋 Features:**
+- Hỗ trợ 3 loại: Privacy Policy, Terms of Use, hoặc cả hai
+- Nội dung mẫu tiếng Việt đầy đủ cho doanh nghiệp
+- Layout: tabs, accordion, stacked
+- Table of Contents tự động với smooth scroll
+- Thông tin công ty có thể tùy chỉnh
+- Responsive design với Framer Motion animations
+
+---
+
+### Task: Fix Mobile Background và Logo Size
+
+**✏️ Modified:**
+- `landing/src/app/app.tsx` - Fix background-attachment cho mobile/tablet (iOS Safari không hỗ trợ fixed), thêm resize listener
+- `landing/src/app/components/Header.tsx` - Tăng kích thước logo trên mobile (38px min thay vì 32px)
+- `landing/src/styles.css` - Thêm CSS rules cho mobile: background-attachment scroll, logo size 42px
+
+**🔧 Issues Fixed:**
+- Background không hiển thị đúng trên điện thoại thật (iOS Safari)
+- Logo quá nhỏ trên mobile
+
+---
+
+### Task: Tắt dịch vụ GCP không cần thiết + Fix Logo PDF
+
+**🔧 GCP Services Disabled:**
+- `alloydb.googleapis.com` - AlloyDB (không dùng)
+- `analyticshub.googleapis.com` - Analytics Hub
+- `bigquerydatapolicy.googleapis.com` - BigQuery Data Policy
+- `bigquerydatatransfer.googleapis.com` - BigQuery Data Transfer
+- `bigquerymigration.googleapis.com` - BigQuery Migration
+- `bigqueryreservation.googleapis.com` - BigQuery Reservation
+- `dataform.googleapis.com` - Dataform
+- `dataplex.googleapis.com` - Dataplex
+- `datastore.googleapis.com` - Datastore
+- `containerregistry.googleapis.com` - Container Registry (đã migrate sang Artifact Registry)
+
+**✏️ Modified:**
+- `admin/src/app/pages/SettingsPage/CompanyTab.tsx` - Cập nhật description cho logo PDF
+- `api/src/services/pdf.service.ts` - Fix logo URL resolution, thêm logging để debug
+- `infra/gcp/cloudbuild-api.yaml` - Thêm API_URL env var cho production
+
+---
+
+## 2026-01-08
+
+### Task: Fix Media Storage - Use S3 Instead of Local Filesystem
+
+**✏️ Modified:**
+- `api/src/services/media.service.ts` - Refactored to use IStorage abstraction instead of local fs. Now uploads to S3/R2 for persistent storage across deployments
+- `infra/gcp/cloudbuild-api.yaml` - Added S3 secrets (s3-bucket, s3-region, s3-endpoint, s3-access-key-id, s3-secret-access-key, s3-public-url)
+
+**🔧 GCP Configuration:**
+- Granted Cloud Run service account access to S3 secrets
+- Deployed API with S3 storage enabled
+
+**⚠️ Note:** Logo và media files giờ sẽ được lưu trữ persistent trong S3, không bị mất khi redeploy.
+
+---
+
+### Task: Add GCP Deployment Steering + System Check
+
+**🆕 Created:**
+- `.kiro/steering/gcp-deployment.md` - Hướng dẫn deployment lên GCP, không chạy local cho production
+
+**✅ System Check:**
+- All 4 Cloud Run services: ✅ Running (ntn-api, ntn-landing, ntn-admin, ntn-portal)
+- Cloud SQL (ntn-db): ✅ RUNNABLE
+- Cloud Storage (ntn-media-bucket): ✅ Available
+- All secrets: ✅ Configured
+- Recent builds: ✅ All SUCCESS
+
+---
+
+### Task: Simplify Quotation Email Template
+
+**✏️ Modified:**
+- `api/src/utils/quotation-email.ts` - Redesigned email template: removed gradients, simplified colors, cleaner professional look
+
+---
+
+### Task: Fix Google Integration - ENCRYPTION_KEY
+
+**✏️ Modified:**
+- Updated ENCRYPTION_KEY secret in GCP Secret Manager with proper base64 format
+- Redeployed ntn-api to apply new secret
+
+---
+
+### Task: Fix GCB Build - Missing Google OAuth Secrets
+
+**✏️ Modified:**
+- `infra/gcp/setup.sh` - Added placeholder secrets creation for GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET; added IAM binding for these secrets
+- `infra/gcp/cloudbuild-api.yaml` - (verified) Google OAuth secrets are required for deployment
 
 ---
 

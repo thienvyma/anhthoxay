@@ -122,12 +122,18 @@ REDIS_URL="redis://$REDIS_HOST:6379"
 echo -n "$REDIS_URL" | gcloud secrets create REDIS_URL --data-file=- 2>/dev/null || \
 echo -n "$REDIS_URL" | gcloud secrets versions add REDIS_URL --data-file=-
 
+# Google OAuth (placeholder - update later via setup-google-integration.sh)
+echo -n "placeholder" | gcloud secrets create GOOGLE_CLIENT_ID --data-file=- 2>/dev/null || \
+echo "GOOGLE_CLIENT_ID already exists"
+echo -n "placeholder" | gcloud secrets create GOOGLE_CLIENT_SECRET --data-file=- 2>/dev/null || \
+echo "GOOGLE_CLIENT_SECRET already exists"
+
 # 11. Grant Cloud Run access to secrets
 echo "🔑 Granting permissions..."
 PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
 CLOUD_RUN_SA="$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
 
-for SECRET in DATABASE_URL JWT_SECRET ENCRYPTION_KEY REDIS_URL; do
+for SECRET in DATABASE_URL JWT_SECRET ENCRYPTION_KEY REDIS_URL GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET; do
   gcloud secrets add-iam-policy-binding $SECRET \
     --member="serviceAccount:$CLOUD_RUN_SA" \
     --role="roles/secretmanager.secretAccessor"

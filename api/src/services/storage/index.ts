@@ -2,7 +2,7 @@
  * Storage Module
  *
  * Provides a unified storage interface with automatic provider selection.
- * Supports local filesystem, AWS S3, and Cloudflare R2.
+ * Supports Google Cloud Storage, AWS S3, Cloudflare R2, and local filesystem.
  *
  * **Feature: high-traffic-resilience**
  * **Requirements: 1.5**
@@ -11,6 +11,7 @@
 import { IStorage, StorageFile, UploadOptions, ListOptions, ListResult, StorageError } from './storage.interface';
 import { LocalStorage } from './local.storage';
 import { createS3StorageFromEnv } from './s3.storage';
+import { createGCSStorageFromEnv } from './gcs.storage';
 import { logger } from '../../utils/logger';
 import { isClusterMode } from '../../config/cluster';
 
@@ -18,6 +19,7 @@ import { isClusterMode } from '../../config/cluster';
 export { IStorage, StorageFile, UploadOptions, ListOptions, ListResult, StorageError };
 export { LocalStorage } from './local.storage';
 export { S3Storage, createS3StorageFromEnv } from './s3.storage';
+export { GCSStorage, createGCSStorageFromEnv } from './gcs.storage';
 
 // ============================================
 // STORAGE FACTORY
@@ -29,27 +31,29 @@ let storageInstance: IStorage | null = null;
  * Get the storage instance
  *
  * Automatically selects the appropriate storage provider:
- * - S3/R2 if configured (recommended for production)
+ * - GCS if on Google Cloud (recommended for GCP deployments)
+ * - S3/R2 if configured
  * - Local filesystem otherwise (development)
  *
  * In cluster mode, warns if using local storage.
  *
  * @returns Storage instance
- *
- * @example
- * ```ts
- * const storage = getStorage();
- * await storage.upload('images/photo.jpg', buffer, { contentType: 'image/jpeg' });
- * ```
  */
 export function getStorage(): IStorage {
   if (storageInstance) {
     return storageInstance;
   }
 
-  // Try to create S3 storage from environment
-  const s3Storage = createS3StorageFromEnv();
+  // Priority 1: Try GCS (for GCP deployments)
+  const gcsStorage = createGCSStorageFromEnv();
+  if (gcsStorage) {
+    logger.info('Using Google Cloud Storage', { bucket: process.env.GCS_BUCKET || process.env.S3_BUCKET });
+    storageInstance = gcsStorage;
+    return storageInstance;
+  }
 
+  // Priority 2: Try S3/R2
+  const s3Storage = createS3StorageFromEnv();
   if (s3Storage) {
     logger.info('Using S3/R2 storage', { type: s3Storage.getType() });
     storageInstance = s3Storage;
@@ -62,7 +66,7 @@ export function getStorage(): IStorage {
   if (clusterMode) {
     logger.warn(
       'Using local storage in cluster mode - files will not be shared across instances! ' +
-      'Configure S3_BUCKET, S3_REGION, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY for shared storage.'
+      'Configure GCS_BUCKET or S3_BUCKET for shared storage.'
     );
   } else {
     logger.info('Using local filesystem storage');
@@ -82,10 +86,10 @@ export function resetStorage(): void {
 /**
  * Check if shared storage is configured
  *
- * @returns true if S3/R2 storage is configured
+ * @returns true if GCS or S3/R2 storage is configured
  */
 export function isSharedStorageConfigured(): boolean {
-  return createS3StorageFromEnv() !== null;
+  return createGCSStorageFromEnv() !== null || createS3StorageFromEnv() !== null;
 }
 
 /**
@@ -103,11 +107,6 @@ export function getStorageType(): 'local' | 's3' | 'r2' {
 
 /**
  * Upload a file to storage
- *
- * @param key - File key/path
- * @param data - File data
- * @param options - Upload options
- * @returns Uploaded file info
  */
 export async function uploadFile(
   key: string,
@@ -119,9 +118,6 @@ export async function uploadFile(
 
 /**
  * Download a file from storage
- *
- * @param key - File key/path
- * @returns File data or null
  */
 export async function downloadFile(key: string): Promise<Buffer | null> {
   return getStorage().download(key);
@@ -129,9 +125,6 @@ export async function downloadFile(key: string): Promise<Buffer | null> {
 
 /**
  * Delete a file from storage
- *
- * @param key - File key/path
- * @returns true if deleted
  */
 export async function deleteFile(key: string): Promise<boolean> {
   return getStorage().delete(key);
@@ -139,9 +132,6 @@ export async function deleteFile(key: string): Promise<boolean> {
 
 /**
  * Get public URL for a file
- *
- * @param key - File key/path
- * @returns Public URL
  */
 export function getFileUrl(key: string): string {
   return getStorage().getUrl(key);
@@ -149,8 +139,6 @@ export function getFileUrl(key: string): string {
 
 /**
  * Check if storage is available
- *
- * @returns true if storage is operational
  */
 export async function isStorageAvailable(): Promise<boolean> {
   return getStorage().isAvailable();

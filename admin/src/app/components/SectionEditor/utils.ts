@@ -43,6 +43,7 @@ export function getSectionDescription(kind: SectionKind): string {
     MEDIA_GALLERY: 'Full media gallery with pagination and lightbox',
     VIDEO_SHOWCASE: 'Video showcase with autoplay support (YouTube, Vimeo, or direct URL)',
     FURNITURE_QUOTE: 'Step-by-step apartment selection and furniture quotation process',
+    LEGAL_CONTENT: 'Privacy Policy & Terms of Use for business compliance',
   };
   return descriptions[kind] || '';
 }
@@ -85,6 +86,7 @@ export function getSectionIcon(kind: SectionKind): string {
     MEDIA_GALLERY: 'ri-gallery-fill',
     VIDEO_SHOWCASE: 'ri-video-fill',
     FURNITURE_QUOTE: 'ri-sofa-fill',
+    LEGAL_CONTENT: 'ri-shield-check-fill',
   };
   return icons[kind] || 'ri-layout-fill';
 }
