@@ -82,7 +82,7 @@ export function LoginPage() {
             Admin Dashboard
           </h1>
           <p style={{ color: tokens.color.muted, fontSize: 14, margin: 0 }}>
-            Đăng nhập để quản lý hệ thống Anh Thợ Xây
+            Đăng nhập để quản lý hệ thống Nội Thất Nhanh
           </p>
         </div>
 

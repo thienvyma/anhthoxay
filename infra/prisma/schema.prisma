@@ -1409,7 +1409,7 @@ model FurniturePdfSettings {
   id String @id @default("default")
 
   // Company info
-  companyName    String @default("ANH THỢ XÂY")
+  companyName    String @default("NỘI THẤT NHANH")
   companyTagline String @default("Đối tác tin cậy cho ngôi nhà của bạn")
   companyLogo    String? // URL to logo image
 
@@ -1438,7 +1438,7 @@ model FurniturePdfSettings {
 
   // Footer settings
   footerNote      String @default("Báo giá này chỉ mang tính chất tham khảo. Giá thực tế có thể thay đổi tùy theo thời điểm và điều kiện cụ thể.")
-  footerCopyright String @default("© ANH THỢ XÂY - Đối tác tin cậy cho ngôi nhà của bạn")
+  footerCopyright String @default("© NỘI THẤT NHANH - Đối tác tin cậy cho ngôi nhà của bạn")
 
   // Contact info (optional, shown in PDF)
   contactPhone   String?

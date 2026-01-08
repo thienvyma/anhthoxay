@@ -504,7 +504,7 @@ export function CompanyTab({ settings, onChange, onShowMessage, onError }: Compa
           label="Tên công ty"
           value={settings.name}
           onChange={(value) => onChange({ ...settings, name: value })}
-          placeholder="Anh Thợ Xây"
+          placeholder="Nội Thất Nhanh"
           fullWidth
         />
 
@@ -542,14 +542,14 @@ export function CompanyTab({ settings, onChange, onShowMessage, onError }: Compa
             label="Email"
             value={settings.email}
             onChange={(value) => onChange({ ...settings, email: value })}
-            placeholder="contact@anhthoxay.vn"
+            placeholder="contact@noithatnhanh.vn"
             fullWidth
           />
           <Input
             label="Website"
             value={settings.website}
             onChange={(value) => onChange({ ...settings, website: value })}
-            placeholder="https://anhthoxay.vn"
+            placeholder="https://noithatnhanh.vn"
             fullWidth
           />
           <Input

@@ -210,7 +210,7 @@ export function LoginPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setEmail('admin@anhthoxay.vn');
+                  setEmail('admin@noithatnhanh.vn');
                   setPassword('Admin@123');
                 }}
                 className="btn"
@@ -227,7 +227,7 @@ export function LoginPage() {
                 <i className="ri-admin-line" style={{ color: 'var(--error)' }} />
                 Admin
                 <span style={{ color: 'var(--text-muted)', fontSize: 11, marginLeft: 'auto' }}>
-                  admin@anhthoxay.vn
+                  admin@noithatnhanh.vn
                 </span>
               </button>
               <button

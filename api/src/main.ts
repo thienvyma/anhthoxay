@@ -1,5 +1,5 @@
 /**
- * ANH THỢ XÂY API - Main Entry Point
+ * NỘI THẤT NHANH API - Main Entry Point
  *
  * This file handles:
  * - Environment setup
@@ -159,7 +159,7 @@ if (process.env.DATABASE_URL?.startsWith('file:')) {
 }
 
 // eslint-disable-next-line no-console -- Startup logging before logger initialization
-console.info('🔧 ANH THỢ XÂY API Starting...');
+console.info('🔧 NỘI THẤT NHANH API Starting...');
 // eslint-disable-next-line no-console -- Startup logging before logger initialization
 console.info('📁 Project root:', projectRoot);
 // eslint-disable-next-line no-console -- Startup logging before logger initialization
@@ -298,7 +298,7 @@ app.route('/metrics', createMetricsRoutes());
 
 app.get('/', (c) =>
   successResponse(c, {
-    message: 'Anh Thợ Xây API',
+    message: 'Nội Thất Nhanh API',
     endpoints: ['/health', '/health/ready', '/health/live', '/metrics', '/api/auth/login', '/pages/:slug', '/service-categories', '/materials', '/leads'],
   })
 );
@@ -455,7 +455,7 @@ console.info(`🚀 Starting server on port ${port}...`);
 
 const server = serve({ fetch: app.fetch, port }, (info) => {
   // eslint-disable-next-line no-console -- Startup logging
-  console.info(`✅ ANH THỢ XÂY API running at http://localhost:${info.port}`);
+  console.info(`✅ NỘI THẤT NHANH API running at http://localhost:${info.port}`);
 });
 
 // ============================================

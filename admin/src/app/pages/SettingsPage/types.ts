@@ -1,4 +1,4 @@
-// Settings Page Type Definitions - ANH THỢ XÂY
+// Settings Page Type Definitions - NỘI THẤT NHANH
 
 export interface CompanySettings {
   name: string;
@@ -139,9 +139,9 @@ export interface EmailSettings {
 }
 
 export const defaultEmailSettings: EmailSettings = {
-  brandName: 'ANH THỢ XÂY',
+  brandName: 'NỘI THẤT NHANH',
   tagline: 'Đối tác tin cậy cho ngôi nhà của bạn',
-  subjectTemplate: '[ANH THỢ XÂY] Báo giá nội thất - Căn hộ {{unitNumber}}',
+  subjectTemplate: '[NỘI THẤT NHANH] Báo giá nội thất - Căn hộ {{unitNumber}}',
   
   greetingTemplate: 'Xin chào {{leadName}},',
   introText: 'Cảm ơn bạn đã sử dụng dịch vụ báo giá nội thất của {{brandName}}. Chúng tôi đã chuẩn bị báo giá chi tiết cho căn hộ của bạn.',
@@ -157,13 +157,13 @@ export const defaultEmailSettings: EmailSettings = {
   
   ctaQuestion: 'Bạn có câu hỏi hoặc cần tư vấn thêm?',
   ctaButtonText: 'Liên hệ ngay',
-  ctaButtonLink: 'https://anhthoxay.com/lien-he',
+  ctaButtonLink: 'https://noithatnhanh.vn/lien-he',
   
   signatureClosing: 'Trân trọng,',
   signatureTeam: 'Đội ngũ tư vấn nội thất',
   
-  footerCopyright: '© {{year}} ANH THỢ XÂY - Đối tác tin cậy cho ngôi nhà của bạn',
-  footerWebsite: 'anhthoxay.com',
+  footerCopyright: '© {{year}} NỘI THẤT NHANH - Đối tác tin cậy cho ngôi nhà của bạn',
+  footerWebsite: 'noithatnhanh.vn',
   footerHotline: '1900-xxxx',
   spamNotice: '📧 Nếu bạn không thấy email này trong hộp thư đến, vui lòng kiểm tra thư mục Spam hoặc Quảng cáo.',
 };
@@ -178,14 +178,14 @@ export const glass = {
   hoverShadow: '0 4px 16px rgba(245,211,147,0.15)',
 };
 
-// Default values - ATH Construction
+// Default values - NTN Interior
 export const defaultCompanySettings: CompanySettings = {
-  name: 'Anh Thợ Xây',
-  description: 'Dịch vụ cải tạo nhà & căn hộ chuyên nghiệp',
+  name: 'Nội Thất Nhanh',
+  description: 'Dịch vụ thiết kế nội thất chuyên nghiệp',
   address: '123 Đường ABC, Quận 1, TP.HCM',
   phone: '0909 123 456',
-  email: 'contact@anhthoxay.vn',
-  website: 'https://anhthoxay.vn',
+  email: 'contact@noithatnhanh.vn',
+  website: 'https://noithatnhanh.vn',
   workingHours: 'T2 - T7: 8:00 - 18:00',
 };
 
@@ -217,7 +217,7 @@ export const defaultPromoSettings: PromoSettings = {
 };
 
 export const defaultHeaderConfig: HeaderConfig = {
-  logo: { text: 'Anh Thợ Xây', icon: 'ri-building-2-fill', animateIcon: true },
+  logo: { text: 'Nội Thất Nhanh', icon: 'ri-home-smile-fill', animateIcon: true },
   navigation: [
     { label: 'Trang chủ', route: '/', icon: 'ri-home-4-line' },
     { label: 'Báo giá', route: '/bao-gia', icon: 'ri-calculator-line' },
@@ -238,7 +238,7 @@ export const defaultHeaderConfig: HeaderConfig = {
 };
 
 export const defaultFooterConfig: FooterConfig = {
-  brand: { text: 'Anh Thợ Xây', icon: 'ri-building-2-fill', tagline: 'Dịch vụ cải tạo nhà chuyên nghiệp' },
+  brand: { text: 'Nội Thất Nhanh', icon: 'ri-home-smile-fill', tagline: 'Dịch vụ thiết kế nội thất chuyên nghiệp' },
   quickLinks: [
     { label: 'Giới thiệu', link: '/about' },
     { label: 'Báo giá', link: '/bao-gia' },
@@ -255,7 +255,7 @@ export const defaultFooterConfig: FooterConfig = {
     { platform: 'Zalo', url: 'https://zalo.me', icon: 'ri-chat-3-fill' },
     { platform: 'Youtube', url: 'https://youtube.com', icon: 'ri-youtube-fill' },
   ],
-  copyright: { text: `© ${new Date().getFullYear()} Anh Thợ Xây. All rights reserved.` },
+  copyright: { text: `© ${new Date().getFullYear()} Nội Thất Nhanh. All rights reserved.` },
 };
 
 // Re-export API_URL from shared for convenience

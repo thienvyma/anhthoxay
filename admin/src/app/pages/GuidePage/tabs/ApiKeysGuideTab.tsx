@@ -192,12 +192,12 @@ Thời hạn: 1 năm`}
         </Paragraph>
 
         <CodeBlock language="bash" title="Ví dụ với cURL">
-{`curl -X GET "https://api.anhthoxay.com/api/external/leads" \\
+{`curl -X GET "https://api.noithatnhanh.vn/api/external/leads" \\
   -H "X-API-Key: atx_abc123xyz789..."`}
         </CodeBlock>
 
         <CodeBlock language="javascript" title="Ví dụ với JavaScript">
-{`const response = await fetch('https://api.anhthoxay.com/api/external/leads', {
+{`const response = await fetch('https://api.noithatnhanh.vn/api/external/leads', {
   headers: {
     'X-API-Key': 'atx_abc123xyz789...'
   }

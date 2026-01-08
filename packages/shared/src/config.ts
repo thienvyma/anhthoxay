@@ -1,5 +1,5 @@
 /**
- * Centralized configuration module for ANH THỢ XÂY
+ * Centralized configuration module for NỘI THẤT NHANH
  *
  * IMPORTANT: Vite's `define` option in vite.config.ts replaces
  * `import.meta.env.VITE_*` at BUILD TIME. This file is designed

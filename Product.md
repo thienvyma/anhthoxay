@@ -1,5 +1,5 @@
-🌐 Dự án WebApp MVP: ANH THỢ XÂY (ATH) – BẢN CẬP NHẬT
-0. Mục tiêu cốt lõi : Webapp cho doanh nghiệp cải tạo nhà / căn hộ
+🌐 Dự án WebApp MVP: NỘI THẤT NHANH – BẢN CẬP NHẬT
+0. Mục tiêu cốt lõi : Webapp cho doanh nghiệp thiết kế nội thất
 
 1. Khách hàng:
     - Nhận dự toán nhanh

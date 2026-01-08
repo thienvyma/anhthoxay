@@ -1,5 +1,5 @@
 # ============================================
-# ANH THỢ XÂY - Frontend Dockerfile
+# NỘI THẤT NHANH - Frontend Dockerfile
 # For Landing, Admin, Portal apps
 # ============================================
 

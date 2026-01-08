@@ -360,7 +360,7 @@ export const UnsubscribePage = memo(function UnsubscribePage() {
         ) : (
           <>
             <p style={styles.description}>
-              Bạn có muốn hủy đăng ký nhận email từ Anh Thợ Xây?
+              Bạn có muốn hủy đăng ký nhận email từ Nội Thất Nhanh?
             </p>
 
             <div style={styles.buttonGroup}>

@@ -76,7 +76,7 @@ export function FooterEditor({
             label="Name"
             value={footerConfig.brand?.text || ''}
             onChange={(v) => onFooterChange({ ...footerConfig, brand: { ...footerConfig.brand, text: v } })}
-            placeholder="Anh Thợ Xây"
+            placeholder="Nội Thất Nhanh"
             fullWidth
           />
           <IconPicker
@@ -203,7 +203,7 @@ export function FooterEditor({
         label="Copyright"
         value={footerConfig.copyright?.text || ''}
         onChange={(v) => onFooterChange({ ...footerConfig, copyright: { text: v } })}
-        placeholder={`© ${new Date().getFullYear()} Anh Thợ Xây`}
+        placeholder={`© ${new Date().getFullYear()} Nội Thất Nhanh`}
         fullWidth
         style={{ marginBottom: 24 }}
       />

@@ -1,5 +1,5 @@
 /**
- * DashboardPage - ANH THỢ XÂY Admin Dashboard
+ * DashboardPage - NỘI THẤT NHANH Admin Dashboard
  * Main dashboard page - Currently focused on quotation management (báo giá nội thất/thi công)
  * Portal features (bidding, contractors) are coming soon
  */
@@ -503,7 +503,7 @@ export function DashboardPage() {
               margin: 0,
             }}
           >
-            Quản lý báo giá nội thất & thi công - Anh Thợ Xây
+            Quản lý báo giá nội thất & thi công - Nội Thất Nhanh
           </p>
         </div>
 

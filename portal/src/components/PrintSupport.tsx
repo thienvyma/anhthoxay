@@ -118,7 +118,7 @@ export function PrintHeader({
     <div className="print-header print-only">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div className="print-header-logo">ANH THỢ XÂY</div>
+          <div className="print-header-logo">NỘI THẤT NHANH</div>
           {subtitle && <div className="print-header-subtitle">{subtitle}</div>}
         </div>
         {code && (
@@ -157,7 +157,7 @@ interface PrintFooterProps {
 export function PrintFooter({
   showPageInfo = true,
   text,
-  contactInfo = 'Liên hệ: support@anhthoxay.vn | Hotline: 1900-xxxx',
+  contactInfo = 'Liên hệ: support@noithatnhanh.vn | Hotline: 1900-xxxx',
 }: PrintFooterProps) {
   return (
     <div className="print-footer print-only">
@@ -165,7 +165,7 @@ export function PrintFooter({
       <div>{contactInfo}</div>
       {showPageInfo && (
         <div style={{ marginTop: '8px', fontSize: '10px' }}>
-          Tài liệu này được tạo tự động từ hệ thống ANH THỢ XÂY
+          Tài liệu này được tạo tự động từ hệ thống NỘI THẤT NHANH
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
-  title: ANH THỢ XÂY API
-  description: API cho hệ thống báo giá & dự toán cải tạo nhà/căn hộ
+  title: NỘI THẤT NHANH API
+  description: API cho hệ thống báo giá & dự toán thiết kế nội thất
   version: 1.0.0
 servers:
   - url: http://localhost:4202

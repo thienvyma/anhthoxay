@@ -19,7 +19,7 @@ import type { PdfSettingsTabProps, FurniturePdfSettings, UpdatePdfSettingsInput 
 // Default settings for new instances
 const DEFAULT_SETTINGS: FurniturePdfSettings = {
   id: 'default',
-  companyName: 'ANH THỢ XÂY',
+  companyName: 'NỘI THẤT NHANH',
   companyTagline: 'Đối tác tin cậy cho ngôi nhà của bạn',
   companyLogo: null,
   documentTitle: 'BÁO GIÁ NỘI THẤT',
@@ -39,7 +39,7 @@ const DEFAULT_SETTINGS: FurniturePdfSettings = {
   contactInfoTitle: 'THÔNG TIN LIÊN HỆ',
   totalLabel: 'TỔNG CỘNG',
   footerNote: 'Báo giá này chỉ mang tính chất tham khảo. Giá thực tế có thể thay đổi tùy theo thời điểm và điều kiện cụ thể.',
-  footerCopyright: '© ANH THỢ XÂY - Đối tác tin cậy cho ngôi nhà của bạn',
+  footerCopyright: '© NỘI THẤT NHANH - Đối tác tin cậy cho ngôi nhà của bạn',
   contactPhone: null,
   contactEmail: null,
   contactAddress: null,
@@ -227,7 +227,7 @@ export function PdfSettingsTab({ pdfSettings: initialSettings, onRefresh }: PdfS
                     label="Tên công ty"
                     value={settings.companyName}
                     onChange={(val) => updateField('companyName', val)}
-                    placeholder="ANH THỢ XÂY"
+                    placeholder="NỘI THẤT NHANH"
                     fullWidth
                   />
                   <Input

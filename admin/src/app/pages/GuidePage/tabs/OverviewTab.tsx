@@ -43,7 +43,7 @@ export function OverviewTab() {
             </h2>
           </div>
           <Paragraph style={{ margin: 0 }}>
-            Đây là trung tâm quản lý hệ thống Anh Thợ Xây. Tại đây, bạn có thể quản lý nội dung website,
+            Đây là trung tâm quản lý hệ thống Nội Thất Nhanh. Tại đây, bạn có thể quản lý nội dung website,
             khách hàng, nhà thầu, công trình và nhiều tính năng khác. Hãy khám phá các tab bên trên để
             tìm hiểu chi tiết về từng tính năng.
           </Paragraph>

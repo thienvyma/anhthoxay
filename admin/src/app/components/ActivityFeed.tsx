@@ -1,4 +1,4 @@
-// ActivityFeed Component - ANH THỢ XÂY Admin Dashboard
+// ActivityFeed Component - NỘI THẤT NHANH Admin Dashboard
 // Displays recent activity items with icons, titles, descriptions, and timestamps
 //
 // **Feature: admin-dashboard-enhancement**

@@ -238,7 +238,7 @@ export function PublicMarketplacePage() {
         >
           <Link to="/" style={{ textDecoration: 'none' }}>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f5d393' }}>
-              Anh Thợ Xây
+              Nội Thất Nhanh
             </h1>
           </Link>
 
@@ -851,7 +851,7 @@ export function PublicMarketplacePage() {
           }}
         >
           <p style={{ color: '#71717a', fontSize: 14 }}>
-            © 2024 Anh Thợ Xây. All rights reserved.
+            © 2024 Nội Thất Nhanh. All rights reserved.
           </p>
           <div style={{ display: 'flex', gap: 24 }}>
             <a href="#" style={{ color: '#71717a', fontSize: 14, textDecoration: 'none' }}>

@@ -290,7 +290,7 @@ export function MaintenancePage({
           >
             <i className="ri-heart-pulse-line" style={{ color: tokens.color.primary }} />
           </motion.div>
-          <span>Anh Thợ Xây - Xây dựng ước mơ của bạn</span>
+          <span>Nội Thất Nhanh - Giải pháp nội thất trọn gói</span>
         </motion.div>
       </motion.div>
     </div>

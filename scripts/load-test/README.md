@@ -1,6 +1,6 @@
 # Load Testing Scripts
 
-This directory contains k6 load testing scripts for the ANH THỢ XÂY API.
+This directory contains k6 load testing scripts for the NỘI THẤT NHANH API.
 
 ## Prerequisites
 

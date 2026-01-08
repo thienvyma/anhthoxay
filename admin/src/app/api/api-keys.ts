@@ -1,5 +1,5 @@
 /**
- * API Keys API Client - ANH THỢ XÂY Admin Dashboard
+ * API Keys API Client - NỘI THẤT NHANH Admin Dashboard
  *
  * Handles API key management operations including CRUD, status toggle, testing, and usage logs.
  *

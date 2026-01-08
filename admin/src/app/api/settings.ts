@@ -1,4 +1,4 @@
-// Settings APIs - ANH THỢ XÂY Admin Dashboard
+// Settings APIs - NỘI THẤT NHANH Admin Dashboard
 // Settings, Bidding Settings, Service Fees, Pricing, Google Sheets Integration
 import { apiFetch } from './client';
 import type {

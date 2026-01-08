@@ -1,4 +1,4 @@
-// Dashboard APIs - ANH THỢ XÂY Admin Dashboard
+// Dashboard APIs - NỘI THẤT NHANH Admin Dashboard
 // Dashboard statistics and activity feed
 //
 // **Feature: admin-dashboard-enhancement**

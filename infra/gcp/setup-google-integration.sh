@@ -17,7 +17,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}============================================${NC}"
-echo -e "${BLUE}  Setup Google Integration for ANH THỢ XÂY  ${NC}"
+echo -e "${BLUE}  Setup Google Integration for NỘI THẤT NHANH  ${NC}"
 echo -e "${BLUE}============================================${NC}"
 echo ""
 
@@ -64,7 +64,7 @@ echo "1. Vào: https://console.cloud.google.com/apis/credentials?project=${PROJE
 echo "2. Click 'Create Credentials' > 'OAuth client ID'"
 echo "3. Chọn 'Web application'"
 echo "4. Thêm Authorized redirect URIs:"
-echo "   - https://api.anhthoxay.com/integrations/google/callback"
+echo "   - https://api.noithatnhanh.vn/integrations/google/callback"
 echo "   - http://localhost:4202/integrations/google/callback (dev)"
 echo "5. Copy Client ID và Client Secret"
 echo ""
@@ -81,8 +81,8 @@ if [ -z "$GOOGLE_CLIENT_SECRET" ]; then
     exit 1
 fi
 
-read -p "Nhập API Domain (mặc định: api.anhthoxay.com): " API_DOMAIN
-API_DOMAIN=${API_DOMAIN:-api.anhthoxay.com}
+read -p "Nhập API Domain (mặc định: api.noithatnhanh.vn): " API_DOMAIN
+API_DOMAIN=${API_DOMAIN:-api.noithatnhanh.vn}
 
 GOOGLE_REDIRECT_URI="https://${API_DOMAIN}/integrations/google/callback"
 echo -e "${GREEN}  ✓ Redirect URI: ${GOOGLE_REDIRECT_URI}${NC}"

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================
-# ANH THỢ XÂY - Manual Deploy Script
+# NỘI THẤT NHANH - Manual Deploy Script
 # Use this for quick manual deployments
 # ============================================
 

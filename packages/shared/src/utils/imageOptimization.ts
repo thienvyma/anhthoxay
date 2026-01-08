@@ -1,7 +1,7 @@
 /**
  * Image Optimization Utilities
  * 
- * Provides comprehensive image handling for ANH THỢ XÂY platform:
+ * Provides comprehensive image handling for NỘI THẤT NHANH platform:
  * - Responsive image URLs with srcset
  * - Modern format conversion (WebP/AVIF)
  * - Lazy loading support

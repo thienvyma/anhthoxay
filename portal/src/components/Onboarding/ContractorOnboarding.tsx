@@ -291,7 +291,7 @@ export function ContractorOnboarding({ onComplete, onSkip }: ContractorOnboardin
               <i className="ri-shield-check-line" style={{ fontSize: 28, color: '#f5d393' }} />
             </div>
             <h3 style={{ fontSize: 20, fontWeight: 600, color: '#e4e7ec', marginBottom: 8 }}>
-              Chào mừng đến với Anh Thợ Xây!
+              Chào mừng đến với Nội Thất Nhanh!
             </h3>
             <p style={{ fontSize: 14, color: '#a1a1aa' }}>
               Hoàn thành các bước sau để xác minh tài khoản và bắt đầu nhận dự án.

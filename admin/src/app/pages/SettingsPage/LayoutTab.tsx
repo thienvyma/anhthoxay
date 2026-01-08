@@ -200,8 +200,8 @@ export function LayoutTab({
       
       const landingHeaderConfig = {
         logo: {
-          text: headerConfig.logo?.text || 'Anh Thợ Xây',
-          icon: headerConfig.logo?.icon || 'ri-building-2-fill',
+          text: headerConfig.logo?.text || 'Nội Thất Nhanh',
+          icon: headerConfig.logo?.icon || 'ri-home-smile-fill',
           animateIcon: headerConfig.logo?.animateIcon ?? true,
         },
         links:
@@ -284,8 +284,8 @@ export function LayoutTab({
       
       const landingFooterConfig = {
         brand: {
-          text: footerConfig.brand?.text || 'Anh Thợ Xây',
-          icon: footerConfig.brand?.icon || 'ri-building-2-fill',
+          text: footerConfig.brand?.text || 'Nội Thất Nhanh',
+          icon: footerConfig.brand?.icon || 'ri-home-smile-fill',
           description: footerConfig.brand?.tagline || '',
         },
         quickLinks:
@@ -300,7 +300,7 @@ export function LayoutTab({
             url: s.url,
             icon: s.icon,
           })) || [],
-        copyright: footerConfig.copyright?.text || `© ${new Date().getFullYear()} Anh Thợ Xây`,
+        copyright: footerConfig.copyright?.text || `© ${new Date().getFullYear()} Nội Thất Nhanh`,
       };
       const footerConfigStr = JSON.stringify(landingFooterConfig);
 

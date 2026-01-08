@@ -1,4 +1,4 @@
-// Communication APIs - ANH THỢ XÂY Admin Dashboard
+// Communication APIs - NỘI THẤT NHANH Admin Dashboard
 // Notification Templates, Chat Management
 import { apiFetch } from './client';
 import type {

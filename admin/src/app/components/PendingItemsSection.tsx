@@ -1,4 +1,4 @@
-// PendingItemsSection Component - ANH THỢ XÂY Admin Dashboard
+// PendingItemsSection Component - NỘI THẤT NHANH Admin Dashboard
 // Tabbed interface showing pending items requiring admin attention
 //
 // **Feature: admin-dashboard-enhancement**

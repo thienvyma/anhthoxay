@@ -71,9 +71,9 @@ export class NotificationChannelService {
     // Default to mock providers for development
     this.emailConfig = {
       provider: 'mock',
-      from: 'noreply@anhthoxay.vn',
-      fromName: 'Anh Thợ Xây',
-      baseUrl: process.env.APP_URL || 'https://anhthoxay.vn',
+      from: 'noreply@noithatnhanh.vn',
+      fromName: 'Nội Thất Nhanh',
+      baseUrl: process.env.APP_URL || 'https://noithatnhanh.vn',
       ...emailConfig,
     };
     
@@ -457,7 +457,7 @@ export class NotificationChannelService {
     const unsubscribeFooter = unsubscribeToken
       ? this.unsubscribeService.generateEmailFooter(
           unsubscribeToken,
-          this.emailConfig.baseUrl || 'https://anhthoxay.vn'
+          this.emailConfig.baseUrl || 'https://noithatnhanh.vn'
         )
       : `
         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280; text-align: center;">

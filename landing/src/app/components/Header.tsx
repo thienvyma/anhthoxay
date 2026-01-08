@@ -168,11 +168,11 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
   const location = useLocation();
   const [ctaDropdownOpen, setCtaDropdownOpen] = useState(false);
 
-  // Default config - ANH THỢ XÂY
+  // Default config - NỘI THẤT NHANH
   const defaultConfig: HeaderConfig = {
     logo: {
-      text: 'Anh Thợ Xây',
-      icon: 'ri-building-2-line',
+      text: 'Nội Thất Nhanh',
+      icon: 'ri-home-smile-line',
       animateIcon: true,
     },
     links: [
@@ -255,7 +255,7 @@ export function Header({ config, mobileMenuComponent }: HeaderProps) {
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <img
                 src={resolveMediaUrl(logo.imageUrl)}
-                alt={logo.text || 'Anh Thợ Xây Logo'}
+                alt={logo.text || 'Nội Thất Nhanh Logo'}
                 style={{
                   height: 'clamp(32px, 5vw, 45px)', // Responsive height: 32px mobile, 45px desktop
                   maxWidth: 'clamp(120px, 20vw, 180px)', // Responsive width: 120px mobile, 180px desktop

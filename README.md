@@ -1,6 +1,6 @@
-# 🏗️ ANH THỢ XÂY (ATH) - WebApp MVP
+# 🏠 NỘI THẤT NHANH - WebApp MVP
 
-WebApp cho doanh nghiệp cải tạo nhà/căn hộ với tính năng báo giá & dự toán tự động.
+WebApp cho doanh nghiệp thiết kế nội thất với tính năng báo giá & dự toán tự động.
 
 ## 🎯 Mục tiêu
 
@@ -158,4 +158,4 @@ MIT
 
 ---
 
-**Built with ❤️ for ANH THỢ XÂY**
+**Built with ❤️ for NỘI THẤT NHANH**

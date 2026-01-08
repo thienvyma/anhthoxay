@@ -1,6 +1,6 @@
-# 🎛️ Admin Dashboard - ANH THỢ XÂY
+# 🎛️ Admin Dashboard - NỘI THẤT NHANH
 
-Dashboard quản trị cho hệ thống báo giá & dự toán cải tạo nhà/căn hộ.
+Dashboard quản trị cho hệ thống báo giá & dự toán thiết kế nội thất.
 
 ## 🚀 Quick Start
 
@@ -93,4 +93,4 @@ admin/src/app/
 
 ---
 
-**Built for ANH THỢ XÂY**
+**Built for NỘI THẤT NHANH**

@@ -116,8 +116,8 @@ export function MobileMenu({ currentRoute, menuItems }: MobileMenuProps) {
           fontSize: 26,
           display: 'flex', alignItems: 'center', gap: 10,
         }}>
-          <i className="ri-building-2-fill" />
-          Anh Thợ Xây
+          <i className="ri-home-smile-fill" />
+          Nội Thất Nhanh
         </div>
 
         {/* Navigation Items */}

@@ -1,13 +1,13 @@
-# Docker Compose for ANH THỢ XÂY Development Environment
+# Docker Compose for NỘI THẤT NHANH Development Environment
 # PostgreSQL + Redis for production-ready setup
 #
 # IMPORTANT: Set these environment variables before running:
 #   POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, REDIS_PASSWORD
 #
 # Example:
-#   export POSTGRES_USER=anhthoxay
+#   export POSTGRES_USER=noithatnhanh
 #   export POSTGRES_PASSWORD=your_secure_password
-#   export POSTGRES_DB=anhthoxay_dev
+#   export POSTGRES_DB=noithatnhanh_dev
 #   export REDIS_PASSWORD=your_redis_password
 #   docker-compose up -d
 

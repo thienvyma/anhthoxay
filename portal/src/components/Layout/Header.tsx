@@ -143,9 +143,9 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
           <i className={isSidebarOpen ? 'ri-close-line' : 'ri-menu-line'} style={{ fontSize: 24 }} aria-hidden="true" />
         </button>
 
-        <Link to="/" style={{ textDecoration: 'none' }} aria-label="Trang chủ Anh Thợ Xây">
+        <Link to="/" style={{ textDecoration: 'none' }} aria-label="Trang chủ Nội Thất Nhanh">
           <h1 style={{ fontSize: 20, fontWeight: 700, color: '#f5d393' }}>
-            Anh Thợ Xây
+            Nội Thất Nhanh
           </h1>
         </Link>
 

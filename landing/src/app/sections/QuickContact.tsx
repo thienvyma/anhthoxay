@@ -28,8 +28,8 @@ const defaultMethods: ContactMethod[] = [
   {
     icon: 'ri-mail-fill',
     title: 'EMAIL',
-    value: 'info@anhthoxay.com',
-    href: 'mailto:info@anhthoxay.com',
+    value: 'info@noithatnhanh.vn',
+    href: 'mailto:info@noithatnhanh.vn',
     color: '#3b82f6',
   },
   {

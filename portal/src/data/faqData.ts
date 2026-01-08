@@ -188,10 +188,10 @@ export const FAQ_ITEMS: FAQItem[] = [
   {
     id: 'ge-1',
     category: 'general',
-    question: 'Anh Thợ Xây là gì?',
+    question: 'Nội Thất Nhanh là gì?',
     answer:
-      'Anh Thợ Xây là nền tảng kết nối chủ nhà với nhà thầu uy tín. Chúng tôi giúp chủ nhà tìm được nhà thầu phù hợp thông qua hệ thống đấu giá minh bạch, và giúp nhà thầu tiếp cận nhiều khách hàng tiềm năng. Nền tảng đảm bảo an toàn giao dịch qua hệ thống đặt cọc.',
-    keywords: ['anh thợ xây', 'giới thiệu', 'về chúng tôi', 'nền tảng'],
+      'Nội Thất Nhanh là nền tảng cung cấp giải pháp nội thất trọn gói cho căn hộ, nhà phố. Chúng tôi giúp khách hàng tìm được giải pháp nội thất phù hợp với thiết kế miễn phí, thi công nhanh chóng và bảo hành dài hạn.',
+    keywords: ['nội thất nhanh', 'giới thiệu', 'về chúng tôi', 'nền tảng'],
   },
   {
     id: 'ge-2',
@@ -214,7 +214,7 @@ export const FAQ_ITEMS: FAQItem[] = [
     category: 'general',
     question: 'Làm sao để liên hệ hỗ trợ?',
     answer:
-      'Bạn có thể liên hệ hỗ trợ qua: 1) Form liên hệ trong phần Trợ giúp, 2) Email: support@anhthoxay.vn, 3) Hotline: 1900-xxxx (8h-22h hàng ngày). Chúng tôi cam kết phản hồi trong vòng 24 giờ làm việc.',
+      'Bạn có thể liên hệ hỗ trợ qua: 1) Form liên hệ trong phần Trợ giúp, 2) Email: support@noithatnhanh.vn, 3) Hotline: 1900-xxxx (8h-22h hàng ngày). Chúng tôi cam kết phản hồi trong vòng 24 giờ làm việc.',
     keywords: ['liên hệ', 'hỗ trợ', 'support', 'contact', 'hotline'],
   },
   {
@@ -230,7 +230,7 @@ export const FAQ_ITEMS: FAQItem[] = [
     category: 'general',
     question: 'Ứng dụng có hỗ trợ mobile không?',
     answer:
-      'Hiện tại, Anh Thợ Xây hoạt động tốt trên trình duyệt mobile với giao diện responsive. Chúng tôi đang phát triển ứng dụng mobile native cho iOS và Android, dự kiến ra mắt trong thời gian tới. Đăng ký nhận thông báo để cập nhật!',
+      'Hiện tại, Nội Thất Nhanh hoạt động tốt trên trình duyệt mobile với giao diện responsive. Chúng tôi đang phát triển ứng dụng mobile native cho iOS và Android, dự kiến ra mắt trong thời gian tới. Đăng ký nhận thông báo để cập nhật!',
     keywords: ['mobile', 'ứng dụng', 'app', 'điện thoại', 'ios', 'android'],
   },
 ];

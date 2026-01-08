@@ -10,9 +10,9 @@ import type { PrismaClient } from '@prisma/client';
 
 // Default email settings (fallback when no settings in DB)
 export const defaultEmailSettings = {
-  brandName: 'ANH THỢ XÂY',
+  brandName: 'NỘI THẤT NHANH',
   tagline: 'Đối tác tin cậy cho ngôi nhà của bạn',
-  subjectTemplate: '[ANH THỢ XÂY] Báo giá nội thất - Căn hộ {{unitNumber}}',
+  subjectTemplate: '[NỘI THẤT NHANH] Báo giá nội thất - Căn hộ {{unitNumber}}',
   
   greetingTemplate: 'Xin chào {{leadName}},',
   introText: 'Cảm ơn bạn đã sử dụng dịch vụ báo giá nội thất của {{brandName}}. Chúng tôi đã chuẩn bị báo giá chi tiết cho căn hộ của bạn.',
@@ -28,13 +28,13 @@ export const defaultEmailSettings = {
   
   ctaQuestion: 'Bạn có câu hỏi hoặc cần tư vấn thêm?',
   ctaButtonText: 'Liên hệ ngay',
-  ctaButtonLink: 'https://anhthoxay.com/lien-he',
+  ctaButtonLink: 'https://noithatnhanh.vn/lien-he',
   
   signatureClosing: 'Trân trọng,',
   signatureTeam: 'Đội ngũ tư vấn nội thất',
   
-  footerCopyright: '© {{year}} ANH THỢ XÂY - Đối tác tin cậy cho ngôi nhà của bạn',
-  footerWebsite: 'anhthoxay.com',
+  footerCopyright: '© {{year}} NỘI THẤT NHANH - Đối tác tin cậy cho ngôi nhà của bạn',
+  footerWebsite: 'noithatnhanh.vn',
   footerHotline: '1900-xxxx',
   spamNotice: '📧 Nếu bạn không thấy email này trong hộp thư đến, vui lòng kiểm tra thư mục Spam hoặc Quảng cáo.',
 };

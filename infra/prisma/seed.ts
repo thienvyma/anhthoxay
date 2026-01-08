@@ -1,5 +1,5 @@
 /**
- * ANH THỢ XÂY - Comprehensive Database Seed Script
+ * NỘI THẤT NHANH - Comprehensive Database Seed Script
  *
  * Seeds comprehensive data for:
  * - Blog Categories & Posts
@@ -1335,12 +1335,12 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
   const homePage = await prisma.page.upsert({
     where: { slug: 'home' },
     update: {
-      title: 'Trang Chủ - Nội Thất Anh Thợ Xây',
+      title: 'Trang Chủ - Nội Thất Nhanh',
       isActive: true,
     },
     create: {
       slug: 'home',
-      title: 'Trang Chủ - Nội Thất Anh Thợ Xây',
+      title: 'Trang Chủ - Nội Thất Nhanh',
       isActive: true,
     },
   });
@@ -1469,7 +1469,7 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
     update: {
       order: 3,
       data: JSON.stringify({
-        title: 'Anh Thợ Xây Trong Số',
+        title: 'Nội Thất Nhanh Trong Số',
         subtitle: 'Thành tựu và kinh nghiệm của chúng tôi',
         stats: [
           {
@@ -1509,7 +1509,7 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
       order: 3,
       pageId: homePage.id,
       data: JSON.stringify({
-        title: 'Anh Thợ Xây Trong Số',
+        title: 'Nội Thất Nhanh Trong Số',
         subtitle: 'Thành tựu và kinh nghiệm của chúng tôi',
         stats: [
           {
@@ -1583,7 +1583,7 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
             role: 'Gia Chủ',
             avatar: '/uploads/testimonials/lan.jpg',
             rating: 5,
-            content: 'Rất hài lòng với dịch vụ của Anh Thợ Xây. Thi công đúng hẹn, chất lượng tốt, giá cả hợp lý. Phòng khách nhà tôi giờ đẹp như mơ!',
+            content: 'Rất hài lòng với dịch vụ của Nội Thất Nhanh. Thi công đúng hẹn, chất lượng tốt, giá cả hợp lý. Phòng khách nhà tôi giờ đẹp như mơ!',
             date: '2024-12-15',
           },
           {
@@ -1591,7 +1591,7 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
             role: 'Doanh Nhân',
             avatar: '/uploads/testimonials/minh.jpg',
             rating: 5,
-            content: 'Đã làm việc với nhiều nhà thầu nhưng Anh Thợ Xây là chuyên nghiệp nhất. Tư vấn tận tình, thiết kế sáng tạo, thi công cẩn thận.',
+            content: 'Đã làm việc với nhiều nhà thầu nhưng Nội Thất Nhanh là chuyên nghiệp nhất. Tư vấn tận tình, thiết kế sáng tạo, thi công cẩn thận.',
             date: '2024-12-10',
           },
           {
@@ -1620,7 +1620,7 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
             role: 'Gia Chủ',
             avatar: '/uploads/testimonials/lan.jpg',
             rating: 5,
-            content: 'Rất hài lòng với dịch vụ của Anh Thợ Xây. Thi công đúng hẹn, chất lượng tốt, giá cả hợp lý. Phòng khách nhà tôi giờ đẹp như mơ!',
+            content: 'Rất hài lòng với dịch vụ của Nội Thất Nhanh. Thi công đúng hẹn, chất lượng tốt, giá cả hợp lý. Phòng khách nhà tôi giờ đẹp như mơ!',
             date: '2024-12-15',
           },
           {
@@ -1628,7 +1628,7 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
             role: 'Doanh Nhân',
             avatar: '/uploads/testimonials/minh.jpg',
             rating: 5,
-            content: 'Đã làm việc với nhiều nhà thầu nhưng Anh Thợ Xây là chuyên nghiệp nhất. Tư vấn tận tình, thiết kế sáng tạo, thi công cẩn thận.',
+            content: 'Đã làm việc với nhiều nhà thầu nhưng Nội Thất Nhanh là chuyên nghiệp nhất. Tư vấn tận tình, thiết kế sáng tạo, thi công cẩn thận.',
             date: '2024-12-10',
           },
           {
@@ -1720,14 +1720,14 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
       order: 8,
       data: JSON.stringify({
         phone: '0123 456 789',
-        email: 'info@anhthoxay.vn',
+        email: 'info@noithatnhanh.vn',
         address: '123 Đường ABC, Quận XYZ, TP.HCM',
         workingHours: 'Thứ 2 - Chủ Nhật: 8:00 - 18:00',
         mapUrl: 'https://maps.google.com/?q=123+ABC+Street+Ho+Chi+Minh+City',
         socialLinks: [
-          { platform: 'facebook', url: 'https://facebook.com/anhthoxay' },
-          { platform: 'instagram', url: 'https://instagram.com/anhthoxay' },
-          { platform: 'youtube', url: 'https://youtube.com/anhthoxay' },
+          { platform: 'facebook', url: 'https://facebook.com/noithatnhanh' },
+          { platform: 'instagram', url: 'https://instagram.com/noithatnhanh' },
+          { platform: 'youtube', url: 'https://youtube.com/noithatnhanh' },
         ],
       }),
     },
@@ -1738,14 +1738,14 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
       pageId: homePage.id,
       data: JSON.stringify({
         phone: '0123 456 789',
-        email: 'info@anhthoxay.vn',
+        email: 'info@noithatnhanh.vn',
         address: '123 Đường ABC, Quận XYZ, TP.HCM',
         workingHours: 'Thứ 2 - Chủ Nhật: 8:00 - 18:00',
         mapUrl: 'https://maps.google.com/?q=123+ABC+Street+Ho+Chi+Minh+City',
         socialLinks: [
-          { platform: 'facebook', url: 'https://facebook.com/anhthoxay' },
-          { platform: 'instagram', url: 'https://instagram.com/anhthoxay' },
-          { platform: 'youtube', url: 'https://youtube.com/anhthoxay' },
+          { platform: 'facebook', url: 'https://facebook.com/noithatnhanh' },
+          { platform: 'instagram', url: 'https://instagram.com/noithatnhanh' },
+          { platform: 'youtube', url: 'https://youtube.com/noithatnhanh' },
         ],
       }),
     },

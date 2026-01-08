@@ -177,7 +177,7 @@ function AppContent() {
     const mockData = {
       id: '1',
       slug: 'home',
-      title: 'Anh Thợ Xây - Dịch vụ cải tạo nhà chuyên nghiệp',
+      title: 'Nội Thất Nhanh - Giải pháp nội thất trọn gói',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       sections: [
@@ -186,9 +186,9 @@ function AppContent() {
           kind: 'HERO',
           order: 1,
           data: {
-            title: 'Anh Thợ Xây',
-            subtitle: 'Dịch vụ cải tạo nhà & căn hộ chuyên nghiệp - Báo giá minh bạch, thi công uy tín',
-            imageUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200',
+            title: 'Nội Thất Nhanh',
+            subtitle: 'Giải pháp nội thất trọn gói cho căn hộ, nhà phố - Thiết kế miễn phí, thi công nhanh chóng',
+            imageUrl: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1200',
             ctaText: 'Báo Giá Ngay',
             ctaLink: '/bao-gia'
           }
@@ -201,10 +201,10 @@ function AppContent() {
             title: 'Dịch Vụ Của Chúng Tôi',
             subtitle: 'Giải pháp toàn diện cho ngôi nhà của bạn',
             services: [
-              { icon: 'ri-paint-brush-line', title: 'Sơn tường', description: 'Sơn mới, sơn lại với nhiều màu sắc' },
-              { icon: 'ri-layout-grid-line', title: 'Ốp lát', description: 'Ốp gạch, lát sàn chuyên nghiệp' },
-              { icon: 'ri-drop-line', title: 'Chống thấm', description: 'Xử lý chống thấm hiệu quả' },
-              { icon: 'ri-lightbulb-line', title: 'Điện nước', description: 'Sửa chữa, lắp đặt điện nước' }
+              { icon: 'ri-home-smile-line', title: 'Nội thất căn hộ', description: 'Thiết kế và thi công nội thất căn hộ trọn gói' },
+              { icon: 'ri-building-line', title: 'Nội thất nhà phố', description: 'Giải pháp nội thất cho nhà phố, biệt thự' },
+              { icon: 'ri-sofa-line', title: 'Nội thất theo yêu cầu', description: 'Thiết kế riêng theo phong cách của bạn' },
+              { icon: 'ri-tools-line', title: 'Thi công chuyên nghiệp', description: 'Đội ngũ thợ lành nghề, thi công nhanh chóng' }
             ]
           }
         },
@@ -214,7 +214,7 @@ function AppContent() {
           order: 3,
           data: {
             title: 'Nhận Báo Giá Miễn Phí',
-            description: 'Chỉ cần nhập diện tích và chọn hạng mục, hệ thống sẽ tự động tính toán chi phí dự kiến',
+            description: 'Chỉ cần chọn căn hộ và sản phẩm, hệ thống sẽ tự động tính toán chi phí dự kiến',
             buttonText: 'Báo Giá Ngay',
             buttonLink: '/bao-gia'
           }
@@ -380,8 +380,8 @@ function AppContent() {
                 : page.headerConfig)
             : (headerConfigFromSettings ?? {
                 logo: {
-                  text: page?.title ?? 'Anh Thợ Xây',
-                  icon: 'ri-building-2-fill',
+                  text: page?.title ?? 'Nội Thất Nhanh',
+                  icon: 'ri-home-smile-fill',
                 },
                 navigation: [
                   { label: 'Trang chủ', path: '/' },
@@ -477,11 +477,11 @@ function AppContent() {
                 : page.footerConfig)
             : (footerConfigFromSettings ?? {
                 brand: {
-                  text: page?.title ?? 'Anh Thợ Xây',
-                  icon: 'ri-building-2-fill',
+                  text: page?.title ?? 'Nội Thất Nhanh',
+                  icon: 'ri-home-smile-fill',
                 },
                 copyright: {
-                  text: `© ${new Date().getFullYear()} ${page?.title ?? 'Anh Thợ Xây'}. All rights reserved.`,
+                  text: `© ${new Date().getFullYear()} ${page?.title ?? 'Nội Thất Nhanh'}. All rights reserved.`,
                 },
               });
 

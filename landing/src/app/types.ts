@@ -1,4 +1,4 @@
-// Type definitions for Landing app - ANH THỢ XÂY
+// Type definitions for Landing app - NỘI THẤT NHANH
 
 export type RouteType = 'home' | 'bao-gia' | 'about' | 'contact' | 'blog' | 'chinh-sach';
 

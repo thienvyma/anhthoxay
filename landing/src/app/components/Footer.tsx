@@ -39,14 +39,14 @@ interface FooterProps {
 }
 
 export function Footer({ config }: FooterProps) {
-  // Default config - ANH THỢ XÂY
+  // Default config - NỘI THẤT NHANH
   const defaultConfig: FooterConfig = {
     brand: {
-      text: 'Anh Thợ Xây',
-      icon: 'ri-building-2-fill',
+      text: 'Nội Thất Nhanh',
+      icon: 'ri-home-smile-fill',
       description:
-        'Dịch vụ cải tạo nhà và căn hộ chuyên nghiệp. Báo giá minh bạch, thi công uy tín.',
-      awards: ['🏗️', '⭐', '✅'],
+        'Giải pháp nội thất trọn gói cho căn hộ, nhà phố. Thiết kế miễn phí, thi công nhanh chóng.',
+      awards: ['🏠', '⭐', '✅'],
     },
     quickLinks: [
       { label: 'Trang chủ', href: '/' },
@@ -66,7 +66,7 @@ export function Footer({ config }: FooterProps) {
       { platform: 'youtube', url: 'https://youtube.com', icon: 'ri-youtube-fill' },
     ],
     copyright: {
-      text: `© ${new Date().getFullYear()} Anh Thợ Xây. All rights reserved.`,
+      text: `© ${new Date().getFullYear()} Nội Thất Nhanh. All rights reserved.`,
     },
   };
 
@@ -121,7 +121,7 @@ export function Footer({ config }: FooterProps) {
               >
                 <img
                   src={resolveMediaUrl(brand.imageUrl)}
-                  alt={brand.text || 'Anh Thợ Xây Logo'}
+                  alt={brand.text || 'Nội Thất Nhanh Logo'}
                   style={{
                     height: 'clamp(50px, 8vw, 70px)', // Responsive: 50px mobile, 70px desktop
                     width: 'auto',

@@ -1,4 +1,4 @@
-// Bidding APIs - ANH THỢ XÂY Admin Dashboard
+// Bidding APIs - NỘI THẤT NHANH Admin Dashboard
 // Projects, Bids, Matches, Escrows, Fees, Disputes
 import { API_BASE, apiFetch } from './client';
 import { tokenStorage } from '../store';

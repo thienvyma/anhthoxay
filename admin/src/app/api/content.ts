@@ -1,4 +1,4 @@
-// Content APIs - ANH THỢ XÂY Admin Dashboard
+// Content APIs - NỘI THẤT NHANH Admin Dashboard
 // Pages, Sections, Blog, Media, Leads
 import { API_BASE, apiFetch } from './client';
 import { tokenStorage } from '../store';

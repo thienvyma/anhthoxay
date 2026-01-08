@@ -272,13 +272,13 @@ export class UnsubscribeService {
 
     return `
       <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280; text-align: center;">
-        <p>Bạn nhận được email này vì đã đăng ký tài khoản tại Anh Thợ Xây.</p>
+        <p>Bạn nhận được email này vì đã đăng ký tài khoản tại Nội Thất Nhanh.</p>
         <p>
           <a href="${preferencesUrl}" style="color: #2563eb; text-decoration: underline;">Quản lý cài đặt thông báo</a>
           &nbsp;|&nbsp;
           <a href="${unsubscribeUrl}" style="color: #2563eb; text-decoration: underline;">Hủy đăng ký nhận email</a>
         </p>
-        <p style="margin-top: 10px;">© ${new Date().getFullYear()} Anh Thợ Xây. Mọi quyền được bảo lưu.</p>
+        <p style="margin-top: 10px;">© ${new Date().getFullYear()} Nội Thất Nhanh. Mọi quyền được bảo lưu.</p>
       </div>
     `.trim();
   }

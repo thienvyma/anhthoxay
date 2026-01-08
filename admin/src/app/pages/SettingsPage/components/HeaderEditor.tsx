@@ -70,7 +70,7 @@ export function HeaderEditor({
             label="Text"
             value={headerConfig.logo?.text || ''}
             onChange={(v) => onHeaderChange({ ...headerConfig, logo: { ...headerConfig.logo, text: v } })}
-            placeholder="Anh Thợ Xây"
+            placeholder="Nội Thất Nhanh"
             fullWidth
           />
           <IconPicker

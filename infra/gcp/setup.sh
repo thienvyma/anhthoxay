@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================
-# ANH THỢ XÂY - Google Cloud Setup Script
+# NỘI THẤT NHANH - Google Cloud Setup Script
 # Run this script once to set up GCP resources
 # ============================================
 

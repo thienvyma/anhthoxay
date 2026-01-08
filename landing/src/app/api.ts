@@ -1,5 +1,5 @@
 /**
- * Shared API client for Landing page - ANH THỢ XÂY
+ * Shared API client for Landing page - NỘI THẤT NHANH
  * Only includes endpoints needed for ATH project
  */
 

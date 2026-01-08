@@ -6,8 +6,8 @@ export function getDefaultData(sectionKind: SectionKind): Record<string, unknown
   switch (sectionKind) {
     case 'HERO':
       return {
-        title: 'Anh Thợ Xây - Cải Tạo Nhà Chuyên Nghiệp',
-        subtitle: 'Biến ngôi nhà cũ thành không gian sống mơ ước với dịch vụ cải tạo uy tín',
+        title: 'Nội Thất Nhanh - Thiết Kế Nội Thất Chuyên Nghiệp',
+        subtitle: 'Biến ngôi nhà của bạn thành không gian sống mơ ước với dịch vụ nội thất uy tín',
         imageUrl: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=1200&q=80',
         ctaText: 'Nhận Báo Giá Miễn Phí',
         ctaLink: '/bao-gia',
@@ -16,7 +16,7 @@ export function getDefaultData(sectionKind: SectionKind): Record<string, unknown
       return {
         title: 'Liên Hệ',
         subtitle: 'Chúng tôi luôn sẵn sàng tư vấn',
-        description: 'Hãy liên hệ với chúng tôi để được tư vấn miễn phí về dự án cải tạo nhà của bạn',
+        description: 'Hãy liên hệ với chúng tôi để được tư vấn miễn phí về dự án nội thất của bạn',
         backgroundImage: '',
         backgroundOverlay: 60,
         textAlign: 'center',
@@ -59,7 +59,7 @@ export function getDefaultData(sectionKind: SectionKind): Record<string, unknown
       return {
         title: 'Liên Hệ & Địa Chỉ',
         phone: '+84 123 456 789',
-        email: 'contact@anhthoxay.com',
+        email: 'contact@noithatnhanh.vn',
         address: '123 Đường ABC, Quận 1, TP.HCM',
         hours: [
           { _id: generateUniqueId(), day: 'Thứ 2 - Thứ 6', time: '08:00 - 18:00' },
@@ -103,9 +103,9 @@ export function getDefaultData(sectionKind: SectionKind): Record<string, unknown
     case 'MISSION_VISION':
       return {
         title: 'Sứ Mệnh & Tầm Nhìn',
-        subtitle: 'Định hướng phát triển của Anh Thợ Xây',
-        mission: { icon: 'ri-target-line', title: 'Sứ Mệnh', content: 'Mang đến dịch vụ cải tạo nhà chất lượng cao với giá cả hợp lý.' },
-        vision: { icon: 'ri-eye-line', title: 'Tầm Nhìn', content: 'Trở thành đơn vị cải tạo nhà uy tín hàng đầu tại Việt Nam.' },
+        subtitle: 'Định hướng phát triển của Nội Thất Nhanh',
+        mission: { icon: 'ri-target-line', title: 'Sứ Mệnh', content: 'Mang đến dịch vụ thiết kế nội thất chất lượng cao với giá cả hợp lý.' },
+        vision: { icon: 'ri-eye-line', title: 'Tầm Nhìn', content: 'Trở thành đơn vị thiết kế nội thất uy tín hàng đầu tại Việt Nam.' },
       };
     case 'CORE_VALUES':
       return {
@@ -140,7 +140,7 @@ export function getDefaultData(sectionKind: SectionKind): Record<string, unknown
       return {
         title: 'Liên Hệ Ngay',
         phone: '+84 123 456 789',
-        email: 'contact@anhthoxay.com',
+        email: 'contact@noithatnhanh.vn',
         address: '123 Đường ABC, Quận 1, TP.HCM',
       };
     case 'QUOTE_FORM':
@@ -161,7 +161,7 @@ export function getDefaultData(sectionKind: SectionKind): Record<string, unknown
     case 'QUOTE_CALCULATOR':
       return {
         title: 'Báo Giá & Dự Toán',
-        subtitle: 'Tính toán chi phí cải tạo nhà nhanh chóng và chính xác',
+        subtitle: 'Tính toán chi phí nội thất nhanh chóng và chính xác',
         defaultTab: 'calculator',
         calculatorTab: {
           label: 'Dự Toán Nhanh',
@@ -181,8 +181,8 @@ export function getDefaultData(sectionKind: SectionKind): Record<string, unknown
     case 'ABOUT':
       return {
         badge: 'Về Chúng Tôi',
-        title: 'Anh Thợ Xây - Đối Tác Tin Cậy',
-        description: 'Với hơn 10 năm kinh nghiệm trong lĩnh vực cải tạo nhà, chúng tôi tự hào mang đến dịch vụ chất lượng cao với giá cả hợp lý.',
+        title: 'Nội Thất Nhanh - Đối Tác Tin Cậy',
+        description: 'Với hơn 10 năm kinh nghiệm trong lĩnh vực thiết kế nội thất, chúng tôi tự hào mang đến dịch vụ chất lượng cao với giá cả hợp lý.',
         imageUrl: '',
       };
     case 'FAQ':

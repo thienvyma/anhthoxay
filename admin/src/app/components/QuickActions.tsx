@@ -1,4 +1,4 @@
-// QuickActions Component - ANH THỢ XÂY Admin Dashboard
+// QuickActions Component - NỘI THẤT NHANH Admin Dashboard
 // Action buttons with icons and optional badges for quick navigation
 //
 // **Feature: admin-dashboard-enhancement**

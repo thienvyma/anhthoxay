@@ -130,7 +130,7 @@ const TEMPLATES: Partial<Record<SectionKind, Template[]>> = {
       data: {
         title: 'Liên Hệ & Địa Chỉ',
         phone: '+84 123 456 789',
-        email: 'contact@anhthoxay.com',
+        email: 'contact@noithatnhanh.vn',
         address: '123 Đường ABC, Quận 1, TP.HCM',
         hours: [
           { day: 'Thứ 2 - Thứ 6', time: '08:00 - 18:00' },
@@ -138,8 +138,8 @@ const TEMPLATES: Partial<Record<SectionKind, Template[]>> = {
         ],
         mapEmbedUrl: '',
         socialLinks: [
-          { platform: 'facebook', url: 'https://facebook.com/anhthoxay' },
-          { platform: 'zalo', url: 'https://zalo.me/anhthoxay' },
+          { platform: 'facebook', url: 'https://facebook.com/noithatnhanh' },
+          { platform: 'zalo', url: 'https://zalo.me/noithatnhanh' },
         ],
       },
     },
@@ -164,7 +164,7 @@ Chúng tôi là đơn vị chuyên cung cấp dịch vụ cải tạo, sửa ch�
 ## Liên Hệ
 
 Hotline: 0123 456 789
-Email: contact@anhthoxay.com`,
+Email: contact@noithatnhanh.vn`,
       },
     },
   ],

@@ -124,7 +124,7 @@ export function EmailSettingsTab({ onShowMessage, onError }: EmailSettingsTabPro
             label="Tên thương hiệu"
             value={settings.brandName}
             onChange={(value) => updateField('brandName', value)}
-            placeholder="ANH THỢ XÂY"
+            placeholder="NỘI THẤT NHANH"
             fullWidth
           />
           <Input
@@ -140,7 +140,7 @@ export function EmailSettingsTab({ onShowMessage, onError }: EmailSettingsTabPro
             label="Tiêu đề email"
             value={settings.subjectTemplate}
             onChange={(value) => updateField('subjectTemplate', value)}
-            placeholder="[ANH THỢ XÂY] Báo giá nội thất - Căn hộ {{unitNumber}}"
+            placeholder="[NỘI THẤT NHANH] Báo giá nội thất - Căn hộ {{unitNumber}}"
             fullWidth
           />
           <div style={{ fontSize: 12, color: tokens.color.muted, marginTop: 4 }}>
@@ -297,7 +297,7 @@ export function EmailSettingsTab({ onShowMessage, onError }: EmailSettingsTabPro
             label="Link CTA"
             value={settings.ctaButtonLink}
             onChange={(value) => updateField('ctaButtonLink', value)}
-            placeholder="https://anhthoxay.com/lien-he"
+            placeholder="https://noithatnhanh.vn/lien-he"
             fullWidth
           />
         </div>
@@ -327,7 +327,7 @@ export function EmailSettingsTab({ onShowMessage, onError }: EmailSettingsTabPro
             label="Copyright"
             value={settings.footerCopyright}
             onChange={(value) => updateField('footerCopyright', value)}
-            placeholder="© {{year}} ANH THỢ XÂY - Đối tác tin cậy cho ngôi nhà của bạn"
+            placeholder="© {{year}} NỘI THẤT NHANH - Đối tác tin cậy cho ngôi nhà của bạn"
             fullWidth
           />
           <div style={{ fontSize: 12, color: tokens.color.muted, marginTop: 4 }}>
@@ -340,7 +340,7 @@ export function EmailSettingsTab({ onShowMessage, onError }: EmailSettingsTabPro
             label="Website"
             value={settings.footerWebsite}
             onChange={(value) => updateField('footerWebsite', value)}
-            placeholder="anhthoxay.com"
+            placeholder="noithatnhanh.vn"
             fullWidth
           />
           <Input

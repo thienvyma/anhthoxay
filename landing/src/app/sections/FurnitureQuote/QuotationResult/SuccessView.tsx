@@ -102,7 +102,7 @@ export const SuccessView = memo(function SuccessView({
                 fontFamily: tokens.font.display,
               }}
             >
-              ANH THỢ XÂY
+              NỘI THẤT NHANH
             </h2>
             <p
               style={{
@@ -407,7 +407,7 @@ const FooterNote = memo(function FooterNote() {
         Báo giá này chỉ mang tính chất tham khảo. Giá thực tế có thể thay đổi tùy theo thời điểm và điều kiện cụ thể.
       </p>
       <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', color: tokens.color.muted }}>
-        © ANH THỢ XÂY - Đối tác tin cậy cho ngôi nhà của bạn
+        © NỘI THẤT NHANH - Đối tác tin cậy cho ngôi nhà của bạn
       </p>
     </div>
   );
