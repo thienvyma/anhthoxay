@@ -4,7 +4,6 @@
  * Handles media asset operations including upload, retrieval, and deletion.
  * Supports image optimization with Sharp and tracks media usage across the system.
  * Uses content-hash based filenames for CDN cache busting.
- * Uses storage abstraction for cloud compatibility (local, S3, R2).
  * 
  * **Feature: api-refactoring, high-traffic-resilience**
  * **Requirements: 1.1, 1.2, 1.3, 2.3, 3.5, 6.1, 6.2**
@@ -12,12 +11,12 @@
 
 import { Hono } from 'hono';
 import { PrismaClient } from '@prisma/client';
+import fs from 'fs';
+import path from 'path';
 import sharp from 'sharp';
 import { createAuthMiddleware } from '../middleware/auth.middleware';
 import { successResponse, errorResponse } from '../utils/response';
 import { generateContentHashFilename } from '../utils/content-hash';
-import { getStorage, getStorageType, IStorage } from '../services/storage';
-import { logger } from '../utils/logger';
 
 // ============================================
 // TYPES
@@ -46,11 +45,6 @@ function getMimeType(filename: string): string {
     case 'png': return 'image/png';
     case 'jpg':
     case 'jpeg': return 'image/jpeg';
-    case 'gif': return 'image/gif';
-    case 'svg': return 'image/svg+xml';
-    case 'pdf': return 'application/pdf';
-    case 'doc': return 'application/msword';
-    case 'docx': return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     default: return 'application/octet-stream';
   }
 }
@@ -62,17 +56,19 @@ function getMimeType(filename: string): string {
 /**
  * Create media routes with dependency injection
  * @param prisma - Prisma client instance
+ * @param mediaDir - Directory path for media storage
  * @returns Hono app with media routes
  */
-export function createMediaRoutes(prisma: PrismaClient) {
+export function createMediaRoutes(prisma: PrismaClient, mediaDir?: string) {
   const app = new Hono();
   const { authenticate, requireRole } = createAuthMiddleware(prisma);
   
-  // Get storage instance (auto-selects local/S3/R2 based on env)
-  const storage: IStorage = getStorage();
-  
-  // Log storage type on startup
-  logger.info('Media routes initialized', { storageType: getStorageType() });
+  // Resolve media directory
+  const resolvedMediaDir = mediaDir || path.resolve(process.cwd(), process.env.MEDIA_DIR || '.media');
+  if (!fs.existsSync(resolvedMediaDir)) {
+    fs.mkdirSync(resolvedMediaDir, { recursive: true });
+  }
+
 
   // ============================================
   // MEDIA LIST & UPLOAD ROUTES
@@ -92,21 +88,6 @@ export function createMediaRoutes(prisma: PrismaClient) {
     } catch {
       return errorResponse(c, 'INTERNAL_ERROR', 'Failed to get media', 500);
     }
-  });
-
-  /**
-   * @route GET /media/storage-info
-   * @description Get storage type info (for debugging)
-   * @access Admin
-   */
-  app.get('/storage-info', authenticate(), requireRole('ADMIN'), async (c) => {
-    const storageType = getStorageType();
-    const isAvailable = await storage.isAvailable();
-    return successResponse(c, { 
-      storageType, 
-      isAvailable,
-      isCloudStorage: storageType !== 'local',
-    });
   });
 
   /**
@@ -142,32 +123,23 @@ export function createMediaRoutes(prisma: PrismaClient) {
       const mimeType = file.type || 'application/octet-stream';
 
       // Optimize images to WebP
-      if (mimeType.startsWith('image/') && !mimeType.includes('svg')) {
+      if (mimeType.startsWith('image/')) {
         const optimized = await sharp(buffer).webp({ quality: 85 }).toBuffer();
         const metadata = await sharp(buffer).metadata();
         
         // Generate content-hash based filename for cache busting
+        // **Requirements: 2.3**
         const { filename } = generateContentHashFilename(optimized, {
           mimeType: 'image/webp',
           originalFilename: file.name,
         });
         
-        // Upload to storage
-        const storageFile = await storage.upload(filename, optimized, {
-          contentType: 'image/webp',
-          cacheControl: 'public, max-age=31536000',
-          isPublic: true,
-          metadata: {
-            originalName: file.name || 'unknown',
-            width: String(metadata.width || 0),
-            height: String(metadata.height || 0),
-          },
-        });
+        fs.writeFileSync(path.join(resolvedMediaDir, filename), optimized);
         
         const asset = await prisma.mediaAsset.create({
           data: {
             id,
-            url: storageFile.url,
+            url: `/media/${filename}`,
             mimeType: 'image/webp',
             width: metadata.width || null,
             height: metadata.height || null,
@@ -184,28 +156,19 @@ export function createMediaRoutes(prisma: PrismaClient) {
         originalFilename: file.name,
       });
       
-      // Upload to storage
-      const storageFile = await storage.upload(filename, buffer, {
-        contentType: mimeType,
-        cacheControl: 'public, max-age=31536000',
-        isPublic: true,
-        metadata: {
-          originalName: file.name || 'unknown',
-        },
-      });
+      fs.writeFileSync(path.join(resolvedMediaDir, filename), buffer);
       
       const asset = await prisma.mediaAsset.create({
         data: {
           id,
-          url: storageFile.url,
+          url: `/media/${filename}`,
           mimeType,
           size: buffer.length,
         },
       });
       
       return successResponse(c, asset, 201);
-    } catch (error) {
-      logger.error('Upload failed', { error: error instanceof Error ? error.message : 'Unknown' });
+    } catch {
       return errorResponse(c, 'INTERNAL_ERROR', 'Upload failed', 500);
     }
   });
@@ -214,6 +177,9 @@ export function createMediaRoutes(prisma: PrismaClient) {
    * @route POST /media/upload-file
    * @description Upload file only (NO MediaAsset record) - for furniture, materials, etc.
    * @access Admin, Manager
+   * 
+   * **Feature: high-traffic-resilience**
+   * **Requirements: 2.3** - Uses content hash for cache busting
    */
   app.post('/upload-file', authenticate(), requireRole('ADMIN', 'MANAGER'), async (c) => {
     try {
@@ -239,23 +205,22 @@ export function createMediaRoutes(prisma: PrismaClient) {
       const mimeType = file.type || 'application/octet-stream';
 
       // Optimize images to WebP
-      if (mimeType.startsWith('image/') && !mimeType.includes('svg')) {
+      if (mimeType.startsWith('image/')) {
         const optimized = await sharp(buffer).webp({ quality: 85 }).toBuffer();
         const metadata = await sharp(buffer).metadata();
         
+        // Generate content-hash based filename for cache busting
+        // **Requirements: 2.3**
         const { filename } = generateContentHashFilename(optimized, {
           mimeType: 'image/webp',
           originalFilename: file.name,
         });
         
-        const storageFile = await storage.upload(filename, optimized, {
-          contentType: 'image/webp',
-          cacheControl: 'public, max-age=31536000',
-          isPublic: true,
-        });
+        fs.writeFileSync(path.join(resolvedMediaDir, filename), optimized);
         
+        // Return URL only, no MediaAsset record
         return successResponse(c, {
-          url: storageFile.url,
+          url: `/media/${filename}`,
           mimeType: 'image/webp',
           width: metadata.width || null,
           height: metadata.height || null,
@@ -263,25 +228,20 @@ export function createMediaRoutes(prisma: PrismaClient) {
         }, 201);
       }
 
-      // Non-image files
+      // Non-image files - use content hash
       const { filename } = generateContentHashFilename(buffer, {
         mimeType,
         originalFilename: file.name,
       });
       
-      const storageFile = await storage.upload(filename, buffer, {
-        contentType: mimeType,
-        cacheControl: 'public, max-age=31536000',
-        isPublic: true,
-      });
+      fs.writeFileSync(path.join(resolvedMediaDir, filename), buffer);
       
       return successResponse(c, {
-        url: storageFile.url,
+        url: `/media/${filename}`,
         mimeType,
         size: buffer.length,
       }, 201);
-    } catch (error) {
-      logger.error('Upload file failed', { error: error instanceof Error ? error.message : 'Unknown' });
+    } catch {
       return errorResponse(c, 'INTERNAL_ERROR', 'Upload failed', 500);
     }
   });
@@ -313,7 +273,7 @@ export function createMediaRoutes(prisma: PrismaClient) {
       }
 
       // Limit file size to 10MB for user uploads
-      const MAX_FILE_SIZE = 10 * 1024 * 1024;
+      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
       if (buffer.length > MAX_FILE_SIZE) {
         return errorResponse(c, 'VALIDATION_ERROR', 'File size exceeds 10MB limit', 400);
       }
@@ -322,19 +282,16 @@ export function createMediaRoutes(prisma: PrismaClient) {
       const mimeType = file.type || 'application/octet-stream';
 
       // Optimize images to WebP
-      if (mimeType.startsWith('image/') && !mimeType.includes('svg')) {
+      if (mimeType.startsWith('image/')) {
         const optimized = await sharp(buffer).webp({ quality: 85 }).toBuffer();
         const metadata = await sharp(buffer).metadata();
         const filename = `${id}.webp`;
         
-        const storageFile = await storage.upload(filename, optimized, {
-          contentType: 'image/webp',
-          cacheControl: 'public, max-age=31536000',
-          isPublic: true,
-        });
+        fs.writeFileSync(path.join(resolvedMediaDir, filename), optimized);
         
+        // Return URL only, no MediaAsset record
         return successResponse(c, {
-          url: storageFile.url,
+          url: `/media/${filename}`,
           mimeType: 'image/webp',
           width: metadata.width || null,
           height: metadata.height || null,
@@ -351,19 +308,15 @@ export function createMediaRoutes(prisma: PrismaClient) {
       
       const filename = `${id}.${ext}`;
       
-      const storageFile = await storage.upload(filename, buffer, {
-        contentType: mimeType,
-        cacheControl: 'public, max-age=31536000',
-        isPublic: true,
-      });
+      fs.writeFileSync(path.join(resolvedMediaDir, filename), buffer);
       
+      // Return URL only, no MediaAsset record
       return successResponse(c, {
-        url: storageFile.url,
+        url: `/media/${filename}`,
         mimeType,
         size: buffer.length,
       }, 201);
-    } catch (error) {
-      logger.error('User upload failed', { error: error instanceof Error ? error.message : 'Unknown' });
+    } catch {
       return errorResponse(c, 'INTERNAL_ERROR', 'Upload failed', 500);
     }
   });
@@ -401,7 +354,7 @@ export function createMediaRoutes(prisma: PrismaClient) {
 
       return successResponse(c, updated);
     } catch (error) {
-      logger.error('Update media error', { error: error instanceof Error ? error.message : 'Unknown' });
+      console.error('Update media error:', error);
       return errorResponse(c, 'INTERNAL_ERROR', 'Failed to update media', 500);
     }
   });
@@ -423,7 +376,7 @@ export function createMediaRoutes(prisma: PrismaClient) {
       });
       return successResponse(c, featured);
     } catch (error) {
-      logger.error('Get featured error', { error: error instanceof Error ? error.message : 'Unknown' });
+      console.error('Get featured error:', error);
       return errorResponse(c, 'INTERNAL_ERROR', 'Failed to get featured media', 500);
     }
   });
@@ -459,7 +412,7 @@ export function createMediaRoutes(prisma: PrismaClient) {
         },
       });
     } catch (error) {
-      logger.error('Get gallery error', { error: error instanceof Error ? error.message : 'Unknown' });
+      console.error('Get gallery error:', error);
       return errorResponse(c, 'INTERNAL_ERROR', 'Failed to get gallery', 500);
     }
   });
@@ -472,31 +425,24 @@ export function createMediaRoutes(prisma: PrismaClient) {
    * @route GET /media/:filename
    * @description Serve a media file by filename
    * @access Public
-   * 
-   * Note: In production with S3/R2, files are served directly from CDN.
-   * This route is mainly for local development or fallback.
    */
   app.get('/:filename', async (c) => {
     try {
       const filename = c.req.param('filename');
-      
-      // Download from storage
-      const buffer = await storage.download(filename);
+      const filePath = path.join(resolvedMediaDir, filename);
 
-      if (!buffer) {
+      if (!fs.existsSync(filePath)) {
         return errorResponse(c, 'NOT_FOUND', 'File not found', 404);
       }
 
+      const buf = fs.readFileSync(filePath);
       const contentType = getMimeType(filename);
 
-      return new Response(new Uint8Array(buffer), {
-        headers: { 
-          'Content-Type': contentType,
-          'Cache-Control': 'public, max-age=31536000',
-        },
+      return new Response(buf, {
+        headers: { 'Content-Type': contentType },
       });
     } catch (error) {
-      logger.error('Get file error', { error: error instanceof Error ? error.message : 'Unknown' });
+      console.error('Get file error:', error);
       return errorResponse(c, 'INTERNAL_ERROR', 'Failed to get file', 500);
     }
   });
@@ -515,12 +461,14 @@ export function createMediaRoutes(prisma: PrismaClient) {
         return errorResponse(c, 'NOT_FOUND', 'Media asset not found', 404);
       }
 
-      // Extract filename from URL
-      const filename = extractFilenameFromUrl(asset.url);
-      
-      if (filename) {
-        // Delete file from storage
-        await storage.delete(filename);
+      // Delete file from disk
+      const filename = asset.url.split('/').pop();
+      if (!filename) {
+        return errorResponse(c, 'INTERNAL_ERROR', 'Invalid media URL format', 500);
+      }
+      const filePath = path.join(resolvedMediaDir, filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
       }
 
       // Delete from database
@@ -528,36 +476,12 @@ export function createMediaRoutes(prisma: PrismaClient) {
 
       return successResponse(c, { ok: true });
     } catch (error) {
-      logger.error('Delete media error', { error: error instanceof Error ? error.message : 'Unknown' });
+      console.error('Delete media error:', error);
       return errorResponse(c, 'INTERNAL_ERROR', 'Failed to delete media', 500);
     }
   });
 
   return app;
-}
-
-/**
- * Extract filename from URL (handles both local and cloud URLs)
- */
-function extractFilenameFromUrl(url: string): string | null {
-  try {
-    // Handle relative URLs (/media/filename.webp)
-    if (url.startsWith('/media/')) {
-      return url.replace('/media/', '');
-    }
-    
-    // Handle absolute URLs (https://storage.googleapis.com/bucket/filename.webp)
-    const urlObj = new URL(url);
-    const pathname = urlObj.pathname;
-    
-    // Get the last part of the path
-    const parts = pathname.split('/').filter(Boolean);
-    return parts[parts.length - 1] || null;
-  } catch {
-    // If URL parsing fails, try simple extraction
-    const parts = url.split('/');
-    return parts[parts.length - 1] || null;
-  }
 }
 
 export default { createMediaRoutes };
