@@ -513,11 +513,6 @@ img {
     min-height: 44px;
     min-width: 44px;
   }
-  
-  /* Hide slideshow thumbnails on mobile - CSS backup for JS */
-  .slideshow-thumbnails {
-    display: none !important;
-  }
 
   /* Adjust FAB position on mobile */
   [style*="position: fixed"][style*="bottom: 20"] {

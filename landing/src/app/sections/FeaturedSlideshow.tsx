@@ -316,15 +316,15 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
             )}
           </div>
 
-          {/* Pagination Dots - Show on mobile OR when thumbnails disabled */}
-          {showPagination && images.length > 1 && (isMobile || !showThumbnails) && (
+          {/* Pagination Dots - Show on mobile only */}
+          {showPagination && images.length > 1 && isMobile && (
             <div
               style={{
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
                 gap: 6,
-                padding: isMobile ? '10px 12px' : '12px 16px',
+                padding: '10px 12px',
                 background: tokens.color.surface,
               }}
             >
@@ -351,13 +351,12 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
             </div>
           )}
 
-          {/* Thumbnails - Desktop only (hidden on mobile via CSS + JS) */}
-          {showThumbnails && images.length > 1 && (
+          {/* Thumbnails - Desktop only (NOT rendered on mobile) */}
+          {showThumbnails && images.length > 1 && !isMobile && (
             <div
               ref={thumbnailsRef}
-              className="slideshow-thumbnails"
               style={{
-                display: isMobile ? 'none' : 'flex',
+                display: 'flex',
                 gap: 8,
                 padding: '12px 16px',
                 background: tokens.color.surface,
