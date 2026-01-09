@@ -12,9 +12,9 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/mrsaigon-repo/landing:$COMMIT_SHA'
+      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/ntn-repo/landing:$COMMIT_SHA'
       - '-t'
-      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/mrsaigon-repo/landing:latest'
+      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/ntn-repo/landing:latest'
       - '-f'
       - 'infra/docker/frontend.Dockerfile'
       - '--build-arg'
@@ -27,12 +27,12 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/mrsaigon-repo/landing:$COMMIT_SHA'
+      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/ntn-repo/landing:$COMMIT_SHA'
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/mrsaigon-repo/landing:latest'
+      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/ntn-repo/landing:latest'
 
   # Step 3: Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -42,7 +42,7 @@ steps:
       - 'deploy'
       - 'ntn-landing'
       - '--image'
-      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/mrsaigon-repo/landing:$COMMIT_SHA'
+      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/ntn-repo/landing:$COMMIT_SHA'
       - '--region'
       - 'asia-southeast1'
       - '--platform'
@@ -62,8 +62,8 @@ steps:
       - '100'
 
 images:
-  - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/mrsaigon-repo/landing:$COMMIT_SHA'
-  - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/mrsaigon-repo/landing:latest'
+  - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/ntn-repo/landing:$COMMIT_SHA'
+  - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/ntn-repo/landing:latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY
