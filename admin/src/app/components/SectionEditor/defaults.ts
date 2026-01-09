@@ -194,11 +194,6 @@ export function getDefaultData(sectionKind: SectionKind): Record<string, unknown
           { _id: generateUniqueId(), question: 'Có bảo hành sau thi công không?', answer: 'Có, chúng tôi bảo hành từ 6-12 tháng tùy theo hạng mục công việc.' },
         ],
       };
-    case 'BLOG_LIST':
-      return {
-        title: 'Tất Cả Bài Viết',
-        perPage: 6,
-      };
     case 'SERVICES':
       return {
         title: 'Dịch Vụ Của Chúng Tôi',
@@ -208,6 +203,44 @@ export function getDefaultData(sectionKind: SectionKind): Record<string, unknown
           { _id: generateUniqueId(), icon: 'ri-layout-grid-line', title: 'Ốp Lát', description: 'Ốp gạch, lát sàn chuyên nghiệp' },
           { _id: generateUniqueId(), icon: 'ri-drop-line', title: 'Chống Thấm', description: 'Xử lý chống thấm, chống dột hiệu quả' },
         ],
+      };
+    case 'FEATURED_SLIDESHOW':
+      return {
+        title: 'Dự Án Nổi Bật',
+        subtitle: 'Những công trình tiêu biểu của chúng tôi',
+        autoPlay: true,
+        interval: 5000,
+        showDots: true,
+        showArrows: true,
+      };
+    case 'MEDIA_GALLERY':
+      return {
+        title: 'Thư Viện Hình Ảnh',
+        subtitle: 'Khám phá các dự án đã hoàn thành',
+        columns: 3,
+        gap: 16,
+        showLightbox: true,
+        perPage: 12,
+      };
+    case 'VIDEO_SHOWCASE':
+      return {
+        title: 'Video Giới Thiệu',
+        subtitle: 'Xem video về dịch vụ của chúng tôi',
+        videoUrl: '',
+        youtubeId: '',
+        autoPlay: false,
+        muted: true,
+        loop: true,
+        showControls: true,
+        aspectRatio: '16:9',
+      };
+    case 'BLOG_LIST':
+      return {
+        title: 'Tất Cả Bài Viết',
+        subtitle: 'Kiến thức và kinh nghiệm về nội thất',
+        perPage: 9,
+        showSearch: true,
+        showCategories: true,
       };
     case 'MARKETPLACE':
       return {

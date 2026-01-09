@@ -26,6 +26,8 @@ const RichTextSection = lazy(() => import('./RichTextSection').then(m => ({ defa
 const VideoShowcase = lazy(() => import('./VideoShowcase').then(m => ({ default: m.VideoShowcase })));
 const FurnitureQuoteSection = lazy(() => import('./FurnitureQuote').then(m => ({ default: m.FurnitureQuoteSection })));
 const LegalContent = lazy(() => import('./LegalContent').then(m => ({ default: m.LegalContent })));
+const About = lazy(() => import('./About').then(m => ({ default: m.About })));
+const FAQ = lazy(() => import('./FAQ').then(m => ({ default: m.FAQ })));
 
 // Loading fallback component
 const SectionLoader = () => (
@@ -263,6 +265,20 @@ export function renderSection(section: Section) {
       return (
         <Suspense key={section.id} fallback={<SectionLoader />}>
           <LegalContent data={data} />
+        </Suspense>
+      );
+
+    case 'ABOUT':
+      return (
+        <Suspense key={section.id} fallback={<SectionLoader />}>
+          <About data={data} />
+        </Suspense>
+      );
+
+    case 'FAQ':
+      return (
+        <Suspense key={section.id} fallback={<SectionLoader />}>
+          <FAQ data={data} />
         </Suspense>
       );
 

@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => {
   const apiUrl = process.env.VITE_API_URL || env.VITE_API_URL || 'http://localhost:4202';
   const portalUrl = process.env.VITE_PORTAL_URL || env.VITE_PORTAL_URL || 'http://localhost:4203';
   
+  // eslint-disable-next-line no-console
   console.log(`[Vite] Building with VITE_API_URL=${apiUrl}`);
   
   return {

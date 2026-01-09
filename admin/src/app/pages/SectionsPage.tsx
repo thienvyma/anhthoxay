@@ -184,25 +184,42 @@ export function SectionsPage({ pageSlug = 'home' }: { pageSlug?: string }) {
 
   // ATH Construction/Renovation section types
   const sectionTypes: Array<{ kind: SectionKind; icon: string; label: string; description: string }> = [
+    // Hero & Banners
     { kind: 'HERO', icon: 'ri-layout-top-line', label: 'Hero Banner', description: 'Banner chính với CTA' },
     { kind: 'HERO_SIMPLE', icon: 'ri-layout-top-fill', label: 'Hero Đơn Giản', description: 'Hero nhẹ cho trang phụ' },
+    { kind: 'BANNER', icon: 'ri-notification-line', label: 'Thông Báo', description: 'Banner thông báo' },
+    // Content
+    { kind: 'ABOUT', icon: 'ri-information-line', label: 'Giới Thiệu', description: 'Thông tin về công ty' },
     { kind: 'FEATURED_BLOG_POSTS', icon: 'ri-article-line', label: 'Bài Viết Nổi Bật', description: 'Hiển thị bài blog mới nhất' },
+    { kind: 'BLOG_LIST', icon: 'ri-list-check', label: 'Danh Sách Blog', description: 'Danh sách bài viết với bộ lọc' },
     { kind: 'TESTIMONIALS', icon: 'ri-message-3-line', label: 'Đánh Giá Khách Hàng', description: 'Phản hồi từ khách hàng' },
-    { kind: 'STATS', icon: 'ri-bar-chart-line', label: 'Thống Kê', description: 'Hiển thị số liệu nổi bật' },
+    { kind: 'FAQ', icon: 'ri-question-answer-line', label: 'Câu Hỏi Thường Gặp', description: 'Danh sách FAQ' },
+    { kind: 'RICH_TEXT', icon: 'ri-text', label: 'Nội Dung Tùy Chỉnh', description: 'Markdown/HTML content' },
+    // Services & Features
     { kind: 'FEATURES', icon: 'ri-star-line', label: 'Tính Năng/Dịch Vụ', description: 'Các dịch vụ cải tạo nhà' },
+    { kind: 'SERVICES', icon: 'ri-service-line', label: 'Dịch Vụ', description: 'Danh sách các dịch vụ' },
+    { kind: 'STATS', icon: 'ri-bar-chart-line', label: 'Thống Kê', description: 'Hiển thị số liệu nổi bật' },
     { kind: 'MISSION_VISION', icon: 'ri-flag-line', label: 'Sứ Mệnh & Tầm Nhìn', description: 'Giới thiệu công ty' },
     { kind: 'CORE_VALUES', icon: 'ri-heart-3-line', label: 'Giá Trị Cốt Lõi', description: 'Cam kết chất lượng' },
+    // CTA
     { kind: 'CTA', icon: 'ri-megaphone-line', label: 'Kêu Gọi Hành Động', description: 'Nút CTA đơn giản' },
     { kind: 'CALL_TO_ACTION', icon: 'ri-megaphone-fill', label: 'CTA Đầy Đủ', description: 'CTA với 2 nút' },
-    { kind: 'CONTACT_INFO', icon: 'ri-contacts-line', label: 'Thông Tin Liên Hệ', description: 'Địa chỉ, SĐT, email' },
-    { kind: 'SOCIAL_MEDIA', icon: 'ri-share-line', label: 'Mạng Xã Hội', description: 'Link social media' },
     { kind: 'FAB_ACTIONS', icon: 'ri-customer-service-line', label: 'Nút Nổi', description: 'Nút liên hệ nhanh góc màn hình' },
-    { kind: 'FOOTER_SOCIAL', icon: 'ri-share-forward-line', label: 'Footer Social', description: 'Social links ở footer' },
+    // Contact & Social
+    { kind: 'CONTACT_INFO', icon: 'ri-contacts-line', label: 'Thông Tin Liên Hệ', description: 'Địa chỉ, SĐT, email' },
     { kind: 'QUICK_CONTACT', icon: 'ri-contacts-fill', label: 'Liên Hệ Nhanh', description: 'Card liên hệ nhanh' },
-    { kind: 'RICH_TEXT', icon: 'ri-text', label: 'Nội Dung Tùy Chỉnh', description: 'Markdown/HTML content' },
-    { kind: 'BANNER', icon: 'ri-notification-line', label: 'Thông Báo', description: 'Banner thông báo' },
+    { kind: 'SOCIAL_MEDIA', icon: 'ri-share-line', label: 'Mạng Xã Hội', description: 'Link social media' },
+    { kind: 'FOOTER_SOCIAL', icon: 'ri-share-forward-line', label: 'Footer Social', description: 'Social links ở footer' },
+    // Forms
     { kind: 'QUOTE_CALCULATOR', icon: 'ri-calculator-line', label: 'Dự Toán & Tư Vấn', description: 'Wizard dự toán chi phí xây dựng' },
     { kind: 'QUOTE_FORM', icon: 'ri-file-list-3-line', label: 'Form Báo Giá', description: 'Form đăng ký tư vấn' },
+    { kind: 'FURNITURE_QUOTE', icon: 'ri-sofa-line', label: 'Báo Giá Nội Thất', description: 'Quy trình chọn căn hộ và báo giá' },
+    // Media
+    { kind: 'FEATURED_SLIDESHOW', icon: 'ri-slideshow-3-line', label: 'Slideshow Nổi Bật', description: 'Hình ảnh nổi bật dạng slideshow' },
+    { kind: 'MEDIA_GALLERY', icon: 'ri-gallery-line', label: 'Thư Viện Ảnh', description: 'Gallery ảnh với lightbox' },
+    { kind: 'VIDEO_SHOWCASE', icon: 'ri-video-line', label: 'Video Showcase', description: 'Video tự động chạy' },
+    // Other
+    { kind: 'MARKETPLACE', icon: 'ri-store-2-line', label: 'Sàn Giao Dịch', description: 'Công trình đang tìm nhà thầu' },
     { kind: 'LEGAL_CONTENT', icon: 'ri-shield-check-line', label: 'Chính Sách & Điều Khoản', description: 'Privacy Policy & Terms of Use' },
   ];
 

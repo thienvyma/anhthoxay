@@ -2,6 +2,24 @@
 
 ## 2026-01-09
 
+### Task: Fix Missing Section Components (About, FAQ) và Sync Section Types
+
+**🆕 Created:**
+- `landing/src/app/sections/About.tsx` - Component About section với badge, title, description, features list và CTA
+- `landing/src/app/sections/FAQ.tsx` - Component FAQ section với accordion style
+
+**✏️ Modified:**
+- `landing/src/app/sections/render.tsx` - Thêm lazy import và case cho About, FAQ
+- `admin/src/app/components/SectionEditor/defaults.ts` - Thêm default data cho FEATURED_SLIDESHOW, MEDIA_GALLERY, VIDEO_SHOWCASE, BLOG_LIST
+- `admin/src/app/pages/SectionsPage.tsx` - Cập nhật sectionTypes array đầy đủ 29 section types với phân loại rõ ràng
+
+**🔧 Vấn đề đã fix:**
+- ABOUT và FAQ sections không hiển thị trên landing (thiếu component)
+- Một số section types thiếu default data khi tạo mới
+- SectionsPage thiếu nhiều section types trong danh sách icon/label
+
+---
+
 ### Task: Cải thiện UI Blog Manager - Nút Lưu nháp và Xuất bản riêng biệt
 
 **✏️ Modified:**
