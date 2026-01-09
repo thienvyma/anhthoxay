@@ -1,10 +1,10 @@
 /**
  * Featured Slideshow Section
- * Displays featured media images in a slideshow/carousel
- * Optimized for both desktop and mobile
+ * Displays featured media images in a beautiful slideshow/carousel
+ * Optimized for both desktop and mobile with modern UI
  */
 
-import { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokens, resolveMediaUrl, API_URL } from '@app/shared';
 
@@ -34,6 +34,8 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const thumbnailsRef = useRef<HTMLDivElement>(null);
 
   const autoplay = data.autoplay !== false;
   const autoplayDelay = data.autoplayDelay || 5000;
@@ -67,14 +69,24 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
 
   // Autoplay
   useEffect(() => {
-    if (!autoplay || images.length <= 1) return;
+    if (!autoplay || images.length <= 1 || isPaused) return;
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % images.length);
     }, autoplayDelay);
 
     return () => clearInterval(interval);
-  }, [autoplay, autoplayDelay, images.length]);
+  }, [autoplay, autoplayDelay, images.length, isPaused]);
+
+  // Scroll thumbnail into view
+  useEffect(() => {
+    if (thumbnailsRef.current && !isMobile) {
+      const thumbnail = thumbnailsRef.current.children[currentIndex] as HTMLElement;
+      if (thumbnail) {
+        thumbnail.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+  }, [currentIndex, isMobile]);
 
   const goToSlide = useCallback((index: number) => {
     setCurrentIndex(index);
@@ -115,21 +127,21 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
   const currentImage = images[currentIndex];
 
   return (
-    <section style={{ padding: isMobile ? '40px 0' : '80px 0' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '0 16px' : '0 24px' }}>
+    <section style={{ padding: isMobile ? '32px 0' : '60px 0' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '0 12px' : '0 24px' }}>
         {/* Header */}
         {(data.title || data.subtitle) && (
-          <div style={{ textAlign: 'center', marginBottom: isMobile ? 24 : 48 }}>
+          <div style={{ textAlign: 'center', marginBottom: isMobile ? 20 : 40 }}>
             {data.title && (
               <motion.h2
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 style={{
-                  fontSize: isMobile ? 24 : 'clamp(28px, 5vw, 42px)',
+                  fontSize: isMobile ? 22 : 'clamp(28px, 4vw, 38px)',
                   fontFamily: tokens.font.display,
                   color: tokens.color.primary,
-                  marginBottom: 12,
+                  marginBottom: 8,
                 }}
               >
                 {data.title}
@@ -142,9 +154,9 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 }}
                 style={{
-                  fontSize: isMobile ? 14 : 'clamp(14px, 2vw, 18px)',
+                  fontSize: isMobile ? 13 : 16,
                   color: tokens.color.muted,
-                  maxWidth: 600,
+                  maxWidth: 500,
                   margin: '0 auto',
                 }}
               >
@@ -158,18 +170,20 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
         <div
           style={{
             position: 'relative',
-            borderRadius: isMobile ? tokens.radius.md : tokens.radius.lg,
+            borderRadius: isMobile ? 12 : 16,
             overflow: 'hidden',
             background: tokens.color.surface,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.2)',
           }}
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
         >
           {/* Main Image */}
           <div
             style={{
               position: 'relative',
               width: '100%',
-              paddingBottom: isMobile ? '75%' : '56.25%', // 4:3 on mobile, 16:9 on desktop
+              aspectRatio: isMobile ? '4/3' : '16/9',
             }}
           >
             <AnimatePresence mode="wait">
@@ -177,10 +191,10 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
                 key={currentImage.id}
                 src={resolveMediaUrl(currentImage.url)}
                 alt={currentImage.alt || ''}
-                initial={{ opacity: 0, scale: 1.05 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.5 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -195,7 +209,7 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
             {/* Caption Overlay */}
             {currentImage.caption && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 key={`caption-${currentImage.id}`}
                 style={{
@@ -203,10 +217,10 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
                   bottom: 0,
                   left: 0,
                   right: 0,
-                  padding: isMobile ? '32px 16px 16px' : '48px 24px 24px',
-                  background: 'linear-gradient(transparent, rgba(0,0,0,0.8))',
+                  padding: isMobile ? '24px 12px 12px' : '40px 20px 16px',
+                  background: 'linear-gradient(transparent, rgba(0,0,0,0.75))',
                   color: '#fff',
-                  fontSize: isMobile ? 14 : 16,
+                  fontSize: isMobile ? 13 : 15,
                   textAlign: 'center',
                   fontWeight: 500,
                 }}
@@ -215,128 +229,79 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
               </motion.div>
             )}
 
-            {/* Navigation Arrows - Desktop */}
-            {showNavigation && images.length > 1 && !isMobile && (
+            {/* Navigation Arrows */}
+            {showNavigation && images.length > 1 && (
               <>
                 <motion.button
-                  whileHover={{ scale: 1.1, background: 'rgba(245, 211, 147, 0.9)' }}
+                  whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={goPrev}
                   style={{
                     position: 'absolute',
-                    left: 20,
+                    left: isMobile ? 8 : 16,
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    width: 52,
-                    height: 52,
-                    borderRadius: '50%',
-                    background: 'rgba(0,0,0,0.6)',
-                    backdropFilter: 'blur(4px)',
-                    border: '2px solid rgba(255,255,255,0.2)',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 28,
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  <i className="ri-arrow-left-s-line" />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.1, background: 'rgba(245, 211, 147, 0.9)' }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={goNext}
-                  style={{
-                    position: 'absolute',
-                    right: 20,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    width: 52,
-                    height: 52,
-                    borderRadius: '50%',
-                    background: 'rgba(0,0,0,0.6)',
-                    backdropFilter: 'blur(4px)',
-                    border: '2px solid rgba(255,255,255,0.2)',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 28,
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  <i className="ri-arrow-right-s-line" />
-                </motion.button>
-              </>
-            )}
-
-            {/* Navigation Arrows - Mobile (smaller, semi-transparent) */}
-            {showNavigation && images.length > 1 && isMobile && (
-              <>
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={goPrev}
-                  style={{
-                    position: 'absolute',
-                    left: 8,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    width: 40,
-                    height: 40,
+                    width: isMobile ? 36 : 48,
+                    height: isMobile ? 36 : 48,
                     borderRadius: '50%',
                     background: 'rgba(0,0,0,0.5)',
+                    backdropFilter: 'blur(4px)',
                     border: 'none',
                     color: '#fff',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 22,
+                    fontSize: isMobile ? 20 : 26,
+                    transition: 'background 0.2s',
                   }}
+                  aria-label="Ảnh trước"
                 >
                   <i className="ri-arrow-left-s-line" />
                 </motion.button>
                 <motion.button
+                  whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={goNext}
                   style={{
                     position: 'absolute',
-                    right: 8,
+                    right: isMobile ? 8 : 16,
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    width: 40,
-                    height: 40,
+                    width: isMobile ? 36 : 48,
+                    height: isMobile ? 36 : 48,
                     borderRadius: '50%',
                     background: 'rgba(0,0,0,0.5)',
+                    backdropFilter: 'blur(4px)',
                     border: 'none',
                     color: '#fff',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 22,
+                    fontSize: isMobile ? 20 : 26,
+                    transition: 'background 0.2s',
                   }}
+                  aria-label="Ảnh tiếp"
                 >
                   <i className="ri-arrow-right-s-line" />
                 </motion.button>
               </>
             )}
 
-            {/* Slide Counter - Mobile */}
-            {isMobile && images.length > 1 && (
+            {/* Slide Counter Badge */}
+            {images.length > 1 && (
               <div
                 style={{
                   position: 'absolute',
-                  top: 12,
-                  right: 12,
-                  padding: '6px 12px',
+                  top: isMobile ? 8 : 12,
+                  right: isMobile ? 8 : 12,
+                  padding: isMobile ? '4px 10px' : '6px 14px',
                   background: 'rgba(0,0,0,0.6)',
+                  backdropFilter: 'blur(4px)',
                   borderRadius: 20,
                   color: '#fff',
-                  fontSize: 12,
+                  fontSize: isMobile ? 11 : 13,
                   fontWeight: 600,
                 }}
               >
@@ -345,35 +310,36 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
             )}
           </div>
 
-          {/* Pagination Dots - Mobile only */}
-          {showPagination && images.length > 1 && isMobile && (
+          {/* Pagination Dots - Show on mobile OR when thumbnails disabled */}
+          {showPagination && images.length > 1 && (isMobile || !showThumbnails) && (
             <div
               style={{
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                gap: 8,
-                padding: '12px 16px',
+                gap: 6,
+                padding: isMobile ? '10px 12px' : '12px 16px',
                 background: tokens.color.surface,
               }}
             >
               {images.map((_, index) => (
-                <motion.button
+                <button
                   key={index}
-                  whileTap={{ scale: 0.9 }}
                   onClick={() => goToSlide(index)}
                   style={{
-                    width: index === currentIndex ? 20 : 8,
+                    width: index === currentIndex ? 24 : 8,
                     height: 8,
                     borderRadius: 4,
                     background:
                       index === currentIndex
                         ? tokens.color.primary
-                        : `${tokens.color.muted}50`,
+                        : `${tokens.color.muted}40`,
                     border: 'none',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
+                    padding: 0,
                   }}
+                  aria-label={`Đi đến ảnh ${index + 1}`}
                 />
               ))}
             </div>
@@ -382,14 +348,15 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
           {/* Thumbnails - Desktop only */}
           {showThumbnails && images.length > 1 && !isMobile && (
             <div
+              ref={thumbnailsRef}
               style={{
                 display: 'flex',
-                justifyContent: 'center',
-                gap: 12,
-                padding: '16px 24px',
+                gap: 8,
+                padding: '12px 16px',
                 background: tokens.color.surface,
-                borderTop: `1px solid ${tokens.color.border}`,
                 overflowX: 'auto',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
               }}
             >
               {images.map((img, index) => (
@@ -399,28 +366,31 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
                   whileTap={{ scale: 0.95 }}
                   onClick={() => goToSlide(index)}
                   style={{
-                    width: 80,
-                    height: 56,
-                    borderRadius: tokens.radius.sm,
+                    width: 72,
+                    height: 48,
+                    borderRadius: 6,
                     overflow: 'hidden',
                     border: index === currentIndex 
-                      ? `3px solid ${tokens.color.primary}` 
-                      : '3px solid transparent',
+                      ? `2px solid ${tokens.color.primary}` 
+                      : '2px solid transparent',
                     cursor: 'pointer',
-                    opacity: index === currentIndex ? 1 : 0.6,
-                    transition: 'all 0.3s ease',
+                    opacity: index === currentIndex ? 1 : 0.5,
+                    transition: 'all 0.2s ease',
                     flexShrink: 0,
                     padding: 0,
-                    background: 'transparent',
+                    background: tokens.color.border,
                   }}
+                  aria-label={`Xem ảnh ${index + 1}`}
                 >
                   <img
                     src={resolveMediaUrl(img.url)}
                     alt={img.alt || `Slide ${index + 1}`}
+                    loading="lazy"
                     style={{
                       width: '100%',
                       height: '100%',
                       objectFit: 'cover',
+                      display: 'block',
                     }}
                   />
                 </motion.button>
@@ -429,41 +399,29 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
           )}
         </div>
 
-        {/* Progress Bar - Desktop */}
-        {autoplay && images.length > 1 && !isMobile && (
+        {/* Progress Indicator - Desktop with autoplay */}
+        {autoplay && images.length > 1 && !isMobile && !isPaused && (
           <div
             style={{
-              marginTop: 16,
-              display: 'flex',
-              justifyContent: 'center',
-              gap: 6,
+              marginTop: 12,
+              height: 3,
+              background: tokens.color.border,
+              borderRadius: 2,
+              overflow: 'hidden',
+              maxWidth: 400,
+              margin: '12px auto 0',
             }}
           >
-            {images.map((_, index) => (
-              <div
-                key={index}
-                style={{
-                  width: 60,
-                  height: 3,
-                  borderRadius: 2,
-                  background: tokens.color.border,
-                  overflow: 'hidden',
-                }}
-              >
-                {index === currentIndex && (
-                  <motion.div
-                    initial={{ width: '0%' }}
-                    animate={{ width: '100%' }}
-                    transition={{ duration: autoplayDelay / 1000, ease: 'linear' }}
-                    key={`progress-${currentIndex}`}
-                    style={{
-                      height: '100%',
-                      background: tokens.color.primary,
-                    }}
-                  />
-                )}
-              </div>
-            ))}
+            <motion.div
+              initial={{ width: '0%' }}
+              animate={{ width: '100%' }}
+              transition={{ duration: autoplayDelay / 1000, ease: 'linear' }}
+              key={`progress-${currentIndex}`}
+              style={{
+                height: '100%',
+                background: tokens.color.primary,
+              }}
+            />
           </div>
         )}
       </div>
