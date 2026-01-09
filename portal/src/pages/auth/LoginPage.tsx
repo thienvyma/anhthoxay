@@ -4,6 +4,65 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../auth/AuthContext';
 import { useToast } from '../../components/Toast';
 
+// Password input with toggle visibility
+function PasswordInput({
+  id,
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+  required,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  autoComplete?: string;
+  required?: boolean;
+}) {
+  const [showPassword, setShowPassword] = useState(false);
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <input
+        id={id}
+        type={showPassword ? 'text' : 'password'}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="input"
+        style={{ width: '100%', paddingRight: 44 }}
+        required={required}
+        autoComplete={autoComplete}
+        aria-required={required ? 'true' : undefined}
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        style={{
+          position: 'absolute',
+          right: 8,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          background: 'transparent',
+          border: 'none',
+          padding: 8,
+          cursor: 'pointer',
+          color: 'var(--text-muted)',
+          fontSize: 18,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+        aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+      >
+        <i className={showPassword ? 'ri-eye-off-line' : 'ri-eye-line'} />
+      </button>
+    </div>
+  );
+}
+
 /**
  * Login Page with accessibility support
  * Requirements: 26.3 - ARIA labels and roles, 26.5 - Form labels
@@ -118,17 +177,13 @@ export function LoginPage() {
               Mật khẩu
               <span className="sr-only"> (bắt buộc)</span>
             </label>
-            <input
+            <PasswordInput
               id={passwordId}
-              type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={setPassword}
               placeholder="••••••••"
-              className="input"
-              style={{ width: '100%' }}
               required
               autoComplete="current-password"
-              aria-required="true"
             />
           </div>
 

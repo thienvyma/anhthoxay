@@ -105,6 +105,8 @@ export function CreateUserModal({
             }}
           >
             <option value="USER">Người dùng</option>
+            <option value="HOMEOWNER">Chủ nhà</option>
+            <option value="CONTRACTOR">Nhà thầu</option>
             <option value="WORKER">Thợ</option>
             <option value="MANAGER">Quản lý</option>
             <option value="ADMIN">Admin</option>

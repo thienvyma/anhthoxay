@@ -20,6 +20,57 @@ import { authApi } from '../../api';
 // Tab types
 type ProfileTab = 'profile' | 'activity';
 
+// Password input with toggle visibility
+function PasswordInput({
+  value,
+  onChange,
+  required,
+  minLength,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  required?: boolean;
+  minLength?: number;
+}) {
+  const [showPassword, setShowPassword] = useState(false);
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <input
+        type={showPassword ? 'text' : 'password'}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="input"
+        style={{ paddingRight: 44 }}
+        required={required}
+        minLength={minLength}
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        style={{
+          position: 'absolute',
+          right: 8,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          background: 'transparent',
+          border: 'none',
+          padding: 8,
+          cursor: 'pointer',
+          color: '#a1a1aa',
+          fontSize: 18,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+      >
+        <i className={showPassword ? 'ri-eye-off-line' : 'ri-eye-line'} />
+      </button>
+    </div>
+  );
+}
+
 export function HomeownerProfilePage() {
   const { user, refreshToken } = useAuth();
   const { showToast } = useToast();
@@ -289,11 +340,9 @@ export function HomeownerProfilePage() {
                     >
                       Mật khẩu hiện tại
                     </label>
-                    <input
-                      type="password"
+                    <PasswordInput
                       value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="input"
+                      onChange={setCurrentPassword}
                       required
                     />
                   </div>
@@ -310,11 +359,9 @@ export function HomeownerProfilePage() {
                     >
                       Mật khẩu mới
                     </label>
-                    <input
-                      type="password"
+                    <PasswordInput
                       value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="input"
+                      onChange={setNewPassword}
                       required
                       minLength={6}
                     />
@@ -332,11 +379,9 @@ export function HomeownerProfilePage() {
                     >
                       Xác nhận mật khẩu mới
                     </label>
-                    <input
-                      type="password"
+                    <PasswordInput
                       value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="input"
+                      onChange={setConfirmPassword}
                       required
                     />
                   </div>

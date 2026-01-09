@@ -119,9 +119,10 @@ function TopViolatingIPsTable({
       >
         <i
           className="ri-shield-check-line"
-          style={{ fontSize: 48, marginBottom: 16, display: 'block' }}
+          style={{ fontSize: 48, marginBottom: 16, display: 'block', color: tokens.color.success }}
         />
-        <p style={{ margin: 0 }}>Không có vi phạm rate limit trong giờ qua</p>
+        <p style={{ margin: '0 0 8px', color: tokens.color.text, fontWeight: 500 }}>Hệ thống an toàn</p>
+        <p style={{ margin: 0, fontSize: 13 }}>Không có IP nào vi phạm trong giờ qua</p>
       </div>
     );
   }
@@ -157,7 +158,7 @@ function TopViolatingIPsTable({
                 fontWeight: 500,
               }}
             >
-              IP Address
+              Địa chỉ IP
             </th>
             <th
               style={{
@@ -168,7 +169,7 @@ function TopViolatingIPsTable({
                 fontWeight: 500,
               }}
             >
-              Violations
+              Số lần vi phạm
             </th>
           </tr>
         </thead>
@@ -272,9 +273,10 @@ function TopViolatingEndpointsTable({
       >
         <i
           className="ri-route-line"
-          style={{ fontSize: 48, marginBottom: 16, display: 'block' }}
+          style={{ fontSize: 48, marginBottom: 16, display: 'block', color: tokens.color.success }}
         />
-        <p style={{ margin: 0 }}>Không có endpoint nào bị vi phạm</p>
+        <p style={{ margin: '0 0 8px', color: tokens.color.text, fontWeight: 500 }}>Tất cả API hoạt động bình thường</p>
+        <p style={{ margin: 0, fontSize: 13 }}>Không có đường dẫn API nào bị tấn công</p>
       </div>
     );
   }
@@ -299,7 +301,7 @@ function TopViolatingEndpointsTable({
                 fontWeight: 500,
               }}
             >
-              Endpoint
+              Đường dẫn API
             </th>
             <th
               style={{
@@ -310,7 +312,7 @@ function TopViolatingEndpointsTable({
                 fontWeight: 500,
               }}
             >
-              Violations
+              Số lần vi phạm
             </th>
             <th
               style={{
@@ -321,7 +323,7 @@ function TopViolatingEndpointsTable({
                 fontWeight: 500,
               }}
             >
-              Unique IPs
+              Số IP khác nhau
             </th>
           </tr>
         </thead>
@@ -377,8 +379,8 @@ function AlertThresholdInfo({
     <div
       style={{
         padding: 16,
-        background: `${tokens.color.warning}10`,
-        border: `1px solid ${tokens.color.warning}30`,
+        background: `${tokens.color.info}10`,
+        border: `1px solid ${tokens.color.info}30`,
         borderRadius: tokens.radius.md,
         display: 'flex',
         alignItems: 'flex-start',
@@ -386,8 +388,8 @@ function AlertThresholdInfo({
       }}
     >
       <i
-        className="ri-alarm-warning-line"
-        style={{ fontSize: 20, color: tokens.color.warning, marginTop: 2 }}
+        className="ri-information-line"
+        style={{ fontSize: 20, color: tokens.color.info, marginTop: 2 }}
       />
       <div>
         <div
@@ -397,10 +399,10 @@ function AlertThresholdInfo({
             marginBottom: 4,
           }}
         >
-          Alert Threshold
+          Ngưỡng cảnh báo
         </div>
         <div style={{ color: tokens.color.muted, fontSize: 13 }}>
-          {threshold.description}
+          Hệ thống sẽ cảnh báo khi có {threshold.threshold} vi phạm trong {threshold.windowMinutes} phút
         </div>
       </div>
     </div>
@@ -474,7 +476,7 @@ export function RateLimitPage() {
             }}
           >
             <i className="ri-shield-line" style={{ color: tokens.color.primary }} />
-            Rate Limit Monitoring
+            Giám sát bảo mật
           </h2>
           <p
             style={{
@@ -483,7 +485,7 @@ export function RateLimitPage() {
               margin: 0,
             }}
           >
-            Theo dõi vi phạm rate limit và phát hiện tấn công
+            Theo dõi các IP gửi quá nhiều request để phát hiện tấn công spam/DDoS
           </p>
         </div>
 
@@ -589,19 +591,19 @@ export function RateLimitPage() {
         />
         <SummaryCard
           icon="ri-time-line"
-          label="Giờ qua"
+          label="Trong giờ qua"
           value={dashboard?.summary.lastHourViolations ?? 0}
           color={tokens.color.warning}
         />
         <SummaryCard
           icon="ri-route-line"
-          label="Endpoints"
+          label="API bị tấn công"
           value={dashboard?.summary.uniqueEndpoints ?? 0}
           color={tokens.color.info}
         />
         <SummaryCard
           icon="ri-computer-line"
-          label="Unique IPs"
+          label="IP vi phạm"
           value={dashboard?.summary.uniqueIPs ?? 0}
           color={tokens.color.primary}
         />
@@ -619,14 +621,14 @@ export function RateLimitPage() {
         cols={{ mobile: 1, tablet: 1, desktop: 2 }}
         gap={{ mobile: 16, tablet: 20, desktop: 20 }}
       >
-        <Card title="Top Violating IPs" icon="ri-computer-line">
+        <Card title="IP vi phạm nhiều nhất" icon="ri-computer-line">
           <TopViolatingIPsTable
             data={dashboard?.topViolatingIPs ?? []}
             loading={loading}
           />
         </Card>
 
-        <Card title="Top Violating Endpoints" icon="ri-route-line">
+        <Card title="API bị tấn công nhiều nhất" icon="ri-route-line">
           <TopViolatingEndpointsTable
             data={dashboard?.topViolatingEndpoints ?? []}
             loading={loading}

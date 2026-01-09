@@ -9,12 +9,14 @@ import type { UserAccount, UserSession } from '../../types';
 export type { UserAccount, UserSession };
 
 // User role type
-export type UserRole = 'ADMIN' | 'MANAGER' | 'WORKER' | 'USER';
+export type UserRole = 'ADMIN' | 'MANAGER' | 'CONTRACTOR' | 'HOMEOWNER' | 'WORKER' | 'USER';
 
 // Role colors for badges
 export const ROLE_COLORS: Record<UserRole, string> = {
   ADMIN: '#EF4444',
   MANAGER: '#F59E0B',
+  CONTRACTOR: '#8B5CF6',
+  HOMEOWNER: '#06B6D4',
   WORKER: '#3B82F6',
   USER: '#10B981',
 };
@@ -23,6 +25,8 @@ export const ROLE_COLORS: Record<UserRole, string> = {
 export const ROLE_LABELS: Record<UserRole, string> = {
   ADMIN: 'Admin',
   MANAGER: 'Quản lý',
+  CONTRACTOR: 'Nhà thầu',
+  HOMEOWNER: 'Chủ nhà',
   WORKER: 'Thợ',
   USER: 'Người dùng',
 };

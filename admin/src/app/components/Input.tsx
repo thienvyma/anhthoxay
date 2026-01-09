@@ -1,4 +1,4 @@
-import { CSSProperties } from 'react';
+import { CSSProperties, useState } from 'react';
 import { tokens } from '../../theme';
 
 interface InputProps {
@@ -32,6 +32,9 @@ export function Input({
   autoComplete,
   name,
 }: InputProps) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === 'password';
+
   // Auto-determine autocomplete based on type if not provided
   const resolvedAutoComplete = autoComplete ?? (
     type === 'password' ? 'current-password' :
@@ -40,6 +43,10 @@ export function Input({
     type === 'url' ? 'url' :
     'off'
   );
+
+  // Determine actual input type (for password toggle)
+  const inputType = isPassword && showPassword ? 'text' : type;
+
   return (
     <div 
       style={{ width: fullWidth ? '100%' : 'auto', ...style }}
@@ -75,7 +82,7 @@ export function Input({
           />
         )}
         <input
-          type={type}
+          type={inputType}
           name={name}
           autoComplete={resolvedAutoComplete}
           value={value ?? ''}
@@ -100,7 +107,7 @@ export function Input({
           required={required}
           style={{
             width: '100%',
-            padding: icon ? '10px 14px 10px 40px' : '10px 14px',
+            padding: icon ? '10px 14px 10px 40px' : isPassword ? '10px 44px 10px 14px' : '10px 14px',
             background: tokens.color.background,
             border: `1px solid ${error ? tokens.color.error : tokens.color.border}`,
             borderRadius: tokens.radius.md,
@@ -121,6 +128,42 @@ export function Input({
             }
           }}
         />
+        {/* Password toggle button */}
+        {isPassword && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowPassword(!showPassword);
+            }}
+            style={{
+              position: 'absolute',
+              right: 8,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'transparent',
+              border: 'none',
+              padding: 6,
+              cursor: 'pointer',
+              color: tokens.color.muted,
+              fontSize: 18,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: tokens.radius.sm,
+              transition: 'color 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = tokens.color.text;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = tokens.color.muted;
+            }}
+            title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+          >
+            <i className={showPassword ? 'ri-eye-off-line' : 'ri-eye-line'} />
+          </button>
+        )}
       </div>
       {error && (
         <div style={{ color: tokens.color.error, fontSize: 12, marginTop: 4 }}>

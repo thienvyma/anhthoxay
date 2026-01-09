@@ -138,12 +138,25 @@ export class UsersService {
       throw new Error('USER_NOT_FOUND');
     }
 
+    // Build update data
+    const updateData: Record<string, unknown> = {};
+    
+    if (data.name !== undefined) {
+      updateData.name = data.name;
+    }
+    
+    if (data.role !== undefined) {
+      updateData.role = data.role;
+    }
+    
+    // Handle password change
+    if (data.password && data.password.length >= 8) {
+      updateData.passwordHash = await bcrypt.hash(data.password, 12);
+    }
+
     return this.prisma.user.update({
       where: { id },
-      data: {
-        name: data.name,
-        role: data.role,
-      },
+      data: updateData,
       select: {
         id: true,
         email: true,

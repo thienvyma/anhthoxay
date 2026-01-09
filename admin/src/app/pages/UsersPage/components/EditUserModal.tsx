@@ -4,6 +4,7 @@
  * Requirements: 2.4
  */
 
+import { useState } from 'react';
 import { tokens } from '../../../../theme';
 import { ResponsiveModal } from '../../../../components/responsive';
 import { Button } from '../../../components/Button';
@@ -20,17 +21,24 @@ export function EditUserModal({
   saving,
   isMobile,
 }: EditUserModalProps) {
+  const [showPasswordField, setShowPasswordField] = useState(false);
+
+  const handleClose = () => {
+    setShowPasswordField(false);
+    onClose();
+  };
+
   return (
     <ResponsiveModal
       isOpen={isOpen && !!user}
-      onClose={onClose}
+      onClose={handleClose}
       title="Chỉnh sửa tài khoản"
       footer={
         <>
           <Button
             type="button"
             variant="secondary"
-            onClick={onClose}
+            onClick={handleClose}
             style={{ width: isMobile ? '100%' : 'auto' }}
           >
             Hủy
@@ -104,10 +112,60 @@ export function EditUserModal({
             }}
           >
             <option value="USER">Người dùng</option>
+            <option value="HOMEOWNER">Chủ nhà</option>
+            <option value="CONTRACTOR">Nhà thầu</option>
             <option value="WORKER">Thợ</option>
             <option value="MANAGER">Quản lý</option>
             <option value="ADMIN">Admin</option>
           </select>
+        </div>
+
+        {/* Password change section */}
+        <div
+          style={{
+            borderTop: `1px solid ${tokens.color.border}`,
+            paddingTop: 16,
+            marginTop: 8,
+          }}
+        >
+          {!showPasswordField ? (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowPasswordField(true)}
+              style={{ width: '100%' }}
+            >
+              <i className="ri-lock-password-line" style={{ marginRight: 8 }} />
+              Đổi mật khẩu
+            </Button>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <Input
+                label="Mật khẩu mới"
+                type="password"
+                autoComplete="new-password"
+                value={formData.password || ''}
+                onChange={(v) => setFormData({ ...formData, password: v })}
+                placeholder="Để trống nếu không đổi"
+                fullWidth
+              />
+              <p style={{ color: tokens.color.muted, fontSize: 12, margin: 0 }}>
+                <i className="ri-information-line" style={{ marginRight: 4 }} />
+                Mật khẩu phải có ít nhất 8 ký tự. Để trống nếu không muốn đổi.
+              </p>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setShowPasswordField(false);
+                  setFormData({ ...formData, password: '' });
+                }}
+                style={{ alignSelf: 'flex-start' }}
+              >
+                Hủy đổi mật khẩu
+              </Button>
+            </div>
+          )}
         </div>
       </form>
     </ResponsiveModal>

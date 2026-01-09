@@ -94,17 +94,24 @@ export function UsersPage() {
     if (!selectedUser) return;
     setSaving(true);
     try {
-      await usersApi.update(selectedUser.id, {
+      const updateData: { name: string; role: UserRole; password?: string } = {
         name: formData.name,
         role: formData.role,
-      });
+      };
+      
+      // Only include password if it's not empty
+      if (formData.password && formData.password.length > 0) {
+        updateData.password = formData.password;
+      }
+      
+      await usersApi.update(selectedUser.id, updateData);
       toast.success('Cập nhật tài khoản thành công!');
       setShowEditModal(false);
       setSelectedUser(null);
       loadUsers();
     } catch (error) {
       console.error('Failed to update user:', error);
-      toast.error('Cập nhật thất bại');
+      toast.error(error instanceof Error ? error.message : 'Cập nhật thất bại');
     } finally {
       setSaving(false);
     }
@@ -261,6 +268,8 @@ export function UsersPage() {
           <option value="">Tất cả vai trò</option>
           <option value="ADMIN">Admin</option>
           <option value="MANAGER">Quản lý</option>
+          <option value="CONTRACTOR">Nhà thầu</option>
+          <option value="HOMEOWNER">Chủ nhà</option>
           <option value="WORKER">Thợ</option>
           <option value="USER">Người dùng</option>
         </select>

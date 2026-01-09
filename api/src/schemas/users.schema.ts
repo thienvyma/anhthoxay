@@ -7,7 +7,7 @@
 import { z } from 'zod';
 
 // User roles
-export const UserRoleSchema = z.enum(['ADMIN', 'MANAGER', 'WORKER', 'USER']);
+export const UserRoleSchema = z.enum(['ADMIN', 'MANAGER', 'CONTRACTOR', 'HOMEOWNER', 'WORKER', 'USER']);
 
 // User status for account management
 export const UserStatusSchema = z.enum(['ACTIVE', 'BANNED', 'PENDING']);
@@ -25,6 +25,7 @@ export const UpdateUserSchema = z.object({
   name: z.string().min(1, 'Tên không được trống').optional(),
   role: UserRoleSchema.optional(),
   status: UserStatusSchema.optional(),
+  password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự').optional().or(z.literal('')),
 });
 
 // List users query schema

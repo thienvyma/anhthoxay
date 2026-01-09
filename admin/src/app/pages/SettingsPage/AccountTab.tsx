@@ -14,6 +14,67 @@ const glass = {
   border: `1px solid ${tokens.color.border}`,
 };
 
+// Password input with toggle visibility
+function PasswordInput({
+  value,
+  onChange,
+  autoComplete,
+  required,
+  minLength,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  autoComplete: string;
+  required?: boolean;
+  minLength?: number;
+}) {
+  const [showPassword, setShowPassword] = useState(false);
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <input
+        type={showPassword ? 'text' : 'password'}
+        autoComplete={autoComplete}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required={required}
+        minLength={minLength}
+        style={{
+          width: '100%',
+          padding: '10px 44px 10px 12px',
+          background: tokens.color.inputBg,
+          border: `1px solid ${tokens.color.inputBorder}`,
+          borderRadius: tokens.radius.md,
+          color: tokens.color.text,
+          fontSize: 14,
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        style={{
+          position: 'absolute',
+          right: 8,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          background: 'transparent',
+          border: 'none',
+          padding: 6,
+          cursor: 'pointer',
+          color: tokens.color.muted,
+          fontSize: 18,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+      >
+        <i className={showPassword ? 'ri-eye-off-line' : 'ri-eye-line'} />
+      </button>
+    </div>
+  );
+}
+
 export function AccountTab({ onShowMessage, onError }: AccountTabProps) {
   const user = useUser();
 
@@ -204,23 +265,13 @@ export function AccountTab({ onShowMessage, onError }: AccountTabProps) {
               >
                 Mật khẩu hiện tại
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 autoComplete="current-password"
                 value={passwordForm.currentPassword}
-                onChange={(e) =>
-                  setPasswordForm((prev) => ({ ...prev, currentPassword: e.target.value }))
+                onChange={(value) =>
+                  setPasswordForm((prev) => ({ ...prev, currentPassword: value }))
                 }
                 required
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  background: tokens.color.inputBg,
-                  border: `1px solid ${tokens.color.inputBorder}`,
-                  borderRadius: tokens.radius.md,
-                  color: tokens.color.text,
-                  fontSize: 14,
-                }}
               />
             </div>
             <div>
@@ -234,24 +285,14 @@ export function AccountTab({ onShowMessage, onError }: AccountTabProps) {
               >
                 Mật khẩu mới (tối thiểu 8 ký tự)
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 autoComplete="new-password"
                 value={passwordForm.newPassword}
-                onChange={(e) =>
-                  setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))
+                onChange={(value) =>
+                  setPasswordForm((prev) => ({ ...prev, newPassword: value }))
                 }
                 required
                 minLength={8}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  background: tokens.color.inputBg,
-                  border: `1px solid ${tokens.color.inputBorder}`,
-                  borderRadius: tokens.radius.md,
-                  color: tokens.color.text,
-                  fontSize: 14,
-                }}
               />
             </div>
             <div>
@@ -265,23 +306,13 @@ export function AccountTab({ onShowMessage, onError }: AccountTabProps) {
               >
                 Xác nhận mật khẩu mới
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 autoComplete="new-password"
                 value={passwordForm.confirmPassword}
-                onChange={(e) =>
-                  setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))
+                onChange={(value) =>
+                  setPasswordForm((prev) => ({ ...prev, confirmPassword: value }))
                 }
                 required
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  background: tokens.color.inputBg,
-                  border: `1px solid ${tokens.color.inputBorder}`,
-                  borderRadius: tokens.radius.md,
-                  color: tokens.color.text,
-                  fontSize: 14,
-                }}
               />
             </div>
             <motion.button

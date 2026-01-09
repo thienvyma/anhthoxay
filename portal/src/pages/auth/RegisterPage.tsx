@@ -7,6 +7,71 @@ import { TurnstileWidget } from '../../components/TurnstileWidget';
 
 type AccountType = 'homeowner' | 'contractor';
 
+// Password input with toggle visibility
+function PasswordInput({
+  id,
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+  required,
+  minLength,
+  ariaDescribedby,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  autoComplete?: string;
+  required?: boolean;
+  minLength?: number;
+  ariaDescribedby?: string;
+}) {
+  const [showPassword, setShowPassword] = useState(false);
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <input
+        id={id}
+        type={showPassword ? 'text' : 'password'}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="input"
+        style={{ paddingRight: 44 }}
+        required={required}
+        minLength={minLength}
+        autoComplete={autoComplete}
+        aria-required={required ? 'true' : undefined}
+        aria-describedby={ariaDescribedby}
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        style={{
+          position: 'absolute',
+          right: 8,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          background: 'transparent',
+          border: 'none',
+          padding: 8,
+          cursor: 'pointer',
+          color: 'var(--text-muted)',
+          fontSize: 18,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+        aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+      >
+        <i className={showPassword ? 'ri-eye-off-line' : 'ri-eye-line'} />
+      </button>
+    </div>
+  );
+}
+
 /**
  * Register Page with accessibility support
  * Requirements: 26.3 - ARIA labels and roles, 26.5 - Form labels
@@ -365,18 +430,15 @@ export function RegisterPage() {
               Mật khẩu
               <span className="sr-only"> (bắt buộc, tối thiểu 6 ký tự)</span>
             </label>
-            <input
+            <PasswordInput
               id={passwordId}
-              type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={setPassword}
               placeholder="••••••••"
-              className="input"
               required
               minLength={6}
               autoComplete="new-password"
-              aria-required="true"
-              aria-describedby="password-hint"
+              ariaDescribedby="password-hint"
             />
             <span id="password-hint" className="sr-only">Mật khẩu phải có ít nhất 6 ký tự</span>
           </div>
@@ -389,16 +451,13 @@ export function RegisterPage() {
               Xác nhận mật khẩu
               <span className="sr-only"> (bắt buộc)</span>
             </label>
-            <input
+            <PasswordInput
               id={confirmPasswordId}
-              type="password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={setConfirmPassword}
               placeholder="••••••••"
-              className="input"
               required
               autoComplete="new-password"
-              aria-required="true"
             />
           </div>
 

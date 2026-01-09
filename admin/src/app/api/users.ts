@@ -28,12 +28,13 @@ interface CreateUserInput {
   email: string;
   password: string;
   name: string;
-  role?: 'ADMIN' | 'MANAGER' | 'WORKER' | 'USER';
+  role?: 'ADMIN' | 'MANAGER' | 'CONTRACTOR' | 'HOMEOWNER' | 'WORKER' | 'USER';
 }
 
 interface UpdateUserInput {
   name?: string;
-  role?: 'ADMIN' | 'MANAGER' | 'WORKER' | 'USER';
+  role?: 'ADMIN' | 'MANAGER' | 'CONTRACTOR' | 'HOMEOWNER' | 'WORKER' | 'USER';
+  password?: string;
 }
 
 export const usersApi = {

@@ -2,6 +2,31 @@
 
 ## 2026-01-09
 
+### Task: Cải thiện trang Quản lý tài khoản Admin
+
+**✏️ Modified:**
+- `admin/src/app/pages/UsersPage/index.tsx` - Thêm filter CONTRACTOR/HOMEOWNER, cập nhật handleUpdate để gửi password
+- `admin/src/app/pages/UsersPage/types.ts` - Thêm role CONTRACTOR và HOMEOWNER với màu sắc và label
+- `admin/src/app/pages/UsersPage/components/CreateUserModal.tsx` - Thêm options Chủ nhà và Nhà thầu vào dropdown
+- `admin/src/app/pages/UsersPage/components/EditUserModal.tsx` - Thêm chức năng đổi mật khẩu, thêm options role mới
+- `admin/src/app/api/users.ts` - Cập nhật types để hỗ trợ CONTRACTOR/HOMEOWNER và password trong update
+- `api/src/schemas/users.schema.ts` - Thêm CONTRACTOR/HOMEOWNER vào UserRoleSchema, thêm password vào UpdateUserSchema
+- `api/src/services/users.service.ts` - Cập nhật update() để hỗ trợ đổi password
+
+**📋 Features:**
+- Admin có thể đổi mật khẩu cho user khi chỉnh sửa tài khoản
+- Hỗ trợ đầy đủ 6 roles: Admin, Quản lý, Nhà thầu, Chủ nhà, Thợ, Người dùng
+- Filter theo role đầy đủ
+
+---
+
+### Task: Dịch trang Rate Limit Monitoring sang tiếng Việt
+
+**✏️ Modified:**
+- `admin/src/app/pages/RateLimitPage/index.tsx` - Dịch toàn bộ UI sang tiếng Việt, cải thiện empty states
+
+---
+
 ### Task: Fix Mobile Background với Fixed Pseudo-Element
 
 **✏️ Modified:**
