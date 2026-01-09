@@ -53,16 +53,14 @@ export const EnhancedHero = memo(function EnhancedHero({ data }: { data: HeroDat
   return (
     <div style={{ 
       maxWidth: 1200, 
-      margin: '80px auto 0', // 80px top margin for spacing from header
-      padding: '0 16px' 
+      margin: '60px auto 0', // Reduced from 80px for mobile
+      padding: '0 12px' 
     }}>
       <motion.section
         ref={ref}
         style={{
           position: 'relative',
-          height: '60vh',
-          minHeight: '400px',
-          maxHeight: '700px',
+          height: 'clamp(280px, 50vh, 600px)', // Responsive height: smaller on mobile
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -235,11 +233,11 @@ export const EnhancedHero = memo(function EnhancedHero({ data }: { data: HeroDat
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: tokens.motion.ease.outExpo }}
           style={{
-            fontSize: 'clamp(32px, 6vw, 56px)',
+            fontSize: 'clamp(26px, 5vw, 52px)',
             fontFamily: tokens.font.display,
             color: tokens.color.primary,
-            marginBottom: 16,
-            lineHeight: 1.1,
+            marginBottom: 12,
+            lineHeight: 1.15,
             textShadow: '0 8px 32px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.6)',
           }}
         >
@@ -252,12 +250,13 @@ export const EnhancedHero = memo(function EnhancedHero({ data }: { data: HeroDat
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.2, ease: tokens.motion.ease.outExpo }}
             style={{
-              fontSize: 'clamp(16px, 2.5vw, 20px)',
+              fontSize: 'clamp(14px, 2vw, 18px)',
               color: tokens.color.text,
-              marginBottom: 24,
+              marginBottom: 20,
               maxWidth: '700px',
-              margin: '0 auto 24px',
+              margin: '0 auto 20px',
               textShadow: '0 4px 16px rgba(0,0,0,0.7)',
+              lineHeight: 1.5,
             }}
           >
             {data.subtitle}
@@ -276,12 +275,12 @@ export const EnhancedHero = memo(function EnhancedHero({ data }: { data: HeroDat
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 12,
+              gap: 8,
               background: `linear-gradient(135deg, ${tokens.color.primary} 0%, ${tokens.color.accent} 100%)`,
               color: '#111',
-              padding: 'clamp(12px, 2vw, 14px) clamp(24px, 5vw, 36px)',
+              padding: 'clamp(10px, 1.5vw, 14px) clamp(20px, 4vw, 32px)',
               borderRadius: tokens.radius.pill,
-              fontSize: 'clamp(14px, 2vw, 16px)',
+              fontSize: 'clamp(13px, 1.8vw, 16px)',
               fontWeight: 700,
               textDecoration: 'none',
               boxShadow: `0 8px 32px ${tokens.color.primary}40`,
@@ -296,14 +295,15 @@ export const EnhancedHero = memo(function EnhancedHero({ data }: { data: HeroDat
         )}
       </motion.div>
 
-      {/* Scroll Indicator - Simplified without infinite animation */}
+      {/* Scroll Indicator - Hidden on mobile */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1, duration: 1 }}
+        className="desktop-only"
         style={{
           position: 'absolute',
-          bottom: 24,
+          bottom: 16,
           left: '50%',
           transform: 'translateX(-50%)',
           display: 'flex',
@@ -313,10 +313,10 @@ export const EnhancedHero = memo(function EnhancedHero({ data }: { data: HeroDat
           color: tokens.color.muted,
         }}
       >
-        <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 2 }}>Scroll</span>
+        <span style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 2 }}>Scroll</span>
         <i
           className="ri-arrow-down-line"
-          style={{ fontSize: 20 }}
+          style={{ fontSize: 16 }}
         />
       </motion.div>
     </motion.section>

@@ -34,8 +34,8 @@ export function HeroSimple({ data }: { data: HeroSimpleData }) {
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
-        paddingTop: 'clamp(100px, 16vh, 140px)',
-        paddingBottom: 'clamp(80px, 14vh, 120px)',
+        paddingTop: 'clamp(80px, 12vh, 120px)',
+        paddingBottom: 'clamp(60px, 10vh, 100px)',
         overflow: 'hidden',
       }}
     >
@@ -80,16 +80,16 @@ export function HeroSimple({ data }: { data: HeroSimpleData }) {
             transition={{ duration: 0.6 }}
             style={{
               display: 'inline-block',
-              padding: '8px 20px',
+              padding: 'clamp(6px, 1vw, 8px) clamp(14px, 2vw, 20px)',
               background: 'rgba(245,211,147,0.1)',
               border: '1px solid rgba(245,211,147,0.3)',
               borderRadius: tokens.radius.pill,
-              fontSize: 14,
+              fontSize: 'clamp(11px, 1.5vw, 14px)',
               fontWeight: 600,
               color: tokens.color.primary,
               letterSpacing: '0.5px',
               textTransform: 'uppercase',
-              marginBottom: 24,
+              marginBottom: 16,
             }}
           >
             {subtitle}
@@ -102,10 +102,10 @@ export function HeroSimple({ data }: { data: HeroSimpleData }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
           style={{
-            fontSize: 'clamp(2.5rem, 6vw, 4.5rem)',
+            fontSize: 'clamp(1.8rem, 5vw, 3.5rem)',
             fontFamily: 'Playfair Display, serif',
             color: tokens.color.primary,
-            marginBottom: description ? 24 : 0,
+            marginBottom: description ? 16 : 0,
             fontWeight: 700,
             lineHeight: 1.2,
           }}
@@ -120,11 +120,11 @@ export function HeroSimple({ data }: { data: HeroSimpleData }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             style={{
-              fontSize: '1.125rem',
+              fontSize: 'clamp(0.9rem, 2vw, 1.125rem)',
               color: 'rgba(255,255,255,0.7)',
               maxWidth: 700,
               margin: textAlign === 'center' ? '0 auto' : textAlign === 'right' ? '0 0 0 auto' : '0',
-              lineHeight: 1.7,
+              lineHeight: 1.6,
             }}
           >
             {description}
