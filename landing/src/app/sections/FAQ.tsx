@@ -30,8 +30,12 @@ export function FAQ({ data }: { data: FAQData }) {
   return (
     <section
       style={{
+        position: 'relative',
         padding: 'clamp(60px, 10vw, 100px) clamp(16px, 5vw, 40px)',
-        background: tokens.color.surface,
+        margin: '80px 0',
+        overflow: 'hidden',
+        borderRadius: 24,
+        background: 'linear-gradient(135deg, rgba(245,211,147,0.1), rgba(239,182,121,0.05))',
       }}
     >
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -46,14 +50,15 @@ export function FAQ({ data }: { data: FAQData }) {
             style={{
               fontSize: 'clamp(28px, 5vw, 40px)',
               fontWeight: 700,
-              color: tokens.color.text,
+              fontFamily: 'Playfair Display, serif',
+              color: tokens.color.primary,
               marginBottom: subtitle ? 12 : 0,
             }}
           >
             {title}
           </h2>
           {subtitle && (
-            <p style={{ fontSize: 16, color: tokens.color.muted }}>
+            <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)' }}>
               {subtitle}
             </p>
           )}
@@ -72,11 +77,12 @@ export function FAQ({ data }: { data: FAQData }) {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.05 }}
                 style={{
-                  background: tokens.color.background,
+                  background: 'rgba(255,255,255,0.03)',
                   borderRadius: tokens.radius.md,
-                  border: `1px solid ${isOpen ? tokens.color.primary : tokens.color.border}`,
+                  border: `1px solid ${isOpen ? tokens.color.primary : 'rgba(255,255,255,0.1)'}`,
                   overflow: 'hidden',
                   transition: 'border-color 0.2s',
+                  backdropFilter: 'blur(8px)',
                 }}
               >
                 {/* Question */}
@@ -131,7 +137,7 @@ export function FAQ({ data }: { data: FAQData }) {
                         style={{
                           padding: '0 20px 20px',
                           fontSize: 15,
-                          color: tokens.color.muted,
+                          color: 'rgba(255,255,255,0.7)',
                           lineHeight: 1.7,
                         }}
                       >
