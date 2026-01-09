@@ -16,7 +16,6 @@ interface AboutData {
   }>;
   ctaText?: string;
   ctaLink?: string;
-  layout?: 'left' | 'right'; // Image position
 }
 
 export function About({ data }: { data: AboutData }) {
@@ -29,10 +28,8 @@ export function About({ data }: { data: AboutData }) {
     features = [],
     ctaText = '',
     ctaLink = '',
-    layout = 'right',
   } = data;
 
-  // Resolve image URL (handle relative paths from media upload)
   const resolvedImageUrl = imageUrl ? resolveMediaUrl(imageUrl) : '';
 
   const handleLinkClick = useCallback(
@@ -45,260 +42,198 @@ export function About({ data }: { data: AboutData }) {
     [navigate]
   );
 
-  const hasImage = !!resolvedImageUrl;
-
   return (
     <section
       style={{
         position: 'relative',
-        padding: 'clamp(60px, 10vw, 100px) clamp(16px, 5vw, 40px)',
-        background: tokens.color.background,
+        padding: '100px 24px',
+        margin: '80px 0',
         overflow: 'hidden',
+        borderRadius: 24,
+        background: `linear-gradient(135deg, ${tokens.color.primary}10, ${tokens.color.accent}05)`,
       }}
     >
-      {/* Subtle background decoration */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          right: layout === 'right' ? 0 : 'auto',
-          left: layout === 'left' ? 0 : 'auto',
-          width: '50%',
-          height: '100%',
-          background: `linear-gradient(${layout === 'right' ? '270deg' : '90deg'}, transparent, ${tokens.color.primary}05)`,
-          pointerEvents: 'none',
-        }}
-      />
+      {/* Background Image (if provided) */}
+      {resolvedImageUrl && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `url(${resolvedImageUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: 0.1,
+            zIndex: 0,
+          }}
+        />
+      )}
 
+      {/* Content */}
       <div
         style={{
           position: 'relative',
-          maxWidth: 1200,
+          zIndex: 1,
+          maxWidth: 800,
           margin: '0 auto',
-          display: 'grid',
-          gridTemplateColumns: hasImage
-            ? 'repeat(auto-fit, minmax(min(100%, 450px), 1fr))'
-            : '1fr',
-          gap: 'clamp(40px, 8vw, 80px)',
-          alignItems: 'center',
+          textAlign: 'center',
         }}
       >
-        {/* Content - order based on layout */}
-        <motion.div
-          initial={{ opacity: 0, x: layout === 'right' ? -30 : 30 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          style={{ order: layout === 'right' ? 1 : 2 }}
-        >
-          {badge && (
-            <motion.span
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              style={{
-                display: 'inline-block',
-                padding: '8px 18px',
-                background: `${tokens.color.primary}15`,
-                color: tokens.color.primary,
-                borderRadius: tokens.radius.pill,
-                fontSize: 13,
-                fontWeight: 600,
-                marginBottom: 20,
-                letterSpacing: '0.5px',
-              }}
-            >
-              {badge}
-            </motion.span>
-          )}
-
-          <h2
+        {/* Badge */}
+        {badge && (
+          <motion.span
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             style={{
-              fontSize: 'clamp(28px, 5vw, 44px)',
-              fontFamily: tokens.font.display,
-              fontWeight: 700,
-              color: tokens.color.text,
-              lineHeight: 1.2,
-              marginBottom: 24,
+              display: 'inline-block',
+              padding: '8px 18px',
+              background: `${tokens.color.primary}15`,
+              color: tokens.color.primary,
+              borderRadius: tokens.radius.pill,
+              fontSize: 13,
+              fontWeight: 600,
+              marginBottom: 20,
+              letterSpacing: '0.5px',
             }}
           >
-            {title}
-          </h2>
+            {badge}
+          </motion.span>
+        )}
 
-          {description && (
-            <p
-              style={{
-                fontSize: 'clamp(15px, 2vw, 17px)',
-                color: tokens.color.textMuted,
-                lineHeight: 1.8,
-                marginBottom: features.length > 0 ? 36 : 28,
-              }}
-            >
-              {description}
-            </p>
-          )}
+        {/* Title */}
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          style={{
+            fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+            fontFamily: tokens.font.display,
+            color: tokens.color.primary,
+            marginBottom: 16,
+            fontWeight: 700,
+          }}
+        >
+          {title}
+        </motion.h2>
 
-          {/* Features list */}
-          {features.length > 0 && (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 20,
-                marginBottom: 36,
-              }}
-            >
-              {features.map((feature, index) => (
-                <motion.div
-                  key={feature._id || index}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
+        {/* Description */}
+        {description && (
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            style={{
+              fontSize: 18,
+              color: tokens.color.textMuted,
+              marginBottom: features.length > 0 ? 40 : 32,
+              lineHeight: 1.6,
+            }}
+          >
+            {description}
+          </motion.p>
+        )}
+
+        {/* Features */}
+        {features.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.15 }}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: 24,
+              marginBottom: 40,
+              textAlign: 'left',
+            }}
+          >
+            {features.map((feature, index) => (
+              <div
+                key={feature._id || index}
+                style={{
+                  display: 'flex',
+                  gap: 12,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <div
                   style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: tokens.radius.md,
+                    background: `${tokens.color.primary}15`,
                     display: 'flex',
-                    gap: 16,
-                    alignItems: 'flex-start',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
                   }}
                 >
-                  <div
+                  <i
+                    className={feature.icon || 'ri-check-line'}
+                    style={{ fontSize: 18, color: tokens.color.primary }}
+                  />
+                </div>
+                <div>
+                  <h4
                     style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: tokens.radius.md,
-                      background: `${tokens.color.primary}15`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
+                      fontSize: 15,
+                      fontWeight: 600,
+                      color: tokens.color.text,
+                      marginBottom: 4,
                     }}
                   >
-                    <i
-                      className={feature.icon || 'ri-check-line'}
-                      style={{ fontSize: 20, color: tokens.color.primary }}
-                    />
-                  </div>
-                  <div>
-                    <h4
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 600,
-                        color: tokens.color.text,
-                        marginBottom: 6,
-                      }}
-                    >
-                      {feature.title}
-                    </h4>
-                    <p
-                      style={{
-                        fontSize: 14,
-                        color: tokens.color.muted,
-                        lineHeight: 1.6,
-                        margin: 0,
-                      }}
-                    >
-                      {feature.description}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
+                    {feature.title}
+                  </h4>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: tokens.color.muted,
+                      lineHeight: 1.5,
+                      margin: 0,
+                    }}
+                  >
+                    {feature.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        )}
 
-          {/* CTA Button */}
-          {ctaText && ctaLink && (
+        {/* CTA Button */}
+        {ctaText && ctaLink && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+          >
             <motion.a
               href={ctaLink}
               onClick={(e) => handleLinkClick(e, ctaLink)}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 10,
+                gap: 8,
                 padding: '16px 32px',
                 background: tokens.color.primary,
                 color: '#111',
-                borderRadius: tokens.radius.pill,
-                fontSize: 15,
+                borderRadius: 999,
                 fontWeight: 600,
+                fontSize: 16,
                 textDecoration: 'none',
-                boxShadow: `0 4px 20px ${tokens.color.primary}40`,
-                transition: 'box-shadow 0.3s ease',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: `0 4px 16px ${tokens.color.primary}30`,
               }}
             >
               {ctaText}
-              <i className="ri-arrow-right-line" style={{ fontSize: 18 }} />
+              <i className="ri-arrow-right-line" />
             </motion.a>
-          )}
-        </motion.div>
-
-        {/* Image */}
-        {hasImage && (
-          <motion.div
-            initial={{ opacity: 0, x: layout === 'right' ? 30 : -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            style={{
-              order: layout === 'right' ? 2 : 1,
-              position: 'relative',
-            }}
-          >
-            {/* Decorative frame */}
-            <div
-              style={{
-                position: 'absolute',
-                top: -12,
-                left: layout === 'right' ? -12 : 'auto',
-                right: layout === 'left' ? -12 : 'auto',
-                width: '100%',
-                height: '100%',
-                border: `2px solid ${tokens.color.primary}30`,
-                borderRadius: tokens.radius.xl,
-                pointerEvents: 'none',
-              }}
-            />
-
-            <div
-              style={{
-                position: 'relative',
-                borderRadius: tokens.radius.xl,
-                overflow: 'hidden',
-                boxShadow: tokens.shadow.lg,
-              }}
-            >
-              <img
-                src={resolvedImageUrl}
-                alt={title}
-                style={{
-                  width: '100%',
-                  height: 'auto',
-                  minHeight: 300,
-                  maxHeight: 500,
-                  objectFit: 'cover',
-                  display: 'block',
-                }}
-                onError={(e) => {
-                  // Hide image container if image fails to load
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                }}
-              />
-
-              {/* Overlay gradient */}
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: '30%',
-                  background: `linear-gradient(to top, ${tokens.color.background}80, transparent)`,
-                  pointerEvents: 'none',
-                }}
-              />
-            </div>
           </motion.div>
         )}
       </div>
