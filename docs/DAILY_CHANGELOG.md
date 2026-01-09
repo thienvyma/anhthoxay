@@ -2,6 +2,22 @@
 
 ## 2026-01-10
 
+### Task: Disable Memorystore Redis to Reduce GCP Costs
+
+**🔧 GCP Changes:**
+- Disabled Memorystore Redis (was $35/month)
+- Updated REDIS_URL secret to empty string
+- API now uses in-memory fallback for rate limiting, SLO metrics, etc.
+
+**💰 Cost Savings:** ~$35/month (45-50% reduction)
+
+**📋 Notes:**
+- Rate limiting chính đã dùng in-memory Map (không phụ thuộc Redis)
+- Tất cả services có fallback khi Redis không available
+- Có thể enable lại Redis khi cần scale
+
+---
+
 ### Task: Merge API Keys into Settings Page
 
 **🆕 Created:**
