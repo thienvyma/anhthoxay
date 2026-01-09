@@ -174,14 +174,17 @@ export function BlogManagerPage() {
     }));
   }, [editingPost]);
 
-  const handleSavePost = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSavePost = useCallback(async (status?: 'DRAFT' | 'PUBLISHED') => {
     try {
+      const dataToSave = {
+        ...postForm,
+        status: status || postForm.status,
+      };
       if (editingPost) {
-        await blogPostsApi.update(editingPost.id, postForm);
+        await blogPostsApi.update(editingPost.id, dataToSave);
         toast.success('Đã cập nhật bài viết!');
       } else {
-        await blogPostsApi.create(postForm);
+        await blogPostsApi.create(dataToSave);
         toast.success('Đã tạo bài viết mới!');
       }
       await loadPosts();
