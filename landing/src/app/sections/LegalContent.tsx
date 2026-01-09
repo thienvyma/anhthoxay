@@ -66,46 +66,29 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-// Wrapper component with Hero-style box
+// Wrapper component with Blog-style dark box
 function LegalWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ 
-      maxWidth: 1200, 
-      margin: '60px auto 80px',
-      padding: '0 12px' 
-    }}>
+    <div
+      style={{
+        maxWidth: 1200,
+        margin: '60px auto 80px',
+        padding: '0 12px',
+      }}
+    >
       <div
         style={{
           position: 'relative',
           overflow: 'hidden',
-          borderRadius: 'clamp(12px, 2vw, 24px)',
-          background: 'linear-gradient(135deg, rgba(245,211,147,0.08), rgba(239,182,121,0.04))',
+          borderRadius: 16,
+          background: 'rgba(12,12,16,0.85)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
           padding: 'clamp(32px, 6vw, 64px) clamp(20px, 4vw, 48px)',
         }}
       >
-        {/* Animated Light Effect */}
-        <motion.div
-          animate={{
-            background: [
-              'radial-gradient(600px circle at 20% 30%, rgba(245,211,147,0.06), transparent 50%)',
-              'radial-gradient(600px circle at 80% 60%, rgba(245,211,147,0.08), transparent 50%)',
-              'radial-gradient(600px circle at 50% 80%, rgba(245,211,147,0.05), transparent 50%)',
-              'radial-gradient(600px circle at 20% 30%, rgba(245,211,147,0.06), transparent 50%)',
-            ],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 0,
-            pointerEvents: 'none',
-          }}
-        />
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 900, margin: '0 auto' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
           {children}
         </div>
       </div>
