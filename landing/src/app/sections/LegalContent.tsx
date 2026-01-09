@@ -66,6 +66,53 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
+// Wrapper component with Hero-style box
+function LegalWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ 
+      maxWidth: 1200, 
+      margin: '60px auto 80px',
+      padding: '0 12px' 
+    }}>
+      <div
+        style={{
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: 'clamp(12px, 2vw, 24px)',
+          background: 'linear-gradient(135deg, rgba(245,211,147,0.08), rgba(239,182,121,0.04))',
+          padding: 'clamp(32px, 6vw, 64px) clamp(20px, 4vw, 48px)',
+        }}
+      >
+        {/* Animated Light Effect */}
+        <motion.div
+          animate={{
+            background: [
+              'radial-gradient(600px circle at 20% 30%, rgba(245,211,147,0.06), transparent 50%)',
+              'radial-gradient(600px circle at 80% 60%, rgba(245,211,147,0.08), transparent 50%)',
+              'radial-gradient(600px circle at 50% 80%, rgba(245,211,147,0.05), transparent 50%)',
+              'radial-gradient(600px circle at 20% 30%, rgba(245,211,147,0.06), transparent 50%)',
+            ],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 0,
+            pointerEvents: 'none',
+          }}
+        />
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 900, margin: '0 auto' }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LegalContent({ data }: LegalContentProps) {
   const {
     documentType = 'both',
@@ -146,7 +193,7 @@ export function LegalContent({ data }: LegalContentProps) {
         </h3>
         <p style={{
           fontSize: 'clamp(14px, 2vw, 16px)',
-          color: tokens.color.textMuted,
+          color: 'rgba(255,255,255,0.7)',
           lineHeight: 1.8,
           margin: 0,
         }}>
@@ -179,7 +226,7 @@ export function LegalContent({ data }: LegalContentProps) {
               whileHover={{ x: 4 }}
               style={{
                 padding: 'clamp(16px, 3vw, 20px)',
-                background: tokens.color.surface,
+                background: 'rgba(255,255,255,0.03)',
                 borderRadius: tokens.radius.md,
                 borderLeft: `4px solid ${tokens.color.primary}`,
               }}
@@ -194,7 +241,7 @@ export function LegalContent({ data }: LegalContentProps) {
               </div>
               <div style={{
                 fontSize: 'clamp(13px, 2vw, 15px)',
-                color: tokens.color.textMuted,
+                color: 'rgba(255,255,255,0.7)',
                 lineHeight: 1.7,
               }}>
                 {item.description}
@@ -213,7 +260,7 @@ export function LegalContent({ data }: LegalContentProps) {
         variants={itemVariants}
         style={{
           padding: 'clamp(16px, 3vw, 24px)',
-          background: tokens.color.surface,
+          background: 'rgba(255,255,255,0.03)',
           borderRadius: tokens.radius.lg,
           marginBottom: 32,
         }}
@@ -239,7 +286,7 @@ export function LegalContent({ data }: LegalContentProps) {
               style={{
                 background: 'none',
                 border: 'none',
-                color: tokens.color.textMuted,
+                color: 'rgba(255,255,255,0.7)',
                 fontSize: 'clamp(13px, 2vw, 15px)',
                 textAlign: 'left',
                 cursor: 'pointer',
@@ -269,7 +316,7 @@ export function LegalContent({ data }: LegalContentProps) {
           gap: 16,
           marginBottom: 24,
           paddingBottom: 20,
-          borderBottom: `1px solid ${tokens.color.border}`,
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
         }}
       >
         <div style={{
@@ -287,14 +334,15 @@ export function LegalContent({ data }: LegalContentProps) {
           <h2 style={{
             fontSize: 'clamp(22px, 4vw, 28px)',
             fontWeight: 700,
-            color: tokens.color.text,
+            fontFamily: 'Playfair Display, serif',
+            color: tokens.color.primary,
             margin: 0,
           }}>
             Chính Sách Bảo Mật
           </h2>
           <p style={{
             fontSize: 'clamp(12px, 2vw, 14px)',
-            color: tokens.color.muted,
+            color: 'rgba(255,255,255,0.5)',
             margin: 0,
           }}>
             Cập nhật: {formatDate(effectiveDate)}
@@ -328,7 +376,7 @@ export function LegalContent({ data }: LegalContentProps) {
           gap: 16,
           marginBottom: 24,
           paddingBottom: 20,
-          borderBottom: `1px solid ${tokens.color.border}`,
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
         }}
       >
         <div style={{
@@ -346,14 +394,15 @@ export function LegalContent({ data }: LegalContentProps) {
           <h2 style={{
             fontSize: 'clamp(22px, 4vw, 28px)',
             fontWeight: 700,
-            color: tokens.color.text,
+            fontFamily: 'Playfair Display, serif',
+            color: tokens.color.primary,
             margin: 0,
           }}>
             Điều Khoản Sử Dụng
           </h2>
           <p style={{
             fontSize: 'clamp(12px, 2vw, 14px)',
-            color: tokens.color.muted,
+            color: 'rgba(255,255,255,0.5)',
             margin: 0,
           }}>
             Cập nhật: {formatDate(effectiveDate)}
@@ -381,7 +430,7 @@ export function LegalContent({ data }: LegalContentProps) {
       style={{
         marginTop: 40,
         padding: 'clamp(20px, 4vw, 32px)',
-        background: tokens.color.surface,
+        background: 'rgba(255,255,255,0.03)',
         borderRadius: tokens.radius.lg,
         borderTop: `4px solid ${tokens.color.primary}`,
       }}
@@ -400,7 +449,7 @@ export function LegalContent({ data }: LegalContentProps) {
       </h4>
       <div style={{
         fontSize: 'clamp(13px, 2vw, 15px)',
-        color: tokens.color.textMuted,
+        color: 'rgba(255,255,255,0.7)',
         lineHeight: 2,
       }}>
         <div style={{ fontWeight: 600, color: tokens.color.text, marginBottom: 8 }}>{companyName}</div>
@@ -433,255 +482,230 @@ export function LegalContent({ data }: LegalContentProps) {
   // Single document type
   if (documentType === 'privacy_policy') {
     return (
-      <section style={{
-        padding: 'clamp(40px, 8vw, 80px) clamp(16px, 4vw, 24px)',
-        background: tokens.color.background,
-      }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          {renderPrivacyPolicy()}
-          {renderContactInfo()}
-        </div>
-      </section>
+      <LegalWrapper>
+        {renderPrivacyPolicy()}
+        {renderContactInfo()}
+      </LegalWrapper>
     );
   }
 
   if (documentType === 'terms_of_use') {
     return (
-      <section style={{
-        padding: 'clamp(40px, 8vw, 80px) clamp(16px, 4vw, 24px)',
-        background: tokens.color.background,
-      }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          {renderTermsOfUse()}
-          {renderContactInfo()}
-        </div>
-      </section>
+      <LegalWrapper>
+        {renderTermsOfUse()}
+        {renderContactInfo()}
+      </LegalWrapper>
     );
   }
 
   // Both documents - tabs layout
   if (layout === 'tabs') {
     return (
-      <section style={{
-        padding: 'clamp(40px, 8vw, 80px) clamp(16px, 4vw, 24px)',
-        background: tokens.color.background,
-      }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          {/* Tabs */}
-          <div style={{
-            display: 'flex',
-            gap: 0,
-            marginBottom: 32,
-            borderRadius: tokens.radius.lg,
-            overflow: 'hidden',
-            border: `1px solid ${tokens.color.border}`,
-          }}>
-            <motion.button
-              whileHover={{ opacity: 0.9 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setActiveTab('privacy')}
-              style={{
-                flex: 1,
-                padding: 'clamp(12px, 2vw, 16px) clamp(16px, 3vw, 24px)',
-                background: activeTab === 'privacy' ? tokens.color.primary : tokens.color.surface,
-                color: activeTab === 'privacy' ? '#111' : tokens.color.text,
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: 'clamp(13px, 2vw, 15px)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                transition: 'all 0.2s',
-              }}
-            >
-              <i className="ri-shield-check-line" />
-              <span className="desktop-only">Chính sách bảo mật</span>
-              <span className="mobile-only">Bảo mật</span>
-            </motion.button>
-            <motion.button
-              whileHover={{ opacity: 0.9 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setActiveTab('terms')}
-              style={{
-                flex: 1,
-                padding: 'clamp(12px, 2vw, 16px) clamp(16px, 3vw, 24px)',
-                background: activeTab === 'terms' ? tokens.color.primary : tokens.color.surface,
-                color: activeTab === 'terms' ? '#111' : tokens.color.text,
-                border: 'none',
-                borderLeft: `1px solid ${tokens.color.border}`,
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: 'clamp(13px, 2vw, 15px)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                transition: 'all 0.2s',
-              }}
-            >
-              <i className="ri-file-list-2-line" />
-              <span className="desktop-only">Điều khoản sử dụng</span>
-              <span className="mobile-only">Điều khoản</span>
-            </motion.button>
-          </div>
-
-          {/* Content */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              {activeTab === 'privacy' ? renderPrivacyPolicy() : renderTermsOfUse()}
-            </motion.div>
-          </AnimatePresence>
-
-          {renderContactInfo()}
+      <LegalWrapper>
+        {/* Tabs */}
+        <div style={{
+          display: 'flex',
+          gap: 0,
+          marginBottom: 32,
+          borderRadius: tokens.radius.lg,
+          overflow: 'hidden',
+          border: '1px solid rgba(255,255,255,0.1)',
+        }}>
+          <motion.button
+            whileHover={{ opacity: 0.9 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setActiveTab('privacy')}
+            style={{
+              flex: 1,
+              padding: 'clamp(12px, 2vw, 16px) clamp(16px, 3vw, 24px)',
+              background: activeTab === 'privacy' ? tokens.color.primary : 'rgba(255,255,255,0.03)',
+              color: activeTab === 'privacy' ? '#111' : tokens.color.text,
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 600,
+              fontSize: 'clamp(13px, 2vw, 15px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              transition: 'all 0.2s',
+            }}
+          >
+            <i className="ri-shield-check-line" />
+            <span className="desktop-only">Chính sách bảo mật</span>
+            <span className="mobile-only">Bảo mật</span>
+          </motion.button>
+          <motion.button
+            whileHover={{ opacity: 0.9 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setActiveTab('terms')}
+            style={{
+              flex: 1,
+              padding: 'clamp(12px, 2vw, 16px) clamp(16px, 3vw, 24px)',
+              background: activeTab === 'terms' ? tokens.color.primary : 'rgba(255,255,255,0.03)',
+              color: activeTab === 'terms' ? '#111' : tokens.color.text,
+              border: 'none',
+              borderLeft: '1px solid rgba(255,255,255,0.1)',
+              cursor: 'pointer',
+              fontWeight: 600,
+              fontSize: 'clamp(13px, 2vw, 15px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              transition: 'all 0.2s',
+            }}
+          >
+            <i className="ri-file-list-2-line" />
+            <span className="desktop-only">Điều khoản sử dụng</span>
+            <span className="mobile-only">Điều khoản</span>
+          </motion.button>
         </div>
-      </section>
+
+        {/* Content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {activeTab === 'privacy' ? renderPrivacyPolicy() : renderTermsOfUse()}
+          </motion.div>
+        </AnimatePresence>
+
+        {renderContactInfo()}
+      </LegalWrapper>
     );
   }
 
   // Accordion layout
   if (layout === 'accordion') {
     return (
-      <section style={{
-        padding: 'clamp(40px, 8vw, 80px) clamp(16px, 4vw, 24px)',
-        background: tokens.color.background,
-      }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          {/* Privacy Policy Accordion */}
-          <motion.div
+      <LegalWrapper>
+        {/* Privacy Policy Accordion */}
+        <motion.div
+          style={{
+            marginBottom: 16,
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: tokens.radius.lg,
+            overflow: 'hidden',
+          }}
+        >
+          <motion.button
+            whileHover={{ background: 'rgba(255,255,255,0.05)' }}
+            onClick={() => toggleAccordion('privacy')}
             style={{
-              marginBottom: 16,
-              border: `1px solid ${tokens.color.border}`,
-              borderRadius: tokens.radius.lg,
-              overflow: 'hidden',
+              width: '100%',
+              padding: 'clamp(16px, 3vw, 20px)',
+              background: 'rgba(255,255,255,0.03)',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
             }}
           >
-            <motion.button
-              whileHover={{ background: tokens.color.surfaceHover }}
-              onClick={() => toggleAccordion('privacy')}
-              style={{
-                width: '100%',
-                padding: 'clamp(16px, 3vw, 20px)',
-                background: tokens.color.surface,
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <i className="ri-shield-check-line" style={{ fontSize: 24, color: tokens.color.success }} />
-                <span style={{ fontWeight: 600, color: tokens.color.text, fontSize: 'clamp(15px, 2vw, 18px)' }}>
-                  Chính Sách Bảo Mật
-                </span>
-              </div>
-              <motion.i
-                className="ri-arrow-down-s-line"
-                animate={{ rotate: expandedSections.includes('privacy') ? 180 : 0 }}
-                style={{ fontSize: 24, color: tokens.color.muted }}
-              />
-            </motion.button>
-            <AnimatePresence>
-              {expandedSections.includes('privacy') && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  style={{ overflow: 'hidden' }}
-                >
-                  <div style={{ padding: 'clamp(16px, 3vw, 24px)' }}>
-                    {renderPrivacyPolicy()}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <i className="ri-shield-check-line" style={{ fontSize: 24, color: tokens.color.success }} />
+              <span style={{ fontWeight: 600, color: tokens.color.text, fontSize: 'clamp(15px, 2vw, 18px)' }}>
+                Chính Sách Bảo Mật
+              </span>
+            </div>
+            <motion.i
+              className="ri-arrow-down-s-line"
+              animate={{ rotate: expandedSections.includes('privacy') ? 180 : 0 }}
+              style={{ fontSize: 24, color: tokens.color.muted }}
+            />
+          </motion.button>
+          <AnimatePresence>
+            {expandedSections.includes('privacy') && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                style={{ overflow: 'hidden' }}
+              >
+                <div style={{ padding: 'clamp(16px, 3vw, 24px)' }}>
+                  {renderPrivacyPolicy()}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
 
-          {/* Terms of Use Accordion */}
-          <motion.div
+        {/* Terms of Use Accordion */}
+        <motion.div
+          style={{
+            marginBottom: 16,
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: tokens.radius.lg,
+            overflow: 'hidden',
+          }}
+        >
+          <motion.button
+            whileHover={{ background: 'rgba(255,255,255,0.05)' }}
+            onClick={() => toggleAccordion('terms')}
             style={{
-              marginBottom: 16,
-              border: `1px solid ${tokens.color.border}`,
-              borderRadius: tokens.radius.lg,
-              overflow: 'hidden',
+              width: '100%',
+              padding: 'clamp(16px, 3vw, 20px)',
+              background: 'rgba(255,255,255,0.03)',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
             }}
           >
-            <motion.button
-              whileHover={{ background: tokens.color.surfaceHover }}
-              onClick={() => toggleAccordion('terms')}
-              style={{
-                width: '100%',
-                padding: 'clamp(16px, 3vw, 20px)',
-                background: tokens.color.surface,
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <i className="ri-file-list-2-line" style={{ fontSize: 24, color: tokens.color.warning }} />
-                <span style={{ fontWeight: 600, color: tokens.color.text, fontSize: 'clamp(15px, 2vw, 18px)' }}>
-                  Điều Khoản Sử Dụng
-                </span>
-              </div>
-              <motion.i
-                className="ri-arrow-down-s-line"
-                animate={{ rotate: expandedSections.includes('terms') ? 180 : 0 }}
-                style={{ fontSize: 24, color: tokens.color.muted }}
-              />
-            </motion.button>
-            <AnimatePresence>
-              {expandedSections.includes('terms') && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  style={{ overflow: 'hidden' }}
-                >
-                  <div style={{ padding: 'clamp(16px, 3vw, 24px)' }}>
-                    {renderTermsOfUse()}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <i className="ri-file-list-2-line" style={{ fontSize: 24, color: tokens.color.warning }} />
+              <span style={{ fontWeight: 600, color: tokens.color.text, fontSize: 'clamp(15px, 2vw, 18px)' }}>
+                Điều Khoản Sử Dụng
+              </span>
+            </div>
+            <motion.i
+              className="ri-arrow-down-s-line"
+              animate={{ rotate: expandedSections.includes('terms') ? 180 : 0 }}
+              style={{ fontSize: 24, color: tokens.color.muted }}
+            />
+          </motion.button>
+          <AnimatePresence>
+            {expandedSections.includes('terms') && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                style={{ overflow: 'hidden' }}
+              >
+                <div style={{ padding: 'clamp(16px, 3vw, 24px)' }}>
+                  {renderTermsOfUse()}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
 
-          {renderContactInfo()}
-        </div>
-      </section>
+        {renderContactInfo()}
+      </LegalWrapper>
     );
   }
 
   // Stacked layout (default)
   return (
-    <section style={{
-      padding: 'clamp(40px, 8vw, 80px) clamp(16px, 4vw, 24px)',
-      background: tokens.color.background,
-    }}>
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
-        {renderPrivacyPolicy()}
-        
-        <div style={{
-          height: 1,
-          background: tokens.color.border,
-          margin: '48px 0',
-        }} />
-        
-        {renderTermsOfUse()}
-        {renderContactInfo()}
-      </div>
-    </section>
+    <LegalWrapper>
+      {renderPrivacyPolicy()}
+      
+      <div style={{
+        height: 1,
+        background: 'rgba(255,255,255,0.1)',
+        margin: '48px 0',
+      }} />
+      
+      {renderTermsOfUse()}
+      {renderContactInfo()}
+    </LegalWrapper>
   );
 }
