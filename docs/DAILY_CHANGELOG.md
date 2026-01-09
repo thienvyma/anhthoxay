@@ -2,6 +2,33 @@
 
 ## 2026-01-10
 
+### Task: Further GCP Cost Optimization
+
+**🔧 APIs Disabled:**
+- `bigquery.googleapis.com` - Không dùng
+- `bigqueryconnection.googleapis.com` - Không dùng
+- `bigquerystorage.googleapis.com` - Không dùng
+- `cloudtrace.googleapis.com` - Không dùng
+- `servicenetworking.googleapis.com` - Không cần (Redis đã tắt)
+
+**� Clousd Run Resources Reduced:**
+| Service | Before | After |
+|---------|--------|-------|
+| ntn-api | 512Mi | 256Mi |
+| ntn-landing | 256Mi | 128Mi |
+| ntn-admin | 256Mi | 128Mi |
+| ntn-portal | 256Mi | 128Mi |
+
+**💰 Additional Savings:** ~$5-10/month
+
+**✏️ Modified:**
+- `infra/gcp/cloudbuild-api.yaml` - Memory 512Mi → 256Mi
+- `infra/gcp/cloudbuild-landing.yaml` - Memory 256Mi → 128Mi
+- `infra/gcp/cloudbuild-admin.yaml` - Memory 256Mi → 128Mi
+- `infra/gcp/cloudbuild-portal.yaml` - Memory 256Mi → 128Mi
+
+---
+
 ### Task: Disable Memorystore Redis to Reduce GCP Costs
 
 **🔧 GCP Changes:**
