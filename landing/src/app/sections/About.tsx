@@ -8,6 +8,7 @@ interface AboutData {
   title?: string;
   description?: string;
   imageUrl?: string;
+  layout?: 'left' | 'right';
   features?: Array<{
     _id?: string;
     icon: string;
@@ -25,12 +26,14 @@ export function About({ data }: { data: AboutData }) {
     title = 'Nội Thất Nhanh - Đối Tác Tin Cậy',
     description = '',
     imageUrl = '',
+    layout = 'right',
     features = [],
     ctaText = '',
     ctaLink = '',
   } = data;
 
   const resolvedImageUrl = imageUrl ? resolveMediaUrl(imageUrl) : '';
+  const isImageLeft = layout === 'left';
 
   const handleLinkClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>, link: string) => {
@@ -53,163 +56,137 @@ export function About({ data }: { data: AboutData }) {
         background: `linear-gradient(135deg, ${tokens.color.primary}10, ${tokens.color.accent}05)`,
       }}
     >
-      {/* Background Image (if provided) */}
-      {resolvedImageUrl && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage: `url(${resolvedImageUrl})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            opacity: 0.1,
-            zIndex: 0,
-          }}
-        />
-      )}
-
-      {/* Content */}
       <div
         style={{
-          position: 'relative',
-          zIndex: 1,
-          maxWidth: 800,
+          maxWidth: 1200,
           margin: '0 auto',
-          textAlign: 'center',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 60,
+          alignItems: 'center',
         }}
+        className="about-grid"
       >
-        {/* Badge */}
-        {badge && (
-          <motion.span
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            style={{
-              display: 'inline-block',
-              padding: '8px 18px',
-              background: `${tokens.color.primary}15`,
-              color: tokens.color.primary,
-              borderRadius: tokens.radius.pill,
-              fontSize: 13,
-              fontWeight: 600,
-              marginBottom: 20,
-              letterSpacing: '0.5px',
-            }}
-          >
-            {badge}
-          </motion.span>
-        )}
-
-        {/* Title */}
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+        {/* Content Column */}
+        <motion.div
+          initial={{ opacity: 0, x: isImageLeft ? 30 : -30 }}
+          whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
-          style={{
-            fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
-            fontFamily: tokens.font.display,
-            color: tokens.color.primary,
-            marginBottom: 16,
-            fontWeight: 700,
-          }}
+          transition={{ duration: 0.6 }}
+          style={{ order: isImageLeft ? 2 : 1 }}
         >
-          {title}
-        </motion.h2>
+          {/* Badge */}
+          {badge && (
+            <span
+              style={{
+                display: 'inline-block',
+                padding: '8px 18px',
+                background: `${tokens.color.primary}15`,
+                color: tokens.color.primary,
+                borderRadius: tokens.radius.pill,
+                fontSize: 13,
+                fontWeight: 600,
+                marginBottom: 20,
+                letterSpacing: '0.5px',
+              }}
+            >
+              {badge}
+            </span>
+          )}
 
-        {/* Description */}
-        {description && (
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
+          {/* Title */}
+          <h2
             style={{
-              fontSize: 18,
-              color: tokens.color.textMuted,
-              marginBottom: features.length > 0 ? 40 : 32,
-              lineHeight: 1.6,
+              fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+              fontFamily: tokens.font.display,
+              color: tokens.color.primary,
+              marginBottom: 16,
+              fontWeight: 700,
+              lineHeight: 1.2,
             }}
           >
-            {description}
-          </motion.p>
-        )}
+            {title}
+          </h2>
 
-        {/* Features */}
-        {features.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.15 }}
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: 24,
-              marginBottom: 40,
-              textAlign: 'left',
-            }}
-          >
-            {features.map((feature, index) => (
-              <div
-                key={feature._id || index}
-                style={{
-                  display: 'flex',
-                  gap: 12,
-                  alignItems: 'flex-start',
-                }}
-              >
+          {/* Description */}
+          {description && (
+            <p
+              style={{
+                fontSize: 16,
+                color: tokens.color.textMuted,
+                marginBottom: features.length > 0 ? 32 : 24,
+                lineHeight: 1.7,
+              }}
+            >
+              {description}
+            </p>
+          )}
+
+          {/* Features */}
+          {features.length > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
+                marginBottom: 32,
+              }}
+            >
+              {features.map((feature, index) => (
                 <div
+                  key={feature._id || index}
                   style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: tokens.radius.md,
-                    background: `${tokens.color.primary}15`,
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
+                    gap: 12,
+                    alignItems: 'flex-start',
                   }}
                 >
-                  <i
-                    className={feature.icon || 'ri-check-line'}
-                    style={{ fontSize: 18, color: tokens.color.primary }}
-                  />
-                </div>
-                <div>
-                  <h4
+                  <div
                     style={{
-                      fontSize: 15,
-                      fontWeight: 600,
-                      color: tokens.color.text,
-                      marginBottom: 4,
+                      width: 40,
+                      height: 40,
+                      borderRadius: tokens.radius.md,
+                      background: `${tokens.color.primary}15`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
                     }}
                   >
-                    {feature.title}
-                  </h4>
-                  <p
-                    style={{
-                      fontSize: 13,
-                      color: tokens.color.muted,
-                      lineHeight: 1.5,
-                      margin: 0,
-                    }}
-                  >
-                    {feature.description}
-                  </p>
+                    <i
+                      className={feature.icon || 'ri-check-line'}
+                      style={{ fontSize: 18, color: tokens.color.primary }}
+                    />
+                  </div>
+                  <div>
+                    <h4
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: tokens.color.text,
+                        marginBottom: 4,
+                      }}
+                    >
+                      {feature.title}
+                    </h4>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: tokens.color.muted,
+                        lineHeight: 1.5,
+                        margin: 0,
+                      }}
+                    >
+                      {feature.description}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </motion.div>
-        )}
+              ))}
+            </div>
+          )}
 
-        {/* CTA Button */}
-        {ctaText && ctaLink && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-          >
+          {/* CTA Button */}
+          {ctaText && ctaLink && (
             <motion.a
               href={ctaLink}
               onClick={(e) => handleLinkClick(e, ctaLink)}
@@ -219,24 +196,82 @@ export function About({ data }: { data: AboutData }) {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 8,
-                padding: '16px 32px',
+                padding: '14px 28px',
                 background: tokens.color.primary,
                 color: '#111',
                 borderRadius: 999,
                 fontWeight: 600,
-                fontSize: 16,
+                fontSize: 15,
                 textDecoration: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                boxShadow: `0 4px 16px ${tokens.color.primary}30`,
               }}
             >
               {ctaText}
               <i className="ri-arrow-right-line" />
             </motion.a>
-          </motion.div>
-        )}
+          )}
+        </motion.div>
+
+        {/* Image Column */}
+        <motion.div
+          initial={{ opacity: 0, x: isImageLeft ? -30 : 30 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          style={{ order: isImageLeft ? 1 : 2 }}
+        >
+          {resolvedImageUrl ? (
+            <div
+              style={{
+                position: 'relative',
+                borderRadius: tokens.radius.lg,
+                overflow: 'hidden',
+                aspectRatio: '4/3',
+              }}
+            >
+              <img
+                src={resolvedImageUrl}
+                alt={title}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+              />
+            </div>
+          ) : (
+            <div
+              style={{
+                aspectRatio: '4/3',
+                borderRadius: tokens.radius.lg,
+                background: `${tokens.color.primary}10`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <i
+                className="ri-image-line"
+                style={{ fontSize: 64, color: tokens.color.primary, opacity: 0.3 }}
+              />
+            </div>
+          )}
+        </motion.div>
       </div>
+
+      {/* Responsive CSS */}
+      <style>{`
+        @media (max-width: 768px) {
+          .about-grid {
+            grid-template-columns: 1fr !important;
+            gap: 40px !important;
+          }
+          .about-grid > div {
+            order: unset !important;
+          }
+        }
+      `}</style>
     </section>
   );
 }

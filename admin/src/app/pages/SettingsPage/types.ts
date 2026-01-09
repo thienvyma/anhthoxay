@@ -98,7 +98,7 @@ export interface FooterConfig {
   copyright?: { text?: string };
 }
 
-export type SettingsTab = 'account' | 'layout' | 'company' | 'promo' | 'email' | 'integrations';
+export type SettingsTab = 'account' | 'layout' | 'company' | 'promo' | 'email' | 'integrations' | 'api-keys';
 
 // Email Settings - Tùy chỉnh nội dung email báo giá
 export interface EmailSettings {

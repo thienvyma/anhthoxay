@@ -24,15 +24,7 @@ export const menuItems: MenuItem[] = [
   { type: 'item', route: 'users', icon: 'ri-user-settings-line', label: 'Quản lý tài khoản' },
   { type: 'item', route: 'rate-limits', icon: 'ri-shield-line', label: 'Rate Limit Monitor' },
   { type: 'item', route: 'guide', icon: 'ri-book-open-line', label: 'Hướng dẫn' },
-  {
-    type: 'dropdown',
-    icon: 'ri-settings-3-line',
-    label: 'Settings',
-    children: [
-      { route: 'settings', icon: 'ri-settings-line', label: 'Cài đặt chung' },
-      { route: 'settings/api-keys', icon: 'ri-key-2-line', label: 'API Keys' },
-    ],
-  },
+  { type: 'item', route: 'settings', icon: 'ri-settings-3-line', label: 'Cài đặt' },
 ];
 
 // Coming Soon items - tách riêng để hiển thị ở cuối

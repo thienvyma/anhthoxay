@@ -432,4 +432,364 @@ export class FurnitureImportExportService {
       apartmentTypes: apartmentTypesCSV,
     };
   }
+
+  // ============================================
+  // CATALOG EXPORT (Categories, Materials, Products, Variants, Fees)
+  // ============================================
+
+  /**
+   * Export furniture catalog to CSV
+   * Returns 5 CSV files: Categories, Materials, ProductBases, Variants, Fees
+   */
+  async exportCatalogToCSV(): Promise<{
+    categories: string;
+    materials: string;
+    productBases: string;
+    variants: string;
+    fees: string;
+  }> {
+    // Categories
+    const categories = await this.prisma.furnitureCategory.findMany({
+      orderBy: { order: 'asc' },
+    });
+    const categoriesCSV = this.generateCSV(
+      categories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        description: c.description || '',
+        icon: c.icon || '',
+        order: c.order,
+        isActive: c.isActive ? 'true' : 'false',
+      })),
+      ['id', 'name', 'description', 'icon', 'order', 'isActive']
+    );
+
+    // Materials
+    const materials = await this.prisma.furnitureMaterial.findMany({
+      orderBy: { order: 'asc' },
+    });
+    const materialsCSV = this.generateCSV(
+      materials.map((m) => ({
+        id: m.id,
+        name: m.name,
+        description: m.description || '',
+        order: m.order,
+        isActive: m.isActive ? 'true' : 'false',
+      })),
+      ['id', 'name', 'description', 'order', 'isActive']
+    );
+
+    // Product Bases
+    const productBases = await this.prisma.furnitureProductBase.findMany({
+      include: { category: true },
+      orderBy: { order: 'asc' },
+    });
+    const productBasesCSV = this.generateCSV(
+      productBases.map((p) => ({
+        id: p.id,
+        name: p.name,
+        categoryId: p.categoryId,
+        categoryName: p.category.name,
+        description: p.description || '',
+        imageUrl: p.imageUrl || '',
+        allowFitIn: p.allowFitIn ? 'true' : 'false',
+        order: p.order,
+        isActive: p.isActive ? 'true' : 'false',
+      })),
+      ['id', 'name', 'categoryId', 'categoryName', 'description', 'imageUrl', 'allowFitIn', 'order', 'isActive']
+    );
+
+    // Variants
+    const variants = await this.prisma.furnitureProductVariant.findMany({
+      include: { productBase: true, material: true },
+      orderBy: [{ productBaseId: 'asc' }, { order: 'asc' }],
+    });
+    const variantsCSV = this.generateCSV(
+      variants.map((v) => ({
+        id: v.id,
+        productBaseId: v.productBaseId,
+        productBaseName: v.productBase.name,
+        materialId: v.materialId,
+        materialName: v.material.name,
+        pricePerUnit: v.pricePerUnit,
+        pricingType: v.pricingType,
+        length: v.length,
+        width: v.width || '',
+        calculatedPrice: v.calculatedPrice,
+        imageUrl: v.imageUrl || '',
+        order: v.order,
+        isActive: v.isActive ? 'true' : 'false',
+      })),
+      ['id', 'productBaseId', 'productBaseName', 'materialId', 'materialName', 'pricePerUnit', 'pricingType', 'length', 'width', 'calculatedPrice', 'imageUrl', 'order', 'isActive']
+    );
+
+    // Fees
+    const fees = await this.prisma.furnitureFee.findMany({
+      orderBy: { order: 'asc' },
+    });
+    const feesCSV = this.generateCSV(
+      fees.map((f) => ({
+        id: f.id,
+        name: f.name,
+        code: f.code,
+        type: f.type,
+        value: f.value,
+        applicability: f.applicability,
+        description: f.description || '',
+        order: f.order,
+        isActive: f.isActive ? 'true' : 'false',
+      })),
+      ['id', 'name', 'code', 'type', 'value', 'applicability', 'description', 'order', 'isActive']
+    );
+
+    return {
+      categories: categoriesCSV,
+      materials: materialsCSV,
+      productBases: productBasesCSV,
+      variants: variantsCSV,
+      fees: feesCSV,
+    };
+  }
+
+  // ============================================
+  // CATALOG IMPORT (Categories, Materials, Products, Variants, Fees)
+  // ============================================
+
+  /**
+   * Import furniture catalog from CSV
+   * Supports upsert (update if exists, create if not)
+   */
+  async importCatalogFromCSV(files: {
+    categories?: string;
+    materials?: string;
+    productBases?: string;
+    variants?: string;
+    fees?: string;
+  }): Promise<{
+    categories: { created: number; updated: number };
+    materials: { created: number; updated: number };
+    productBases: { created: number; updated: number };
+    variants: { created: number; updated: number };
+    fees: { created: number; updated: number };
+  }> {
+    const result = {
+      categories: { created: 0, updated: 0 },
+      materials: { created: 0, updated: 0 },
+      productBases: { created: 0, updated: 0 },
+      variants: { created: 0, updated: 0 },
+      fees: { created: 0, updated: 0 },
+    };
+
+    await this.prisma.$transaction(async (tx) => {
+      // Import Categories
+      if (files.categories) {
+        const rows = this.parseCSV<{
+          id: string;
+          name: string;
+          description: string;
+          icon: string;
+          order: string;
+          isActive: string;
+        }>(files.categories);
+
+        for (const row of rows) {
+          if (!row.name) continue;
+          const existing = await tx.furnitureCategory.findUnique({ where: { name: row.name } });
+          const data = {
+            name: row.name,
+            description: row.description || null,
+            icon: row.icon || null,
+            order: parseInt(row.order, 10) || 0,
+            isActive: row.isActive !== 'false',
+          };
+          if (existing) {
+            await tx.furnitureCategory.update({ where: { id: existing.id }, data });
+            result.categories.updated++;
+          } else {
+            await tx.furnitureCategory.create({ data });
+            result.categories.created++;
+          }
+        }
+      }
+
+      // Import Materials
+      if (files.materials) {
+        const rows = this.parseCSV<{
+          id: string;
+          name: string;
+          description: string;
+          order: string;
+          isActive: string;
+        }>(files.materials);
+
+        for (const row of rows) {
+          if (!row.name) continue;
+          const existing = await tx.furnitureMaterial.findUnique({ where: { name: row.name } });
+          const data = {
+            name: row.name,
+            description: row.description || null,
+            order: parseInt(row.order, 10) || 0,
+            isActive: row.isActive !== 'false',
+          };
+          if (existing) {
+            await tx.furnitureMaterial.update({ where: { id: existing.id }, data });
+            result.materials.updated++;
+          } else {
+            await tx.furnitureMaterial.create({ data });
+            result.materials.created++;
+          }
+        }
+      }
+
+      // Import Product Bases (requires categoryId)
+      if (files.productBases) {
+        const rows = this.parseCSV<{
+          id: string;
+          name: string;
+          categoryId: string;
+          categoryName: string;
+          description: string;
+          imageUrl: string;
+          allowFitIn: string;
+          order: string;
+          isActive: string;
+        }>(files.productBases);
+
+        for (const row of rows) {
+          if (!row.name) continue;
+          
+          // Find category by name or id
+          let categoryId = row.categoryId;
+          if (!categoryId && row.categoryName) {
+            const category = await tx.furnitureCategory.findUnique({ where: { name: row.categoryName } });
+            if (category) categoryId = category.id;
+          }
+          if (!categoryId) continue;
+
+          const existing = row.id ? await tx.furnitureProductBase.findUnique({ where: { id: row.id } }) : null;
+          const data = {
+            name: row.name,
+            categoryId,
+            description: row.description || null,
+            imageUrl: row.imageUrl || null,
+            allowFitIn: row.allowFitIn === 'true',
+            order: parseInt(row.order, 10) || 0,
+            isActive: row.isActive !== 'false',
+          };
+          if (existing) {
+            await tx.furnitureProductBase.update({ where: { id: existing.id }, data });
+            result.productBases.updated++;
+          } else {
+            await tx.furnitureProductBase.create({ data });
+            result.productBases.created++;
+          }
+        }
+      }
+
+      // Import Variants (requires productBaseId and materialId)
+      if (files.variants) {
+        const rows = this.parseCSV<{
+          id: string;
+          productBaseId: string;
+          productBaseName: string;
+          materialId: string;
+          materialName: string;
+          pricePerUnit: string;
+          pricingType: string;
+          length: string;
+          width: string;
+          calculatedPrice: string;
+          imageUrl: string;
+          order: string;
+          isActive: string;
+        }>(files.variants);
+
+        for (const row of rows) {
+          // Find productBase by id or name
+          let productBaseId = row.productBaseId;
+          if (!productBaseId && row.productBaseName) {
+            const pb = await tx.furnitureProductBase.findFirst({ where: { name: row.productBaseName } });
+            if (pb) productBaseId = pb.id;
+          }
+          if (!productBaseId) continue;
+
+          // Find material by id or name
+          let materialId = row.materialId;
+          if (!materialId && row.materialName) {
+            const mat = await tx.furnitureMaterial.findUnique({ where: { name: row.materialName } });
+            if (mat) materialId = mat.id;
+          }
+          if (!materialId) continue;
+
+          const pricePerUnit = parseFloat(row.pricePerUnit) || 0;
+          const length = parseFloat(row.length) || 0;
+          const width = row.width ? parseFloat(row.width) : null;
+          const pricingType = row.pricingType === 'M2' ? 'M2' : 'LINEAR';
+          const calculatedPrice = row.calculatedPrice 
+            ? parseFloat(row.calculatedPrice) 
+            : (pricingType === 'M2' && width ? pricePerUnit * length * width : pricePerUnit * length);
+
+          const existing = row.id ? await tx.furnitureProductVariant.findUnique({ where: { id: row.id } }) : null;
+          const data = {
+            productBaseId,
+            materialId,
+            pricePerUnit,
+            pricingType,
+            length,
+            width,
+            calculatedPrice,
+            imageUrl: row.imageUrl || null,
+            order: parseInt(row.order, 10) || 0,
+            isActive: row.isActive !== 'false',
+          };
+          if (existing) {
+            await tx.furnitureProductVariant.update({ where: { id: existing.id }, data });
+            result.variants.updated++;
+          } else {
+            await tx.furnitureProductVariant.create({ data });
+            result.variants.created++;
+          }
+        }
+      }
+
+      // Import Fees
+      if (files.fees) {
+        const rows = this.parseCSV<{
+          id: string;
+          name: string;
+          code: string;
+          type: string;
+          value: string;
+          applicability: string;
+          description: string;
+          order: string;
+          isActive: string;
+        }>(files.fees);
+
+        for (const row of rows) {
+          if (!row.name || !row.code) continue;
+          const existing = await tx.furnitureFee.findUnique({ where: { code: row.code } });
+          const data = {
+            name: row.name,
+            code: row.code,
+            type: row.type === 'PERCENTAGE' ? 'PERCENTAGE' : 'FIXED',
+            value: parseFloat(row.value) || 0,
+            applicability: row.applicability === 'CUSTOM' ? 'CUSTOM' : 'BOTH',
+            description: row.description || null,
+            order: parseInt(row.order, 10) || 0,
+            isActive: row.isActive !== 'false',
+          };
+          if (existing) {
+            await tx.furnitureFee.update({ where: { id: existing.id }, data });
+            result.fees.updated++;
+          } else {
+            await tx.furnitureFee.create({ data });
+            result.fees.created++;
+          }
+        }
+      }
+    });
+
+    return result;
+  }
 }

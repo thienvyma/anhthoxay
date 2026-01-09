@@ -26,7 +26,6 @@ import { ChatPage } from './pages/ChatPage';
 import { BiddingManagementPage } from './pages/BiddingManagementPage';
 import { BiddingSettingsPage } from './pages/BiddingSettingsPage';
 import { FurniturePage } from './pages/FurniturePage';
-import { ApiKeysPage } from './pages/ApiKeysPage';
 import { GuidePage } from './pages/GuidePage';
 import { RateLimitPage } from './pages/RateLimitPage';
 import { useUser, store, tokenStorage } from './store';
@@ -168,8 +167,8 @@ function AppContent() {
           <Route path="/bidding" element={<BiddingManagementPage />} />
           <Route path="/bidding-settings" element={<BiddingSettingsPage />} />
           <Route path="/furniture" element={<FurniturePage />} />
-          <Route path="/api-keys" element={<ApiKeysPage />} />
-          <Route path="/settings/api-keys" element={<ApiKeysPage />} />
+          <Route path="/api-keys" element={<Navigate to="/settings?tab=api-keys" replace />} />
+          <Route path="/settings/api-keys" element={<Navigate to="/settings?tab=api-keys" replace />} />
           <Route path="/guide" element={<GuidePage />} />
           <Route path="/rate-limits" element={<RateLimitPage />} />
           <Route path="/pricing-config" element={<PricingConfigPage />} />

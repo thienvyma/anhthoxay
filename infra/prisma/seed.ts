@@ -1763,15 +1763,12 @@ Liên hệ với chúng tôi để được tư vấn miễn phí:
   const developers = [
     {
       name: 'Vingroup',
-      imageUrl: '/uploads/developers/vingroup.jpg',
     },
     {
       name: 'Novaland',
-      imageUrl: '/uploads/developers/novaland.jpg',
     },
     {
       name: 'Masterise Homes',
-      imageUrl: '/uploads/developers/masterise.jpg',
     },
   ];
 

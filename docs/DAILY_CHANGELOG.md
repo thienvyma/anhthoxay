@@ -2,6 +2,88 @@
 
 ## 2026-01-10
 
+### Task: Merge API Keys into Settings Page
+
+**🆕 Created:**
+- `admin/src/app/pages/SettingsPage/ApiKeysTab.tsx` - API Keys management as subtab in Settings
+
+**✏️ Modified:**
+- `admin/src/app/pages/SettingsPage/index.tsx` - Added API Keys tab, sync tab state with URL query param
+- `admin/src/app/pages/SettingsPage/types.ts` - Added 'api-keys' to SettingsTab type
+- `admin/src/app/app.tsx` - Added redirects from `/api-keys` and `/settings/api-keys` to `/settings?tab=api-keys`
+- `admin/src/app/components/Layout/constants.ts` - Changed Settings from dropdown to single menu item
+
+---
+
+### Task: Fix About Section UI - Restore 2-Column Layout
+
+**✏️ Modified:**
+- `landing/src/app/sections/About.tsx` - Restored 2-column layout (content + image), added layout prop support ('left' | 'right'), gradient background matching CallToAction style
+
+---
+
+### Task: Add Catalog Sync Feature for Furniture (Categories, Materials, Products, Variants, Fees)
+
+**✏️ Modified:**
+- `api/src/services/furniture/furniture-import-export.service.ts`:
+  - Thêm `exportCatalogToCSV()` - Export 5 sheets: Categories, Materials, ProductBases, Variants, Fees
+  - Thêm `importCatalogFromCSV()` - Import với upsert logic (update if exists, create if not)
+  - Fix: Bỏ `imageUrl` field cho Materials (không có trong schema)
+
+- `api/src/services/furniture/index.ts`:
+  - Thêm facade methods `exportCatalogToCSV()` và `importCatalogFromCSV()` vào FurnitureService
+
+- `api/src/services/google-sheets.service.ts`:
+  - Thêm `syncCatalogPull()` - Pull catalog từ Google Sheets vào DB
+  - Thêm `syncCatalogPush()` - Push catalog từ DB lên Google Sheets với merge logic
+  - Fix: Empty arrow function lint errors
+
+- `api/src/routes/furniture/admin.routes.ts`:
+  - Thêm `/sync/catalog/pull` endpoint
+  - Thêm `/sync/catalog/push` endpoint (hỗ trợ dryRun, backup)
+
+**📋 Catalog Sheet Structure:**
+- Categories: id, name, description, icon, order, isActive (key: name)
+- Materials: id, name, description, order, isActive (key: name)
+- ProductBases: id, name, categoryId, categoryName, description, imageUrl, allowFitIn, order, isActive (key: id)
+- Variants: id, productBaseId, productBaseName, materialId, materialName, pricePerUnit, pricingType, length, width, calculatedPrice, imageUrl, order, isActive (key: id)
+- Fees: id, name, code, type, value, applicability, description, order, isActive (key: code)
+
+---
+
+### Task: Fix Google Sheets Sync - Merge Instead of Overwrite + Safety Features
+
+**✏️ Modified:**
+- `api/src/services/google-sheets.service.ts`:
+  - Thêm `copySheet()` để tạo backup sheet trước khi merge
+  - Thêm `mergeSheetWithOptions()` với dry-run mode và detailed logging
+  - Sửa `syncFurniturePush()` để merge data thay vì xóa và ghi đè
+  - Hỗ trợ options: `dryRun` (preview), `backup` (tạo backup)
+  - Return chi tiết: `added`, `updated`, `unchanged`, `details` (keys)
+  - DuAn: merge by `MaToaNha` (column 4)
+  - Layout: merge by `LayoutAxis` (column 0)
+  - ApartmentType: merge by composite key `MaToaNha + ApartmentType`
+
+- `api/src/schemas/furniture.schema.ts`:
+  - Thêm `syncPushSchema` với `dryRun` và `backup` options
+
+- `api/src/routes/furniture/admin.routes.ts`:
+  - Cập nhật `/sync/push` endpoint để hỗ trợ dry-run và backup
+
+**🔧 Vấn đề đã fix:**
+- Push sync xóa toàn bộ data trong sheet trước khi ghi
+- Giờ sẽ merge: update rows có key trùng, append rows mới
+- Có thể preview changes trước khi apply (dryRun=true)
+- Có thể tạo backup sheets trước khi merge (backup=true)
+
+**🛡️ Safety Features:**
+- Dry-run mode: Preview changes without applying
+- Backup sheets: Auto-create `{SheetName}_backup_{date}` before merge
+- Detailed logging: Log keys to add/update/existing-only
+- Return `existingOnly`: Keys in sheet but not in DB (không bị xóa)
+
+---
+
 ### Task: Fix GCP Deployment - Repository Name & Project Switch
 
 **✏️ Modified:**

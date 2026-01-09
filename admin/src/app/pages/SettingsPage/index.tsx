@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { tokens } from '../../../theme';
 import { useToast } from '../../components/Toast';
@@ -16,6 +17,7 @@ import { PromoTab } from './PromoTab';
 import { AccountTab } from './AccountTab';
 import { GoogleSheetsTab } from './GoogleSheetsTab';
 import { EmailSettingsTab } from './EmailSettingsTab';
+import { ApiKeysTab } from './ApiKeysTab';
 import {
   type SettingsTab,
   type CompanySettings,
@@ -30,9 +32,24 @@ import {
 
 export function SettingsPage() {
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState<SettingsTab>('account');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab') as SettingsTab | null;
+  const [activeTab, setActiveTab] = useState<SettingsTab>(tabFromUrl || 'account');
   const [isReady, setIsReady] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Sync tab with URL
+  useEffect(() => {
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl, activeTab]);
+
+  const handleTabChange = useCallback((tabId: string) => {
+    const newTab = tabId as SettingsTab;
+    setActiveTab(newTab);
+    setSearchParams({ tab: newTab });
+  }, [setSearchParams]);
 
   // State
   const [companySettings, setCompanySettings] = useState<CompanySettings>(defaultCompanySettings);
@@ -166,6 +183,12 @@ export function SettingsPage() {
         icon: 'ri-plug-line',
         content: <GoogleSheetsTab />,
       },
+      {
+        id: 'api-keys',
+        label: 'API Keys',
+        icon: 'ri-key-2-line',
+        content: <ApiKeysTab />,
+      },
     ],
     [companySettings, promoSettings, headerConfig, footerConfig, showSavedMessage, handleError]
   );
@@ -258,7 +281,7 @@ export function SettingsPage() {
       <ResponsiveTabs
         tabs={tabs}
         activeTab={activeTab}
-        onTabChange={(tabId) => setActiveTab(tabId as SettingsTab)}
+        onTabChange={handleTabChange}
         mobileMode="dropdown"
         iconOnlyMobile={false}
         testId="settings-page-tabs"

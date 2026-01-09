@@ -411,4 +411,21 @@ export class FurnitureService {
   exportToCSV() {
     return this.importExportService.exportToCSV();
   }
+
+  // ============================================
+  // CATALOG CSV IMPORT/EXPORT
+  // ============================================
+  exportCatalogToCSV() {
+    return this.importExportService.exportCatalogToCSV();
+  }
+
+  importCatalogFromCSV(files: {
+    categories?: string;
+    materials?: string;
+    productBases?: string;
+    variants?: string;
+    fees?: string;
+  }) {
+    return this.importExportService.importCatalogFromCSV(files);
+  }
 }

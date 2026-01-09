@@ -433,6 +433,17 @@ export const syncSchema = z.object({
   spreadsheetId: z.string().min(1, 'Spreadsheet ID không được trống'),
 });
 
+/**
+ * Schema for Google Sheets sync push with options
+ * - dryRun: Preview changes without applying
+ * - backup: Create backup sheets before merge
+ */
+export const syncPushSchema = z.object({
+  spreadsheetId: z.string().min(1, 'Spreadsheet ID không được trống'),
+  dryRun: z.boolean().optional().default(false),
+  backup: z.boolean().optional().default(false),
+});
+
 // ============================================
 // PRODUCT BASE SCHEMAS (NEW - furniture-product-restructure)
 // _Requirements: 3.2, 3.3, 9.2, 9.3, 9.4_
@@ -563,6 +574,7 @@ export type QueryProductsInput = z.infer<typeof queryProductsSchema>;
 export type QueryFeesInput = z.infer<typeof queryFeesSchema>;
 export type QueryQuotationsInput = z.infer<typeof queryQuotationsSchema>;
 export type SyncInput = z.infer<typeof syncSchema>;
+export type SyncPushInput = z.infer<typeof syncPushSchema>;
 export type CreateVariantSchemaInput = z.infer<typeof createVariantSchema>;
 export type UpdateVariantSchemaInput = z.infer<typeof updateVariantSchema>;
 export type CreateProductBaseSchemaInput = z.infer<typeof createProductBaseSchema>;
