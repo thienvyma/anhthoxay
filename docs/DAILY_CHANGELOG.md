@@ -1,5 +1,48 @@
 # Daily Changelog
 
+## 2026-01-10
+
+### Task: Fix Rate Limit Login Issue & Add Recovery Documentation
+
+**🆕 Created:**
+- `docs/RATE-LIMIT-RECOVERY.md` - Hướng dẫn khôi phục khi bị rate limit/IP block
+- `scripts/clear-rate-limits.js` - Script clear rate limits từ Redis
+
+**✏️ Modified:**
+- `api/src/routes/auth.routes.ts` - Thêm endpoint `/api/auth/clear-rate-limits` (Admin only)
+- `infra/gcp/cloudbuild-api.yaml` - Sửa repository name từ `ntn-repo` thành `mrsaigon-repo`
+
+**🔧 Vấn đề đã fix:**
+- Không thể đăng nhập Admin do bị rate limit
+- Cloud Build fail do repository name sai
+
+---
+
+### Task: Tối ưu UI About Section
+
+**✏️ Modified:**
+- `landing/src/app/sections/About.tsx` - Redesign UI đẹp hơn:
+  - Thêm `resolveMediaUrl` để fix lỗi ảnh không hiển thị
+  - Thêm decorative frame cho ảnh
+  - Thêm subtle background gradient
+  - Thêm layout option (ảnh trái/phải)
+  - Cải thiện typography và spacing
+  - Thêm box-shadow và overlay gradient cho ảnh
+  - Thêm error handling khi ảnh load fail
+
+- `admin/src/app/components/SectionEditor/forms/AboutForm.tsx` - Thêm các field mới:
+  - Layout selector (ảnh trái/phải)
+  - Features array với icon, title, description
+  - CTA button (text + link)
+  - UI form được tổ chức theo nhóm rõ ràng
+
+- `admin/src/app/components/SectionEditor/defaults.ts` - Cập nhật default data cho ABOUT:
+  - Thêm features mẫu
+  - Thêm ctaText, ctaLink
+  - Thêm layout default
+
+---
+
 ## 2026-01-09
 
 ### Task: Fix Missing Section Components (About, FAQ) và Sync Section Types

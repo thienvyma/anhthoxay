@@ -182,8 +182,16 @@ export function getDefaultData(sectionKind: SectionKind): Record<string, unknown
       return {
         badge: 'Về Chúng Tôi',
         title: 'Nội Thất Nhanh - Đối Tác Tin Cậy',
-        description: 'Với hơn 10 năm kinh nghiệm trong lĩnh vực thiết kế nội thất, chúng tôi tự hào mang đến dịch vụ chất lượng cao với giá cả hợp lý.',
+        description: 'Với hơn 10 năm kinh nghiệm trong lĩnh vực thiết kế nội thất, chúng tôi tự hào mang đến dịch vụ chất lượng cao với giá cả hợp lý. Đội ngũ chuyên gia của chúng tôi luôn sẵn sàng tư vấn và hỗ trợ bạn trong mọi dự án.',
         imageUrl: '',
+        layout: 'right',
+        features: [
+          { _id: generateUniqueId(), icon: 'ri-shield-check-line', title: 'Uy Tín & Chất Lượng', description: 'Cam kết thi công đúng tiêu chuẩn, bảo hành dài hạn' },
+          { _id: generateUniqueId(), icon: 'ri-time-line', title: 'Đúng Tiến Độ', description: 'Hoàn thành công trình đúng hẹn, không phát sinh chi phí' },
+          { _id: generateUniqueId(), icon: 'ri-customer-service-2-line', title: 'Hỗ Trợ 24/7', description: 'Đội ngũ tư vấn luôn sẵn sàng hỗ trợ bạn' },
+        ],
+        ctaText: 'Tìm hiểu thêm',
+        ctaLink: '/gioi-thieu',
       };
     case 'FAQ':
       return {

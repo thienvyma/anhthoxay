@@ -341,14 +341,36 @@ export function createAuthRoutes(prisma: PrismaClient) {
   });
 
   // ============================================
-  // DEV ONLY: Clear rate limits (Development only)
+  // Clear rate limits (Admin only - requires authentication)
   // ============================================
-  if (process.env.NODE_ENV !== 'production') {
-    app.post('/clear-rate-limits', async (c) => {
+  app.post('/clear-rate-limits', authenticate(), requireRole('ADMIN'), async (c) => {
+    try {
+      // Clear in-memory rate limits
       clearAllLimits();
-      return successResponse(c, { message: 'All rate limits cleared' });
-    });
-  }
+      
+      // Clear Redis rate limits if available
+      try {
+        const { clearAllRateLimits } = await import('../middleware/redis-rate-limiter');
+        await clearAllRateLimits('ratelimit');
+        await clearAllRateLimits('ratelimit:login');
+      } catch {
+        // Redis not available, in-memory already cleared
+      }
+      
+      // Clear IP blocking violations
+      try {
+        const { getIPBlockingService } = await import('../services/ip-blocking.service');
+        const ipBlockingService = getIPBlockingService();
+        await ipBlockingService.clearAll();
+      } catch {
+        // IP blocking service not available
+      }
+      
+      return successResponse(c, { message: 'All rate limits and IP blocks cleared' });
+    } catch (error) {
+      return errorResponse(c, 'INTERNAL_ERROR', 'Failed to clear rate limits', 500);
+    }
+  });
 
   // ============================================
   // POST /auth/setup - One-time admin setup (requires SETUP_SECRET)

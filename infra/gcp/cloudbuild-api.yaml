@@ -9,9 +9,9 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/ntn-repo/api:$COMMIT_SHA'
+      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/mrsaigon-repo/api:$COMMIT_SHA'
       - '-t'
-      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/ntn-repo/api:latest'
+      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/mrsaigon-repo/api:latest'
       - '-f'
       - 'infra/docker/api.Dockerfile'
       - '.'
@@ -20,12 +20,12 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/ntn-repo/api:$COMMIT_SHA'
+      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/mrsaigon-repo/api:$COMMIT_SHA'
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/ntn-repo/api:latest'
+      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/mrsaigon-repo/api:latest'
 
   # Step 3: Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -35,7 +35,7 @@ steps:
       - 'deploy'
       - 'ntn-api'
       - '--image'
-      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/ntn-repo/api:$COMMIT_SHA'
+      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/mrsaigon-repo/api:$COMMIT_SHA'
       - '--region'
       - 'asia-southeast1'
       - '--platform'
@@ -44,7 +44,7 @@ steps:
       - '--set-env-vars'
       - '^@^NODE_ENV=production@API_URL=https://api.noithatnhanh.vn@CORS_ORIGINS=https://noithatnhanh.vn,https://admin.noithatnhanh.vn,https://portal.noithatnhanh.vn@ADMIN_URL=https://admin.noithatnhanh.vn@GOOGLE_REDIRECT_URI=https://api.noithatnhanh.vn/integrations/google/callback@GCS_BUCKET=ntn-media-bucket@GCS_PUBLIC_URL=https://storage.googleapis.com/ntn-media-bucket'
       - '--set-secrets'
-      - 'DATABASE_URL=DATABASE_URL:latest,JWT_SECRET=JWT_SECRET:latest,ENCRYPTION_KEY=ENCRYPTION_KEY:latest,REDIS_URL=REDIS_URL:latest,GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest,GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest'
+      - 'DATABASE_URL=DATABASE_URL:latest,JWT_SECRET=JWT_SECRET:latest,ENCRYPTION_KEY=ENCRYPTION_KEY:latest,REDIS_URL=REDIS_URL:latest,SETUP_SECRET=SETUP_SECRET:latest'
       - '--min-instances'
       - '0'
       - '--max-instances'
@@ -59,8 +59,8 @@ steps:
       - '80'
 
 images:
-  - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/ntn-repo/api:$COMMIT_SHA'
-  - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/ntn-repo/api:latest'
+  - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/mrsaigon-repo/api:$COMMIT_SHA'
+  - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/mrsaigon-repo/api:latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY
