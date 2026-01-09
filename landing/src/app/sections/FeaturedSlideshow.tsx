@@ -33,9 +33,16 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
   const [images, setImages] = useState<MediaAsset[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const thumbnailsRef = useRef<HTMLDivElement>(null);
+  
+  // Check mobile - set initial value from window
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
 
   const autoplay = data.autoplay !== false;
   const autoplayDelay = data.autoplayDelay || 5000;
@@ -43,10 +50,9 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
   const showPagination = data.showPagination !== false;
   const showThumbnails = data.showThumbnails !== false;
 
-  // Check mobile
+  // Update mobile state on resize
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
@@ -345,12 +351,13 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
             </div>
           )}
 
-          {/* Thumbnails - Desktop only */}
-          {showThumbnails && images.length > 1 && !isMobile && (
+          {/* Thumbnails - Desktop only (hidden on mobile via CSS + JS) */}
+          {showThumbnails && images.length > 1 && (
             <div
               ref={thumbnailsRef}
+              className="slideshow-thumbnails"
               style={{
-                display: 'flex',
+                display: isMobile ? 'none' : 'flex',
                 gap: 8,
                 padding: '12px 16px',
                 background: tokens.color.surface,
