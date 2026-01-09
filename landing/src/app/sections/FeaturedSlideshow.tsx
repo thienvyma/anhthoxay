@@ -184,12 +184,13 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
-          {/* Main Image */}
+          {/* Main Image - Use padding-bottom trick for reliable aspect ratio */}
           <div
             style={{
               position: 'relative',
               width: '100%',
-              aspectRatio: isMobile ? '4/3' : '16/9',
+              paddingBottom: isMobile ? '75%' : '56.25%', // 4:3 = 75%, 16:9 = 56.25%
+              background: tokens.color.background,
             }}
           >
             <AnimatePresence mode="wait">
