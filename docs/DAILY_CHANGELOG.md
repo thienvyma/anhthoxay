@@ -2,6 +2,23 @@
 
 ## 2026-01-10
 
+### Task: Fix GCP Deployment - Repository Name & Project Switch
+
+**✏️ Modified:**
+- `infra/gcp/cloudbuild-api.yaml` - Sửa repository name từ `mrsaigon-repo` về `ntn-repo`
+- `infra/gcp/cloudbuild-landing.yaml` - Sửa repository name từ `mrsaigon-repo` về `ntn-repo`
+
+**🔧 Vấn đề đã fix:**
+- Cloud Build fail do đang dùng sai GCP project (`mrsaigon` thay vì `noithatnhanh`)
+- Repository name bị sửa nhầm thành `mrsaigon-repo`
+- Đã switch về đúng project `noithatnhanh` và deploy thành công
+
+**✅ Deployment Status:**
+- Landing: SUCCESS (about-ui-202601100251)
+- Admin: SUCCESS (about-ui-202601100242)
+
+---
+
 ### Task: Fix Rate Limit Login Issue & Add Recovery Documentation
 
 **🆕 Created:**
