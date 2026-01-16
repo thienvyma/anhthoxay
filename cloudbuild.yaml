@@ -1,4 +1,5 @@
 # Cloud Build configuration for API deployment
+# Uses $BUILD_ID for image tagging (works for both manual and trigger-based builds)
 steps:
   # Install dependencies and build
   - name: 'node:20-alpine'
@@ -15,7 +16,7 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/ntn-api:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/ntn-api:$BUILD_ID'
       - '-t'
       - 'gcr.io/$PROJECT_ID/ntn-api:latest'
       - '-f'
@@ -26,7 +27,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'gcr.io/$PROJECT_ID/ntn-api:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/ntn-api:$BUILD_ID'
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
@@ -41,7 +42,7 @@ steps:
       - 'deploy'
       - 'ntn-api'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/ntn-api:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/ntn-api:$BUILD_ID'
       - '--region'
       - 'asia-southeast1'
       - '--platform'
@@ -59,7 +60,7 @@ steps:
       - 'NODE_ENV=production,FIREBASE_PROJECT_ID=$PROJECT_ID'
 
 images:
-  - 'gcr.io/$PROJECT_ID/ntn-api:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/ntn-api:$BUILD_ID'
   - 'gcr.io/$PROJECT_ID/ntn-api:latest'
 
 options:
