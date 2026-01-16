@@ -15,6 +15,8 @@ interface InputProps {
   style?: CSSProperties;
   autoComplete?: string;
   name?: string;
+  /** If true, prevent Enter key from submitting form (useful in modals) */
+  preventEnterSubmit?: boolean;
 }
 
 export function Input({
@@ -31,6 +33,7 @@ export function Input({
   style,
   autoComplete,
   name,
+  preventEnterSubmit = false,
 }: InputProps) {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === 'password';
@@ -94,8 +97,8 @@ export function Input({
           onMouseDown={(e) => e.stopPropagation()}
           onKeyDown={(e) => {
             e.stopPropagation();
-            // Prevent Enter key from submitting form
-            if (e.key === 'Enter') {
+            // Only prevent Enter key from submitting form if explicitly requested
+            if (e.key === 'Enter' && preventEnterSubmit) {
               e.preventDefault();
             }
           }}

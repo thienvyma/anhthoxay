@@ -5,6 +5,9 @@
  * - Vite frontend apps (using import.meta.env)
  * - Node.js backend (using process.env)
  *
+ * IMPORTANT: Vite replaces import.meta.env.VITE_* at build-time.
+ * We must access these directly (not via dynamic lookup) for replacement to work.
+ *
  * @example
  * import { API_URL, getApiUrl, firebaseConfig } from '@app/shared';
  */
@@ -21,34 +24,16 @@ function isBrowser(): boolean {
 }
 
 /**
- * Safely get Vite environment variables
- * Uses dynamic access to avoid TypeScript errors in Node.js
- */
-function getViteEnv(): Record<string, string> | null {
-  if (!isBrowser()) return null;
-
-  try {
-    // Use Function constructor to avoid static analysis of import.meta
-    // This prevents TypeScript errors when compiling for Node.js
-    const getImportMeta = new Function('return typeof import.meta !== "undefined" ? import.meta : null');
-    const meta = getImportMeta();
-    return meta?.env || null;
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Get environment variable value
  * Works in both Vite (import.meta.env) and Node.js (process.env)
+ * 
+ * NOTE: For Vite build-time replacement to work, we pass the already-resolved
+ * viteValue directly instead of doing dynamic lookup.
  */
-function getEnvVar(viteKey: string, nodeKey: string, defaultValue: string): string {
-  // In browser/Vite environment
-  if (isBrowser()) {
-    const viteEnv = getViteEnv();
-    if (viteEnv && viteEnv[viteKey]) {
-      return viteEnv[viteKey];
-    }
+function getEnvVar(viteValue: string | undefined, nodeKey: string, defaultValue: string): string {
+  // Check Vite build-time replaced value first
+  if (viteValue && viteValue !== '' && !viteValue.startsWith('import.meta')) {
+    return viteValue;
   }
 
   // In Node.js environment
@@ -64,16 +49,17 @@ function getEnvVar(viteKey: string, nodeKey: string, defaultValue: string): stri
 // ============================================
 
 /**
- * API URL - works in both Vite and Node.js
- * Falls back to localhost for development
+ * API URL - Vite replaces import.meta.env.VITE_API_URL at build-time
+ * The define option in vite.config.ts handles the replacement
+ * Falls back to localhost for development or Node.js environment
  */
 export const API_URL: string = (() => {
-  // Check for Vite build-time replacement first
-  if (isBrowser()) {
-    const viteEnv = getViteEnv();
-    if (viteEnv && viteEnv['VITE_API_URL']) {
-      return viteEnv['VITE_API_URL'];
-    }
+  // In browser: Vite replaces this at build-time via define option
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore - import.meta.env is Vite-specific, replaced at build-time
+  const viteApiUrl = import.meta.env.VITE_API_URL;
+  if (isBrowser() && viteApiUrl && typeof viteApiUrl === 'string') {
+    return viteApiUrl;
   }
   // Node.js environment
   if (typeof process !== 'undefined' && process.env?.['API_URL']) {
@@ -83,16 +69,16 @@ export const API_URL: string = (() => {
 })();
 
 /**
- * Portal URL - works in both Vite and Node.js
- * Falls back to localhost for development
+ * Portal URL - Vite replaces import.meta.env.VITE_PORTAL_URL at build-time
+ * Falls back to localhost for development or Node.js environment
  */
 export const PORTAL_URL: string = (() => {
-  // Check for Vite build-time replacement first
-  if (isBrowser()) {
-    const viteEnv = getViteEnv();
-    if (viteEnv && viteEnv['VITE_PORTAL_URL']) {
-      return viteEnv['VITE_PORTAL_URL'];
-    }
+  // In browser: Vite replaces this at build-time via define option
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore - import.meta.env is Vite-specific, replaced at build-time
+  const vitePortalUrl = import.meta.env.VITE_PORTAL_URL;
+  if (isBrowser() && vitePortalUrl && typeof vitePortalUrl === 'string') {
+    return vitePortalUrl;
   }
   // Node.js environment
   if (typeof process !== 'undefined' && process.env?.['PORTAL_URL']) {
@@ -122,9 +108,10 @@ export function getPortalUrl(): string {
  */
 export function isProduction(): boolean {
   if (isBrowser()) {
-    const viteEnv = getViteEnv();
-    if (viteEnv) {
-      return viteEnv['MODE'] === 'production' || viteEnv['PROD'] === 'true';
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore - import.meta.env is Vite-specific
+    if (import.meta.env?.MODE === 'production' || import.meta.env?.PROD === true) {
+      return true;
     }
   }
 
@@ -144,15 +131,27 @@ export function isDevelopment(): boolean {
 
 /**
  * Firebase client configuration for frontend apps
- * Uses VITE_ prefixed environment variables
+ * Vite replaces import.meta.env.VITE_* at build-time
  */
 export const firebaseConfig = {
-  apiKey: getEnvVar('VITE_FIREBASE_API_KEY', 'FIREBASE_API_KEY', ''),
-  authDomain: getEnvVar('VITE_FIREBASE_AUTH_DOMAIN', 'FIREBASE_AUTH_DOMAIN', ''),
-  projectId: getEnvVar('VITE_FIREBASE_PROJECT_ID', 'FIREBASE_PROJECT_ID', ''),
-  storageBucket: getEnvVar('VITE_FIREBASE_STORAGE_BUCKET', 'FIREBASE_STORAGE_BUCKET', ''),
-  messagingSenderId: getEnvVar('VITE_FIREBASE_MESSAGING_SENDER_ID', 'FIREBASE_MESSAGING_SENDER_ID', ''),
-  appId: getEnvVar('VITE_FIREBASE_APP_ID', 'FIREBASE_APP_ID', ''),
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  apiKey: getEnvVar(import.meta.env?.VITE_FIREBASE_API_KEY, 'FIREBASE_API_KEY', ''),
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  authDomain: getEnvVar(import.meta.env?.VITE_FIREBASE_AUTH_DOMAIN, 'FIREBASE_AUTH_DOMAIN', ''),
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  projectId: getEnvVar(import.meta.env?.VITE_FIREBASE_PROJECT_ID, 'FIREBASE_PROJECT_ID', ''),
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  storageBucket: getEnvVar(import.meta.env?.VITE_FIREBASE_STORAGE_BUCKET, 'FIREBASE_STORAGE_BUCKET', ''),
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  messagingSenderId: getEnvVar(import.meta.env?.VITE_FIREBASE_MESSAGING_SENDER_ID, 'FIREBASE_MESSAGING_SENDER_ID', ''),
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  appId: getEnvVar(import.meta.env?.VITE_FIREBASE_APP_ID, 'FIREBASE_APP_ID', ''),
 };
 
 /**

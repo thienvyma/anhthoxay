@@ -277,6 +277,19 @@ export class FormulaFirestoreService extends BaseFirestoreService<FormulaDoc> {
 
     return this.update(id, input);
   }
+
+  /**
+   * Delete a formula
+   */
+  async deleteFormula(id: string): Promise<void> {
+    const existing = await this.getById(id);
+    if (!existing) {
+      throw new PricingFirestoreError('NOT_FOUND', 'Formula not found', 404);
+    }
+
+    await this.delete(id);
+    logger.info('Deleted formula', { id });
+  }
 }
 
 // ============================================

@@ -246,9 +246,13 @@ export class BlogPostFirestoreService extends BaseFirestoreService<FirestoreBlog
       whereClause.push({ field: 'authorId', operator: '==', value: authorId });
     }
 
+    // Use publishedAt for ordering when status filter is applied (matches Firestore index)
+    // Otherwise use createdAt for general queries
+    const orderByField = status ? 'publishedAt' : 'createdAt';
+    
     const queryOptions: QueryOptions<FirestoreBlogPost> = {
       where: whereClause.length > 0 ? whereClause : undefined,
-      orderBy: [{ field: 'createdAt', direction: 'desc' }],
+      orderBy: [{ field: orderByField, direction: 'desc' }],
     };
 
     // Get all matching posts

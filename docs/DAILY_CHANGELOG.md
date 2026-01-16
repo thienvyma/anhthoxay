@@ -2,6 +2,53 @@
 
 ## 2026-01-17
 
+### Task: Enable Enter Key Login
+
+**✏️ Modified:**
+- `admin/src/app/components/Input.tsx` - Removed default Enter key prevention, added `preventEnterSubmit` prop for cases that need it
+
+**📋 Issue Fixed:**
+- Login page now supports pressing Enter to submit form
+
+---
+
+### Task: Fix Firestore Collection Name & Index Issues
+
+**✏️ Modified:**
+- `api/src/routes/firestore/media.firestore.routes.ts` - Fixed collection name from `media_assets` to `mediaAssets`
+- `api/src/services/firestore/blog.firestore.ts` - Fixed orderBy field to use `publishedAt` when status filter is applied (matches Firestore index)
+- `firestore.indexes.json` - Added composite index for `blogPosts` with `status + isFeatured + publishedAt`
+
+**📋 Issues Fixed:**
+- `/media` endpoint returning 404 due to wrong collection name
+- `/blog/posts` returning 500 due to missing Firestore index
+- Admin Furniture page crashing with "Cannot read properties of undefined (reading 'length')"
+
+**🚀 Action Required:**
+- Deploy API to Cloud Run
+- Deploy Firestore indexes: `firebase deploy --only firestore:indexes`
+
+---
+
+### Task: Fix Admin API URL - Production Build
+
+**✏️ Modified:**
+- `packages/shared/src/config.ts` - Simplified Vite env var access for proper build-time replacement
+
+**📋 Issue Fixed:**
+- Admin app was calling `localhost:4202` instead of production Cloud Run API
+- `import.meta.env.VITE_API_URL` was not being replaced correctly during Vite build
+- Removed intermediate variables that prevented Vite's define replacement from working
+
+**🚀 Deployed:**
+- Rebuilt admin app with correct API URL: `https://ntn-api-gsfn3zbloa-as.a.run.app`
+- Deployed to Firebase Hosting: `https://noithatnhanh-admin.web.app`
+- Rebuilt landing app with correct API URL
+- Deployed to Firebase Hosting: `https://noithatnhanh-landing.web.app`
+- Added Firestore indexes for furniture collections (furnitureProductBases, furnitureQuotations, furnitureCategories, furnitureMaterials, furnitureFees, mediaAssets)
+
+---
+
 ### Task: Fix Blog API Response Format Mismatch
 
 **✏️ Modified:**
