@@ -335,7 +335,7 @@ export function CatalogTab({ categories, productBases, materials, onRefresh }: C
 
     setUploadingImage(true);
     try {
-      const result = await mediaApi.uploadFile(file);
+      const result = await mediaApi.uploadFile(file, 'products');
       setProductBaseForm((prev) => ({ ...prev, imageUrl: result.url }));
       toast.success('Tải ảnh lên thành công');
     } catch (error) {

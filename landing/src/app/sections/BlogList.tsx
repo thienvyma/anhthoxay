@@ -15,10 +15,15 @@ interface BlogListData {
   subtitle?: string;
   showFilters?: boolean;
   postsPerPage?: number;
+  perPage?: number; // Admin form uses this field name
 }
 
 export function BlogList({ data }: { data: BlogListData }) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  // Support both field names: perPage (admin) and postsPerPage (legacy)
+  const postsPerPage = data.perPage || data.postsPerPage || 6;
 
   // Fetch blog categories with React Query
   const { data: categories = [], isLoading: loadingCategories } = useQuery({
@@ -33,6 +38,12 @@ export function BlogList({ data }: { data: BlogListData }) {
   });
 
   const loading = loadingCategories || loadingPosts;
+  
+  // Reset page when category changes
+  const handleCategoryChange = (catId: string) => {
+    setSelectedCategory(catId);
+    setCurrentPage(1);
+  };
 
   const calculateReadTime = (excerpt: string | null) => {
     if (!excerpt) return 3;
@@ -46,11 +57,28 @@ export function BlogList({ data }: { data: BlogListData }) {
     ? posts 
     : posts.filter(post => post.categoryId === selectedCategory);
 
+  // Pagination
+  const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
+  const startIndex = (currentPage - 1) * postsPerPage;
+  const paginatedPosts = filteredPosts.slice(startIndex, startIndex + postsPerPage);
+
   // Categories for filter (including 'all')
   const filterCategories = ['all', ...categories.map(c => c.id)];
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px' }}>
+    <div style={{ maxWidth: 1200, margin: '60px auto 80px', padding: '0 12px' }}>
+      <div
+        style={{
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: 16,
+          background: 'rgba(12,12,16,0.85)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
+          padding: 'clamp(32px, 6vw, 48px) clamp(20px, 4vw, 40px)',
+        }}
+      >
       {/* Title */}
       {(data.title || data.subtitle) && (
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
@@ -99,10 +127,11 @@ export function BlogList({ data }: { data: BlogListData }) {
               animate={{ opacity: 1, y: 0 }}
               style={{ 
                 display: 'flex', 
-                gap: 12, 
+                gap: 8, 
                 justifyContent: 'center', 
-                marginBottom: 48, 
-                flexWrap: 'wrap' 
+                marginBottom: 32, 
+                flexWrap: 'wrap',
+                padding: '0 8px',
               }}
             >
               {filterCategories.map((catId) => {
@@ -117,26 +146,23 @@ export function BlogList({ data }: { data: BlogListData }) {
                 return (
                   <motion.button
                     key={catId}
-                    onClick={() => setSelectedCategory(catId)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleCategoryChange(catId)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="blog-category-btn"
                     style={{
-                      padding: '12px 28px',
-                      borderRadius: '999px',
-                      border: `1px solid ${isActive ? '#F5D393' : 'rgba(255,255,255,0.08)'}`,
+                      padding: '8px 16px',
+                      borderRadius: '20px',
+                      border: `1px solid ${isActive ? '#F5D393' : 'rgba(255,255,255,0.15)'}`,
                       background: isActive 
-                        ? 'linear-gradient(135deg, #F5D393, #EFB679)' 
-                        : 'rgba(12,12,16,0.7)',
-                      backdropFilter: 'blur(12px)',
-                      color: isActive ? '#111' : 'white',
+                        ? '#F5D393' 
+                        : 'rgba(30,30,35,0.9)',
+                      color: isActive ? '#111' : 'rgba(255,255,255,0.85)',
                       cursor: 'pointer',
-                      fontSize: 14,
-                      fontWeight: 600,
-                      textTransform: 'capitalize',
-                      transition: 'all 0.3s ease',
-                      boxShadow: isActive 
-                        ? '0 4px 16px rgba(245,211,147,0.3)' 
-                        : '0 2px 8px rgba(0,0,0,0.2)',
+                      fontSize: 13,
+                      fontWeight: 500,
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.2s ease',
                     }}
                   >
                     {category.name}
@@ -177,17 +203,18 @@ export function BlogList({ data }: { data: BlogListData }) {
           <p style={{ fontSize: 18 }}>Không tìm thấy bài viết nào</p>
         </div>
       ) : (
-        <div
-          className="blog-list-grid"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
-            gap: 24,
-            paddingBottom: 80,
-          }}
-        >
-          <AnimatePresence mode="sync">
-            {filteredPosts.map((post, idx) => {
+        <>
+          <div
+            className="blog-list-grid"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+              gap: 24,
+              paddingBottom: 32,
+            }}
+          >
+            <AnimatePresence mode="sync">
+              {paginatedPosts.map((post, idx) => {
               // Create varied aspect ratios for masonry effect
               const aspectRatios = ['1/1', '4/3', '3/4', '16/9'];
               const aspectRatio = aspectRatios[idx % aspectRatios.length];
@@ -352,6 +379,96 @@ export function BlogList({ data }: { data: BlogListData }) {
             })}
           </AnimatePresence>
         </div>
+        
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: 8,
+              marginTop: 32,
+              paddingBottom: 48,
+            }}
+          >
+            {/* Previous Button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              style={{
+                padding: '8px 16px',
+                borderRadius: 8,
+                border: '1px solid rgba(255,255,255,0.15)',
+                background: currentPage === 1 ? 'rgba(30,30,35,0.5)' : 'rgba(30,30,35,0.9)',
+                color: currentPage === 1 ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.85)',
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                fontSize: 14,
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <i className="ri-arrow-left-s-line" />
+              Trước
+            </motion.button>
+
+            {/* Page Numbers */}
+            <div style={{ display: 'flex', gap: 4 }}>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <motion.button
+                  key={page}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setCurrentPage(page)}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    border: page === currentPage ? '1px solid #F5D393' : '1px solid rgba(255,255,255,0.15)',
+                    background: page === currentPage ? '#F5D393' : 'rgba(30,30,35,0.9)',
+                    color: page === currentPage ? '#111' : 'rgba(255,255,255,0.85)',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: page === currentPage ? 600 : 500,
+                  }}
+                >
+                  {page}
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Next Button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              style={{
+                padding: '8px 16px',
+                borderRadius: 8,
+                border: '1px solid rgba(255,255,255,0.15)',
+                background: currentPage === totalPages ? 'rgba(30,30,35,0.5)' : 'rgba(30,30,35,0.9)',
+                color: currentPage === totalPages ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.85)',
+                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                fontSize: 14,
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              Sau
+              <i className="ri-arrow-right-s-line" />
+            </motion.button>
+          </motion.div>
+        )}
+        </>
       )}
 
       <style>{`
@@ -359,7 +476,33 @@ export function BlogList({ data }: { data: BlogListData }) {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
+        
+        /* Mobile: horizontal scroll for category filters */
+        @media (max-width: 640px) {
+          .blog-category-filters {
+            flex-wrap: nowrap !important;
+            justify-content: flex-start !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding-bottom: 8px !important;
+            margin-left: -8px !important;
+            margin-right: -8px !important;
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+          }
+          .blog-category-filters::-webkit-scrollbar {
+            display: none;
+          }
+          .blog-category-btn {
+            flex-shrink: 0;
+            padding: 6px 12px !important;
+            font-size: 12px !important;
+          }
+        }
       `}</style>
+      </div>
     </div>
   );
 }

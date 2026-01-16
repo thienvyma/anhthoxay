@@ -75,7 +75,7 @@ export function MaterialsTab({ materials, categories, onRefresh }: MaterialsTabP
     if (!file) return;
     setUploading(true);
     try {
-      const result = await mediaApi.uploadFile(file);
+      const result = await mediaApi.uploadFile(file, 'products');
       const fullUrl = result.url.startsWith('http') ? result.url : `${API_URL}${result.url}`;
       setForm(prev => ({ ...prev, imageUrl: fullUrl }));
       toast.success('Upload ảnh thành công!');

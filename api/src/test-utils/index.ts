@@ -3,9 +3,8 @@
  *
  * Re-exports all test utilities for easy importing.
  *
- * **Feature: api-test-coverage**
+ * **Feature: firebase-phase3-firestore**
  */
 
-export * from './mock-prisma';
 export * from './fixtures';
 export * from './generators';

@@ -1,7 +1,7 @@
 // Content APIs - NỘI THẤT NHANH Admin Dashboard
 // Pages, Sections, Blog, Media, Leads
 import { API_BASE, apiFetch } from './client';
-import { tokenStorage } from '../store';
+import { getIdToken } from '../auth/firebase';
 import type {
   Page,
   Section,
@@ -63,14 +63,21 @@ interface UploadFileResponse {
   size: number;
 }
 
+/**
+ * Media folder types for organizing files
+ */
+export type MediaFolder = 'blog' | 'portfolio' | 'projects' | 'documents' | 'avatars' | 'products' | 'gallery' | 'temp';
+
 export const mediaApi = {
   list: () => apiFetch<MediaAsset[]>('/media'),
 
   /**
    * Upload a file to gallery (creates MediaAsset record)
    * Use this for MediaPage uploads only
+   * @param formDataOrFile - File or FormData to upload
+   * @param folder - Optional folder to organize files (default: gallery)
    */
-  upload: async (formDataOrFile: FormData | File) => {
+  upload: async (formDataOrFile: FormData | File, folder?: MediaFolder) => {
     const formData =
       formDataOrFile instanceof FormData
         ? formDataOrFile
@@ -80,8 +87,13 @@ export const mediaApi = {
             return fd;
           })();
 
+    // Add folder if specified
+    if (folder && !formData.has('folder')) {
+      formData.append('folder', folder);
+    }
+
     const headers: HeadersInit = {};
-    const accessToken = tokenStorage.getAccessToken();
+    const accessToken = await getIdToken();
     if (accessToken) {
       headers['Authorization'] = `Bearer ${accessToken}`;
     }
@@ -104,8 +116,10 @@ export const mediaApi = {
   /**
    * Upload file only (NO MediaAsset record)
    * Use this for furniture, materials, blog images, etc.
+   * @param formDataOrFile - File or FormData to upload
+   * @param folder - Optional folder to organize files
    */
-  uploadFile: async (formDataOrFile: FormData | File) => {
+  uploadFile: async (formDataOrFile: FormData | File, folder?: MediaFolder) => {
     const formData =
       formDataOrFile instanceof FormData
         ? formDataOrFile
@@ -115,8 +129,13 @@ export const mediaApi = {
             return fd;
           })();
 
+    // Add folder if specified
+    if (folder && !formData.has('folder')) {
+      formData.append('folder', folder);
+    }
+
     const headers: HeadersInit = {};
-    const accessToken = tokenStorage.getAccessToken();
+    const accessToken = await getIdToken();
     if (accessToken) {
       headers['Authorization'] = `Bearer ${accessToken}`;
     }
@@ -153,6 +172,14 @@ export const mediaApi = {
       items: MediaAsset[];
       pagination: { page: number; limit: number; total: number; totalPages: number };
     }>(`/media/gallery?page=${page}&limit=${limit}`),
+
+  // Get folder stats (Admin only)
+  getFolders: () =>
+    apiFetch<{
+      folders: MediaFolder[];
+      stats: Array<{ name: string; count: number }>;
+      total: number;
+    }>('/media/folders'),
 };
 
 // ========== BLOG CATEGORIES API ==========
@@ -338,7 +365,7 @@ export const leadsApi = {
     
     const url = `${API_BASE}/leads/export${query ? '?' + query : ''}`;
     const headers: HeadersInit = {};
-    const accessToken = tokenStorage.getAccessToken();
+    const accessToken = await getIdToken();
     if (accessToken) {
       headers['Authorization'] = `Bearer ${accessToken}`;
     }

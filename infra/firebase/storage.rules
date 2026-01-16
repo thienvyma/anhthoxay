@@ -1,0 +1,102 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'ADMIN';
+    }
+    
+    function isManager() {
+      return isAuthenticated() && request.auth.token.role in ['ADMIN', 'MANAGER'];
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*')
+             && request.resource.size < 10 * 1024 * 1024; // 10MB max
+    }
+    
+    function isValidDocument() {
+      return request.resource.contentType.matches('application/pdf')
+             || request.resource.contentType.matches('image/.*')
+             && request.resource.size < 20 * 1024 * 1024; // 20MB max
+    }
+
+    // ==================== PUBLIC MEDIA ====================
+    // Blog images, gallery, products - public read
+    match /media/{folder}/{fileName} {
+      allow read: if true;
+      allow write: if isManager();
+    }
+    
+    match /blog/{fileName} {
+      allow read: if true;
+      allow write: if isManager();
+    }
+    
+    match /gallery/{fileName} {
+      allow read: if true;
+      allow write: if isManager();
+    }
+    
+    match /products/{fileName} {
+      allow read: if true;
+      allow write: if isManager();
+    }
+
+    // ==================== USER UPLOADS ====================
+    // Portfolio images for contractors
+    match /portfolio/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isValidImage();
+    }
+    
+    // Project images for homeowners
+    match /projects/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isValidImage();
+    }
+    
+    // Documents (ID cards, certificates, business licenses)
+    match /documents/{userId}/{fileName} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && isValidDocument();
+    }
+    
+    // Avatars
+    match /avatars/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isValidImage();
+    }
+
+    // ==================== CHAT ATTACHMENTS ====================
+    match /chat/{conversationId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidDocument();
+    }
+
+    // ==================== BID ATTACHMENTS ====================
+    match /bids/{bidId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidDocument();
+    }
+
+    // ==================== TEMP UPLOADS ====================
+    match /temp/{userId}/{fileName} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ==================== ADMIN ONLY ====================
+    match /system/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "projects": {
+    "default": "noithatnhanh-f8f72"
+  },
+  "targets": {
+    "noithatnhanh-f8f72": {
+      "hosting": {
+        "landing": [
+          "noithatnhanh-landing"
+        ],
+        "admin": [
+          "noithatnhanh-admin"
+        ],
+        "portal": [
+          "noithatnhanh-portal"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

@@ -1,52 +1,23 @@
 /**
  * Distributed Lock Tests
  *
- * **Feature: production-scalability**
- * **Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6**
+ * Tests for in-memory distributed lock implementation.
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fc from 'fast-check';
-import { LockTimeoutError, LockKeys, getLockConfig } from './distributed-lock';
-
-// Mock redlock module
-vi.mock('redlock', () => {
-  const mockLock = {
-    release: vi.fn().mockResolvedValue(undefined),
-  };
-
-  const MockRedlock = vi.fn().mockImplementation(() => ({
-    acquire: vi.fn().mockResolvedValue(mockLock),
-    on: vi.fn(),
-  }));
-
-  return {
-    default: MockRedlock,
-    ResourceLockedError: class ResourceLockedError extends Error {
-      constructor() {
-        super('Resource locked');
-        this.name = 'ResourceLockedError';
-      }
-    },
-  };
-});
-
-// Mock redis config
-vi.mock('../config/redis', () => ({
-  getRedisClient: vi.fn().mockReturnValue(null), // Return null to test fallback behavior
-}));
+import { LockTimeoutError, LockKeys, getLockConfig, withLock } from './distributed-lock';
 
 describe('Distributed Lock', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   /**
-   * **Feature: production-scalability, Property 10: Lock acquisition for critical operations**
-   * **Validates: Requirements 5.1, 5.2, 5.3**
-   *
-   * *For any* critical operation (token refresh, ranking recalculation, Google Sheets sync),
-   * the system SHALL acquire a distributed lock before processing.
+   * Lock key format tests
    */
-  describe('Property 10: Lock acquisition for critical operations', () => {
+  describe('Lock Keys', () => {
     it('should have correct lock keys for all critical operations', () => {
-      // Token refresh lock
       fc.assert(
         fc.property(
           fc.uuid(),
@@ -125,125 +96,7 @@ describe('Distributed Lock', () => {
         { numRuns: 100 }
       );
     });
-  });
 
-  /**
-   * **Feature: production-scalability, Property 11: Lock timeout error**
-   * **Validates: Requirements 5.4**
-   *
-   * *For any* lock acquisition that cannot complete within 5 seconds,
-   * the system SHALL return LOCK_TIMEOUT error with status 503.
-   */
-  describe('Property 11: Lock timeout error', () => {
-    it('should have correct error code and status', () => {
-      const error = new LockTimeoutError('test-resource');
-      
-      expect(error.code).toBe('LOCK_TIMEOUT');
-      expect(error.status).toBe(503);
-      expect(error.name).toBe('LockTimeoutError');
-    });
-
-    it('should include resource name in error message', () => {
-      fc.assert(
-        fc.property(
-          fc.string({ minLength: 1, maxLength: 100 }),
-          (resource) => {
-            const error = new LockTimeoutError(resource);
-            expect(error.message).toContain(resource);
-            return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
-
-    it('should be instanceof Error', () => {
-      const error = new LockTimeoutError('test');
-      expect(error).toBeInstanceOf(Error);
-    });
-  });
-
-  /**
-   * **Feature: production-scalability, Property 12: Lock auto-release on TTL**
-   * **Validates: Requirements 5.5**
-   *
-   * *For any* acquired lock, if the lock holder crashes,
-   * the lock SHALL be automatically released after TTL expires (30 seconds).
-   */
-  describe('Property 12: Lock auto-release on TTL', () => {
-    it('should have default TTL of 30 seconds', () => {
-      const config = getLockConfig();
-      expect(config.defaultTtl).toBe(30000);
-    });
-
-    it('should have retry configuration', () => {
-      const config = getLockConfig();
-      expect(config.retryCount).toBe(3);
-      expect(config.retryDelay).toBe(200);
-      expect(config.retryJitter).toBe(200);
-    });
-
-    it('should respect TTL for lock expiration', () => {
-      fc.assert(
-        fc.property(
-          fc.integer({ min: 1000, max: 60000 }), // TTL in ms
-          fc.integer({ min: 0, max: 120000 }), // elapsed time in ms
-          (ttl, elapsed) => {
-            const shouldExpire = elapsed >= ttl;
-            
-            if (shouldExpire) {
-              // Lock should be released after TTL
-              expect(elapsed).toBeGreaterThanOrEqual(ttl);
-            } else {
-              // Lock should still be held
-              expect(elapsed).toBeLessThan(ttl);
-            }
-            
-            return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
-  });
-
-  /**
-   * Redis unavailable fallback
-   * **Feature: production-scalability**
-   * **Requirements: 5.6**
-   */
-  describe('Redis unavailable fallback', () => {
-    it('should execute function without lock when Redis unavailable', async () => {
-      vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-      
-      // Import withLock after mocking
-      const { withLock } = await import('./distributed-lock');
-      
-      let executed = false;
-      const result = await withLock('test-resource', 5000, async () => {
-        executed = true;
-        return 'success';
-      });
-
-      expect(executed).toBe(true);
-      expect(result).toBe('success');
-    });
-
-    it('should log warning when Redis unavailable', async () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-      
-      const { withLock } = await import('./distributed-lock');
-      
-      await withLock('test-resource', 5000, async () => 'result');
-
-      expect(consoleWarnSpy).toHaveBeenCalled();
-    });
-  });
-
-  /**
-   * Lock key format validation
-   */
-  describe('Lock key format', () => {
     it('should always start with lock: prefix', () => {
       fc.assert(
         fc.property(
@@ -284,6 +137,119 @@ describe('Distributed Lock', () => {
         ),
         { numRuns: 100 }
       );
+    });
+  });
+
+  /**
+   * Lock timeout error tests
+   */
+  describe('LockTimeoutError', () => {
+    it('should have correct error code and status', () => {
+      const error = new LockTimeoutError('test-resource');
+      
+      expect(error.code).toBe('LOCK_TIMEOUT');
+      expect(error.status).toBe(503);
+      expect(error.name).toBe('LockTimeoutError');
+    });
+
+    it('should include resource name in error message', () => {
+      fc.assert(
+        fc.property(
+          fc.string({ minLength: 1, maxLength: 100 }),
+          (resource) => {
+            const error = new LockTimeoutError(resource);
+            expect(error.message).toContain(resource);
+            return true;
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('should be instanceof Error', () => {
+      const error = new LockTimeoutError('test');
+      expect(error).toBeInstanceOf(Error);
+    });
+  });
+
+  /**
+   * Lock configuration tests
+   */
+  describe('Lock Configuration', () => {
+    it('should have default TTL of 30 seconds', () => {
+      const config = getLockConfig();
+      expect(config.defaultTtl).toBe(30000);
+    });
+
+    it('should have retry configuration', () => {
+      const config = getLockConfig();
+      expect(config.retryCount).toBe(3);
+      expect(config.retryDelay).toBe(200);
+      expect(config.retryJitter).toBe(200);
+    });
+  });
+
+  /**
+   * withLock function tests
+   */
+  describe('withLock', () => {
+    it('should execute function and return result', async () => {
+      const result = await withLock('test-resource', 5000, async () => {
+        return 'success';
+      });
+
+      expect(result).toBe('success');
+    });
+
+    it('should execute async functions', async () => {
+      let executed = false;
+      
+      await withLock('test-resource-async', 5000, async () => {
+        await new Promise(resolve => setTimeout(resolve, 10));
+        executed = true;
+        return 'done';
+      });
+
+      expect(executed).toBe(true);
+    });
+
+    it('should handle errors in the function', async () => {
+      await expect(
+        withLock('test-resource-error', 5000, async () => {
+          throw new Error('Test error');
+        })
+      ).rejects.toThrow('Test error');
+    });
+
+    it('should allow sequential locks on same resource', async () => {
+      const results: number[] = [];
+
+      await withLock('sequential-resource', 5000, async () => {
+        results.push(1);
+      });
+
+      await withLock('sequential-resource', 5000, async () => {
+        results.push(2);
+      });
+
+      expect(results).toEqual([1, 2]);
+    });
+
+    it('should allow concurrent locks on different resources', async () => {
+      const results: string[] = [];
+
+      await Promise.all([
+        withLock('resource-a', 5000, async () => {
+          results.push('a');
+        }),
+        withLock('resource-b', 5000, async () => {
+          results.push('b');
+        }),
+      ]);
+
+      expect(results).toHaveLength(2);
+      expect(results).toContain('a');
+      expect(results).toContain('b');
     });
   });
 });

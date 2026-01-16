@@ -1,6 +1,12 @@
-// API Client utilities - NỘI THẤT NHANH Admin Dashboard
+/**
+ * API Client utilities - NỘI THẤT NHANH Admin Dashboard
+ * Uses Firebase Auth for authentication
+ *
+ * **Feature: firebase-phase3-firestore**
+ * **Requirements: 4.5**
+ */
 import { API_URL } from '@app/shared';
-import { tokenStorage } from '../store';
+import { getIdToken } from '../auth/firebase';
 
 export const API_BASE = API_URL;
 
@@ -16,43 +22,6 @@ interface ValidationDetail {
   message: string;
 }
 
-// Token refresh logic
-let isRefreshing = false;
-let refreshPromise: Promise<boolean> | null = null;
-
-async function refreshAccessToken(): Promise<boolean> {
-  const refreshToken = tokenStorage.getRefreshToken();
-  
-  if (!refreshToken) {
-    return false;
-  }
-
-  try {
-    const response = await fetch(`${API_BASE}/api/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
-    });
-
-    if (!response.ok) {
-      return false;
-    }
-
-    const json = await response.json();
-    // Unwrap standardized response format
-    const data = json.data || json;
-    tokenStorage.setAccessToken(data.accessToken);
-    tokenStorage.setRefreshToken(data.refreshToken);
-    // Also save the new sessionId from token rotation
-    if (data.sessionId) {
-      tokenStorage.setSessionId(data.sessionId);
-    }
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
   const headers: HeadersInit = {
@@ -60,15 +29,15 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
     ...options.headers,
   };
 
-  // Add Authorization header if we have a token
+  // Add Authorization header with Firebase ID token
   if (!options.skipAuth) {
-    const accessToken = tokenStorage.getAccessToken();
-    if (accessToken) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${accessToken}`;
-    }
-    const sessionId = tokenStorage.getSessionId();
-    if (sessionId) {
-      (headers as Record<string, string>)['x-session-id'] = sessionId;
+    try {
+      const idToken = await getIdToken();
+      if (idToken) {
+        (headers as Record<string, string>)['Authorization'] = `Bearer ${idToken}`;
+      }
+    } catch (error) {
+      console.warn('Failed to get Firebase ID token:', error);
     }
   }
 
@@ -87,29 +56,24 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
     config.body = JSON.stringify(options.body);
   }
 
-  let response = await fetch(url, config);
+  const response = await fetch(url, config);
 
-  // Handle 401 - try to refresh token
+  // Handle 401 - Firebase token might be expired
   if (response.status === 401 && !options.skipAuth) {
-    if (!isRefreshing) {
-      isRefreshing = true;
-      refreshPromise = refreshAccessToken();
-    }
-
-    const refreshed = await refreshPromise;
-    isRefreshing = false;
-    refreshPromise = null;
-
-    if (refreshed) {
-      // Retry with new token
-      const newToken = tokenStorage.getAccessToken();
-      if (newToken) {
-        (headers as Record<string, string>)['Authorization'] = `Bearer ${newToken}`;
+    // Try to get a fresh token
+    try {
+      const freshToken = await getIdToken(true); // Force refresh
+      if (freshToken) {
+        (headers as Record<string, string>)['Authorization'] = `Bearer ${freshToken}`;
+        const retryResponse = await fetch(url, { ...config, headers });
+        
+        if (retryResponse.ok) {
+          const json = await retryResponse.json();
+          return unwrapResponse<T>(json);
+        }
       }
-      response = await fetch(url, { ...config, headers });
-    } else {
-      // Refresh failed - clear tokens to force re-login
-      tokenStorage.clearTokens();
+    } catch (error) {
+      console.warn('Failed to refresh Firebase token:', error);
     }
   }
 
@@ -138,22 +102,28 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
   }
 
   const json = await response.json();
-  
-  // Unwrap standardized response format: { success: true, data: T }
+  return unwrapResponse<T>(json);
+}
+
+/**
+ * Unwrap standardized API response format
+ */
+function unwrapResponse<T>(json: unknown): T {
   if (json && typeof json === 'object' && 'success' in json && 'data' in json) {
+    const response = json as { success: boolean; data: unknown; meta?: { total?: number; page?: number; limit?: number; totalPages?: number } };
+    
     // Handle paginated response: { success: true, data: [], meta: { total, page, limit, totalPages } }
-    if ('meta' in json && json.meta && typeof json.meta === 'object') {
-      const meta = json.meta as { total?: number; page?: number; limit?: number; totalPages?: number };
+    if (response.meta && typeof response.meta === 'object') {
       return {
-        data: json.data,
-        total: meta.total ?? 0,
-        page: meta.page ?? 1,
-        limit: meta.limit ?? 10,
-        totalPages: meta.totalPages ?? 1,
+        data: response.data,
+        total: response.meta.total ?? 0,
+        page: response.meta.page ?? 1,
+        limit: response.meta.limit ?? 10,
+        totalPages: response.meta.totalPages ?? 1,
       } as T;
     }
     // Non-paginated response: just return data
-    return json.data as T;
+    return response.data as T;
   }
   
   // Fallback for non-standard responses

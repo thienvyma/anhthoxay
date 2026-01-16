@@ -7,29 +7,8 @@
 import { FurnitureFee, QuotationItem, FeeBreakdown } from '../../../api/furniture';
 import { QuotationResultData } from './types';
 
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
-
-/**
- * Format currency in Vietnamese format
- */
-export const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0,
-  }).format(value);
-};
-
-/**
- * Calculate unit number from building code, floor, and axis
- * Format: {buildingCode}.{floor padded to 2 digits}{axis padded to 2 digits}
- * **Validates: Requirements 6.5**
- */
-export const calculateUnitNumber = (buildingCode: string, floor: number, axis: number): string => {
-  return `${buildingCode}.${floor.toString().padStart(2, '0')}${axis.toString().padStart(2, '0')}`;
-};
+// Re-export from @app/shared for backward compatibility
+export { formatCurrency, calculateUnitNumber } from '@app/shared';
 
 /**
  * Calculate quotation pricing

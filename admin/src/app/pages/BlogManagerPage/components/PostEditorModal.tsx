@@ -150,7 +150,7 @@ export function PostEditorModal({
                 onChange={(value) => onFormChange(prev => ({ ...prev, content: value }))}
                 placeholder="Viết nội dung bài viết..." minHeight={300}
                 onImageUpload={async (file) => {
-                  const result = await mediaApi.uploadFile(file);
+                  const result = await mediaApi.uploadFile(file, 'blog');
                   return result.url;
                 }}
               />

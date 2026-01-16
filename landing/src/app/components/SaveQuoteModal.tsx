@@ -1,6 +1,6 @@
 import { useState, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens, API_URL } from '@app/shared';
+import { tokens, API_URL, formatCurrency } from '@app/shared';
 import { useToast } from './Toast';
 import { useFormValidation } from '../hooks/useFormValidation';
 import { z } from 'zod';
@@ -137,14 +137,6 @@ export const SaveQuoteModal = memo(function SaveQuoteModal({
       setSubmitting(false);
     }
   }, [form, quoteResult, onSuccess, onClose, toast, validateAll, resetValidation]);
-
-  const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   const inputStyle: React.CSSProperties = {
     width: '100%',

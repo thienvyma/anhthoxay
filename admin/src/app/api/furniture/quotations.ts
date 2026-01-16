@@ -1,12 +1,13 @@
 /**
  * Furniture Quotations, Fees, PDF Settings & Data Import/Export API
+ * Uses Firebase Auth for authentication
  *
- * **Feature: furniture-quotation**
- * **Requirements: 4.1-4.4, 8.1-8.3, 1.6, 1.8, 9.3, 9.4, 11.3**
+ * **Feature: firebase-phase3-firestore**
+ * **Requirements: 4.5**
  */
 
 import { API_BASE, apiFetch } from '../client';
-import { tokenStorage } from '../../store';
+import { getIdToken } from '../../auth/firebase';
 import type {
   FurnitureFee,
   FurnitureQuotation,
@@ -21,9 +22,6 @@ import type {
 
 /**
  * Furniture Fees API
- *
- * **Feature: furniture-quotation**
- * **Requirements: 4.1, 4.2, 4.3, 4.4**
  */
 export const furnitureFeesApi = {
   list: () => apiFetch<FurnitureFee[]>('/api/admin/furniture/fees'),
@@ -48,9 +46,6 @@ export const furnitureFeesApi = {
 
 /**
  * Furniture Quotations API
- *
- * **Feature: furniture-quotation**
- * **Requirements: 8.1, 8.2, 8.3, 11.3**
  */
 export const furnitureQuotationsApi = {
   list: (leadId: string) =>
@@ -58,13 +53,9 @@ export const furnitureQuotationsApi = {
 
   exportPdf: async (quotationId: string): Promise<string> => {
     const headers: HeadersInit = {};
-    const accessToken = tokenStorage.getAccessToken();
+    const accessToken = await getIdToken();
     if (accessToken) {
       headers['Authorization'] = `Bearer ${accessToken}`;
-    }
-    const sessionId = tokenStorage.getSessionId();
-    if (sessionId) {
-      headers['x-session-id'] = sessionId;
     }
 
     const response = await fetch(
@@ -83,8 +74,6 @@ export const furnitureQuotationsApi = {
 
 /**
  * Furniture PDF Settings API
- *
- * **Feature: furniture-quotation**
  */
 export const furniturePdfSettingsApi = {
   get: () => apiFetch<FurniturePdfSettings>('/api/admin/furniture/pdf-settings'),
@@ -103,9 +92,6 @@ export const furniturePdfSettingsApi = {
 
 /**
  * Furniture Data Import/Export API
- *
- * **Feature: furniture-quotation**
- * **Requirements: 1.6, 1.8, 9.3, 9.4**
  */
 export const furnitureDataApi = {
   import: async (files: {
@@ -119,13 +105,9 @@ export const furnitureDataApi = {
     formData.append('apartmentTypes', files.apartmentTypes);
 
     const headers: HeadersInit = {};
-    const accessToken = tokenStorage.getAccessToken();
+    const accessToken = await getIdToken();
     if (accessToken) {
       headers['Authorization'] = `Bearer ${accessToken}`;
-    }
-    const sessionId = tokenStorage.getSessionId();
-    if (sessionId) {
-      headers['x-session-id'] = sessionId;
     }
 
     const response = await fetch(`${API_BASE}/api/admin/furniture/import`, {

@@ -1,15 +1,15 @@
 /**
- * Redis-based Response Caching Middleware
+ * In-Memory Response Caching Middleware
  *
- * Caches GET responses in Redis with configurable TTL.
+ * Caches GET responses in memory with configurable TTL.
  * Supports cache invalidation and cache-control headers.
+ * (Redis removed - using in-memory cache)
  *
  * **Feature: production-readiness**
  * **Requirements: FR-3.3**
  */
 
 import type { Context, Next } from 'hono';
-import { getRedisClient, isRedisConnected } from '../config/redis';
 import { logger } from '../utils/logger';
 
 // ============================================
@@ -32,124 +32,94 @@ interface CachedResponse {
   contentType: string;
   status: number;
   cachedAt: number;
+  expiresAt: number;
+  ttl?: number;
 }
 
+// ============================================
+// IN-MEMORY CACHE
+// ============================================
+
+const memoryCache = new Map<string, CachedResponse>();
+
+/**
+ * Clean up expired entries periodically
+ */
+function cleanupExpiredEntries(): void {
+  const now = Date.now();
+  for (const [key, entry] of memoryCache.entries()) {
+    if (now > entry.expiresAt) {
+      memoryCache.delete(key);
+    }
+  }
+}
+
+// Run cleanup every 5 minutes
+setInterval(cleanupExpiredEntries, 5 * 60 * 1000);
 
 // ============================================
 // CACHE FUNCTIONS
 // ============================================
 
 /**
- * Get cached response from Redis
+ * Get cached response from memory
  */
 async function getCachedResponse(key: string): Promise<CachedResponse | null> {
-  const redis = getRedisClient();
+  const cached = memoryCache.get(key);
   
-  if (!redis || !isRedisConnected()) {
+  if (!cached) {
     return null;
   }
-
-  try {
-    const cached = await redis.get(key);
-    if (cached) {
-      return JSON.parse(cached) as CachedResponse;
-    }
-    return null;
-  } catch (error) {
-    logger.error('Cache get error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      key,
-    });
+  
+  // Check if expired
+  if (Date.now() > cached.expiresAt) {
+    memoryCache.delete(key);
     return null;
   }
+  
+  return cached;
 }
 
 /**
- * Set cached response in Redis
+ * Set cached response in memory
  */
 async function setCachedResponse(
   key: string,
   response: CachedResponse,
   ttl: number
 ): Promise<void> {
-  const redis = getRedisClient();
-  
-  if (!redis || !isRedisConnected()) {
-    return;
-  }
-
-  try {
-    await redis.setex(key, ttl, JSON.stringify(response));
-  } catch (error) {
-    logger.error('Cache set error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      key,
-    });
-  }
+  memoryCache.set(key, response);
+  // TTL is handled by cleanup interval, but we store it for reference
+  response.ttl = ttl;
 }
-
 
 /**
  * Invalidate cache for a specific key
  */
 export async function invalidateCache(key: string): Promise<void> {
-  const redis = getRedisClient();
-  
-  if (!redis || !isRedisConnected()) {
-    return;
-  }
-
-  try {
-    await redis.del(key);
-    logger.debug('Cache invalidated', { key });
-  } catch (error) {
-    logger.error('Cache invalidation error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      key,
-    });
-  }
+  memoryCache.delete(key);
+  logger.debug('Cache invalidated', { key });
 }
 
 /**
  * Invalidate all cache entries with a specific prefix
- * Uses SCAN instead of KEYS to avoid blocking Redis in production
  */
 export async function invalidateCacheByPrefix(prefix: string): Promise<number> {
-  const redis = getRedisClient();
+  let totalDeleted = 0;
+  const pattern = `${prefix}:`;
   
-  if (!redis || !isRedisConnected()) {
-    return 0;
-  }
-
-  try {
-    let cursor = '0';
-    let totalDeleted = 0;
-    const pattern = `${prefix}:*`;
-    
-    // Use SCAN to iterate through keys without blocking
-    do {
-      const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
-      cursor = nextCursor;
-      
-      if (keys.length > 0) {
-        await redis.del(...keys);
-        totalDeleted += keys.length;
-      }
-    } while (cursor !== '0');
-    
-    if (totalDeleted > 0) {
-      logger.info(`Invalidated ${totalDeleted} cache entries`, { prefix });
+  for (const key of memoryCache.keys()) {
+    if (key.startsWith(pattern)) {
+      memoryCache.delete(key);
+      totalDeleted++;
     }
-    return totalDeleted;
-  } catch (error) {
-    logger.error('Cache prefix invalidation error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      prefix,
-    });
-    return 0;
   }
+  
+  if (totalDeleted > 0) {
+    logger.info(`Invalidated ${totalDeleted} cache entries`, { prefix });
+  }
+  return totalDeleted;
 }
-
 
 // ============================================
 // MIDDLEWARE
@@ -158,21 +128,6 @@ export async function invalidateCacheByPrefix(prefix: string): Promise<number> {
 /**
  * Response caching middleware
  * Only caches GET requests with successful responses
- * 
- * @param options - Cache configuration
- * @returns Hono middleware
- * 
- * @example
- * ```ts
- * // Cache for 5 minutes
- * app.get('/api/settings', cache({ ttl: 300 }), handler);
- * 
- * // Cache with custom key
- * app.get('/api/regions', cache({ 
- *   ttl: 3600,
- *   keyGenerator: (c) => `regions:${c.req.query('level') || 'all'}`
- * }), handler);
- * ```
  */
 export function cache(options: CacheOptions = {}) {
   const {
@@ -196,15 +151,7 @@ export function cache(options: CacheOptions = {}) {
       return;
     }
 
-    // Check if Redis is available
-    if (!isRedisConnected()) {
-      c.header('X-Cache-Status', 'DISABLED');
-      await next();
-      return;
-    }
-
     const cacheKey = `${keyPrefix}:${keyGenerator(c)}`;
-
 
     // Try to get cached response
     const cached = await getCachedResponse(cacheKey);
@@ -234,6 +181,7 @@ export function cache(options: CacheOptions = {}) {
           contentType,
           status: response.status,
           cachedAt: Date.now(),
+          expiresAt: Date.now() + (ttl * 1000),
         };
         
         await setCachedResponse(cacheKey, cacheEntry, ttl);

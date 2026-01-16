@@ -3,19 +3,17 @@
  *
  * Ensures that duplicate requests with the same Idempotency-Key header
  * return the same response without re-processing.
+ * Uses in-memory cache (Redis removed).
  *
  * **Feature: production-scalability**
  * **Requirements: 6.1, 6.2, 6.3, 6.4, 6.5**
  */
 
 import { Context, Next } from 'hono';
-import { getRedisClient } from '../config/redis';
 import { logger } from '../utils/logger';
 
 /**
  * TTL for idempotency cache entries (24 hours)
- * **Feature: production-scalability**
- * **Requirements: 6.3**
  */
 const IDEMPOTENCY_TTL = 86400; // 24 hours in seconds
 
@@ -30,11 +28,33 @@ interface IdempotencyEntry {
 }
 
 /**
+ * In-memory cache for idempotency
+ */
+const idempotencyCache = new Map<string, IdempotencyEntry>();
+
+/**
  * Get idempotency TTL for testing
  */
 export function getIdempotencyTTL(): number {
   return IDEMPOTENCY_TTL;
 }
+
+/**
+ * Clean up expired entries periodically
+ */
+function cleanupExpiredEntries(): void {
+  const now = Date.now();
+  const ttlMs = IDEMPOTENCY_TTL * 1000;
+  
+  for (const [key, entry] of idempotencyCache.entries()) {
+    if (now - entry.createdAt > ttlMs) {
+      idempotencyCache.delete(key);
+    }
+  }
+}
+
+// Run cleanup every hour
+setInterval(cleanupExpiredEntries, 60 * 60 * 1000);
 
 /**
  * Idempotency middleware factory
@@ -45,32 +65,13 @@ export function getIdempotencyTTL(): number {
  * 3. If no, process the request and cache the response
  *
  * Requests without Idempotency-Key are processed normally.
- *
- * **Feature: production-scalability, Property 13: Idempotency duplicate detection**
- * **Validates: Requirements 6.1, 6.2**
- *
- * @example
- * ```typescript
- * app.post('/leads', idempotencyMiddleware(), async (c) => {
- *   // This handler will only run once per unique Idempotency-Key
- * });
- * ```
  */
 export function idempotencyMiddleware() {
   return async (c: Context, next: Next) => {
     const idempotencyKey = c.req.header('Idempotency-Key');
 
-    // **Feature: production-scalability, Requirements: 6.4**
     // Requests without idempotency key are processed normally
     if (!idempotencyKey) {
-      return next();
-    }
-
-    const redis = getRedisClient();
-
-    // If Redis unavailable, process without idempotency
-    if (!redis) {
-      console.warn('[IDEMPOTENCY] Redis unavailable, processing without idempotency check');
       return next();
     }
 
@@ -78,28 +79,33 @@ export function idempotencyMiddleware() {
 
     try {
       // Check for existing cached response
-      const cached = await redis.get(cacheKey);
+      const cached = idempotencyCache.get(cacheKey);
 
       if (cached) {
-        // **Feature: production-scalability, Property 13: Idempotency duplicate detection**
-        // **Validates: Requirements 6.1, 6.2**
-        const entry: IdempotencyEntry = JSON.parse(cached);
+        // Check if entry is still valid
+        const now = Date.now();
+        const ttlMs = IDEMPOTENCY_TTL * 1000;
+        
+        if (now - cached.createdAt <= ttlMs) {
+          logger.info('[IDEMPOTENCY] Returning cached response', {
+            idempotencyKey,
+            originalCreatedAt: new Date(cached.createdAt).toISOString(),
+          });
 
-        logger.info('[IDEMPOTENCY] Returning cached response', {
-          idempotencyKey,
-          originalCreatedAt: new Date(entry.createdAt).toISOString(),
-        });
+          // Set cached headers
+          Object.entries(cached.headers).forEach(([key, value]) => {
+            c.header(key, value);
+          });
 
-        // Set cached headers
-        Object.entries(entry.headers).forEach(([key, value]) => {
-          c.header(key, value);
-        });
+          // Mark as replayed response
+          c.header('X-Idempotency-Replayed', 'true');
 
-        // Mark as replayed response
-        c.header('X-Idempotency-Replayed', 'true');
-
-        // Return cached response
-        return c.json(entry.body, entry.status as 200 | 201 | 400 | 404 | 500);
+          // Return cached response
+          return c.json(cached.body, cached.status as 200 | 201 | 400 | 404 | 500);
+        } else {
+          // Entry expired, remove it
+          idempotencyCache.delete(cacheKey);
+        }
       }
 
       // Process the request
@@ -123,9 +129,7 @@ export function idempotencyMiddleware() {
           };
 
           // Cache the response
-          // **Feature: production-scalability, Property 14: Idempotency cache TTL**
-          // **Validates: Requirements 6.3, 6.5**
-          await redis.setex(cacheKey, IDEMPOTENCY_TTL, JSON.stringify(entry));
+          idempotencyCache.set(cacheKey, entry);
 
           logger.info('[IDEMPOTENCY] Cached response', {
             idempotencyKey,
@@ -146,32 +150,29 @@ export function idempotencyMiddleware() {
 
 /**
  * Check if a response is cached for an idempotency key
- * Useful for testing and debugging
- *
- * @param idempotencyKey - The idempotency key to check
- * @returns The cached entry or null
  */
 export async function getIdempotencyEntry(idempotencyKey: string): Promise<IdempotencyEntry | null> {
-  const redis = getRedisClient();
-  if (!redis) return null;
-
   const cacheKey = `idempotency:${idempotencyKey}`;
-  const cached = await redis.get(cacheKey);
+  const cached = idempotencyCache.get(cacheKey);
 
   if (!cached) return null;
 
-  return JSON.parse(cached);
+  // Check if entry is still valid
+  const now = Date.now();
+  const ttlMs = IDEMPOTENCY_TTL * 1000;
+  
+  if (now - cached.createdAt > ttlMs) {
+    idempotencyCache.delete(cacheKey);
+    return null;
+  }
+
+  return cached;
 }
 
 /**
  * Clear an idempotency entry (for testing)
- *
- * @param idempotencyKey - The idempotency key to clear
  */
 export async function clearIdempotencyEntry(idempotencyKey: string): Promise<void> {
-  const redis = getRedisClient();
-  if (!redis) return;
-
   const cacheKey = `idempotency:${idempotencyKey}`;
-  await redis.del(cacheKey);
+  idempotencyCache.delete(cacheKey);
 }

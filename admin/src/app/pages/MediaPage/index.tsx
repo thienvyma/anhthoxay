@@ -54,7 +54,7 @@ export function MediaPage() {
     if (!files || files.length === 0) return;
     setUploading(true);
     try {
-      const uploadPromises = Array.from(files).map((file) => mediaApi.upload(file));
+      const uploadPromises = Array.from(files).map((file) => mediaApi.upload(file, 'gallery'));
       const results = await Promise.all(uploadPromises);
       setMediaFiles((prev) => [...results, ...prev]);
       toast.success(`Đã upload ${results.length} file!`);

@@ -12,7 +12,6 @@ import type { Context, Next } from 'hono';
 import CircuitBreaker from 'opossum';
 import { createLogger, logger } from '../utils/logger';
 import { getCorrelationId } from './correlation-id';
-import { getRedisClusterClientSync } from '../config/redis-cluster';
 
 // ============================================
 // Types and Interfaces
@@ -257,21 +256,13 @@ export function getCircuitBreakerStates(): Record<string, string> {
 // ============================================
 
 /**
- * Try to get cached response when circuit is open
+ * Try to get cached response when circuit is open (in-memory fallback)
  * _Requirements: 9.4_
  */
 async function getCachedResponse(cacheKey: string): Promise<string | null> {
-  try {
-    const redis = getRedisClusterClientSync();
-    if (redis) {
-      return await redis.get(cacheKey);
-    }
-  } catch (error) {
-    logger.warn('[TIMEOUT] Failed to get cached response', {
-      cacheKey,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
+  // In-memory cache - no distributed cache available
+  // Log for debugging purposes
+  logger.debug('Cache lookup attempted', { cacheKey });
   return null;
 }
 

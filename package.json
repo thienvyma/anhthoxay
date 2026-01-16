@@ -6,7 +6,8 @@
   "types": "./src/index.d.ts",
   "license": "MIT",
   "scripts": {
-    "build": "nx build",
+    "build": "nx build api",
+    "start": "node dist/api/main.js",
     "test": "node scripts/run-tests.js",
     "test:api": "npx vitest run --workspace vitest.workspace.ts --project api",
     "test:admin": "npx vitest run --workspace vitest.workspace.ts --project admin",
@@ -15,16 +16,11 @@
     "test:coverage": "npx vitest run --workspace vitest.workspace.ts --coverage",
     "env:init": "tsx scripts/env.ts init",
     "env:sync": "tsx scripts/env.ts sync",
-    "db:generate": "prisma generate --schema=infra/prisma/schema.prisma",
-    "db:push": "prisma db push --schema=infra/prisma/schema.prisma --skip-generate",
-    "db:migrate": "prisma migrate dev --name init --schema=infra/prisma/schema.prisma",
-    "db:seed": "tsx infra/prisma/seed.ts",
-    "db:seed-bidding": "tsx infra/prisma/seed-bidding.ts",
-    "db:migrate-furniture": "tsx infra/prisma/migrate-furniture-products.ts",
+    "firebase:seed": "tsx scripts/seed-firestore.ts",
+    "firebase:set-admin": "tsx scripts/firebase-set-admin-claims.ts",
     "dev:api": "nx serve api",
     "dev:landing": "nx serve landing",
-    "dev:admin": "nx serve admin",
-    "dev:portal": "nx serve portal"
+    "dev:admin": "nx serve admin"
   },
   "nx": {
     "includedScripts": []
@@ -32,11 +28,12 @@
   "dependencies": {
     "@nx/eslint-plugin": "21.6.3",
     "@nx/jest": "21.6.3",
-    "@prisma/client": "5.22.0",
     "@sentry/node": "^10.32.1",
     "@types/jsonwebtoken": "^9.0.10",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.66.4",
+    "firebase": "^12.7.0",
+    "firebase-admin": "^13.6.0",
     "googleapis": "^169.0.0",
     "ioredis": "^5.9.0",
     "jsonwebtoken": "^9.0.3",
@@ -93,7 +90,6 @@
     "jsonc-eslint-parser": "^2.1.0",
     "nx": "21.6.3",
     "prettier": "^2.6.2",
-    "prisma": "^5.20.0",
     "rollup": "^4.14.0",
     "ts-jest": "^29.4.0",
     "ts-node": "10.9.1",

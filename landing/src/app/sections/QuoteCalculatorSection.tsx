@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens, API_URL, resolveMediaUrl } from '@app/shared';
+import { tokens, API_URL, resolveMediaUrl, formatCurrency } from '@app/shared';
 import { useToast } from '../components/Toast';
 import { SaveQuoteModal } from '../components/SaveQuoteModal';
 import { useDebounce } from '../hooks/useDebounce';
@@ -87,15 +87,6 @@ interface QuoteCalculatorData {
 interface Props {
   data: QuoteCalculatorData;
 }
-
-// Format currency
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0,
-  }).format(value);
-};
 
 // Step indicator component
 const StepIndicator = memo(function StepIndicator({

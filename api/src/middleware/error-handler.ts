@@ -1,24 +1,28 @@
 import { Context } from 'hono';
 import { ZodError } from 'zod';
-import { Prisma } from '@prisma/client';
-import { AuthError } from '../services/auth.service';
+import { FirestoreError, NotFoundError, ValidationError, ConflictError, ForbiddenError } from '../errors/firestore.errors';
 import { createLogger } from '../utils/logger';
 import { getCorrelationId } from './correlation-id';
 import { captureException, setUser } from '../config/sentry';
 
 /**
- * Centralized error handler for Hono
+ * Centralized error handler for Hono (Firebase/Firestore)
  * 
  * Handles:
  * - ZodError → 400 with validation details
- * - AuthError → status from error.statusCode
- * - Prisma P2025 → 404 Not Found
- * - Prisma P2002 → 409 Conflict
+ * - FirestoreError → status from error.statusCode
+ * - NotFoundError → 404 Not Found
+ * - ValidationError → 400 Bad Request
+ * - ConflictError → 409 Conflict
+ * - ForbiddenError → 403 Forbidden
  * - Other errors → 500 Internal Server Error
  * 
  * Always includes correlationId in response for debugging
  * Stack trace included in dev mode only
  * Captures errors to Sentry in production
+ *
+ * **Feature: firebase-phase3-firestore**
+ * **Requirements: 13.1, 13.2, 13.3, 13.4, 13.5**
  * 
  * @example
  * ```ts
@@ -34,7 +38,7 @@ export function errorHandler() {
 
     // Log error with full details (always include stack in logs)
     logger.error(err.message, {
-      errorCode: (err as AuthError).code,
+      errorCode: (err as FirestoreError).code,
       stack: err.stack,
       errorName: err.name,
     });
@@ -42,7 +46,7 @@ export function errorHandler() {
     // Set user context for Sentry if available
     const user = c.get('user');
     if (user) {
-      setUser({ id: user.id, email: user.email, role: user.role });
+      setUser({ id: user.uid, email: user.email, role: user.role });
     }
 
     // Handle Zod validation errors (don't send to Sentry - client errors)
@@ -54,9 +58,9 @@ export function errorHandler() {
       }, 400);
     }
 
-    // Handle AuthError (custom auth errors - don't send to Sentry for 4xx)
-    if (err instanceof AuthError) {
-      // Only capture 5xx auth errors to Sentry
+    // Handle Firestore errors
+    if (err instanceof FirestoreError) {
+      // Only capture 5xx errors to Sentry
       if (err.statusCode >= 500) {
         captureException(err, {
           correlationId,
@@ -64,33 +68,82 @@ export function errorHandler() {
           method: c.req.method,
         });
       }
-      return c.json({
-        error: { code: err.code, message: err.message },
-        correlationId,
-      }, err.statusCode as 400 | 401 | 403 | 404 | 409 | 429 | 500);
-    }
 
-    // Handle Prisma errors
-    if (err instanceof Prisma.PrismaClientKnownRequestError) {
-      if (err.code === 'P2025') {
+      // Handle specific error types
+      if (err instanceof NotFoundError) {
         return c.json({
-          error: 'Record not found',
+          error: err.message,
+          code: err.code,
           correlationId,
         }, 404);
       }
-      if (err.code === 'P2002') {
+
+      if (err instanceof ValidationError) {
         return c.json({
-          error: 'Record already exists',
+          error: err.message,
+          code: err.code,
+          fields: err.fields,
+          correlationId,
+        }, 400);
+      }
+
+      if (err instanceof ConflictError) {
+        return c.json({
+          error: err.message,
+          code: err.code,
           correlationId,
         }, 409);
       }
-      // Capture other Prisma errors to Sentry
-      captureException(err, {
+
+      if (err instanceof ForbiddenError) {
+        return c.json({
+          error: err.message,
+          code: err.code,
+          correlationId,
+        }, 403);
+      }
+
+      // Generic Firestore error
+      return c.json({
+        error: err.message,
+        code: err.code,
         correlationId,
-        path: c.req.path,
-        method: c.req.method,
-        prismaCode: err.code,
-      });
+      }, err.statusCode as 400 | 401 | 403 | 404 | 409 | 429 | 500 | 503);
+    }
+
+    // Handle Firebase Auth errors
+    if (err.name === 'FirebaseAuthError' || (err as { code?: string }).code?.startsWith('auth/')) {
+      const authCode = (err as { code?: string }).code;
+      
+      if (authCode === 'auth/id-token-expired') {
+        return c.json({
+          error: 'Token expired',
+          code: 'TOKEN_EXPIRED',
+          correlationId,
+        }, 401);
+      }
+
+      if (authCode === 'auth/id-token-revoked') {
+        return c.json({
+          error: 'Token revoked',
+          code: 'TOKEN_REVOKED',
+          correlationId,
+        }, 401);
+      }
+
+      if (authCode === 'auth/invalid-id-token' || authCode === 'auth/argument-error') {
+        return c.json({
+          error: 'Invalid token',
+          code: 'INVALID_TOKEN',
+          correlationId,
+        }, 401);
+      }
+
+      return c.json({
+        error: 'Authentication failed',
+        code: authCode || 'AUTH_ERROR',
+        correlationId,
+      }, 401);
     }
 
     // Capture all 500 errors to Sentry

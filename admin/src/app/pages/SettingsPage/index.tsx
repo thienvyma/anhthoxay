@@ -18,6 +18,7 @@ import { AccountTab } from './AccountTab';
 import { GoogleSheetsTab } from './GoogleSheetsTab';
 import { EmailSettingsTab } from './EmailSettingsTab';
 import { ApiKeysTab } from './ApiKeysTab';
+import { MaintenanceTab } from './MaintenanceTab';
 import {
   type SettingsTab,
   type CompanySettings,
@@ -188,6 +189,17 @@ export function SettingsPage() {
         label: 'API Keys',
         icon: 'ri-key-2-line',
         content: <ApiKeysTab />,
+      },
+      {
+        id: 'maintenance',
+        label: 'Bảo trì',
+        icon: 'ri-tools-line',
+        content: (
+          <MaintenanceTab
+            onShowMessage={showSavedMessage}
+            onError={handleError}
+          />
+        ),
       },
     ],
     [companySettings, promoSettings, headerConfig, footerConfig, showSavedMessage, handleError]

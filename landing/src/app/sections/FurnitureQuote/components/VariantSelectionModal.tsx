@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokens, resolveMediaUrl } from '@app/shared';
+import { tokens, resolveMediaUrl, formatCurrency } from '@app/shared';
 import { useThrottledCallback } from '../../../hooks/useThrottle';
 import type { ProductBaseGroup, ProductVariantForLanding, FurnitureFee } from '../../../api/furniture';
 import type { SelectedProduct } from '../types';
@@ -29,14 +29,6 @@ interface VariantSelectionModalProps {
   /** Loading state */
   isLoading?: boolean;
 }
-
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0,
-  }).format(value);
-};
 
 /**
  * VariantSelectionModal - Modal for selecting product variants

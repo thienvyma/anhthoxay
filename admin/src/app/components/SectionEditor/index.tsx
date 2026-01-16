@@ -10,13 +10,17 @@ import { getSectionIcon, getSectionDescription } from './utils';
 import { renderPreview } from './previews/index';
 import { renderFormFields } from './forms';
 
+// Section types that should NOT sync across pages (each page has unique content)
+const NO_SYNC_SECTIONS: SectionKind[] = ['HERO_SIMPLE'];
+
 export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditorProps) {
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
   const [imagePickerField, setImagePickerField] = useState<string | null>(null);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
-  const [syncAll, setSyncAll] = useState(true); // Default: sync all sections of same kind
+  // Default syncAll based on section type - HERO_SIMPLE should NOT sync
+  const [syncAll, setSyncAll] = useState(!NO_SYNC_SECTIONS.includes(kind));
   const initialDataRef = useRef<string>('');
 
   useEffect(() => {
@@ -296,7 +300,8 @@ export function SectionEditor({ section, kind, onSave, onCancel }: SectionEditor
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              {section && (
+              {/* Hide sync checkbox for section types that should have unique content per page */}
+              {section && !NO_SYNC_SECTIONS.includes(kind) && (
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                   <input
                     type="checkbox"

@@ -4,11 +4,10 @@
  * Tracks Service Level Objectives (SLOs) including availability,
  * latency percentiles, and error budget calculations.
  *
- * **Feature: high-traffic-resilience**
- * **Requirements: 13.1, 13.2, 13.4, 13.5**
+ * Uses in-memory storage only. For distributed deployments,
+ * consider using Firebase or external metrics service.
  */
 
-import { getRedisClusterClient, getRedisClusterClientSync } from '../config/redis-cluster';
 import { logger } from '../utils/logger';
 
 // ============================================
@@ -111,11 +110,7 @@ export interface AlertConfig {
 // CONSTANTS
 // ============================================
 
-const REDIS_KEY_PREFIX = 'slo:';
-const DAILY_METRICS_KEY = (date: string) => `${REDIS_KEY_PREFIX}daily:${date}`;
-const LATENCY_SAMPLES_KEY = (date: string) => `${REDIS_KEY_PREFIX}latency:${date}`;
 const METRICS_TTL_DAYS = 35; // Keep 35 days of data for 30-day window
-const METRICS_TTL_SECONDS = METRICS_TTL_DAYS * 24 * 60 * 60;
 const MAX_LATENCY_SAMPLES = 10000; // Max samples per day for percentile calculation
 
 // Default configuration
@@ -138,7 +133,7 @@ const DEFAULT_ALERT_CONFIG: AlertConfig = {
 };
 
 // ============================================
-// IN-MEMORY FALLBACK
+// IN-MEMORY STORAGE
 // ============================================
 
 interface InMemoryMetrics {
@@ -185,13 +180,7 @@ export class SLOService {
     const date = this.getCurrentDate();
 
     try {
-      const redis = getRedisClusterClientSync();
-
-      if (redis && redis.isConnected()) {
-        await this.recordToRedis(redis, date, success, latencyMs);
-      } else {
-        this.recordToMemory(date, success, latencyMs);
-      }
+      this.recordToMemory(date, success, latencyMs);
 
       // Check for SLO breaches and trigger alerts
       await this.checkAndAlert();
@@ -200,64 +189,7 @@ export class SLOService {
       logger.warn('Failed to record SLO metrics', {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      // Fallback to memory
-      this.recordToMemory(date, success, latencyMs);
     }
-  }
-
-  private async recordToRedis(
-    redis: Awaited<ReturnType<typeof getRedisClusterClient>>,
-    date: string,
-    success: boolean,
-    latencyMs: number
-  ): Promise<void> {
-    const metricsKey = DAILY_METRICS_KEY(date);
-    const latencyKey = LATENCY_SAMPLES_KEY(date);
-
-    // Get current metrics
-    const currentData = await redis.get(metricsKey);
-    let metrics: DailyMetrics;
-
-    if (currentData) {
-      metrics = JSON.parse(currentData);
-    } else {
-      metrics = {
-        date,
-        total: 0,
-        successful: 0,
-        failed: 0,
-        latencySum: 0,
-        latencySamples: [],
-      };
-    }
-
-    // Update metrics
-    metrics.total++;
-    if (success) {
-      metrics.successful++;
-    } else {
-      metrics.failed++;
-    }
-    metrics.latencySum += latencyMs;
-
-    // Store updated metrics
-    await redis.set(metricsKey, JSON.stringify(metrics), METRICS_TTL_SECONDS);
-
-    // Store latency sample (reservoir sampling for large volumes)
-    const latencySamplesData = await redis.get(latencyKey);
-    const samples: number[] = latencySamplesData ? JSON.parse(latencySamplesData) : [];
-
-    if (samples.length < MAX_LATENCY_SAMPLES) {
-      samples.push(latencyMs);
-    } else {
-      // Reservoir sampling: replace random element
-      const idx = Math.floor(Math.random() * metrics.total);
-      if (idx < MAX_LATENCY_SAMPLES) {
-        samples[idx] = latencyMs;
-      }
-    }
-
-    await redis.set(latencyKey, JSON.stringify(samples), METRICS_TTL_SECONDS);
   }
 
   private recordToMemory(date: string, success: boolean, latencyMs: number): void {
@@ -330,8 +262,8 @@ export class SLOService {
     const windowDays = Math.ceil(this.config.availability.window / (24 * 60 * 60 * 1000));
     const dates = this.getDateRange(windowDays);
 
-    const allMetrics = await this.getMetricsForDates(dates);
-    const allLatencySamples = await this.getLatencySamplesForDates(dates);
+    const allMetrics = this.getMetricsForDates(dates);
+    const allLatencySamples = this.getLatencySamplesForDates(dates);
 
     // Aggregate metrics
     let totalRequests = 0;
@@ -653,94 +585,26 @@ export class SLOService {
     return dates;
   }
 
-  private async getMetricsForDates(dates: string[]): Promise<DailyMetrics[]> {
+  private getMetricsForDates(dates: string[]): DailyMetrics[] {
     const metrics: DailyMetrics[] = [];
 
-    try {
-      const redis = getRedisClusterClientSync();
-
-      if (redis && redis.isConnected()) {
-        const keys = dates.map(DAILY_METRICS_KEY);
-        const values = await redis.mget(keys);
-
-        for (let i = 0; i < dates.length; i++) {
-          if (values[i]) {
-            metrics.push(JSON.parse(values[i]));
-          } else {
-            // Check in-memory fallback
-            const memMetrics = inMemoryMetrics.daily.get(dates[i]);
-            if (memMetrics) {
-              metrics.push(memMetrics);
-            }
-          }
-        }
-      } else {
-        // Use in-memory data
-        for (const date of dates) {
-          const memMetrics = inMemoryMetrics.daily.get(date);
-          if (memMetrics) {
-            metrics.push(memMetrics);
-          }
-        }
-      }
-    } catch (error) {
-      logger.warn('Failed to get metrics from Redis, using in-memory', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-
-      // Fallback to in-memory
-      for (const date of dates) {
-        const memMetrics = inMemoryMetrics.daily.get(date);
-        if (memMetrics) {
-          metrics.push(memMetrics);
-        }
+    for (const date of dates) {
+      const memMetrics = inMemoryMetrics.daily.get(date);
+      if (memMetrics) {
+        metrics.push(memMetrics);
       }
     }
 
     return metrics;
   }
 
-  private async getLatencySamplesForDates(dates: string[]): Promise<number[][]> {
+  private getLatencySamplesForDates(dates: string[]): number[][] {
     const samples: number[][] = [];
 
-    try {
-      const redis = getRedisClusterClientSync();
-
-      if (redis && redis.isConnected()) {
-        const keys = dates.map(LATENCY_SAMPLES_KEY);
-        const values = await redis.mget(keys);
-
-        for (let i = 0; i < dates.length; i++) {
-          if (values[i]) {
-            samples.push(JSON.parse(values[i]));
-          } else {
-            // Check in-memory fallback
-            const memSamples = inMemoryMetrics.latencySamples.get(dates[i]);
-            if (memSamples) {
-              samples.push(memSamples);
-            }
-          }
-        }
-      } else {
-        // Use in-memory data
-        for (const date of dates) {
-          const memSamples = inMemoryMetrics.latencySamples.get(date);
-          if (memSamples) {
-            samples.push(memSamples);
-          }
-        }
-      }
-    } catch (error) {
-      logger.warn('Failed to get latency samples from Redis, using in-memory', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-
-      // Fallback to in-memory
-      for (const date of dates) {
-        const memSamples = inMemoryMetrics.latencySamples.get(date);
-        if (memSamples) {
-          samples.push(memSamples);
-        }
+    for (const date of dates) {
+      const memSamples = inMemoryMetrics.latencySamples.get(date);
+      if (memSamples) {
+        samples.push(memSamples);
       }
     }
 

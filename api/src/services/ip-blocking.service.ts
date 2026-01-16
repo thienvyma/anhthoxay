@@ -3,13 +3,9 @@
  *
  * Provides IP blocking functionality for DDoS mitigation and abuse prevention.
  * Tracks rate limit violations per IP and automatically blocks IPs that exceed thresholds.
- * Uses Redis for distributed tracking across multiple instances with in-memory fallback.
- *
- * **Feature: high-traffic-resilience**
- * **Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6**
+ * Uses in-memory storage.
  */
 
-import { getRedisClient, isRedisConnected } from '../config/redis';
 import { logger } from '../utils/logger';
 
 // ============================================
@@ -44,20 +40,9 @@ export interface BlockedIPRecord {
   isEmergencyBlock: boolean;
 }
 
-export interface IPViolationStats {
-  ip: string;
-  count: number;
-  firstViolation: number;
-  lastViolation: number;
-}
-
 // ============================================
 // Constants
 // ============================================
-
-const BLOCKED_IP_KEY_PREFIX = 'blocked_ip';
-const IP_VIOLATIONS_KEY_PREFIX = 'ip_violations';
-const EMERGENCY_MODE_KEY = 'ip_blocking:emergency_mode';
 
 const DEFAULT_CONFIG: IPBlockingConfig = {
   threshold: 50,                    // 50 violations
@@ -67,7 +52,7 @@ const DEFAULT_CONFIG: IPBlockingConfig = {
   emergencyBlockDuration: 2 * 60 * 60 * 1000, // 2 hours
 };
 
-// In-memory fallback stores
+// In-memory stores
 const inMemoryBlockedIPs: Map<string, BlockedIPRecord> = new Map();
 const inMemoryViolations: Map<string, { count: number; timestamps: number[] }> = new Map();
 let inMemoryEmergencyMode = false;
@@ -85,162 +70,28 @@ class IPBlockingService {
 
   /**
    * Check if an IP is blocked
-   * 
-   * @param ip - The IP address to check
-   * @returns true if the IP is blocked
-   * 
-   * **Property 7: IP Blocking Enforcement**
-   * **Validates: Requirements 14.1, 14.2**
    */
   async isBlocked(ip: string): Promise<boolean> {
-    const redis = getRedisClient();
-    
-    if (!redis || !isRedisConnected()) {
-      return this.isBlockedInMemory(ip);
-    }
-
-    try {
-      const key = `${BLOCKED_IP_KEY_PREFIX}:${ip}`;
-      const record = await redis.get(key);
-      
-      if (!record) {
-        return false;
-      }
-
-      const blocked: BlockedIPRecord = JSON.parse(record);
-      
-      // Check if block has expired
-      if (Date.now() > blocked.expiresAt) {
-        await redis.del(key);
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      logger.error('[IP_BLOCKING] Failed to check blocked status', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        ip,
-      });
-      return this.isBlockedInMemory(ip);
-    }
+    return this.isBlockedInMemory(ip);
   }
 
   /**
    * Record a rate limit violation for an IP
-   * Automatically blocks the IP if threshold is exceeded
-   * 
-   * @param ip - The IP address that violated rate limits
-   * 
-   * **Validates: Requirements 14.1**
    */
   async recordViolation(ip: string): Promise<void> {
-    const redis = getRedisClient();
     const isEmergency = await this.isEmergencyMode();
-    
-    if (!redis || !isRedisConnected()) {
-      await this.recordViolationInMemory(ip, isEmergency);
-      return;
-    }
-
-    try {
-      const key = `${IP_VIOLATIONS_KEY_PREFIX}:${ip}`;
-      const now = Date.now();
-      const windowStart = now - this.config.window;
-      const threshold = isEmergency ? this.config.emergencyThreshold : this.config.threshold;
-
-      // Use Redis sorted set for sliding window
-      const pipeline = redis.pipeline();
-      
-      // Remove expired entries
-      pipeline.zremrangebyscore(key, 0, windowStart);
-      
-      // Add current violation
-      pipeline.zadd(key, now, `${now}-${Math.random()}`);
-      
-      // Count violations in window
-      pipeline.zcard(key);
-      
-      // Set expiry
-      pipeline.expire(key, Math.ceil(this.config.window / 1000) + 60);
-      
-      const results = await pipeline.exec();
-      
-      if (!results) {
-        throw new Error('Redis pipeline returned null');
-      }
-
-      // Get count from zcard result (index 2)
-      const countResult = results[2];
-      const violationCount = countResult && countResult[1] ? Number(countResult[1]) : 0;
-
-      logger.debug('[IP_BLOCKING] Recorded violation', {
-        ip,
-        violationCount,
-        threshold,
-        isEmergency,
-      });
-
-      // Check if threshold exceeded
-      if (violationCount >= threshold) {
-        const blockDuration = isEmergency 
-          ? this.config.emergencyBlockDuration 
-          : this.config.blockDuration;
-        
-        await this.blockIP(
-          ip, 
-          `Exceeded rate limit threshold (${violationCount} violations in ${this.config.window / 60000} minutes)`,
-          blockDuration,
-          undefined,
-          isEmergency
-        );
-      }
-    } catch (error) {
-      logger.error('[IP_BLOCKING] Failed to record violation', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        ip,
-      });
-      await this.recordViolationInMemory(ip, isEmergency);
-    }
+    await this.recordViolationInMemory(ip, isEmergency);
   }
 
   /**
    * Get violation count for an IP in the current window
-   * 
-   * @param ip - The IP address to check
-   * @returns Number of violations in the current window
    */
   async getViolationCount(ip: string): Promise<number> {
-    const redis = getRedisClient();
-    
-    if (!redis || !isRedisConnected()) {
-      return this.getViolationCountInMemory(ip);
-    }
-
-    try {
-      const key = `${IP_VIOLATIONS_KEY_PREFIX}:${ip}`;
-      const now = Date.now();
-      const windowStart = now - this.config.window;
-      
-      return await redis.zcount(key, windowStart, now);
-    } catch (error) {
-      logger.error('[IP_BLOCKING] Failed to get violation count', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        ip,
-      });
-      return this.getViolationCountInMemory(ip);
-    }
+    return this.getViolationCountInMemory(ip);
   }
 
   /**
    * Block an IP address
-   * 
-   * @param ip - The IP address to block
-   * @param reason - Reason for blocking
-   * @param duration - Block duration in ms (optional, uses default)
-   * @param blockedBy - Admin ID if manual block
-   * @param isEmergencyBlock - Whether this is an emergency mode block
-   * 
-   * **Validates: Requirements 14.1, 14.3**
    */
   async blockIP(
     ip: string, 
@@ -249,12 +100,10 @@ class IPBlockingService {
     blockedBy?: string,
     isEmergencyBlock = false
   ): Promise<void> {
-    const redis = getRedisClient();
     const now = Date.now();
     const blockDuration = duration || this.config.blockDuration;
     const expiresAt = now + blockDuration;
     
-    // Get current violation count
     const violationCount = await this.getViolationCount(ip);
 
     const record: BlockedIPRecord = {
@@ -267,242 +116,57 @@ class IPBlockingService {
       isEmergencyBlock,
     };
 
-    if (!redis || !isRedisConnected()) {
-      this.blockIPInMemory(record);
-      return;
-    }
-
-    try {
-      const key = `${BLOCKED_IP_KEY_PREFIX}:${ip}`;
-      const ttlSeconds = Math.ceil(blockDuration / 1000);
-      
-      await redis.setex(key, ttlSeconds, JSON.stringify(record));
-
-      logger.warn('[IP_BLOCKING] IP blocked', {
-        ip,
-        reason,
-        expiresAt: new Date(expiresAt).toISOString(),
-        violationCount,
-        blockedBy,
-        isEmergencyBlock,
-      });
-    } catch (error) {
-      logger.error('[IP_BLOCKING] Failed to block IP in Redis', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        ip,
-      });
-      this.blockIPInMemory(record);
-    }
+    this.blockIPInMemory(record);
   }
 
   /**
    * Unblock an IP address
-   * 
-   * @param ip - The IP address to unblock
-   * 
-   * **Validates: Requirements 14.4**
    */
   async unblockIP(ip: string): Promise<void> {
-    const redis = getRedisClient();
-    
-    // Remove from in-memory store
     inMemoryBlockedIPs.delete(ip);
-
-    if (!redis || !isRedisConnected()) {
-      logger.info('[IP_BLOCKING] IP unblocked (in-memory)', { ip });
-      return;
-    }
-
-    try {
-      const key = `${BLOCKED_IP_KEY_PREFIX}:${ip}`;
-      await redis.del(key);
-      
-      // Also clear violation history
-      const violationKey = `${IP_VIOLATIONS_KEY_PREFIX}:${ip}`;
-      await redis.del(violationKey);
-
-      logger.info('[IP_BLOCKING] IP unblocked', { ip });
-    } catch (error) {
-      logger.error('[IP_BLOCKING] Failed to unblock IP', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        ip,
-      });
-    }
+    inMemoryViolations.delete(ip);
+    logger.info('[IP_BLOCKING] IP unblocked', { ip });
   }
 
   /**
    * Get list of all blocked IPs
-   * Uses SCAN instead of KEYS to avoid blocking Redis in production
-   * 
-   * @returns Array of blocked IP records
-   * 
-   * **Validates: Requirements 14.3**
    */
   async getBlockedIPs(): Promise<BlockedIP[]> {
-    const redis = getRedisClient();
-    
-    if (!redis || !isRedisConnected()) {
-      return this.getBlockedIPsFromMemory();
-    }
-
-    try {
-      const blockedIPs: BlockedIP[] = [];
-      const now = Date.now();
-      let cursor = '0';
-      const pattern = `${BLOCKED_IP_KEY_PREFIX}:*`;
-      
-      // Use SCAN to iterate through keys without blocking
-      do {
-        const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
-        cursor = nextCursor;
-        
-        for (const key of keys) {
-          const record = await redis.get(key);
-          if (record) {
-            const blocked: BlockedIPRecord = JSON.parse(record);
-            
-            // Skip expired entries
-            if (blocked.expiresAt <= now) {
-              await redis.del(key);
-              continue;
-            }
-
-            blockedIPs.push({
-              ip: blocked.ip,
-              reason: blocked.reason,
-              blockedAt: new Date(blocked.blockedAt),
-              expiresAt: new Date(blocked.expiresAt),
-              violationCount: blocked.violationCount,
-              blockedBy: blocked.blockedBy,
-              isEmergencyBlock: blocked.isEmergencyBlock,
-            });
-          }
-        }
-      } while (cursor !== '0');
-
-      return blockedIPs.sort((a, b) => b.blockedAt.getTime() - a.blockedAt.getTime());
-    } catch (error) {
-      logger.error('[IP_BLOCKING] Failed to get blocked IPs', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      return this.getBlockedIPsFromMemory();
-    }
+    return this.getBlockedIPsFromMemory();
   }
 
   /**
    * Get details of a blocked IP
-   * 
-   * @param ip - The IP address to get details for
-   * @returns Blocked IP record or null if not blocked
    */
   async getBlockedIPDetails(ip: string): Promise<BlockedIP | null> {
-    const redis = getRedisClient();
-    
-    if (!redis || !isRedisConnected()) {
-      const record = inMemoryBlockedIPs.get(ip);
-      if (!record || record.expiresAt <= Date.now()) {
-        return null;
-      }
-      return this.recordToBlockedIP(record);
-    }
-
-    try {
-      const key = `${BLOCKED_IP_KEY_PREFIX}:${ip}`;
-      const record = await redis.get(key);
-      
-      if (!record) {
-        return null;
-      }
-
-      const blocked: BlockedIPRecord = JSON.parse(record);
-      
-      if (blocked.expiresAt <= Date.now()) {
-        await redis.del(key);
-        return null;
-      }
-
-      return this.recordToBlockedIP(blocked);
-    } catch (error) {
-      logger.error('[IP_BLOCKING] Failed to get blocked IP details', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        ip,
-      });
+    const record = inMemoryBlockedIPs.get(ip);
+    if (!record || record.expiresAt <= Date.now()) {
       return null;
     }
+    return this.recordToBlockedIP(record);
   }
 
   /**
    * Enable emergency mode with stricter rate limits
-   * 
-   * **Validates: Requirements 14.5, 14.6**
    */
   async enableEmergencyMode(): Promise<void> {
-    const redis = getRedisClient();
-    
     inMemoryEmergencyMode = true;
-
-    if (!redis || !isRedisConnected()) {
-      logger.warn('[IP_BLOCKING] Emergency mode enabled (in-memory)');
-      return;
-    }
-
-    try {
-      // Emergency mode lasts for 1 hour by default
-      await redis.setex(EMERGENCY_MODE_KEY, 3600, '1');
-      logger.warn('[IP_BLOCKING] Emergency mode enabled');
-    } catch (error) {
-      logger.error('[IP_BLOCKING] Failed to enable emergency mode', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
+    logger.warn('[IP_BLOCKING] Emergency mode enabled');
   }
 
   /**
    * Disable emergency mode
-   * 
-   * **Validates: Requirements 14.5, 14.6**
    */
   async disableEmergencyMode(): Promise<void> {
-    const redis = getRedisClient();
-    
     inMemoryEmergencyMode = false;
-
-    if (!redis || !isRedisConnected()) {
-      logger.info('[IP_BLOCKING] Emergency mode disabled (in-memory)');
-      return;
-    }
-
-    try {
-      await redis.del(EMERGENCY_MODE_KEY);
-      logger.info('[IP_BLOCKING] Emergency mode disabled');
-    } catch (error) {
-      logger.error('[IP_BLOCKING] Failed to disable emergency mode', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
+    logger.info('[IP_BLOCKING] Emergency mode disabled');
   }
 
   /**
    * Check if emergency mode is active
-   * 
-   * @returns true if emergency mode is active
    */
   async isEmergencyMode(): Promise<boolean> {
-    const redis = getRedisClient();
-    
-    if (!redis || !isRedisConnected()) {
-      return inMemoryEmergencyMode;
-    }
-
-    try {
-      const value = await redis.get(EMERGENCY_MODE_KEY);
-      return value === '1';
-    } catch (error) {
-      logger.error('[IP_BLOCKING] Failed to check emergency mode', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      return inMemoryEmergencyMode;
-    }
+    return inMemoryEmergencyMode;
   }
 
   /**
@@ -520,7 +184,7 @@ class IPBlockingService {
   }
 
   // ============================================
-  // In-Memory Fallback Methods
+  // In-Memory Methods
   // ============================================
 
   private isBlockedInMemory(ip: string): boolean {
@@ -553,6 +217,13 @@ class IPBlockingService {
     // Add current violation
     entry.timestamps.push(now);
     entry.count = entry.timestamps.length;
+
+    logger.debug('[IP_BLOCKING] Recorded violation', {
+      ip,
+      violationCount: entry.count,
+      threshold,
+      isEmergency,
+    });
     
     // Check threshold
     if (entry.count >= threshold) {
@@ -584,11 +255,12 @@ class IPBlockingService {
   private blockIPInMemory(record: BlockedIPRecord): void {
     inMemoryBlockedIPs.set(record.ip, record);
     
-    logger.warn('[IP_BLOCKING] IP blocked (in-memory)', {
+    logger.warn('[IP_BLOCKING] IP blocked', {
       ip: record.ip,
       reason: record.reason,
       expiresAt: new Date(record.expiresAt).toISOString(),
       violationCount: record.violationCount,
+      isEmergencyBlock: record.isEmergencyBlock,
     });
   }
 
@@ -622,43 +294,11 @@ class IPBlockingService {
 
   /**
    * Clear all blocked IPs and violations (for testing)
-   * Uses SCAN instead of KEYS to avoid blocking Redis in production
    */
   async clearAll(): Promise<void> {
     inMemoryBlockedIPs.clear();
     inMemoryViolations.clear();
     inMemoryEmergencyMode = false;
-
-    const redis = getRedisClient();
-    if (!redis || !isRedisConnected()) return;
-
-    try {
-      const keysToDelete: string[] = [EMERGENCY_MODE_KEY];
-      
-      // Scan for blocked IP keys
-      let cursor = '0';
-      do {
-        const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', `${BLOCKED_IP_KEY_PREFIX}:*`, 'COUNT', 100);
-        cursor = nextCursor;
-        keysToDelete.push(...keys);
-      } while (cursor !== '0');
-      
-      // Scan for violation keys
-      cursor = '0';
-      do {
-        const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', `${IP_VIOLATIONS_KEY_PREFIX}:*`, 'COUNT', 100);
-        cursor = nextCursor;
-        keysToDelete.push(...keys);
-      } while (cursor !== '0');
-      
-      if (keysToDelete.length > 0) {
-        await redis.del(...keysToDelete);
-      }
-    } catch (error) {
-      logger.error('[IP_BLOCKING] Failed to clear all data', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
   }
 }
 
@@ -667,109 +307,62 @@ class IPBlockingService {
 // ============================================
 
 export interface SuspiciousPatternConfig {
-  /** User agents to flag as suspicious */
   suspiciousUserAgents: string[];
-  /** Request rate threshold per second to trigger pattern detection */
   rapidRequestThreshold: number;
-  /** Time window for rapid request detection (ms) */
   rapidRequestWindow: number;
-  /** Whether to auto-enable emergency mode on attack detection */
   autoEmergencyMode: boolean;
-  /** Number of suspicious IPs to trigger auto emergency mode */
   autoEmergencyThreshold: number;
 }
 
 const DEFAULT_SUSPICIOUS_CONFIG: SuspiciousPatternConfig = {
   suspiciousUserAgents: [
-    'curl',
-    'wget',
-    'python-requests',
-    'go-http-client',
-    'java/',
-    'libwww-perl',
-    'scrapy',
-    'bot',
-    'crawler',
-    'spider',
+    'curl', 'wget', 'python-requests', 'go-http-client',
+    'java/', 'libwww-perl', 'scrapy', 'bot', 'crawler', 'spider',
   ],
-  rapidRequestThreshold: 10,  // 10 requests per second
-  rapidRequestWindow: 1000,   // 1 second
+  rapidRequestThreshold: 10,
+  rapidRequestWindow: 1000,
   autoEmergencyMode: true,
-  autoEmergencyThreshold: 10, // 10 suspicious IPs triggers emergency
+  autoEmergencyThreshold: 10,
 };
 
 let suspiciousConfig: SuspiciousPatternConfig = { ...DEFAULT_SUSPICIOUS_CONFIG };
 const suspiciousIPsCount = new Map<string, number>();
 const rapidRequestTracking = new Map<string, number[]>();
 
-/**
- * Get suspicious pattern configuration
- */
 export function getSuspiciousPatternConfig(): SuspiciousPatternConfig {
   return { ...suspiciousConfig };
 }
 
-/**
- * Update suspicious pattern configuration
- */
 export function updateSuspiciousPatternConfig(config: Partial<SuspiciousPatternConfig>): void {
   suspiciousConfig = { ...suspiciousConfig, ...config };
-  logger.info('[IP_BLOCKING] Suspicious pattern config updated', { config: suspiciousConfig });
 }
 
-/**
- * Check if a user agent is suspicious
- * 
- * **Validates: Requirements 14.5**
- */
 export function isSuspiciousUserAgent(userAgent: string | undefined): boolean {
-  if (!userAgent) return true; // No user agent is suspicious
-  
+  if (!userAgent) return true;
   const lowerUA = userAgent.toLowerCase();
   return suspiciousConfig.suspiciousUserAgents.some(pattern => 
     lowerUA.includes(pattern.toLowerCase())
   );
 }
 
-/**
- * Track rapid requests from an IP
- * Returns true if the IP is making rapid requests (potential attack)
- * 
- * **Validates: Requirements 14.5**
- */
 export function trackRapidRequests(ip: string): boolean {
   const now = Date.now();
   const windowStart = now - suspiciousConfig.rapidRequestWindow;
   
   let timestamps = rapidRequestTracking.get(ip) || [];
-  
-  // Remove old timestamps
   timestamps = timestamps.filter(t => t > windowStart);
-  
-  // Add current timestamp
   timestamps.push(now);
   rapidRequestTracking.set(ip, timestamps);
   
-  // Check if exceeds threshold
   return timestamps.length >= suspiciousConfig.rapidRequestThreshold;
 }
 
-/**
- * Record a suspicious IP and check if emergency mode should be triggered
- * 
- * **Validates: Requirements 14.5, 14.6**
- */
 export async function recordSuspiciousIP(ip: string, reason: string): Promise<void> {
   const count = (suspiciousIPsCount.get(ip) || 0) + 1;
   suspiciousIPsCount.set(ip, count);
   
-  logger.warn('[IP_BLOCKING] Suspicious activity detected', {
-    ip,
-    reason,
-    count,
-  });
+  logger.warn('[IP_BLOCKING] Suspicious activity detected', { ip, reason, count });
   
-  // Check if we should auto-enable emergency mode
   if (suspiciousConfig.autoEmergencyMode) {
     const totalSuspicious = suspiciousIPsCount.size;
     
@@ -778,7 +371,7 @@ export async function recordSuspiciousIP(ip: string, reason: string): Promise<vo
       const isEmergency = await ipBlockingService.isEmergencyMode();
       
       if (!isEmergency) {
-        logger.warn('[IP_BLOCKING] Auto-enabling emergency mode due to suspicious activity', {
+        logger.warn('[IP_BLOCKING] Auto-enabling emergency mode', {
           suspiciousIPCount: totalSuspicious,
           threshold: suspiciousConfig.autoEmergencyThreshold,
         });
@@ -788,17 +381,11 @@ export async function recordSuspiciousIP(ip: string, reason: string): Promise<vo
   }
 }
 
-/**
- * Clear suspicious IP tracking (for testing or reset)
- */
 export function clearSuspiciousTracking(): void {
   suspiciousIPsCount.clear();
   rapidRequestTracking.clear();
 }
 
-/**
- * Get suspicious IP statistics
- */
 export function getSuspiciousStats(): { totalSuspiciousIPs: number; rapidRequestIPs: number } {
   return {
     totalSuspiciousIPs: suspiciousIPsCount.size,
@@ -809,7 +396,7 @@ export function getSuspiciousStats(): { totalSuspiciousIPs: number; rapidRequest
 // Cleanup old rapid request tracking every minute
 setInterval(() => {
   const now = Date.now();
-  const windowStart = now - suspiciousConfig.rapidRequestWindow * 60; // Keep 1 minute of data
+  const windowStart = now - suspiciousConfig.rapidRequestWindow * 60;
   
   for (const [ip, timestamps] of rapidRequestTracking.entries()) {
     const filtered = timestamps.filter(t => t > windowStart);
@@ -827,9 +414,6 @@ setInterval(() => {
 
 let ipBlockingService: IPBlockingService | null = null;
 
-/**
- * Get or create the IP blocking service singleton
- */
 export function getIPBlockingService(config?: Partial<IPBlockingConfig>): IPBlockingService {
   if (!ipBlockingService) {
     ipBlockingService = new IPBlockingService(config);
@@ -837,18 +421,11 @@ export function getIPBlockingService(config?: Partial<IPBlockingConfig>): IPBloc
   return ipBlockingService;
 }
 
-/**
- * Reset the IP blocking service (for testing)
- */
 export function resetIPBlockingService(): void {
   ipBlockingService = null;
 }
 
-// Export constants for testing
 export const CONSTANTS = {
-  BLOCKED_IP_KEY_PREFIX,
-  IP_VIOLATIONS_KEY_PREFIX,
-  EMERGENCY_MODE_KEY,
   DEFAULT_CONFIG,
 };
 

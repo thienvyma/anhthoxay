@@ -1,10 +1,10 @@
 /**
  * Media Gallery Section
- * Displays all media images with pagination
+ * Displays all media images with pagination and enhanced lightbox
  */
 
-import { useState, useEffect, useCallback, memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useCallback, memo, useRef } from 'react';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { tokens, resolveMediaUrl, API_URL } from '@app/shared';
 
 interface MediaAsset {
@@ -31,7 +31,10 @@ export const MediaGallery = memo(function MediaGallery({
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [selectedImage, setSelectedImage] = useState<MediaAsset | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [direction, setDirection] = useState(0);
+  const constraintsRef = useRef<HTMLDivElement>(null);
 
   const columns = data.columns || 3;
   const itemsPerPage = data.itemsPerPage || 12;
@@ -67,15 +70,90 @@ export const MediaGallery = memo(function MediaGallery({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  const openLightbox = useCallback((image: MediaAsset) => {
-    setSelectedImage(image);
+  const selectedImage = selectedIndex !== null ? images[selectedIndex] : null;
+
+  const openLightbox = useCallback((index: number) => {
+    setSelectedIndex(index);
+    setIsZoomed(false);
+    setDirection(0);
     document.body.style.overflow = 'hidden';
   }, []);
 
   const closeLightbox = useCallback(() => {
-    setSelectedImage(null);
+    setSelectedIndex(null);
+    setIsZoomed(false);
     document.body.style.overflow = '';
   }, []);
+
+  const goToPrev = useCallback(() => {
+    if (selectedIndex === null || images.length === 0) return;
+    setDirection(-1);
+    setIsZoomed(false);
+    setSelectedIndex((selectedIndex - 1 + images.length) % images.length);
+  }, [selectedIndex, images.length]);
+
+  const goToNext = useCallback(() => {
+    if (selectedIndex === null || images.length === 0) return;
+    setDirection(1);
+    setIsZoomed(false);
+    setSelectedIndex((selectedIndex + 1) % images.length);
+  }, [selectedIndex, images.length]);
+
+  const toggleZoom = useCallback(() => {
+    setIsZoomed((prev) => !prev);
+  }, []);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (selectedIndex === null) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'Escape':
+          closeLightbox();
+          break;
+        case 'ArrowLeft':
+          goToPrev();
+          break;
+        case 'ArrowRight':
+          goToNext();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedIndex, closeLightbox, goToPrev, goToNext]);
+
+  // Swipe handler
+  const handleDragEnd = useCallback(
+    (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+      if (isZoomed) return;
+      const threshold = 50;
+      if (info.offset.x > threshold) {
+        goToPrev();
+      } else if (info.offset.x < -threshold) {
+        goToNext();
+      }
+    },
+    [isZoomed, goToPrev, goToNext]
+  );
+
+  // Slide animation variants
+  const slideVariants = {
+    enter: (dir: number) => ({
+      x: dir > 0 ? 300 : -300,
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+    },
+    exit: (dir: number) => ({
+      x: dir < 0 ? 300 : -300,
+      opacity: 0,
+    }),
+  };
 
   if (loading && images.length === 0) {
     return (
@@ -102,8 +180,20 @@ export const MediaGallery = memo(function MediaGallery({
   }
 
   return (
-    <section style={{ padding: '80px 0' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
+    <section style={{ padding: '60px 0 80px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 12px' }}>
+        <div
+          style={{
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: 16,
+            background: 'rgba(12,12,16,0.85)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
+            padding: 'clamp(32px, 6vw, 48px) clamp(20px, 4vw, 40px)',
+          }}
+        >
         {/* Header */}
         {(data.title || data.subtitle) && (
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
@@ -157,7 +247,7 @@ export const MediaGallery = memo(function MediaGallery({
               viewport={{ once: true }}
               transition={{ delay: index * 0.05 }}
               whileHover={{ scale: 1.02 }}
-              onClick={() => openLightbox(image)}
+              onClick={() => openLightbox(index)}
               style={{
                 position: 'relative',
                 borderRadius: tokens.radius.md,
@@ -341,80 +431,344 @@ export const MediaGallery = memo(function MediaGallery({
           </div>
         )}
 
-        {/* Lightbox */}
+        {/* Enhanced Lightbox */}
         <AnimatePresence>
-          {selectedImage && (
+          {selectedImage && selectedIndex !== null && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeLightbox}
+              ref={constraintsRef}
+              className="lightbox-overlay"
               style={{
                 position: 'fixed',
                 inset: 0,
-                background: 'rgba(0,0,0,0.9)',
+                background: 'rgba(0,0,0,0.95)',
                 zIndex: 9999,
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: 24,
+                padding: 'clamp(12px, 3vw, 24px)',
+                overflow: 'hidden',
               }}
             >
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={closeLightbox}
+              {/* Top Controls Bar */}
+              <div
+                className="lightbox-controls-top"
                 style={{
                   position: 'absolute',
-                  top: 24,
-                  right: 24,
-                  width: 48,
-                  height: 48,
-                  borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.1)',
-                  border: 'none',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: 24,
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: 'clamp(8px, 2vw, 16px)',
+                  zIndex: 10,
                 }}
-              >
-                <i className="ri-close-line" />
-              </motion.button>
-              <motion.img
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                src={resolveMediaUrl(selectedImage.url)}
-                alt={selectedImage.alt || ''}
                 onClick={(e) => e.stopPropagation()}
-                style={{
-                  maxWidth: '90vw',
-                  maxHeight: '90vh',
-                  objectFit: 'contain',
-                  borderRadius: tokens.radius.md,
-                }}
-              />
-              {selectedImage.caption && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
+              >
+                {/* Image Counter */}
+                <div
                   style={{
-                    position: 'absolute',
-                    bottom: 24,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    padding: '12px 24px',
-                    background: 'rgba(0,0,0,0.7)',
-                    borderRadius: tokens.radius.md,
+                    padding: '6px 12px',
+                    background: 'rgba(0,0,0,0.6)',
+                    borderRadius: tokens.radius.pill,
                     color: '#fff',
-                    fontSize: 16,
-                    maxWidth: '80vw',
-                    textAlign: 'center',
+                    fontSize: 'clamp(12px, 2vw, 14px)',
+                    fontWeight: 500,
                   }}
                 >
-                  {selectedImage.caption}
-                </motion.div>
+                  {selectedIndex + 1} / {images.length}
+                </div>
+
+                {/* Right buttons */}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {/* Zoom Button */}
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={toggleZoom}
+                    className="lightbox-btn-zoom"
+                    style={{
+                      width: 'clamp(36px, 8vw, 44px)',
+                      height: 'clamp(36px, 8vw, 44px)',
+                      borderRadius: '50%',
+                      background: isZoomed ? tokens.color.primary : 'rgba(255,255,255,0.1)',
+                      border: 'none',
+                      color: isZoomed ? '#111' : '#fff',
+                      cursor: 'pointer',
+                      fontSize: 'clamp(16px, 3vw, 20px)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <i className={isZoomed ? 'ri-zoom-out-line' : 'ri-zoom-in-line'} />
+                  </motion.button>
+
+                  {/* Close Button */}
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={closeLightbox}
+                    style={{
+                      width: 'clamp(36px, 8vw, 44px)',
+                      height: 'clamp(36px, 8vw, 44px)',
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.1)',
+                      border: 'none',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      fontSize: 'clamp(18px, 3vw, 22px)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <i className="ri-close-line" />
+                  </motion.button>
+                </div>
+              </div>
+
+              {/* Prev Button */}
+              {images.length > 1 && (
+                <motion.button
+                  whileHover={{ scale: 1.1, x: -2 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goToPrev();
+                  }}
+                  className="lightbox-nav-btn"
+                  style={{
+                    position: 'absolute',
+                    left: 'clamp(8px, 2vw, 16px)',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: 'clamp(40px, 8vw, 48px)',
+                    height: 'clamp(40px, 8vw, 48px)',
+                    borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.1)',
+                    border: 'none',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: 'clamp(20px, 4vw, 24px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 10,
+                  }}
+                >
+                  <i className="ri-arrow-left-s-line" />
+                </motion.button>
               )}
+
+              {/* Next Button */}
+              {images.length > 1 && (
+                <motion.button
+                  whileHover={{ scale: 1.1, x: 2 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goToNext();
+                  }}
+                  className="lightbox-nav-btn"
+                  style={{
+                    position: 'absolute',
+                    right: 'clamp(8px, 2vw, 16px)',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: 'clamp(40px, 8vw, 48px)',
+                    height: 'clamp(40px, 8vw, 48px)',
+                    borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.1)',
+                    border: 'none',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: 'clamp(20px, 4vw, 24px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 10,
+                  }}
+                >
+                  <i className="ri-arrow-right-s-line" />
+                </motion.button>
+              )}
+
+              {/* Image with swipe support */}
+              <AnimatePresence initial={false} custom={direction} mode="wait">
+                <motion.div
+                  key={selectedIndex}
+                  custom={direction}
+                  variants={slideVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.25, ease: 'easeInOut' }}
+                  drag={!isZoomed ? 'x' : false}
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.2}
+                  onDragEnd={handleDragEnd}
+                  onClick={(e) => e.stopPropagation()}
+                  onDoubleClick={toggleZoom}
+                  className="lightbox-image-wrapper"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: isZoomed ? 'zoom-out' : 'zoom-in',
+                    width: '100%',
+                    height: '100%',
+                    padding: '56px 60px 100px',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <motion.img
+                    src={resolveMediaUrl(selectedImage.url)}
+                    alt={selectedImage.alt || ''}
+                    animate={{
+                      scale: isZoomed ? 1.8 : 1,
+                    }}
+                    transition={{ duration: 0.3 }}
+                    drag={isZoomed}
+                    dragConstraints={constraintsRef}
+                    className="lightbox-image"
+                    style={{
+                      maxWidth: isZoomed ? 'none' : 'calc(100vw - 120px)',
+                      maxHeight: isZoomed ? 'none' : 'calc(100vh - 180px)',
+                      objectFit: 'contain',
+                      borderRadius: tokens.radius.md,
+                      userSelect: 'none',
+                      pointerEvents: 'auto',
+                    }}
+                  />
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Bottom Controls: Caption + Thumbnails */}
+              <div
+                className="lightbox-controls-bottom"
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: 'clamp(8px, 2vw, 16px)',
+                  zIndex: 10,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Thumbnail strip */}
+                {images.length > 1 && (
+                  <div
+                    className="lightbox-thumbnails"
+                    style={{
+                      display: 'flex',
+                      gap: 'clamp(4px, 1vw, 8px)',
+                      padding: 'clamp(6px, 1.5vw, 12px)',
+                      background: 'rgba(0,0,0,0.6)',
+                      borderRadius: tokens.radius.md,
+                      maxWidth: '95vw',
+                      overflowX: 'auto',
+                    }}
+                  >
+                    {images.slice(0, 10).map((img, idx) => (
+                      <motion.div
+                        key={img.id}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          setDirection(idx > selectedIndex ? 1 : -1);
+                          setSelectedIndex(idx);
+                          setIsZoomed(false);
+                        }}
+                        style={{
+                          width: 'clamp(36px, 8vw, 48px)',
+                          height: 'clamp(36px, 8vw, 48px)',
+                          borderRadius: 6,
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          border: idx === selectedIndex 
+                            ? `2px solid ${tokens.color.primary}` 
+                            : '2px solid transparent',
+                          opacity: idx === selectedIndex ? 1 : 0.6,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <img
+                          src={resolveMediaUrl(img.url)}
+                          alt=""
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                        />
+                      </motion.div>
+                    ))}
+                    {images.length > 10 && (
+                      <div
+                        style={{
+                          width: 'clamp(36px, 8vw, 48px)',
+                          height: 'clamp(36px, 8vw, 48px)',
+                          borderRadius: 6,
+                          background: 'rgba(255,255,255,0.1)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#fff',
+                          fontSize: 'clamp(10px, 2vw, 12px)',
+                          flexShrink: 0,
+                        }}
+                      >
+                        +{images.length - 10}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Caption */}
+                {selectedImage.caption && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                      padding: 'clamp(8px, 2vw, 12px) clamp(12px, 3vw, 24px)',
+                      background: 'rgba(0,0,0,0.7)',
+                      borderRadius: tokens.radius.md,
+                      color: '#fff',
+                      fontSize: 'clamp(12px, 2vw, 15px)',
+                      maxWidth: '90vw',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {selectedImage.caption}
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Keyboard hint - desktop only */}
+              <div
+                className="keyboard-hint"
+                style={{
+                  position: 'absolute',
+                  bottom: 8,
+                  right: 16,
+                  fontSize: 11,
+                  color: 'rgba(255,255,255,0.4)',
+                }}
+              >
+                ← → để chuyển ảnh • ESC để đóng
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -425,9 +779,52 @@ export const MediaGallery = memo(function MediaGallery({
             opacity: 1 !important;
           }
           
+          .lightbox-overlay {
+            touch-action: none;
+          }
+          
+          .lightbox-thumbnails::-webkit-scrollbar {
+            height: 4px;
+          }
+          
+          .lightbox-thumbnails::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          
+          .lightbox-thumbnails::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 2px;
+          }
+          
+          /* Lightbox image responsive */
+          .lightbox-image-wrapper {
+            padding: 56px 60px 100px !important;
+          }
+          
+          .lightbox-image {
+            max-width: calc(100vw - 120px) !important;
+            max-height: calc(100vh - 180px) !important;
+          }
+          
           @media (max-width: 768px) {
             .gallery-grid {
               grid-template-columns: repeat(2, 1fr) !important;
+            }
+            .keyboard-hint {
+              display: none !important;
+            }
+            .lightbox-nav-btn {
+              opacity: 0.7;
+            }
+            .lightbox-btn-zoom {
+              display: none !important;
+            }
+            .lightbox-image-wrapper {
+              padding: 50px 50px 90px !important;
+            }
+            .lightbox-image {
+              max-width: calc(100vw - 100px) !important;
+              max-height: calc(100vh - 160px) !important;
             }
           }
           
@@ -435,8 +832,16 @@ export const MediaGallery = memo(function MediaGallery({
             .gallery-grid {
               grid-template-columns: 1fr !important;
             }
+            .lightbox-image-wrapper {
+              padding: 48px 40px 80px !important;
+            }
+            .lightbox-image {
+              max-width: calc(100vw - 80px) !important;
+              max-height: calc(100vh - 150px) !important;
+            }
           }
         `}</style>
+        </div>
       </div>
     </section>
   );

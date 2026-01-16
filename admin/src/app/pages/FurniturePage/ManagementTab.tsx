@@ -362,7 +362,7 @@ export function ManagementTab({
   // Image upload handler for apartment type only
   const handleApartmentTypeImageUpload = async (file: File) => {
     try {
-      const result = await mediaApi.uploadFile(file);
+      const result = await mediaApi.uploadFile(file, 'products');
       setApartmentTypeForm((prev) => ({ ...prev, imageUrl: result.url }));
       toast.success('Tải ảnh lên thành công');
     } catch (error) { toast.error('Lỗi tải ảnh: ' + (error as Error).message); }

@@ -24,5 +24,6 @@ export { SuccessView } from './SuccessView';
 export { useQuotationData } from './useQuotationData';
 export { useQuotationActions } from './useQuotationActions';
 
-// Utils
-export { formatCurrency, calculateUnitNumber, calculateQuotation } from './utils';
+// Utils - calculateQuotation is local, formatCurrency/calculateUnitNumber from @app/shared
+export { calculateQuotation } from './utils';
+export { formatCurrency, calculateUnitNumber } from '@app/shared';

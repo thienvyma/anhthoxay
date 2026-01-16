@@ -23,6 +23,7 @@ const mockRedisClient = {
   del: vi.fn(),
   keys: vi.fn(),
   ttl: vi.fn(),
+  scan: vi.fn(),
 };
 
 let mockIsConnected = true;
@@ -314,17 +315,21 @@ describe('CacheService', () => {
           fc.constantFrom('cache:materials:*', 'cache:regions:*', 'cache:settings:*'),
           fc.integer({ min: 0, max: 10 }),
           async (pattern, keyCount) => {
+            // Reset mocks for each iteration
+            vi.clearAllMocks();
+            
             const matchingKeys = Array.from({ length: keyCount }, (_, i) =>
               pattern.replace('*', `key${i}`)
             );
-            mockRedisClient.keys.mockResolvedValueOnce(matchingKeys);
+            // Mock scan to return keys in first call, then '0' cursor to end
+            mockRedisClient.scan.mockResolvedValueOnce(['0', matchingKeys]);
             if (keyCount > 0) {
               mockRedisClient.del.mockResolvedValueOnce(keyCount);
             }
 
             const result = await cacheService.invalidateByPattern(pattern);
 
-            expect(mockRedisClient.keys).toHaveBeenCalledWith(pattern);
+            expect(mockRedisClient.scan).toHaveBeenCalledWith('0', 'MATCH', pattern, 'COUNT', 100);
             if (keyCount > 0) {
               expect(mockRedisClient.del).toHaveBeenCalledWith(...matchingKeys);
               expect(result).toBe(keyCount);

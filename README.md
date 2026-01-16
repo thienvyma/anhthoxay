@@ -13,9 +13,9 @@ WebApp cho doanh nghiệp thiết kế nội thất với tính năng báo giá 
 ```
 ├── landing/     → Port 4200 (React + Vite) - Website khách hàng
 ├── admin/       → Port 4201 (React + Vite) - Dashboard quản trị  
-├── api/         → Port 4202 (Hono + Prisma) - Backend API
+├── api/         → Port 4202 (Hono + Firebase) - Backend API
 ├── packages/    → Shared libraries (@app/shared, @app/ui)
-└── infra/       → Prisma schema + Database
+└── infra/       → Firebase configuration
 ```
 
 ## 🚀 Quick Start
@@ -23,6 +23,7 @@ WebApp cho doanh nghiệp thiết kế nội thất với tính năng báo giá 
 ### Prerequisites
 - Node.js 18+
 - pnpm
+- Firebase Project (with Firestore, Auth, Storage enabled)
 
 ### Installation
 
@@ -30,10 +31,14 @@ WebApp cho doanh nghiệp thiết kế nội thất với tính năng báo giá 
 # Install dependencies
 pnpm install
 
-# Setup database
-pnpm db:generate
-pnpm db:push
-pnpm db:seed
+# Setup Firebase
+# 1. Create a Firebase project at https://console.firebase.google.com
+# 2. Enable Firestore, Authentication, and Storage
+# 3. Download service account key and save as service-account.json
+# 4. Copy env.example to .env and configure Firebase settings
+
+# Seed initial data
+pnpm firebase:seed
 ```
 
 ### Development
@@ -47,15 +52,17 @@ pnpm dev:admin    # Admin Dashboard (http://localhost:4201)
 
 ### Default Admin Login
 ```
-Email: admin@example.com
-Password: admin123
+Email: admin@noithatnhanh.vn
+Password: Admin@123456
 ```
 
 ## 📦 Tech Stack
 
-- **Frontend**: React 18 + TypeScript + Vite
+- **Frontend**: React 19 + TypeScript + Vite
 - **Backend**: Hono (lightweight web framework)
-- **Database**: SQLite + Prisma ORM
+- **Database**: Firebase Firestore
+- **Authentication**: Firebase Auth
+- **Storage**: Firebase Storage
 - **Monorepo**: Nx
 - **Styling**: CSS-in-JS với design tokens
 
@@ -75,6 +82,12 @@ Password: admin123
 - **Media Library**: Quản lý hình ảnh
 - **Settings**: Cấu hình hệ thống, CTA, Promo popup
 
+### Bidding System
+- **Dự án**: Homeowner đăng dự án cần thi công
+- **Đấu thầu**: Contractor gửi báo giá
+- **Escrow**: Quản lý thanh toán an toàn
+- **Chat**: Giao tiếp real-time
+
 ## 📐 Công thức tính báo giá
 
 ```
@@ -92,10 +105,9 @@ Công thức: (50 × 80,000 × 1.2) + 500,000 = 5,300,000 VNĐ
 ## 🔧 Scripts
 
 ```bash
-# Database
-pnpm db:generate    # Generate Prisma client
-pnpm db:push        # Push schema to database
-pnpm db:seed        # Seed sample data
+# Firebase
+pnpm firebase:seed        # Seed initial data to Firestore
+pnpm firebase:set-admin   # Set admin custom claims
 
 # Development
 pnpm dev:api        # Start API server
@@ -106,6 +118,11 @@ pnpm dev:admin      # Start Admin dashboard
 pnpm nx run landing:typecheck
 pnpm nx run admin:typecheck
 pnpm nx run api:typecheck
+
+# Testing
+pnpm test:api       # Run API tests
+pnpm test:admin     # Run Admin tests
+pnpm test:landing   # Run Landing tests
 
 # Build
 pnpm nx run-many --target=build --all
@@ -119,8 +136,8 @@ anh-tho-xay/
 │   └── src/app/
 │       ├── components/ # UI components
 │       ├── pages/      # Page components
-│       ├── api.ts      # API client
-│       └── types.ts    # TypeScript types
+│       ├── api/        # API client modules
+│       └── auth/       # Firebase Auth context
 │
 ├── landing/            # Landing Page
 │   └── src/app/
@@ -129,20 +146,54 @@ anh-tho-xay/
 │       ├── components/ # Shared components
 │       └── api.ts      # API client
 │
-├── api/                # Backend API (Hono)
+├── api/                # Backend API (Hono + Firebase)
 │   └── src/
-│       ├── main.ts     # Routes & handlers
-│       ├── schemas.ts  # Zod validation
-│       └── middleware.ts
+│       ├── main.ts           # App entry point
+│       ├── routes/firestore/ # Firestore-based routes
+│       ├── services/firestore/ # Firestore services
+│       ├── middleware/       # Auth, validation, etc.
+│       └── types/            # TypeScript types
 │
 ├── packages/
 │   ├── shared/         # Design tokens, utilities
 │   └── ui/             # Shared UI components
 │
-└── infra/
-    └── prisma/
-        ├── schema.prisma  # Database schema
-        └── seed.ts        # Seed data
+├── infra/
+│   └── firebase/       # Firebase rules & indexes
+│
+└── scripts/
+    ├── seed-firestore.ts     # Firestore seed script
+    └── firebase-set-admin-claims.ts
+```
+
+## 🔥 Firebase Setup
+
+### 1. Create Firebase Project
+1. Go to [Firebase Console](https://console.firebase.google.com)
+2. Create a new project
+3. Enable Firestore Database
+4. Enable Authentication (Email/Password)
+5. Enable Storage
+
+### 2. Configure Service Account
+1. Go to Project Settings > Service Accounts
+2. Generate new private key
+3. Save as `service-account.json` in project root
+4. Set `GOOGLE_APPLICATION_CREDENTIALS` in `.env`
+
+### 3. Deploy Security Rules
+```bash
+# Install Firebase CLI
+npm install -g firebase-tools
+
+# Login and deploy
+firebase login
+firebase deploy --only firestore:rules,storage
+```
+
+### 4. Seed Initial Data
+```bash
+pnpm firebase:seed
 ```
 
 ## 👥 Phân quyền
@@ -150,7 +201,11 @@ anh-tho-xay/
 | Role | Quyền |
 |------|-------|
 | **ADMIN** | Toàn quyền |
-| **QUẢN LÝ** | Xem/quản lý khách hàng, blog. Đề xuất sửa đơn giá/vật dụng (cần Admin duyệt) |
+| **MANAGER** | Quản lý blog, leads, media |
+| **CONTRACTOR** | Đấu thầu dự án, quản lý hồ sơ |
+| **HOMEOWNER** | Đăng dự án, chọn nhà thầu |
+| **WORKER** | Xem công việc được giao |
+| **USER** | Quyền cơ bản |
 
 ## 📝 License
 

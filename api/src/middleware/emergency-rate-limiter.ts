@@ -3,13 +3,13 @@
  *
  * Provides rate limiting with emergency mode support.
  * When emergency mode is active, applies stricter rate limits.
+ * Uses in-memory rate limiting (Redis removed).
  *
  * **Feature: high-traffic-resilience**
  * **Requirements: 14.5, 14.6**
  */
 
 import type { Context, Next } from 'hono';
-import { getRedisClient, isRedisConnected } from '../config/redis';
 import { getIPBlockingService } from '../services/ip-blocking.service';
 import { logger } from '../utils/logger';
 import { checkLimit as inMemoryCheckLimit } from './rate-limiter';
@@ -106,60 +106,14 @@ function getClientIp(c: Context): string {
 }
 
 /**
- * Check rate limit using Redis sliding window algorithm
+ * Check rate limit using in-memory sliding window algorithm
  */
-async function checkLimitRedis(
+async function checkLimitInMemory(
   key: string,
   maxAttempts: number,
   windowMs: number
 ): Promise<RateLimitResult> {
-  const redis = getRedisClient();
-  
-  if (!redis || !isRedisConnected()) {
-    return inMemoryCheckLimit(key, maxAttempts, windowMs);
-  }
-
-  const now = Date.now();
-  const windowStart = now - windowMs;
-  const resetAt = new Date(now + windowMs);
-
-  try {
-    const pipeline = redis.pipeline();
-    
-    pipeline.zremrangebyscore(key, 0, windowStart);
-    pipeline.zcard(key);
-    pipeline.zadd(key, now, `${now}-${Math.random()}`);
-    pipeline.expire(key, Math.ceil(windowMs / 1000) + 60);
-    
-    const results = await pipeline.exec();
-    
-    if (!results) {
-      throw new Error('Redis pipeline returned null');
-    }
-    
-    const countResult = results[1];
-    const currentCount = countResult && countResult[1] ? Number(countResult[1]) : 0;
-    
-    if (currentCount >= maxAttempts) {
-      return {
-        allowed: false,
-        remaining: 0,
-        resetAt,
-      };
-    }
-    
-    return {
-      allowed: true,
-      remaining: Math.max(0, maxAttempts - currentCount - 1),
-      resetAt,
-    };
-  } catch (error) {
-    logger.error('[EMERGENCY_RATE_LIMITER] Redis error, falling back to in-memory', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      key,
-    });
-    return inMemoryCheckLimit(key, maxAttempts, windowMs);
-  }
+  return inMemoryCheckLimit(key, maxAttempts, windowMs);
 }
 
 // ============================================
@@ -267,7 +221,7 @@ export function emergencyRateLimiter(options: EmergencyRateLimiterOptions = {}) 
       });
     }
     
-    const result = await checkLimitRedis(key, effectiveMaxAttempts, effectiveWindowMs);
+    const result = await checkLimitInMemory(key, effectiveMaxAttempts, effectiveWindowMs);
 
     // Set rate limit headers
     c.header('X-RateLimit-Limit', effectiveMaxAttempts.toString());

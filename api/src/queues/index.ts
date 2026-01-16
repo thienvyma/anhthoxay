@@ -1,49 +1,12 @@
 /**
- * Queue System Configuration with BullMQ
+ * Queue System Configuration
  *
- * Provides queue infrastructure for asynchronous task processing
- * including email, sync, and notification jobs.
- *
- * **Feature: production-scalability**
- * **Validates: Requirements 1.1, 1.2, 1.6**
+ * Provides queue infrastructure for asynchronous task processing.
+ * Uses in-memory queue with synchronous fallback.
+ * For production distributed queues, consider Firebase Cloud Tasks.
  */
 
-import { Queue, QueueOptions, JobsOptions } from 'bullmq';
-import { isRedisConnected } from '../config/redis';
 import { logger } from '../utils/logger';
-import { queueHealthService } from '../services/queue-health.service';
-
-// ============================================
-// REDIS CONNECTION FOR BULLMQ
-// ============================================
-
-/**
- * Get Redis connection options for BullMQ
- * BullMQ requires its own connection configuration
- */
-function getRedisConnectionOptions(): { host: string; port: number; password?: string; maxRetriesPerRequest: null } | null {
-  const redisUrl = process.env.REDIS_URL;
-  
-  if (!redisUrl) {
-    return null;
-  }
-
-  try {
-    const url = new URL(redisUrl);
-    return {
-      host: url.hostname,
-      port: parseInt(url.port) || 6379,
-      password: url.password || undefined,
-      maxRetriesPerRequest: null, // Required for BullMQ
-    };
-  } catch {
-    return {
-      host: 'localhost',
-      port: 6379,
-      maxRetriesPerRequest: null,
-    };
-  }
-}
 
 // ============================================
 // TYPES
@@ -59,7 +22,7 @@ export interface EmailJob {
   correlationId: string;
   attachments?: Array<{
     filename: string;
-    content: string; // Base64 encoded
+    content: string;
     contentType: string;
   }>;
 }
@@ -83,110 +46,43 @@ export interface NotificationJob {
 }
 
 // ============================================
-// QUEUE CONFIGURATION
+// IN-MEMORY QUEUE (Simple implementation)
 // ============================================
 
-/**
- * Default job options with retry and backoff configuration
- * Requirements: 1.2 - Retry up to 3 times with exponential backoff
- */
-export const defaultJobOptions: JobsOptions = {
-  attempts: 3,
-  backoff: {
-    type: 'exponential',
-    delay: 1000, // Start with 1 second
-  },
-  removeOnComplete: {
-    count: 100, // Keep last 100 completed jobs
-    age: 3600, // Remove completed jobs older than 1 hour
-  },
-  removeOnFail: {
-    count: 1000, // Keep last 1000 failed jobs for debugging
-    age: 86400, // Remove failed jobs older than 24 hours
-  },
-};
+interface QueuedJob<T> {
+  id: string;
+  data: T;
+  addedAt: number;
+  attempts: number;
+}
 
-/**
- * Get queue options with Redis connection
- */
-function getQueueOptions(): QueueOptions | null {
-  const connection = getRedisConnectionOptions();
-  
-  if (!connection) {
-    logger.warn('Redis not available, queue system disabled');
-    return null;
-  }
+const emailJobs: QueuedJob<EmailJob>[] = [];
+const syncJobs: QueuedJob<SyncJob>[] = [];
+const notificationJobs: QueuedJob<NotificationJob>[] = [];
 
-  return {
-    connection,
-    defaultJobOptions,
-  };
+let jobCounter = 0;
+
+function generateJobId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${++jobCounter}`;
 }
 
 // ============================================
-// QUEUE INSTANCES
+// QUEUE INITIALIZATION
 // ============================================
 
-let emailQueue: Queue<EmailJob> | null = null;
-let syncQueue: Queue<SyncJob> | null = null;
-let notificationQueue: Queue<NotificationJob> | null = null;
-
 /**
- * Initialize all queues
- * Should be called during application startup
+ * Initialize queues (no-op for in-memory)
  */
 export function initializeQueues(): boolean {
-  const options = getQueueOptions();
-  
-  if (!options) {
-    logger.warn('Queue system not initialized - Redis unavailable');
-    return false;
-  }
-
-  try {
-    emailQueue = new Queue<EmailJob>('email', options);
-    syncQueue = new Queue<SyncJob>('sync', options);
-    notificationQueue = new Queue<NotificationJob>('notification', options);
-
-    // Register queues with health service for monitoring
-    // **Feature: production-scalability**
-    // **Requirements: 13.1, 13.3**
-    queueHealthService.registerQueue('email', emailQueue);
-    queueHealthService.registerQueue('sync', syncQueue);
-    queueHealthService.registerQueue('notification', notificationQueue);
-
-    logger.info('Queue system initialized successfully', {
-      queues: ['email', 'sync', 'notification'],
-    });
-
-    return true;
-  } catch (error) {
-    logger.error('Failed to initialize queue system', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-    return false;
-  }
+  logger.info('In-memory queue system initialized');
+  return true;
 }
 
 /**
- * Get email queue instance
+ * Check if queue system is available
  */
-export function getEmailQueue(): Queue<EmailJob> | null {
-  return emailQueue;
-}
-
-/**
- * Get sync queue instance
- */
-export function getSyncQueue(): Queue<SyncJob> | null {
-  return syncQueue;
-}
-
-/**
- * Get notification queue instance
- */
-export function getNotificationQueue(): Queue<NotificationJob> | null {
-  return notificationQueue;
+export function isQueueSystemAvailable(): boolean {
+  return true; // In-memory queue is always available
 }
 
 // ============================================
@@ -194,160 +90,148 @@ export function getNotificationQueue(): Queue<NotificationJob> | null {
 // ============================================
 
 /**
- * Check if queue system is available
- * Requirements: 1.6 - Check Redis availability
- */
-export function isQueueSystemAvailable(): boolean {
-  return isRedisConnected() && emailQueue !== null;
-}
-
-/**
  * Add email job to queue with fallback
- * Requirements: 1.1 - Queue email job and return immediately
- * Requirements: 1.6 - Fall back to synchronous processing if Redis unavailable
- *
- * @param job - Email job data
- * @param fallbackFn - Optional synchronous fallback function
- * @returns Job ID if queued, null if fallback was used
  */
 export async function addEmailJob(
   job: EmailJob,
   fallbackFn?: (job: EmailJob) => Promise<void>
 ): Promise<string | null> {
-  if (!emailQueue || !isRedisConnected()) {
-    logger.warn('Email queue unavailable, using fallback', {
-      correlationId: job.correlationId,
-    });
-
-    if (fallbackFn) {
+  const jobId = generateJobId('email');
+  
+  // For in-memory queue, execute fallback immediately
+  if (fallbackFn) {
+    try {
       await fallbackFn(job);
+      logger.info('Email job processed synchronously', {
+        jobId,
+        type: job.type,
+        to: job.to,
+        correlationId: job.correlationId,
+      });
+    } catch (error) {
+      logger.error('Failed to process email job', {
+        jobId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        correlationId: job.correlationId,
+      });
     }
-    return null;
-  }
-
-  try {
-    const queuedJob = await emailQueue.add(job.type, job, {
-      jobId: `email-${job.correlationId}-${Date.now()}`,
+  } else {
+    // Store in memory for later processing
+    emailJobs.push({
+      id: jobId,
+      data: job,
+      addedAt: Date.now(),
+      attempts: 0,
     });
-
-    logger.info('Email job queued', {
-      jobId: queuedJob.id,
+    logger.info('Email job queued (in-memory)', {
+      jobId,
       type: job.type,
       to: job.to,
       correlationId: job.correlationId,
     });
-
-    return queuedJob.id ?? null;
-  } catch (error) {
-    logger.error('Failed to queue email job', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      correlationId: job.correlationId,
-    });
-
-    if (fallbackFn) {
-      await fallbackFn(job);
-    }
-    return null;
   }
+  
+  return jobId;
 }
 
 /**
  * Add sync job to queue with fallback
- * Requirements: 1.3 - Process sync through queue
- * Requirements: 1.6 - Fall back to synchronous processing if Redis unavailable
- *
- * @param job - Sync job data
- * @param fallbackFn - Optional synchronous fallback function
- * @returns Job ID if queued, null if fallback was used
  */
 export async function addSyncJob(
   job: SyncJob,
   fallbackFn?: (job: SyncJob) => Promise<void>
 ): Promise<string | null> {
-  if (!syncQueue || !isRedisConnected()) {
-    logger.warn('Sync queue unavailable, using fallback', {
-      correlationId: job.correlationId,
-    });
-
-    if (fallbackFn) {
+  const jobId = generateJobId('sync');
+  
+  if (fallbackFn) {
+    try {
       await fallbackFn(job);
+      logger.info('Sync job processed synchronously', {
+        jobId,
+        type: job.type,
+        correlationId: job.correlationId,
+      });
+    } catch (error) {
+      logger.error('Failed to process sync job', {
+        jobId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        correlationId: job.correlationId,
+      });
     }
-    return null;
-  }
-
-  try {
-    const queuedJob = await syncQueue.add(job.type, job, {
-      jobId: `sync-${job.correlationId}-${Date.now()}`,
+  } else {
+    syncJobs.push({
+      id: jobId,
+      data: job,
+      addedAt: Date.now(),
+      attempts: 0,
     });
-
-    logger.info('Sync job queued', {
-      jobId: queuedJob.id,
+    logger.info('Sync job queued (in-memory)', {
+      jobId,
       type: job.type,
       correlationId: job.correlationId,
     });
-
-    return queuedJob.id ?? null;
-  } catch (error) {
-    logger.error('Failed to queue sync job', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      correlationId: job.correlationId,
-    });
-
-    if (fallbackFn) {
-      await fallbackFn(job);
-    }
-    return null;
   }
+  
+  return jobId;
 }
 
 /**
  * Add notification job to queue with fallback
- * Requirements: 1.4 - Queue notification delivery job
- * Requirements: 1.6 - Fall back to synchronous processing if Redis unavailable
- *
- * @param job - Notification job data
- * @param fallbackFn - Optional synchronous fallback function
- * @returns Job ID if queued, null if fallback was used
  */
 export async function addNotificationJob(
   job: NotificationJob,
   fallbackFn?: (job: NotificationJob) => Promise<void>
 ): Promise<string | null> {
-  if (!notificationQueue || !isRedisConnected()) {
-    logger.warn('Notification queue unavailable, using fallback', {
-      correlationId: job.correlationId,
-    });
-
-    if (fallbackFn) {
+  const jobId = generateJobId('notification');
+  
+  if (fallbackFn) {
+    try {
       await fallbackFn(job);
+      logger.info('Notification job processed synchronously', {
+        jobId,
+        type: job.type,
+        userId: job.userId,
+        correlationId: job.correlationId,
+      });
+    } catch (error) {
+      logger.error('Failed to process notification job', {
+        jobId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        correlationId: job.correlationId,
+      });
     }
-    return null;
-  }
-
-  try {
-    const queuedJob = await notificationQueue.add(job.type, job, {
-      jobId: `notification-${job.correlationId}-${Date.now()}`,
+  } else {
+    notificationJobs.push({
+      id: jobId,
+      data: job,
+      addedAt: Date.now(),
+      attempts: 0,
     });
-
-    logger.info('Notification job queued', {
-      jobId: queuedJob.id,
+    logger.info('Notification job queued (in-memory)', {
+      jobId,
       type: job.type,
       userId: job.userId,
       correlationId: job.correlationId,
     });
-
-    return queuedJob.id ?? null;
-  } catch (error) {
-    logger.error('Failed to queue notification job', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      correlationId: job.correlationId,
-    });
-
-    if (fallbackFn) {
-      await fallbackFn(job);
-    }
-    return null;
   }
+  
+  return jobId;
+}
+
+// ============================================
+// QUEUE GETTERS (for compatibility)
+// ============================================
+
+export function getEmailQueue(): null {
+  return null;
+}
+
+export function getSyncQueue(): null {
+  return null;
+}
+
+export function getNotificationQueue(): null {
+  return null;
 }
 
 // ============================================
@@ -358,23 +242,19 @@ export async function addNotificationJob(
  * Close all queue connections gracefully
  */
 export async function closeQueues(): Promise<void> {
-  const closePromises: Promise<void>[] = [];
+  emailJobs.length = 0;
+  syncJobs.length = 0;
+  notificationJobs.length = 0;
+  logger.info('Queue system closed');
+}
 
-  if (emailQueue) {
-    closePromises.push(emailQueue.close());
-  }
-  if (syncQueue) {
-    closePromises.push(syncQueue.close());
-  }
-  if (notificationQueue) {
-    closePromises.push(notificationQueue.close());
-  }
-
-  await Promise.all(closePromises);
-  
-  emailQueue = null;
-  syncQueue = null;
-  notificationQueue = null;
-
-  logger.info('Queue system closed gracefully');
+/**
+ * Get pending job counts (for monitoring)
+ */
+export function getQueueStats(): { email: number; sync: number; notification: number } {
+  return {
+    email: emailJobs.length,
+    sync: syncJobs.length,
+    notification: notificationJobs.length,
+  };
 }

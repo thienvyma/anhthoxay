@@ -1,15 +1,24 @@
-// Simple state management for Admin Dashboard
+/**
+ * Simple state management for Admin Dashboard
+ * Uses Firebase Auth for authentication (no local token storage needed)
+ *
+ * **Feature: firebase-phase3-firestore**
+ * **Requirements: 4.5**
+ */
 import { useState, useEffect } from 'react';
 import type { User, Page } from './types';
 
 // ============================================
-// TOKEN STORAGE (localStorage)
+// TOKEN STORAGE (Legacy - kept for backward compatibility)
+// Firebase Auth handles token management automatically
 // ============================================
 const TOKEN_KEY = 'ath_access_token';
 const REFRESH_TOKEN_KEY = 'ath_refresh_token';
 const SESSION_ID_KEY = 'ath_session_id';
 
 export const tokenStorage = {
+  // These methods are kept for backward compatibility but are no longer used
+  // Firebase Auth manages tokens automatically
   getAccessToken: () => localStorage.getItem(TOKEN_KEY),
   setAccessToken: (token: string) => localStorage.setItem(TOKEN_KEY, token),
   
@@ -42,9 +51,6 @@ export const store = {
   getUser: () => currentUser,
   setUser: (user: User | null) => {
     currentUser = user;
-    if (!user) {
-      tokenStorage.clearTokens();
-    }
     notify();
   },
 
@@ -86,4 +92,3 @@ export function usePage() {
 
   return page;
 }
-

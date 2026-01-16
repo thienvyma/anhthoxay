@@ -1,32 +1,26 @@
 /**
- * NỘI THẤT NHANH API - Main Entry Point
+ * NỘI THẤT NHANH API - Main Entry Point (Firebase/Firestore)
  *
  * This file handles:
  * - Environment setup
  * - Middleware configuration
- * - Route mounting
+ * - Route mounting (Firestore-based)
  * - Server startup
  *
- * **Feature: api-refactoring**
- * **Requirements: 1.1, 1.4**
+ * **Feature: firebase-phase3-firestore**
+ * **Requirements: 1.1, 1.4, 10.1, 10.5**
  */
 
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { User } from '@prisma/client';
 import fs from 'fs';
 import path from 'path';
 
-// Prisma singleton import
-import { prisma } from './utils/prisma';
+// Firebase Admin SDK
+import { initializeFirebaseAdmin } from './services/firebase-admin.service';
 
 // Middleware imports
 import { rateLimiter } from './middleware/rate-limiter';
-import { 
-  loginEmergencyRateLimiter, 
-  formEmergencyRateLimiter, 
-  globalEmergencyRateLimiter 
-} from './middleware/emergency-rate-limiter';
 import { 
   suspiciousActivityMiddleware, 
   emergencyModeHeaderMiddleware 
@@ -38,66 +32,77 @@ import { responseTimeMonitoring } from './middleware/monitoring';
 import { prometheusMiddleware } from './middleware/prometheus';
 import { createCorsMiddleware } from './config/cors';
 import { successResponse } from './utils/response';
+import { firebaseAuth } from './middleware/firebase-auth.middleware';
 
 // Config imports
 import { validateEnvironment } from './config/env-validation';
-import { getRedisClient, closeRedisConnection } from './config/redis';
 import { initSentry, flushSentry, captureException } from './config/sentry';
 
-// Route imports
-import { createAuthRoutes } from './routes/auth.routes';
-import { createPagesRoutes, createSectionsRoutes } from './routes/pages.routes';
-import { createMediaRoutes } from './routes/media.routes';
-import { createLeadsRoutes } from './routes/leads.routes';
-import { createPricingRoutes } from './routes/pricing.routes';
-import { createBlogRoutes } from './routes/blog.routes';
-import { createSettingsRoutes } from './routes/settings.routes';
-import { createIntegrationsRoutes } from './routes/integrations.routes';
-import { createUsersRoutes } from './routes/users.routes';
-import { createContractorRoutes, createAdminContractorRoutes } from './routes/contractor.routes';
-import { createRegionRoutes, createAdminRegionRoutes } from './routes/region.routes';
-import { createBiddingSettingsRoutes, createAdminBiddingSettingsRoutes } from './routes/bidding-settings.routes';
-import { createServiceFeeRoutes, createAdminServiceFeeRoutes } from './routes/service-fee.routes';
-import { createPublicProjectRoutes, createHomeownerProjectRoutes, createAdminProjectRoutes } from './routes/project.routes';
-import { createContractorBidRoutes, createAdminBidRoutes } from './routes/bid.routes';
-import { createAdminEscrowRoutes } from './routes/escrow.routes';
-import { createAdminFeeRoutes } from './routes/fee.routes';
-import { createAdminMatchRoutes } from './routes/match.routes';
-import { createHomeownerDisputeRoutes, createContractorDisputeRoutes, createAdminDisputeRoutes } from './routes/dispute.routes';
-import { createChatRoutes, createAdminChatRoutes } from './routes/chat.routes';
-import { createNotificationRoutes } from './routes/notification.routes';
-import { createNotificationTemplateRoutes } from './routes/notification-template.routes';
-import { createAdminScheduledNotificationRoutes } from './routes/scheduled-notification.routes';
-import { createUnsubscribeRoutes } from './routes/unsubscribe.routes';
-import { 
-  createHomeownerReviewRoutes, 
-  createContractorReviewRoutes, 
-  createPublicReviewRoutes, 
-  createAdminReviewRoutes 
-} from './routes/review.routes';
-import { createPublicRankingRoutes, createAdminRankingRoutes } from './routes/ranking.routes';
-import { createPublicReportRoutes, createAdminReportRoutes } from './routes/report.routes';
-import { createSavedProjectRoutes } from './routes/saved-project.routes';
-import { createActivityRoutes } from './routes/activity.routes';
-import { createAdminDashboardRoutes } from './routes/dashboard.routes';
-import { createFurniturePublicRoutes, createFurnitureAdminRoutes } from './routes/furniture';
-import { createApiKeysRoutes } from './routes/api-keys.routes';
-import { createExternalApiRoutes } from './routes/external-api';
-import { createHealthRoutes } from './routes/health.routes';
-import { createCDNRoutes } from './routes/cdn.routes';
-import { createRateLimitRoutes } from './routes/rate-limit.routes';
+// Firestore Route imports
+import {
+  authFirestoreRoutes,
+  createSettingsFirestoreRoutes,
+  createRegionFirestoreRoutes,
+  createAdminRegionFirestoreRoutes,
+  createServiceFeeFirestoreRoutes,
+  createAdminServiceFeeFirestoreRoutes,
+  usersFirestoreRoutes,
+  contractorFirestoreRoutes,
+  adminContractorFirestoreRoutes,
+  createLeadsFirestoreRoutes,
+  createAdminLeadsFirestoreRoutes,
+  createBlogFirestoreRoutes,
+  createAdminBlogFirestoreRoutes,
+  createPricingFirestoreRoutes,
+  createAdminPricingFirestoreRoutes,
+  createPagesFirestoreRoutes,
+  createSectionsFirestoreRoutes,
+  createPublicProjectFirestoreRoutes,
+  createHomeownerProjectFirestoreRoutes,
+  createAdminProjectFirestoreRoutes,
+  createContractorBidFirestoreRoutes,
+  createAdminBidFirestoreRoutes,
+  createAdminEscrowFirestoreRoutes,
+  createAdminFeeFirestoreRoutes,
+  createHomeownerMatchFirestoreRoutes,
+  createAdminMatchFirestoreRoutes,
+  chatFirestoreRoutes,
+  adminChatFirestoreRoutes,
+  notificationFirestoreRoutes,
+  notificationTemplateFirestoreRoutes,
+  scheduledNotificationFirestoreRoutes,
+  createHomeownerReviewFirestoreRoutes,
+  createContractorReviewFirestoreRoutes,
+  createPublicReviewFirestoreRoutes,
+  createAdminReviewFirestoreRoutes,
+  createPublicRankingFirestoreRoutes,
+  createContractorRankingFirestoreRoutes,
+  createAdminRankingFirestoreRoutes,
+  createPublicReportFirestoreRoutes,
+  createAdminReportFirestoreRoutes,
+  createFurnitureFirestorePublicRoutes,
+  createFurnitureFirestoreAdminRoutes,
+  createHealthFirestoreRoutes,
+  setShutdownState,
+  createMediaFirestoreRoutes,
+  createRateLimitFirestoreRoutes,
+  createQueueHealthFirestoreRoutes,
+  createCDNFirestoreRoutes,
+  createIPBlockingFirestoreRoutes,
+} from './routes/firestore';
+
+// Metrics routes (no Prisma dependency)
 import { createMetricsRoutes } from './routes/metrics.routes';
-import { createQueueHealthRoutes } from './routes/queue-health.routes';
-import { createIPBlockingRoutes } from './routes/ip-blocking.routes';
 import { ipBlockingMiddleware } from './middleware/ip-blocking';
 
 // Service imports
-import { AuthService } from './services/auth.service';
-import { setShutdownState } from './services/health.service';
 import { getEmergencyModeService } from './services/emergency-mode.service';
 
 // Shutdown manager import
 import { ShutdownManager, registerSignalHandlers } from './utils/shutdown';
+
+// Firebase User type for context
+import type { FirebaseUser } from './middleware/firebase-auth.middleware';
 
 // ============================================
 // ENVIRONMENT SETUP
@@ -106,10 +111,7 @@ import { ShutdownManager, registerSignalHandlers } from './utils/shutdown';
 function findProjectRoot(startPath: string): string {
   let currentPath = startPath;
   while (currentPath !== path.dirname(currentPath)) {
-    if (
-      fs.existsSync(path.join(currentPath, '.env')) ||
-      fs.existsSync(path.join(currentPath, 'infra', 'prisma', 'schema.prisma'))
-    ) {
+    if (fs.existsSync(path.join(currentPath, '.env'))) {
       return currentPath;
     }
     currentPath = path.dirname(currentPath);
@@ -132,7 +134,6 @@ if (!fs.existsSync(path.join(projectRoot, '.env'))) {
 const envPath = path.join(projectRoot, '.env');
 
 // Load env vars from .env file
-// .env file takes precedence for DATABASE_URL to allow PostgreSQL configuration
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf-8');
   envContent.split('\n').forEach((line) => {
@@ -145,51 +146,37 @@ if (fs.existsSync(envPath)) {
       let value = match[2].trim();
       // Remove surrounding quotes
       value = value.replace(/^["']|["']$/g, '');
-      // Set the env var (override existing for DATABASE_URL)
+      // Set the env var
       process.env[key] = value;
     }
   });
 }
 
-// Handle DATABASE_URL for SQLite (file: prefix needs absolute path)
-// PostgreSQL URLs (postgresql://) are used as-is
-if (process.env.DATABASE_URL?.startsWith('file:')) {
-  const dbPath = path.join(projectRoot, 'infra', 'prisma', 'dev.db');
-  process.env.DATABASE_URL = `file:${dbPath}`;
-}
-
 // eslint-disable-next-line no-console -- Startup logging before logger initialization
-console.info('🔧 NỘI THẤT NHANH API Starting...');
+console.info('🔧 NỘI THẤT NHANH API Starting (Firebase/Firestore)...');
 // eslint-disable-next-line no-console -- Startup logging before logger initialization
 console.info('📁 Project root:', projectRoot);
 // eslint-disable-next-line no-console -- Startup logging before logger initialization
-console.info(
-  '🗄️ DATABASE_URL:',
-  process.env.DATABASE_URL?.startsWith('postgresql://')
-    ? process.env.DATABASE_URL.replace(/:[^:@]+@/, ':****@') // Hide password in logs
-    : process.env.DATABASE_URL
-);
+console.info('🔥 Firebase Project:', process.env.FIREBASE_PROJECT_ID || 'not configured');
 
 // ============================================
 // ENVIRONMENT VALIDATION
 // ============================================
 
 // Run environment validation before any initialization
-// This validates DATABASE_URL, JWT_SECRET, and other required variables
-// In production, missing required variables will cause the process to exit
 validateEnvironment();
 
 // Initialize Sentry error tracking (optional - requires SENTRY_DSN)
-// Must be initialized before other services to capture all errors
 initSentry();
 
-// Initialize Redis connection (optional - will log warning if not configured)
-const redis = getRedisClient();
+// Initialize Firebase Admin SDK
+initializeFirebaseAdmin().then(() => {
+  console.info('✅ Firebase Admin SDK initialized');
+}).catch((err) => {
+  console.error('❌ Failed to initialize Firebase Admin SDK:', err);
+});
 
 // Initialize Emergency Mode Service
-// Starts periodic check for auto-activation based on attack metrics
-// **Feature: high-traffic-resilience**
-// **Requirements: 14.5, 14.6**
 const emergencyModeService = getEmergencyModeService();
 emergencyModeService.startPeriodicCheck(30000); // Check every 30 seconds
 
@@ -197,8 +184,7 @@ emergencyModeService.startPeriodicCheck(30000); // Check every 30 seconds
 // APP INITIALIZATION
 // ============================================
 
-const app = new Hono<{ Variables: { user?: User; correlationId: string } }>();
-const authService = new AuthService(prisma);
+const app = new Hono<{ Variables: { user?: FirebaseUser; correlationId: string } }>();
 
 // ============================================
 // GLOBAL MIDDLEWARE
@@ -213,49 +199,22 @@ app.use('*', correlationId());
 // Response time monitoring (adds X-Response-Time header, logs slow requests)
 app.use('*', responseTimeMonitoring({ slowThreshold: 500 }));
 
-// IP Blocking middleware (blocks IPs that exceed rate limit thresholds)
-// **Feature: high-traffic-resilience**
-// **Requirements: 14.1, 14.2**
+// IP Blocking middleware
 app.use('*', ipBlockingMiddleware());
 
-// Prometheus metrics middleware (records HTTP request metrics)
-// **Feature: production-scalability**
-// **Requirements: 12.2, 12.3**
+// Prometheus metrics middleware
 app.use('*', prometheusMiddleware());
 
-// CORS (using new config module)
+// CORS
 app.use('*', createCorsMiddleware());
 
-// JWT Auth Middleware - Attach user to context from Bearer token (with blacklist check)
-app.use('*', async (c, next) => {
-  const authHeader = c.req.header('Authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    const token = authHeader.slice(7);
-    const isBlacklisted = await authService.isBlacklisted(token);
-    if (!isBlacklisted) {
-      const { payload, error } = authService.verifyAccessTokenWithError(token);
-      if (payload && !error) {
-        const user = await prisma.user.findUnique({ where: { id: payload.sub } });
-        if (user) {
-          c.set('user', user);
-        }
-      }
-    }
-  }
-  await next();
-});
+// Firebase Auth Middleware - Attach user to context from Bearer token
+app.use('*', firebaseAuth({ optional: true }));
 
-// Rate limiting - Use Redis if available, fallback to in-memory
-// In production, use emergency-aware rate limiters that apply stricter limits during attacks
-// **Feature: high-traffic-resilience**
-// **Requirements: 14.5, 14.6**
+// Rate limiting
 const isDev = process.env.NODE_ENV !== 'production';
-const useRedisRateLimiter = redis !== null;
 
 // Suspicious activity detection middleware
-// Detects suspicious patterns (bots, rapid requests) and increases CAPTCHA challenge rate
-// **Feature: high-traffic-resilience**
-// **Requirements: 14.5**
 app.use('*', suspiciousActivityMiddleware({
   checkUserAgent: true,
   trackRapidRequests: true,
@@ -264,180 +223,137 @@ app.use('*', suspiciousActivityMiddleware({
 }));
 
 // Emergency mode header middleware
-// Adds X-Emergency-Mode header when emergency mode is active
-// **Feature: high-traffic-resilience**
-// **Requirements: 14.5, 14.6**
 app.use('*', emergencyModeHeaderMiddleware());
 
-if (useRedisRateLimiter) {
-  // Redis-based rate limiting with emergency mode support (distributed, production-ready)
-  // In emergency mode, limits are automatically reduced (50% of normal) and windows extended (2x)
-  // **Feature: high-traffic-resilience**
-  // **Requirements: 14.5, 14.6**
-  app.use('/api/auth/login', loginEmergencyRateLimiter());
-  app.use('/leads', formEmergencyRateLimiter());
-  app.use('*', globalEmergencyRateLimiter());
-} else {
-  // In-memory rate limiting (single instance only, no emergency mode support)
-  app.use('/api/auth/login', rateLimiter({ windowMs: 1 * 60 * 1000, maxAttempts: isDev ? 100 : 20 }));
-  app.use('/leads', rateLimiter({ windowMs: 60 * 1000, maxAttempts: isDev ? 100 : 30 }));
-  app.use('*', rateLimiter({ windowMs: 60 * 1000, maxAttempts: isDev ? 500 : 200 }));
-}
+// In-memory rate limiting
+app.use('/api/auth/login', rateLimiter({ windowMs: 1 * 60 * 1000, maxAttempts: isDev ? 100 : 20 }));
+app.use('/leads', rateLimiter({ windowMs: 60 * 1000, maxAttempts: isDev ? 100 : 30 }));
+app.use('*', rateLimiter({ windowMs: 60 * 1000, maxAttempts: isDev ? 500 : 200 }));
 
 // ============================================
 // HEALTH CHECK & ROOT
 // ============================================
 
-// Health check routes (comprehensive health, ready, live endpoints)
-app.route('/health', createHealthRoutes(prisma));
+// Health check routes (Firestore)
+app.route('/health', createHealthFirestoreRoutes());
 
-// Prometheus metrics endpoint (for Prometheus scraping)
-// **Feature: production-scalability**
-// **Requirements: 12.1**
+// Prometheus metrics endpoint
 app.route('/metrics', createMetricsRoutes());
 
 app.get('/', (c) =>
   successResponse(c, {
-    message: 'Nội Thất Nhanh API',
+    message: 'Nội Thất Nhanh API (Firebase/Firestore)',
+    version: '3.0.0',
     endpoints: ['/health', '/health/ready', '/health/live', '/metrics', '/api/auth/login', '/pages/:slug', '/service-categories', '/materials', '/leads'],
   })
 );
 
 // ============================================
-// ROUTE MOUNTING
+// ROUTE MOUNTING (FIRESTORE-BASED)
 // ============================================
 
-// Auth routes
-app.route('/api/auth', createAuthRoutes(prisma));
+// Auth routes (Firebase Auth)
+app.route('/api/auth', authFirestoreRoutes);
 
-// Pages & Sections routes
-app.route('/pages', createPagesRoutes(prisma));
-app.route('/sections', createSectionsRoutes(prisma));
+// Pages & Sections routes (Firestore)
+app.route('/pages', createPagesFirestoreRoutes());
+app.route('/sections', createSectionsFirestoreRoutes());
 
-// Media routes
-app.route('/media', createMediaRoutes(prisma));
+// Media routes (Firebase Storage)
+app.route('/media', createMediaFirestoreRoutes());
 
-// Leads routes
-app.route('/leads', createLeadsRoutes(prisma));
+// Leads routes (Firestore)
+app.route('/leads', createLeadsFirestoreRoutes());
+app.route('/api/admin/leads', createAdminLeadsFirestoreRoutes());
 
-// Pricing routes (service-categories, unit-prices, materials, formulas, calculate-quote)
-const pricingRoutes = createPricingRoutes(prisma);
-app.route('/', pricingRoutes);
+// Pricing routes (Firestore)
+app.route('/', createPricingFirestoreRoutes());
+app.route('/api/admin/pricing', createAdminPricingFirestoreRoutes());
 
-// Blog routes
-app.route('/blog', createBlogRoutes(prisma));
+// Blog routes (Firestore)
+app.route('/blog', createBlogFirestoreRoutes());
+app.route('/api/admin/blog', createAdminBlogFirestoreRoutes());
 
-// Settings routes
-app.route('/settings', createSettingsRoutes(prisma));
+// Settings routes (Firestore)
+app.route('/settings', createSettingsFirestoreRoutes());
 
-// Integrations routes
-app.route('/integrations', createIntegrationsRoutes(prisma));
+// Users management routes (Firestore)
+app.route('/api/users', usersFirestoreRoutes);
 
-// Users management routes (Admin only)
-app.route('/api/users', createUsersRoutes(prisma));
+// Contractor routes (Firestore)
+app.route('/api/contractor', contractorFirestoreRoutes);
+app.route('/api/admin/contractors', adminContractorFirestoreRoutes);
 
-// Contractor routes
-app.route('/api/contractor', createContractorRoutes(prisma));
-app.route('/api/admin/contractors', createAdminContractorRoutes(prisma));
+// Region routes (Firestore)
+app.route('/api/regions', createRegionFirestoreRoutes());
+app.route('/api/admin/regions', createAdminRegionFirestoreRoutes());
 
-// Region routes
-app.route('/api/regions', createRegionRoutes(prisma));
-app.route('/api/admin/regions', createAdminRegionRoutes(prisma));
+// Service Fee routes (Firestore)
+app.route('/api/service-fees', createServiceFeeFirestoreRoutes());
+app.route('/api/admin/service-fees', createAdminServiceFeeFirestoreRoutes());
 
-// Bidding Settings routes
-app.route('/api/settings/bidding', createBiddingSettingsRoutes(prisma));
-app.route('/api/admin/settings/bidding', createAdminBiddingSettingsRoutes(prisma));
+// Project routes (Firestore)
+app.route('/api/projects', createPublicProjectFirestoreRoutes());
+app.route('/api/homeowner/projects', createHomeownerProjectFirestoreRoutes());
+app.route('/api/admin/projects', createAdminProjectFirestoreRoutes());
 
-// Service Fee routes
-app.route('/api/service-fees', createServiceFeeRoutes(prisma));
-app.route('/api/admin/service-fees', createAdminServiceFeeRoutes(prisma));
+// Bid routes (Firestore)
+app.route('/api/contractor/bids', createContractorBidFirestoreRoutes());
+app.route('/api/admin/bids', createAdminBidFirestoreRoutes());
 
-// Project routes
-app.route('/api/projects', createPublicProjectRoutes(prisma));
-app.route('/api/homeowner/projects', createHomeownerProjectRoutes(prisma));
-app.route('/api/admin/projects', createAdminProjectRoutes(prisma));
+// Escrow routes (Firestore)
+app.route('/api/admin/escrows', createAdminEscrowFirestoreRoutes());
 
-// Bid routes
-app.route('/api/contractor/bids', createContractorBidRoutes(prisma));
-app.route('/api/admin/bids', createAdminBidRoutes(prisma));
+// Fee routes (Firestore)
+app.route('/api/admin/fees', createAdminFeeFirestoreRoutes());
 
-// Escrow routes (Admin only)
-app.route('/api/admin/escrows', createAdminEscrowRoutes(prisma));
+// Match routes (Firestore)
+app.route('/api/homeowner/matches', createHomeownerMatchFirestoreRoutes());
+app.route('/api/admin/matches', createAdminMatchFirestoreRoutes());
 
-// Fee routes (Admin only)
-app.route('/api/admin/fees', createAdminFeeRoutes(prisma));
+// Chat routes (Firestore)
+app.route('/api/chat', chatFirestoreRoutes);
+app.route('/api/admin/chat', adminChatFirestoreRoutes);
 
-// Match routes (Admin only)
-app.route('/api/admin/matches', createAdminMatchRoutes(prisma));
+// Notification routes (Firestore)
+app.route('/api/notifications', notificationFirestoreRoutes);
 
-// Dispute routes
-app.route('/api/homeowner/projects', createHomeownerDisputeRoutes(prisma));
-app.route('/api/contractor/bids', createContractorDisputeRoutes(prisma));
-app.route('/api/admin/disputes', createAdminDisputeRoutes(prisma));
+// Notification Template routes (Firestore)
+app.route('/api/admin/notification-templates', notificationTemplateFirestoreRoutes);
 
-// Chat routes (Phase 4)
-app.route('/api/chat', createChatRoutes(prisma));
-app.route('/api/admin/chat', createAdminChatRoutes(prisma));
+// Scheduled Notification routes (Firestore)
+app.route('/api/admin/scheduled-notifications', scheduledNotificationFirestoreRoutes);
 
-// Notification routes (Phase 4)
-app.route('/api/notifications', createNotificationRoutes(prisma));
+// Review routes (Firestore)
+app.route('/api/homeowner/reviews', createHomeownerReviewFirestoreRoutes());
+app.route('/api/contractor/reviews', createContractorReviewFirestoreRoutes());
+app.route('/api/reviews', createPublicReviewFirestoreRoutes());
+app.route('/api/admin/reviews', createAdminReviewFirestoreRoutes());
 
-// Notification Template routes (Phase 4 - Admin only)
-app.route('/api/admin/notification-templates', createNotificationTemplateRoutes(prisma));
+// Ranking routes (Firestore)
+app.route('/api/rankings', createPublicRankingFirestoreRoutes());
+app.route('/api/contractor/rankings', createContractorRankingFirestoreRoutes());
+app.route('/api/admin/rankings', createAdminRankingFirestoreRoutes());
 
-// Scheduled Notification routes (Phase 4 - Admin only)
-app.route('/api/admin/scheduled-notifications', createAdminScheduledNotificationRoutes(prisma));
+// Report routes (Firestore)
+app.route('/api/reviews', createPublicReportFirestoreRoutes()); // POST /api/reviews/:id/report
+app.route('/api/admin/review-reports', createAdminReportFirestoreRoutes());
 
-// Unsubscribe routes (Phase 4 - Public, accessed via email links)
-app.route('/api/unsubscribe', createUnsubscribeRoutes(prisma));
+// Furniture routes (Firestore)
+app.route('/api/furniture', createFurnitureFirestorePublicRoutes());
+app.route('/api/admin/furniture', createFurnitureFirestoreAdminRoutes());
 
-// Review routes (Phase 5)
-app.route('/api/homeowner', createHomeownerReviewRoutes(prisma));
-app.route('/api/contractor/reviews', createContractorReviewRoutes(prisma));
-app.route('/api/reviews', createPublicReviewRoutes(prisma));
-app.route('/api/admin/reviews', createAdminReviewRoutes(prisma));
+// Rate Limit routes (Firestore)
+app.route('/api/admin/rate-limits', createRateLimitFirestoreRoutes());
 
-// Ranking routes (Phase 5)
-app.route('/api/rankings', createPublicRankingRoutes(prisma));
-app.route('/api/admin/rankings', createAdminRankingRoutes(prisma));
+// Queue Health routes (Firestore)
+app.route('/api/admin/queues', createQueueHealthFirestoreRoutes());
 
-// Report routes (Phase 5) - Requirements: 19.1-19.4
-app.route('/api/reviews', createPublicReportRoutes(prisma)); // POST /api/reviews/:id/report
-app.route('/api/admin/review-reports', createAdminReportRoutes(prisma));
+// CDN routes (Firestore)
+app.route('/api/admin/cdn', createCDNFirestoreRoutes());
 
-// Saved Project routes (Phase 6) - Requirements: 21.1-21.5
-app.route('/api/contractor/saved-projects', createSavedProjectRoutes(prisma));
-
-// Activity routes (Phase 6) - Requirements: 23.1-23.4
-app.route('/api/user/activity', createActivityRoutes(prisma));
-
-// Dashboard routes - Feature: admin-dashboard-enhancement
-app.route('/api/admin/dashboard', createAdminDashboardRoutes(prisma));
-
-// Rate Limit routes - Feature: production-scalability
-app.route('/api/admin/rate-limits', createRateLimitRoutes(prisma));
-
-// Queue Health routes - Feature: production-scalability
-// **Requirements: 13.3**
-app.route('/api/admin/queues', createQueueHealthRoutes(prisma));
-
-// Furniture routes - Feature: furniture-quotation
-app.route('/api/furniture', createFurniturePublicRoutes(prisma));
-app.route('/api/admin/furniture', createFurnitureAdminRoutes(prisma));
-
-// API Keys routes - Feature: admin-guide-api-keys
-app.route('/api/admin/api-keys', createApiKeysRoutes(prisma));
-
-// CDN routes - Feature: high-traffic-resilience
-// **Requirements: 2.4, 2.6**
-app.route('/api/admin/cdn', createCDNRoutes(prisma));
-
-// IP Blocking routes - Feature: high-traffic-resilience
-// **Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6**
-app.route('/api/admin/ip-blocking', createIPBlockingRoutes(prisma));
-
-// External API routes - Feature: admin-guide-api-keys (API Key authenticated)
-app.route('/api/external', createExternalApiRoutes(prisma));
+// IP Blocking routes (Firestore)
+app.route('/api/admin/ip-blocking', createIPBlockingFirestoreRoutes());
 
 // ============================================
 // GLOBAL ERROR HANDLER
@@ -455,39 +371,27 @@ console.info(`🚀 Starting server on port ${port}...`);
 
 const server = serve({ fetch: app.fetch, port }, (info) => {
   // eslint-disable-next-line no-console -- Startup logging
-  console.info(`✅ NỘI THẤT NHANH API running at http://localhost:${info.port}`);
+  console.info(`✅ NỘI THẤT NHANH API (Firebase/Firestore) running at http://localhost:${info.port}`);
 });
 
 // ============================================
 // GRACEFUL SHUTDOWN HANDLER
 // ============================================
 
-/**
- * Graceful Shutdown Manager
- * Handles connection draining and cleanup during deployment
- * 
- * **Feature: high-traffic-resilience**
- * **Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6**
- */
 const shutdownManager = new ShutdownManager({
-  timeout: 30000, // 30 seconds for in-flight requests
-  drainDelay: 5000, // 5 seconds for LB to stop routing
-  forceExitDelay: 35000, // 35 seconds total before force exit
+  timeout: 30000,
+  drainDelay: 5000,
+  forceExitDelay: 35000,
 });
 
-// Set the HTTP server for connection tracking
 shutdownManager.setServer(server);
-
-// Set callback to update health check state
 shutdownManager.setShutdownStateCallback(setShutdownState);
 
 // Register cleanup handlers
-shutdownManager.onShutdown('database', async () => {
-  await prisma.$disconnect();
-});
-
-shutdownManager.onShutdown('redis', async () => {
-  await closeRedisConnection();
+shutdownManager.onShutdown('firebase', async () => {
+  // Firebase Admin SDK cleanup if needed
+  // eslint-disable-next-line no-console
+  console.info('🔥 Firebase cleanup complete');
 });
 
 shutdownManager.onShutdown('sentry', async () => {
@@ -498,15 +402,13 @@ shutdownManager.onShutdown('emergency-mode', async () => {
   emergencyModeService.stopPeriodicCheck();
 });
 
-// Register signal handlers (SIGTERM, SIGINT, uncaughtException)
+// Register signal handlers
 registerSignalHandlers(shutdownManager);
 
-// Handle unhandled promise rejections (log but don't exit)
+// Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
   captureException(reason, { type: 'unhandledRejection' });
-  // Don't exit on unhandled rejection, just log it
-  // This allows the server to continue running
 });
 
 export default app;

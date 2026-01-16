@@ -106,7 +106,7 @@ export function ImagePickerModal({ onSelect, onCancel, onClose, currentUrl }: Im
           file.name.replace(/\.[^.]+$/, '.jpg'),
           { type: 'image/jpeg' }
         );
-        await mediaApi.upload(processedFile);
+        await mediaApi.upload(processedFile, 'gallery');
       }
       await loadMedia();
       toast.success('Upload thành công!');

@@ -44,23 +44,9 @@ export const MIN_QUANTITY = 1;
 export const MAX_QUANTITY = 99;
 
 // ============================================
-// HELPERS
+// RE-EXPORTS FROM SHARED
 // ============================================
 
-/**
- * Format currency in Vietnamese format
- */
-export const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0,
-  }).format(value);
-};
-
-/**
- * Calculate unit number from building code, floor and axis
- */
-export const calculateUnitNumber = (buildingCode: string, floor: number, axis: number): string => {
-  return `${buildingCode}.${floor.toString().padStart(2, '0')}${axis.toString().padStart(2, '0')}`;
-};
+// Re-export from @app/shared for backward compatibility
+// TODO: Update imports in consuming files to use @app/shared directly
+export { formatCurrency, calculateUnitNumber } from '@app/shared';

@@ -1,10 +1,11 @@
 export * from './lib/shared';
 export * from './utils/imageOptimization';
 export * from './schemas';
+export * from './firebase-config';
 
 // API Configuration - centralized URL management
 // Import from config module instead of hardcoding
-export { API_URL, getApiUrl, PORTAL_URL, getPortalUrl, isProduction, isDevelopment } from './config';
+export { API_URL, getApiUrl, PORTAL_URL, getPortalUrl, isProduction, isDevelopment, isFirebaseConfigured } from './config';
 import { getApiUrl } from './config';
 
 /**
@@ -17,6 +18,31 @@ export function resolveMediaUrl(url: string | undefined | null): string {
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   if (url.startsWith('/')) return `${getApiUrl()}${url}`;
   return url;
+}
+
+/**
+ * Format currency in Vietnamese format
+ * @param value - The number to format
+ * @returns Formatted currency string (e.g., "1.000.000 ₫")
+ */
+export function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+/**
+ * Calculate unit number from building code, floor and axis
+ * Format: {buildingCode}.{floor padded to 2 digits}{axis padded to 2 digits}
+ * @param buildingCode - Building code (e.g., "A", "B")
+ * @param floor - Floor number
+ * @param axis - Axis number
+ * @returns Unit number string (e.g., "A.0102")
+ */
+export function calculateUnitNumber(buildingCode: string, floor: number, axis: number): string {
+  return `${buildingCode}.${floor.toString().padStart(2, '0')}${axis.toString().padStart(2, '0')}`;
 }
 
 // Design tokens for the whole platform (colors, typography, spacing, motion)

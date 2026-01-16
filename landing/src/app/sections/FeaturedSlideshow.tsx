@@ -35,27 +35,12 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
   const [loading, setLoading] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const thumbnailsRef = useRef<HTMLDivElement>(null);
-  
-  // Check mobile - set initial value from window
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth < 768;
-    }
-    return false;
-  });
 
   const autoplay = data.autoplay !== false;
   const autoplayDelay = data.autoplayDelay || 5000;
   const showNavigation = data.showNavigation !== false;
   const showPagination = data.showPagination !== false;
   const showThumbnails = data.showThumbnails !== false;
-
-  // Update mobile state on resize
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   // Fetch featured images
   useEffect(() => {
@@ -84,15 +69,21 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
     return () => clearInterval(interval);
   }, [autoplay, autoplayDelay, images.length, isPaused]);
 
-  // Scroll thumbnail into view
+  // Scroll thumbnail into view (desktop only)
   useEffect(() => {
-    if (thumbnailsRef.current && !isMobile) {
+    // Skip on mobile
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) return;
+
+    if (thumbnailsRef.current) {
       const thumbnail = thumbnailsRef.current.children[currentIndex] as HTMLElement;
       if (thumbnail) {
-        thumbnail.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        const container = thumbnailsRef.current;
+        const scrollLeft =
+          thumbnail.offsetLeft - container.offsetWidth / 2 + thumbnail.offsetWidth / 2;
+        container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
       }
     }
-  }, [currentIndex, isMobile]);
+  }, [currentIndex]);
 
   const goToSlide = useCallback((index: number) => {
     setCurrentIndex(index);
@@ -108,7 +99,7 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
 
   if (loading) {
     return (
-      <section style={{ padding: isMobile ? '40px 16px' : '80px 24px', textAlign: 'center' }}>
+      <section className="fs-section" style={{ padding: '40px 16px', textAlign: 'center' }}>
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
@@ -133,21 +124,163 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
   const currentImage = images[currentIndex];
 
   return (
-    <section style={{ padding: isMobile ? '32px 0' : '60px 0' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '0 12px' : '0 24px' }}>
+    <section className="fs-section">
+      <style>{`
+        .fs-section {
+          padding: 60px 0;
+        }
+        .fs-container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 24px;
+        }
+        .fs-header {
+          text-align: center;
+          margin-bottom: 40px;
+        }
+        .fs-title {
+          font-size: clamp(28px, 4vw, 38px);
+          margin-bottom: 8px;
+        }
+        .fs-subtitle {
+          font-size: 16px;
+        }
+        .fs-main-image {
+          padding-bottom: 56.25%;
+        }
+        .fs-nav-btn {
+          width: 48px;
+          height: 48px;
+          font-size: 26px;
+        }
+        .fs-nav-prev { left: 16px; }
+        .fs-nav-next { right: 16px; }
+        .fs-counter {
+          top: 12px;
+          right: 12px;
+          padding: 6px 14px;
+          font-size: 13px;
+        }
+        .fs-caption {
+          padding: 40px 20px 16px;
+          font-size: 15px;
+        }
+        /* Pagination - HIDDEN on desktop */
+        .fs-pagination {
+          display: none !important;
+        }
+        /* Thumbnails - VISIBLE on desktop */
+        .fs-thumbnails {
+          display: flex !important;
+          gap: 8px;
+          padding: 12px 16px;
+          background: ${tokens.color.surface};
+          overflow-x: auto;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .fs-thumbnails::-webkit-scrollbar {
+          display: none;
+        }
+        .fs-thumb {
+          width: 72px;
+          height: 48px;
+          border-radius: 6px;
+          overflow: hidden;
+          border: 2px solid transparent;
+          cursor: pointer;
+          opacity: 0.5;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+          padding: 0;
+          background: ${tokens.color.background};
+        }
+        .fs-thumb:hover { opacity: 0.8; }
+        .fs-thumb.active {
+          border-color: ${tokens.color.primary};
+          opacity: 1;
+        }
+        .fs-thumb img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+        /* Progress - VISIBLE on desktop */
+        .fs-progress {
+          display: block;
+        }
+        
+        /* ========== MOBILE STYLES ========== */
+        @media (max-width: 767px) {
+          .fs-section {
+            padding: 32px 0;
+          }
+          .fs-container {
+            padding: 0 12px;
+          }
+          .fs-header {
+            margin-bottom: 20px;
+          }
+          .fs-title {
+            font-size: 22px;
+          }
+          .fs-subtitle {
+            font-size: 13px;
+          }
+          .fs-main-image {
+            padding-bottom: 75%;
+          }
+          .fs-nav-btn {
+            width: 36px;
+            height: 36px;
+            font-size: 20px;
+          }
+          .fs-nav-prev { left: 8px; }
+          .fs-nav-next { right: 8px; }
+          .fs-counter {
+            top: 8px;
+            right: 8px;
+            padding: 4px 10px;
+            font-size: 11px;
+          }
+          .fs-caption {
+            padding: 24px 12px 12px;
+            font-size: 13px;
+          }
+          /* Pagination - VISIBLE on mobile */
+          .fs-pagination {
+            display: flex !important;
+          }
+          /* Thumbnails - COMPLETELY HIDDEN on mobile */
+          .fs-thumbnails {
+            display: none !important;
+            height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: hidden !important;
+            visibility: hidden !important;
+          }
+          /* Progress - HIDDEN on mobile */
+          .fs-progress {
+            display: none !important;
+          }
+        }
+      `}</style>
+
+      <div className="fs-container">
         {/* Header */}
         {(data.title || data.subtitle) && (
-          <div style={{ textAlign: 'center', marginBottom: isMobile ? 20 : 40 }}>
+          <div className="fs-header">
             {data.title && (
               <motion.h2
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
+                className="fs-title"
                 style={{
-                  fontSize: isMobile ? 22 : 'clamp(28px, 4vw, 38px)',
                   fontFamily: tokens.font.display,
                   color: tokens.color.primary,
-                  marginBottom: 8,
                 }}
               >
                 {data.title}
@@ -159,8 +292,8 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 }}
+                className="fs-subtitle"
                 style={{
-                  fontSize: isMobile ? 13 : 16,
                   color: tokens.color.muted,
                   maxWidth: 500,
                   margin: '0 auto',
@@ -176,7 +309,7 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
         <div
           style={{
             position: 'relative',
-            borderRadius: isMobile ? 12 : 16,
+            borderRadius: 16,
             overflow: 'hidden',
             background: tokens.color.surface,
             boxShadow: '0 4px 24px rgba(0,0,0,0.2)',
@@ -184,12 +317,12 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
-          {/* Main Image - Use padding-bottom trick for reliable aspect ratio */}
+          {/* Main Image */}
           <div
+            className="fs-main-image"
             style={{
               position: 'relative',
               width: '100%',
-              paddingBottom: isMobile ? '75%' : '56.25%', // 4:3 = 75%, 16:9 = 56.25%
               background: tokens.color.background,
             }}
           >
@@ -219,15 +352,14 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 key={`caption-${currentImage.id}`}
+                className="fs-caption"
                 style={{
                   position: 'absolute',
                   bottom: 0,
                   left: 0,
                   right: 0,
-                  padding: isMobile ? '24px 12px 12px' : '40px 20px 16px',
                   background: 'linear-gradient(transparent, rgba(0,0,0,0.75))',
                   color: '#fff',
-                  fontSize: isMobile ? 13 : 15,
                   textAlign: 'center',
                   fontWeight: 500,
                 }}
@@ -243,24 +375,19 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={goPrev}
+                  className="fs-nav-btn fs-nav-prev"
                   style={{
                     position: 'absolute',
-                    left: isMobile ? 8 : 16,
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    width: isMobile ? 36 : 48,
-                    height: isMobile ? 36 : 48,
                     borderRadius: '50%',
                     background: 'rgba(0,0,0,0.5)',
-                    backdropFilter: 'blur(4px)',
                     border: 'none',
                     color: '#fff',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: isMobile ? 20 : 26,
-                    transition: 'background 0.2s',
                   }}
                   aria-label="Ảnh trước"
                 >
@@ -270,24 +397,19 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={goNext}
+                  className="fs-nav-btn fs-nav-next"
                   style={{
                     position: 'absolute',
-                    right: isMobile ? 8 : 16,
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    width: isMobile ? 36 : 48,
-                    height: isMobile ? 36 : 48,
                     borderRadius: '50%',
                     background: 'rgba(0,0,0,0.5)',
-                    backdropFilter: 'blur(4px)',
                     border: 'none',
                     color: '#fff',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: isMobile ? 20 : 26,
-                    transition: 'background 0.2s',
                   }}
                   aria-label="Ảnh tiếp"
                 >
@@ -299,16 +421,12 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
             {/* Slide Counter Badge */}
             {images.length > 1 && (
               <div
+                className="fs-counter"
                 style={{
                   position: 'absolute',
-                  top: isMobile ? 8 : 12,
-                  right: isMobile ? 8 : 12,
-                  padding: isMobile ? '4px 10px' : '6px 14px',
                   background: 'rgba(0,0,0,0.6)',
-                  backdropFilter: 'blur(4px)',
                   borderRadius: 20,
                   color: '#fff',
-                  fontSize: isMobile ? 11 : 13,
                   fontWeight: 600,
                 }}
               >
@@ -317,11 +435,11 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
             )}
           </div>
 
-          {/* Pagination Dots - Show on mobile only */}
-          {showPagination && images.length > 1 && isMobile && (
+          {/* Pagination Dots - Mobile only via CSS */}
+          {showPagination && images.length > 1 && (
             <div
+              className="fs-pagination"
               style={{
-                display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
                 gap: 6,
@@ -352,63 +470,31 @@ export const FeaturedSlideshow = memo(function FeaturedSlideshow({
             </div>
           )}
 
-          {/* Thumbnails - Desktop only (NOT rendered on mobile) */}
-          {showThumbnails && images.length > 1 && !isMobile && (
-            <div
-              ref={thumbnailsRef}
-              style={{
-                display: 'flex',
-                gap: 8,
-                padding: '12px 16px',
-                background: tokens.color.surface,
-                overflowX: 'auto',
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none',
-              }}
-            >
+          {/* Thumbnails - Desktop only via CSS */}
+          {showThumbnails && images.length > 1 && (
+            <div ref={thumbnailsRef} className="fs-thumbnails">
               {images.map((img, index) => (
-                <motion.button
+                <button
                   key={img.id}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                   onClick={() => goToSlide(index)}
-                  style={{
-                    width: 72,
-                    height: 48,
-                    borderRadius: 6,
-                    overflow: 'hidden',
-                    border: index === currentIndex 
-                      ? `2px solid ${tokens.color.primary}` 
-                      : '2px solid transparent',
-                    cursor: 'pointer',
-                    opacity: index === currentIndex ? 1 : 0.5,
-                    transition: 'all 0.2s ease',
-                    flexShrink: 0,
-                    padding: 0,
-                    background: tokens.color.border,
-                  }}
+                  className={`fs-thumb ${index === currentIndex ? 'active' : ''}`}
                   aria-label={`Xem ảnh ${index + 1}`}
                 >
                   <img
                     src={resolveMediaUrl(img.url)}
                     alt={img.alt || `Slide ${index + 1}`}
                     loading="lazy"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      display: 'block',
-                    }}
                   />
-                </motion.button>
+                </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* Progress Indicator - Desktop with autoplay */}
-        {autoplay && images.length > 1 && !isMobile && !isPaused && (
+        {/* Progress Indicator - Desktop only via CSS */}
+        {autoplay && images.length > 1 && !isPaused && (
           <div
+            className="fs-progress"
             style={{
               marginTop: 12,
               height: 3,

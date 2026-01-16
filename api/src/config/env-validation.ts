@@ -18,7 +18,12 @@ import { z } from 'zod';
 const envSchema = z.object({
   // Required in all environments
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  
+  // Firebase configuration (required for Firestore mode)
+  FIREBASE_PROJECT_ID: z.string().optional(),
+  
+  // Optional - Legacy Prisma/PostgreSQL (not used in Firestore mode)
+  DATABASE_URL: z.string().optional(),
   
   // Required in production
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters').optional(),
