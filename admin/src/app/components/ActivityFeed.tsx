@@ -31,23 +31,23 @@ const ACTIVITY_CONFIG: Record<ActivityType, ActivityConfig> = {
     bgColor: `${tokens.color.primary}20`,
     getRoute: () => '/leads',
   },
-  PROJECT: {
-    icon: 'ri-building-line',
+  BLOG_POST: {
+    icon: 'ri-quill-pen-line',
     color: tokens.color.info,
     bgColor: 'rgba(59,130,246,0.2)',
-    getRoute: (id) => `/bidding?project=${id}`,
+    getRoute: () => '/blog-manager',
   },
-  BID: {
-    icon: 'ri-auction-line',
+  USER: {
+    icon: 'ri-user-line',
     color: '#8b5cf6',
     bgColor: 'rgba(139,92,246,0.2)',
-    getRoute: (id) => `/bidding?bid=${id}`,
+    getRoute: () => '/users',
   },
-  CONTRACTOR: {
-    icon: 'ri-building-2-line',
+  MEDIA: {
+    icon: 'ri-gallery-line',
     color: tokens.color.warning,
     bgColor: 'rgba(245,158,11,0.2)',
-    getRoute: (id) => `/contractors?id=${id}`,
+    getRoute: () => '/media',
   },
 };
 

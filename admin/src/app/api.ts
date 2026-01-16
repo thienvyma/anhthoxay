@@ -12,16 +12,6 @@ export type { FetchOptions } from './api/client';
 export { authApi, accountApi } from './api/auth';
 export type { SessionInfo } from './api/auth';
 
-// Re-export Bidding APIs
-export {
-  projectsApi,
-  bidsApi,
-  escrowsApi,
-  feesApi,
-  matchesApi,
-  disputesApi,
-} from './api/bidding';
-
 // Re-export Content APIs
 export {
   pagesApi,
@@ -36,14 +26,12 @@ export {
 // Re-export Users APIs
 export {
   usersApi,
-  contractorsApi,
   regionsApi,
 } from './api/users';
 
 // Re-export Settings APIs
 export {
   settingsApi,
-  biddingSettingsApi,
   serviceFeesApi,
   serviceCategoriesApi,
   unitPricesApi,
@@ -53,13 +41,6 @@ export {
   googleSheetsApi,
 } from './api/settings';
 export type { ServiceFee, GoogleSheetsStatus } from './api/settings';
-
-// Re-export Communication APIs
-export {
-  notificationTemplatesApi,
-  chatApi,
-} from './api/communication';
-export type { NotificationTemplate, RenderedTemplate } from './api/communication';
 
 // Re-export Furniture APIs
 export {

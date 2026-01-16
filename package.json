@@ -18,6 +18,7 @@
     "env:sync": "tsx scripts/env.ts sync",
     "firebase:seed": "tsx scripts/seed-firestore.ts",
     "firebase:set-admin": "tsx scripts/firebase-set-admin-claims.ts",
+    "audit:api": "tsx scripts/audit-api-connections.ts",
     "dev:api": "nx serve api",
     "dev:landing": "nx serve landing",
     "dev:admin": "nx serve admin"

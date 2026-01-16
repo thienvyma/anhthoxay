@@ -191,20 +191,22 @@ interface BlogCategoryInput {
 }
 
 export const blogCategoriesApi = {
+  // Public endpoint - get all categories
   list: () =>
     apiFetch<BlogCategory[]>('/blog/categories'),
 
   get: (slug: string) =>
     apiFetch<BlogCategory>(`/blog/categories/${slug}`),
 
+  // Admin endpoints - require auth
   create: (data: BlogCategoryInput) =>
-    apiFetch<BlogCategory>('/blog/categories', { method: 'POST', body: data }),
+    apiFetch<BlogCategory>('/api/admin/blog/categories', { method: 'POST', body: data }),
 
   update: (id: string, data: Partial<BlogCategoryInput>) =>
-    apiFetch<BlogCategory>(`/blog/categories/${id}`, { method: 'PUT', body: data }),
+    apiFetch<BlogCategory>(`/api/admin/blog/categories/${id}`, { method: 'PUT', body: data }),
 
   delete: (id: string) =>
-    apiFetch<{ ok: boolean }>(`/blog/categories/${id}`, { method: 'DELETE' }),
+    apiFetch<{ ok: boolean }>(`/api/admin/blog/categories/${id}`, { method: 'DELETE' }),
 };
 
 // ========== BLOG POSTS API ==========
@@ -220,25 +222,46 @@ interface BlogPostInput {
   isFeatured?: boolean;
 }
 
+interface PaginatedBlogPostsResponse {
+  data: BlogPost[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export const blogPostsApi = {
-  list: (params?: { status?: string; categoryId?: string; search?: string }) => {
+  // Admin endpoint - list all posts (including drafts)
+  list: async (params?: { status?: string; categoryId?: string; search?: string }): Promise<BlogPost[]> => {
     const query = params ? new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined) as [string, string][]
     ).toString() : '';
-    return apiFetch<BlogPost[]>(`/blog/posts${query ? '?' + query : ''}`);
+    const result = await apiFetch<PaginatedBlogPostsResponse | BlogPost[]>(`/api/admin/blog/posts${query ? '?' + query : ''}`);
+    // Handle both paginated and array responses
+    if (Array.isArray(result)) {
+      return result;
+    }
+    if (result && typeof result === 'object' && 'data' in result && Array.isArray(result.data)) {
+      return result.data;
+    }
+    return [];
   },
 
-  get: (slug: string) =>
-    apiFetch<BlogPost>(`/blog/posts/${slug}`),
+  // Admin endpoint - get post by ID (not slug)
+  get: (idOrSlug: string) =>
+    apiFetch<BlogPost>(`/api/admin/blog/posts/${idOrSlug}`),
 
+  // Admin endpoint - create post
   create: (data: BlogPostInput) =>
-    apiFetch<BlogPost>('/blog/posts', { method: 'POST', body: data }),
+    apiFetch<BlogPost>('/api/admin/blog/posts', { method: 'POST', body: data }),
 
+  // Admin endpoint - update post
   update: (id: string, data: Partial<BlogPostInput>) =>
-    apiFetch<BlogPost>(`/blog/posts/${id}`, { method: 'PUT', body: data }),
+    apiFetch<BlogPost>(`/api/admin/blog/posts/${id}`, { method: 'PUT', body: data }),
 
+  // Admin endpoint - delete post
   delete: (id: string) =>
-    apiFetch<{ ok: boolean }>(`/blog/posts/${id}`, { method: 'DELETE' }),
+    apiFetch<{ ok: boolean }>(`/api/admin/blog/posts/${id}`, { method: 'DELETE' }),
 };
 
 // ========== BLOG COMMENTS API ==========
@@ -262,28 +285,44 @@ interface BlogCommentsListParams {
   postId?: string;
 }
 
+interface PaginatedBlogCommentsResponse {
+  data: BlogComment[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export const blogCommentsApi = {
-  // List all comments with optional filtering (Admin/Manager only)
-  list: (params?: BlogCommentsListParams) => {
+  // Admin endpoint - list all comments with optional filtering
+  list: async (params?: BlogCommentsListParams): Promise<BlogComment[]> => {
     const query = params ? new URLSearchParams(
       Object.entries(params)
         .filter(([, v]) => v !== undefined && v !== '')
         .map(([k, v]) => [k, String(v)])
     ).toString() : '';
-    return apiFetch<BlogComment[]>(`/blog/comments${query ? '?' + query : ''}`);
+    const result = await apiFetch<PaginatedBlogCommentsResponse | BlogComment[]>(`/api/admin/blog/comments${query ? '?' + query : ''}`);
+    // Handle both paginated and array responses
+    if (Array.isArray(result)) {
+      return result;
+    }
+    if (result && typeof result === 'object' && 'data' in result && Array.isArray(result.data)) {
+      return result.data;
+    }
+    return [];
   },
 
-  // Create a comment on a post (public)
+  // Public endpoint - create a comment on a post
   create: (postId: string, data: { name: string; email: string; content: string }) =>
     apiFetch<BlogComment>(`/blog/posts/${postId}/comments`, { method: 'POST', body: data }),
 
-  // Update comment status (approve/reject) - Admin/Manager only
+  // Admin endpoint - update comment status (approve/reject)
   updateStatus: (id: string, status: 'APPROVED' | 'REJECTED') =>
-    apiFetch<BlogComment>(`/blog/comments/${id}/status`, { method: 'PUT', body: { status } }),
+    apiFetch<BlogComment>(`/api/admin/blog/comments/${id}/status`, { method: 'PUT', body: { status } }),
 
-  // Delete a comment - Admin/Manager only
+  // Admin endpoint - delete a comment
   delete: (id: string) =>
-    apiFetch<{ ok: boolean }>(`/blog/comments/${id}`, { method: 'DELETE' }),
+    apiFetch<{ ok: boolean }>(`/api/admin/blog/comments/${id}`, { method: 'DELETE' }),
 };
 
 // ========== LEADS API ==========
@@ -326,36 +365,36 @@ interface MergeLeadsResponse {
 }
 
 export const leadsApi = {
-  // List with search, filter, pagination
+  // List with search, filter, pagination (Admin endpoint)
   list: (params?: LeadsListParams) => {
     const query = params ? new URLSearchParams(
       Object.entries(params)
         .filter(([, v]) => v !== undefined && v !== '')
         .map(([k, v]) => [k, String(v)])
     ).toString() : '';
-    return apiFetch<PaginatedLeadsResponse>(`/leads${query ? '?' + query : ''}`);
+    return apiFetch<PaginatedLeadsResponse>(`/api/admin/leads${query ? '?' + query : ''}`);
   },
 
-  // Get single lead by ID
+  // Get single lead by ID (Admin endpoint)
   get: (id: string) =>
-    apiFetch<CustomerLead>(`/leads/${id}`),
+    apiFetch<CustomerLead>(`/api/admin/leads/${id}`),
 
-  // Get dashboard stats
+  // Get dashboard stats (Admin endpoint)
   getStats: () =>
-    apiFetch<LeadsStatsResponse>('/leads/stats'),
+    apiFetch<LeadsStatsResponse>('/api/admin/leads/stats'),
 
-  // Get related leads (same phone, different source)
+  // Get related leads (same phone, different source) (Admin endpoint)
   getRelated: (id: string) =>
-    apiFetch<RelatedLeadsResponse>(`/leads/${id}/related`),
+    apiFetch<RelatedLeadsResponse>(`/api/admin/leads/${id}/related`),
 
   // Merge leads (Admin only)
   merge: (primaryId: string, secondaryLeadIds: string[]) =>
-    apiFetch<MergeLeadsResponse>(`/leads/${primaryId}/merge`, {
+    apiFetch<MergeLeadsResponse>(`/api/admin/leads/${primaryId}/merge`, {
       method: 'POST',
       body: { secondaryLeadIds },
     }),
 
-  // Export CSV - returns blob for download
+  // Export CSV - returns blob for download (Admin endpoint)
   export: async (params?: { search?: string; status?: string }) => {
     const query = params ? new URLSearchParams(
       Object.entries(params)
@@ -363,7 +402,7 @@ export const leadsApi = {
         .map(([k, v]) => [k, String(v)])
     ).toString() : '';
     
-    const url = `${API_BASE}/leads/export${query ? '?' + query : ''}`;
+    const url = `${API_BASE}/api/admin/leads/export${query ? '?' + query : ''}`;
     const headers: HeadersInit = {};
     const accessToken = await getIdToken();
     if (accessToken) {
@@ -387,9 +426,56 @@ export const leadsApi = {
     window.URL.revokeObjectURL(downloadUrl);
   },
 
+  // Update lead (Admin endpoint)
   update: (id: string, data: { status?: string; notes?: string }) =>
-    apiFetch<CustomerLead>(`/leads/${id}`, { method: 'PUT', body: data }),
+    apiFetch<CustomerLead>(`/api/admin/leads/${id}`, { method: 'PUT', body: data }),
 
+  // Delete lead (Admin endpoint)
   delete: (id: string) =>
-    apiFetch<{ ok: boolean }>(`/leads/${id}`, { method: 'DELETE' }),
+    apiFetch<{ ok: boolean }>(`/api/admin/leads/${id}`, { method: 'DELETE' }),
+};
+
+
+// ========== NOTIFICATION TEMPLATES API ==========
+export interface NotificationTemplate {
+  id: string;
+  type: string;
+  emailSubject: string;
+  emailBody: string;
+  smsBody: string;
+  inAppTitle: string;
+  inAppBody: string;
+  variables: string[];
+  version: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RenderedTemplate {
+  emailSubject: string;
+  emailBody: string;
+  smsBody: string;
+  inAppTitle: string;
+  inAppBody: string;
+}
+
+export const notificationTemplatesApi = {
+  list: () =>
+    apiFetch<NotificationTemplate[]>('/api/admin/notification-templates'),
+
+  get: (type: string) =>
+    apiFetch<NotificationTemplate>(`/api/admin/notification-templates/${type}`),
+
+  update: (type: string, data: Partial<NotificationTemplate>) =>
+    apiFetch<NotificationTemplate>(`/api/admin/notification-templates/${type}`, { method: 'PUT', body: data }),
+
+  render: (data: { type: string; variables: Record<string, string> }) =>
+    apiFetch<RenderedTemplate>('/api/admin/notification-templates/render', { method: 'POST', body: data }),
+
+  getTypes: () =>
+    apiFetch<Array<{ type: string; label: string; description: string }>>('/api/admin/notification-templates/types'),
+
+  seed: () =>
+    apiFetch<{ message: string; count: number }>('/api/admin/notification-templates/seed', { method: 'POST' }),
 };

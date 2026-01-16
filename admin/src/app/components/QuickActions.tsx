@@ -26,27 +26,12 @@ interface QuickActionConfig {
 
 const QUICK_ACTIONS: QuickActionConfig[] = [
   {
-    key: 'approve-projects',
-    icon: 'ri-building-line',
-    label: 'Duyệt công trình',
-    route: '/bidding',
-    color: tokens.color.info,
-    getBadgeCount: (s) => s.projects.pending,
-  },
-  {
-    key: 'verify-contractors',
-    icon: 'ri-building-2-line',
-    label: 'Duyệt nhà thầu',
-    route: '/contractors',
-    color: tokens.color.warning,
-    getBadgeCount: (s) => s.contractors.pending,
-  },
-  {
-    key: 'manage-bidding',
-    icon: 'ri-auction-line',
-    label: 'Quản lý đấu thầu',
-    route: '/bidding',
-    color: '#8b5cf6',
+    key: 'manage-leads',
+    icon: 'ri-contacts-book-line',
+    label: 'Quản lý khách hàng',
+    route: '/leads',
+    color: tokens.color.primary,
+    getBadgeCount: (s) => s.leads.new,
   },
   {
     key: 'write-blog',
@@ -63,11 +48,25 @@ const QUICK_ACTIONS: QuickActionConfig[] = [
     color: '#84cc16',
   },
   {
-    key: 'manage-leads',
-    icon: 'ri-contacts-book-line',
-    label: 'Quản lý khách hàng',
-    route: '/leads',
-    color: tokens.color.primary,
+    key: 'manage-furniture',
+    icon: 'ri-sofa-line',
+    label: 'Quản lý nội thất',
+    route: '/furniture',
+    color: tokens.color.info,
+  },
+  {
+    key: 'manage-users',
+    icon: 'ri-user-settings-line',
+    label: 'Quản lý tài khoản',
+    route: '/users',
+    color: '#06b6d4',
+  },
+  {
+    key: 'settings',
+    icon: 'ri-settings-3-line',
+    label: 'Cài đặt',
+    route: '/settings',
+    color: tokens.color.warning,
   },
 ];
 

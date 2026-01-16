@@ -1,5 +1,5 @@
 // Settings APIs - NỘI THẤT NHANH Admin Dashboard
-// Settings, Bidding Settings, Service Fees, Pricing, Google Sheets Integration
+// Settings, Service Fees, Pricing, Google Sheets Integration
 import { apiFetch } from './client';
 import type {
   ServiceCategory,
@@ -20,59 +20,6 @@ export const settingsApi = {
 
   update: (key: string, data: Record<string, unknown>) =>
     apiFetch<Record<string, unknown>>(`/settings/${key}`, { method: 'PUT', body: data }),
-};
-
-// ========== BIDDING SETTINGS (ADMIN) ==========
-interface BiddingSettings {
-  id: string;
-  maxBidsPerProject: number;
-  defaultBidDuration: number;
-  minBidDuration: number;
-  maxBidDuration: number;
-  escrowPercentage: number;
-  escrowMinAmount: number;
-  escrowMaxAmount: number | null;
-  verificationFee: number;
-  winFeePercentage: number;
-  autoApproveHomeowner: boolean;
-  autoApproveProject: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface UpdateBiddingSettingsInput {
-  maxBidsPerProject?: number;
-  defaultBidDuration?: number;
-  minBidDuration?: number;
-  maxBidDuration?: number;
-  escrowPercentage?: number;
-  escrowMinAmount?: number;
-  escrowMaxAmount?: number | null;
-  verificationFee?: number;
-  winFeePercentage?: number;
-  autoApproveHomeowner?: boolean;
-  autoApproveProject?: boolean;
-}
-
-export const biddingSettingsApi = {
-  // Get full bidding settings (Admin only)
-  get: () =>
-    apiFetch<BiddingSettings>('/api/admin/settings/bidding'),
-
-  // Get public bidding settings
-  getPublic: () =>
-    apiFetch<{
-      maxBidsPerProject: number;
-      defaultBidDuration: number;
-      minBidDuration: number;
-      maxBidDuration: number;
-      escrowPercentage: number;
-      escrowMinAmount: number;
-    }>('/api/settings/bidding'),
-
-  // Update bidding settings (Admin only)
-  update: (data: UpdateBiddingSettingsInput) =>
-    apiFetch<BiddingSettings>('/api/admin/settings/bidding', { method: 'PUT', body: data }),
 };
 
 // ========== SERVICE FEES (ADMIN) ==========

@@ -90,6 +90,10 @@ import {
   createQueueHealthFirestoreRoutes,
   createCDNFirestoreRoutes,
   createIPBlockingFirestoreRoutes,
+  createDashboardFirestoreRoutes,
+  createBiddingSettingsFirestoreRoutes,
+  createAdminBiddingSettingsFirestoreRoutes,
+  createAdminDisputesFirestoreRoutes,
 } from './routes/firestore';
 
 // Metrics routes (no Prisma dependency)
@@ -378,6 +382,16 @@ app.route('/api/admin/cdn', createCDNFirestoreRoutes());
 
 // IP Blocking routes (Firestore)
 app.route('/api/admin/ip-blocking', createIPBlockingFirestoreRoutes());
+
+// Dashboard routes (Firestore)
+app.route('/api/admin/dashboard', createDashboardFirestoreRoutes());
+
+// Bidding Settings routes (Firestore)
+app.route('/api/settings/bidding', createBiddingSettingsFirestoreRoutes());
+app.route('/api/admin/settings/bidding', createAdminBiddingSettingsFirestoreRoutes());
+
+// Disputes routes (Firestore)
+app.route('/api/admin/disputes', createAdminDisputesFirestoreRoutes());
 
 // ============================================
 // GLOBAL ERROR HANDLER

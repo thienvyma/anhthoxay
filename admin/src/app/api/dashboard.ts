@@ -23,36 +23,6 @@ export interface LeadsStats {
 }
 
 /**
- * Projects statistics
- */
-export interface ProjectsStats {
-  total: number;
-  pending: number;
-  open: number;
-  matched: number;
-  inProgress: number;
-  completed: number;
-}
-
-/**
- * Bids statistics
- */
-export interface BidsStats {
-  total: number;
-  pending: number;
-  approved: number;
-}
-
-/**
- * Contractors statistics
- */
-export interface ContractorsStats {
-  total: number;
-  pending: number;
-  verified: number;
-}
-
-/**
  * Blog posts statistics
  */
 export interface BlogPostsStats {
@@ -77,66 +47,19 @@ export interface MediaStats {
 }
 
 /**
- * Pending project item
- */
-export interface PendingProject {
-  id: string;
-  code: string;
-  title: string;
-  ownerName: string;
-  createdAt: string;
-}
-
-/**
- * Pending bid item
- */
-export interface PendingBid {
-  id: string;
-  code: string;
-  projectCode: string;
-  contractorName: string;
-  price: number;
-  createdAt: string;
-}
-
-/**
- * Pending contractor item
- */
-export interface PendingContractor {
-  id: string;
-  name: string;
-  email: string;
-  companyName?: string;
-  submittedAt?: string;
-}
-
-/**
- * Pending items section
- */
-export interface PendingItems {
-  projects: PendingProject[];
-  bids: PendingBid[];
-  contractors: PendingContractor[];
-}
-
-/**
  * Complete dashboard stats response
  */
 export interface DashboardStats {
   leads: LeadsStats;
-  projects: ProjectsStats;
-  bids: BidsStats;
-  contractors: ContractorsStats;
   blogPosts: BlogPostsStats;
   users: UsersStats;
   media: MediaStats;
-  pendingItems: PendingItems;
 }
 
 /**
  * Activity item types
  */
-export type ActivityType = 'LEAD' | 'PROJECT' | 'BID' | 'CONTRACTOR';
+export type ActivityType = 'LEAD' | 'BLOG_POST' | 'USER' | 'MEDIA';
 
 /**
  * Activity feed item

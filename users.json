@@ -1,0 +1,25 @@
+{"users": [
+{
+  "localId": "ivcLPFMKIZaAlq1HHDTUQZ823JZ2",
+  "email": "thienvyma@gmail.com",
+  "emailVerified": false,
+  "passwordHash": "np7/AY1p7HOJadKOvrWGcTAc9kuVeHVPecBYop+u9C6MLrX9VHALkflKKvmYL5VGyQEq1xISm2W07T4wmi/eWQ==",
+  "salt": "ZHI2XVHse08vMw==",
+  "lastSignedInAt": "1768580127120",
+  "createdAt": "1768163147712",
+  "disabled": false,
+  "customAttributes": "{\"role\":\"ADMIN\",\"verificationStatus\":\"VERIFIED\"}",
+  "providerUserInfo": []
+},
+{
+  "localId": "kdWcg9V1MoaUHPMbYykB74F8KI73",
+  "email": "admin@noithatnhanh.vn",
+  "emailVerified": true,
+  "passwordHash": "8aRGhKy72hm56o8uuWVimnxiL0zhcM4PuPPiitTvCHq7qXnlreCx4XsDpH0GRNpNg4UuvInD+i1Jv4eEoyvh3g==",
+  "salt": "WdnEDWPEqH+opA==",
+  "displayName": "Admin",
+  "createdAt": "1768570852857",
+  "disabled": false,
+  "customAttributes": "{\"role\":\"ADMIN\",\"verificationStatus\":\"VERIFIED\"}",
+  "providerUserInfo": []
+}]}

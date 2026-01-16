@@ -570,5 +570,21 @@ export function createAdminPricingFirestoreRoutes() {
     }
   });
 
+  /**
+   * @route DELETE /formulas/:id
+   * @description Delete a formula
+   * @access Admin only
+   */
+  app.delete('/formulas/:id', async (c) => {
+    try {
+      const id = c.req.param('id');
+      const service = getFormulaFirestoreService();
+      await service.deleteFormula(id);
+      return successResponse(c, { ok: true });
+    } catch (error) {
+      return handlePricingError(c, error);
+    }
+  });
+
   return app;
 }

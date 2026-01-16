@@ -122,8 +122,10 @@ export class RegionFirestoreService extends BaseFirestoreService<FirestoreRegion
       });
     }
 
+    // Note: Firestore requires composite indexes for multiple orderBy fields
+    // Using simpler orderBy to avoid index issues, then sort in memory
     const queryOptions: QueryOptions<FirestoreRegion> = {
-      where: whereClause,
+      where: whereClause.length > 0 ? whereClause : undefined,
       orderBy: [
         { field: 'level', direction: 'asc' },
         { field: 'order', direction: 'asc' },

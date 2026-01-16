@@ -640,6 +640,17 @@ export function createFurnitureFirestoreAdminRoutes() {
 
 
   // ========== PROJECTS ADMIN ==========
+  app.get('/projects', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const developerId = c.req.query('developerId');
+      const service = getFurnitureProjectFirestoreService();
+      const projects = await service.getProjects(developerId);
+      return successResponse(c, projects);
+    } catch (error) {
+      return handleFurnitureError(c, error);
+    }
+  });
+
   app.post('/projects', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), validate(CreateProjectSchema), async (c) => {
     try {
       const data = getValidatedBody<CreateProjectInput>(c);
@@ -675,6 +686,17 @@ export function createFurnitureFirestoreAdminRoutes() {
   });
 
   // ========== BUILDINGS ADMIN ==========
+  app.get('/buildings', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const projectId = c.req.query('projectId');
+      const service = getFurnitureBuildingFirestoreService();
+      const buildings = await service.getBuildings(projectId);
+      return successResponse(c, buildings);
+    } catch (error) {
+      return handleFurnitureError(c, error);
+    }
+  });
+
   app.post('/buildings', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), validate(CreateBuildingSchema), async (c) => {
     try {
       const data = getValidatedBody<CreateBuildingInput>(c);
@@ -918,7 +940,24 @@ export function createFurnitureFirestoreAdminRoutes() {
   });
 
   // ========== PRODUCTS ADMIN ==========
+  // Note: Also aliased as /product-bases for frontend compatibility
   app.get('/products', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), validateQuery(ProductsAdminQuerySchema), async (c) => {
+    try {
+      const query = getValidatedQuery<ProductsAdminQuery>(c);
+      const service = getFurnitureProductBaseFirestoreService();
+      const result = await service.getProductBasesForAdmin(query);
+      return paginatedResponse(c, result.products, {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+      });
+    } catch (error) {
+      return handleFurnitureError(c, error);
+    }
+  });
+
+  // Alias for /products (frontend compatibility)
+  app.get('/product-bases', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), validateQuery(ProductsAdminQuerySchema), async (c) => {
     try {
       const query = getValidatedQuery<ProductsAdminQuery>(c);
       const service = getFurnitureProductBaseFirestoreService();
@@ -947,7 +986,34 @@ export function createFurnitureFirestoreAdminRoutes() {
     }
   });
 
+  // Alias for /products/:id (frontend compatibility)
+  app.get('/product-bases/:id', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const { id } = c.req.param();
+      const service = getFurnitureProductBaseFirestoreService();
+      const product = await service.getProductBaseWithDetails(id);
+      if (!product) {
+        return errorResponse(c, 'NOT_FOUND', 'Product not found', 404);
+      }
+      return successResponse(c, product);
+    } catch (error) {
+      return handleFurnitureError(c, error);
+    }
+  });
+
   app.post('/products', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), validate(CreateProductBaseSchema), async (c) => {
+    try {
+      const data = getValidatedBody<CreateProductBaseInput>(c);
+      const service = getFurnitureProductBaseFirestoreService();
+      const product = await service.createProductBase(data);
+      return successResponse(c, product, 201);
+    } catch (error) {
+      return handleFurnitureError(c, error);
+    }
+  });
+
+  // Alias for /products POST (frontend compatibility)
+  app.post('/product-bases', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), validate(CreateProductBaseSchema), async (c) => {
     try {
       const data = getValidatedBody<CreateProductBaseInput>(c);
       const service = getFurnitureProductBaseFirestoreService();
@@ -970,6 +1036,19 @@ export function createFurnitureFirestoreAdminRoutes() {
     }
   });
 
+  // Alias for /products/:id PUT (frontend compatibility)
+  app.put('/product-bases/:id', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), validate(UpdateProductBaseSchema), async (c) => {
+    try {
+      const { id } = c.req.param();
+      const data = getValidatedBody<UpdateProductBaseInput>(c);
+      const service = getFurnitureProductBaseFirestoreService();
+      const product = await service.updateProductBase(id, data);
+      return successResponse(c, product);
+    } catch (error) {
+      return handleFurnitureError(c, error);
+    }
+  });
+
   app.delete('/products/:id', firebaseAuth(), requireRole('ADMIN'), async (c) => {
     try {
       const { id } = c.req.param();
@@ -981,6 +1060,116 @@ export function createFurnitureFirestoreAdminRoutes() {
     }
   });
 
+  // Alias for /products/:id DELETE (frontend compatibility)
+  app.delete('/product-bases/:id', firebaseAuth(), requireRole('ADMIN'), async (c) => {
+    try {
+      const { id } = c.req.param();
+      const service = getFurnitureProductBaseFirestoreService();
+      await service.deleteProductBase(id);
+      return successResponse(c, { message: 'Product deleted' });
+    } catch (error) {
+      return handleFurnitureError(c, error);
+    }
+  });
+
+  // ========== PRODUCT-BASES VARIANTS (Alias routes) ==========
+  app.get('/product-bases/:productId/variants', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const { productId } = c.req.param();
+      const service = getFurnitureProductVariantFirestoreService();
+      const variants = await service.getVariants(productId);
+      return successResponse(c, variants);
+    } catch (error) {
+      return handleFurnitureError(c, error);
+    }
+  });
+
+  app.post('/product-bases/:productId/variants', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), validate(VariantInputSchema), async (c) => {
+    try {
+      const { productId } = c.req.param();
+      const data = getValidatedBody<VariantInput>(c);
+      const service = getFurnitureProductVariantFirestoreService();
+      const variant = await service.createVariant(productId, data);
+      return successResponse(c, variant, 201);
+    } catch (error) {
+      return handleFurnitureError(c, error);
+    }
+  });
+
+  app.put('/product-bases/:productId/variants/:variantId', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), validate(VariantInputSchema.partial()), async (c) => {
+    try {
+      const { productId, variantId } = c.req.param();
+      const data = getValidatedBody<Partial<VariantInput>>(c);
+      const service = getFurnitureProductVariantFirestoreService();
+      const variant = await service.updateVariant(productId, variantId, data);
+      return successResponse(c, variant);
+    } catch (error) {
+      return handleFurnitureError(c, error);
+    }
+  });
+
+  app.delete('/product-bases/:productId/variants/:variantId', firebaseAuth(), requireRole('ADMIN'), async (c) => {
+    try {
+      const { productId, variantId } = c.req.param();
+      const service = getFurnitureProductVariantFirestoreService();
+      await service.deleteVariant(productId, variantId);
+      return successResponse(c, { message: 'Variant deleted' });
+    } catch (error) {
+      return handleFurnitureError(c, error);
+    }
+  });
+
+  // ========== PRODUCT-BASES MAPPINGS (Alias routes) ==========
+  app.get('/product-bases/:productId/mappings', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const { productId } = c.req.param();
+      const service = getFurnitureProductMappingFirestoreService();
+      const mappings = await service.getMappings(productId);
+      return successResponse(c, mappings);
+    } catch (error) {
+      return handleFurnitureError(c, error);
+    }
+  });
+
+  app.post('/product-bases/:productId/mappings', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), validate(MappingInputSchema), async (c) => {
+    try {
+      const { productId } = c.req.param();
+      const data = getValidatedBody<MappingInput>(c);
+      const service = getFurnitureProductMappingFirestoreService();
+      const mapping = await service.addMapping(productId, data);
+      return successResponse(c, mapping, 201);
+    } catch (error) {
+      return handleFurnitureError(c, error);
+    }
+  });
+
+  app.delete('/product-bases/:productId/mappings/:mappingId', firebaseAuth(), requireRole('ADMIN'), async (c) => {
+    try {
+      const { mappingId } = c.req.param();
+      const service = getFurnitureProductMappingFirestoreService();
+      await service.removeMapping(mappingId);
+      return successResponse(c, { message: 'Mapping deleted' });
+    } catch (error) {
+      return handleFurnitureError(c, error);
+    }
+  });
+
+  // Bulk mapping for product-bases
+  app.post('/product-bases/bulk-mapping', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const body = await c.req.json();
+      const { productBaseIds, mapping } = body as {
+        productBaseIds: string[];
+        mapping: { projectName: string; buildingCode: string; apartmentType: string };
+      };
+
+      const service = getFurnitureProductMappingFirestoreService();
+      const result = await service.bulkCreateMappings(productBaseIds, mapping);
+      return successResponse(c, result);
+    } catch (error) {
+      return handleFurnitureError(c, error);
+    }
+  });
 
   // ========== PRODUCT VARIANTS ADMIN ==========
   app.get('/products/:productId/variants', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), async (c) => {

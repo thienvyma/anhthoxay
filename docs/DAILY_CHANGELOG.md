@@ -1,5 +1,313 @@
 # Daily Changelog
 
+## 2026-01-17
+
+### Task: Fix Blog API Response Format Mismatch
+
+**✏️ Modified:**
+- `admin/src/app/api/content.ts` - Fixed blogPostsApi.list() and blogCommentsApi.list() to handle paginated response
+
+**📋 Issue Fixed:**
+- `e.map is not a function` error on BlogManagerPage
+- API returns paginated response `{ data: [], total, page, limit, totalPages }` but frontend expected `BlogPost[]`
+- Added response unwrapping to extract `data` array from paginated response
+
+---
+
+### Task: Fix Admin Furniture API 404 Errors
+
+**✏️ Modified:**
+- `api/src/routes/firestore/furniture.firestore.routes.ts` - Added missing admin routes and alias routes
+
+**📋 Routes Added:**
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/admin/furniture/projects` | GET | List furniture projects |
+| `/api/admin/furniture/buildings` | GET | List furniture buildings |
+| `/api/admin/furniture/product-bases` | GET | List product bases (alias for /products) |
+| `/api/admin/furniture/product-bases/:id` | GET/PUT/DELETE | CRUD product bases |
+| `/api/admin/furniture/product-bases/:id/variants` | GET/POST | Manage variants |
+| `/api/admin/furniture/product-bases/:id/variants/:variantId` | PUT/DELETE | Update/delete variants |
+| `/api/admin/furniture/product-bases/:id/mappings` | GET/POST | Manage mappings |
+| `/api/admin/furniture/product-bases/bulk-mapping` | POST | Bulk create mappings |
+
+**📋 Issue Fixed:**
+- Frontend was calling `/api/admin/furniture/projects`, `/buildings`, `/product-bases` but API only had POST/PUT/DELETE routes
+- Added GET routes for projects and buildings in admin section
+- Added alias routes for `/product-bases` to match frontend expectations
+
+---
+
+### Task: Fix Media Routes Async Issue
+
+**✏️ Modified:**
+- `api/src/routes/firestore/media.firestore.routes.ts` - Fixed critical async issue with `getFirestore()` call
+
+**📋 Issue Fixed:**
+- `getFirestore()` was being called synchronously at route creation time, but it's an async function
+- This caused `mediaCollection` to be a Promise instead of a Firestore collection reference
+- All queries on `mediaCollection` would fail with 404/500 errors
+
+**📋 Solution:**
+- Created `getMediaCollection()` helper function that properly awaits `getFirestore()`
+- Updated all route handlers to call `await getMediaCollection()` inside each handler
+- Changed import from `firebase-admin/firestore` to `../../services/firebase-admin.service`
+
+---
+
+### Task: Fix Firestore Indexes for Media & Blog
+
+**✏️ Modified:**
+- `infra/firebase/firestore.indexes.json` - Added missing indexes for media_assets and blogPosts collections
+
+**📋 Indexes Added:**
+| Collection | Fields | Purpose |
+|------------|--------|---------|
+| `media_assets` | isActive + createdAt | List all active media |
+| `media_assets` | isFeatured + isActive + createdAt | Get featured media for slideshow |
+| `media_assets` | folder + isActive + createdAt | List files by folder |
+| `blogPosts` | status + createdAt | List posts by status |
+| `blogPosts` | status + isFeatured + publishedAt | Get featured published posts |
+
+**⚠️ Note:** These indexes need to be deployed to Firebase before the queries will work. Run:
+```bash
+firebase deploy --only firestore:indexes
+```
+
+---
+
+### Task: Fix Media Routes - Restore corrupted file
+
+**✏️ Modified:**
+- `api/src/routes/firestore/media.firestore.routes.ts` - Completely rewritten (file was corrupted in git)
+
+**📋 Media API Endpoints Implemented:**
+| Endpoint | Auth | Description |
+|----------|------|-------------|
+| `GET /media` | Public | List all active media assets |
+| `POST /media` | Auth | Upload media with MediaAsset record (for gallery) |
+| `POST /media/upload-file` | Auth | Upload file only (for furniture, blog, etc.) |
+| `GET /media/featured` | Public | Get featured media for slideshow |
+| `GET /media/gallery` | Public | Get gallery with pagination |
+| `GET /media/folders` | Admin/Manager | Get folder stats |
+| `GET /media/list/:folder` | Auth | List files in specific folder |
+| `PUT /media/:id` | Admin/Manager | Update media metadata |
+| `DELETE /media/:id` | Admin/Manager | Delete media asset |
+| `GET /media/:folder/:filename` | Public | Get file URL (legacy) |
+
+---
+
+### Task: Admin App Authentication & Dashboard Audit (Task 5.1, 5.2)
+
+**✏️ Modified:**
+- `docs/ADMIN_APP_API_AUDIT.md` - Added Section 1 (Authentication) and Section 2 (Dashboard) audit findings
+
+**📊 Authentication API Audit Findings (Task 5.1):**
+- **Total Endpoints**: 5
+- **Working**: 1 (20%)
+- **Missing**: 4 (80%)
+
+| Endpoint | Status | Notes |
+|----------|--------|-------|
+| `GET /api/auth/me` | ✅ EXISTS | Returns user info from Firestore |
+| `POST /api/auth/change-password` | ❌ MISSING | Frontend calls but backend not implemented |
+| `GET /api/auth/sessions` | ❌ MISSING | Firebase Auth doesn't have session management |
+| `DELETE /api/auth/sessions/:id` | ❌ MISSING | Firebase Auth handles token revocation differently |
+| `DELETE /api/auth/sessions` | ❌ MISSING | Firebase Auth handles token revocation differently |
+
+**📊 Dashboard API Audit Findings (Task 5.2):**
+- **Total Endpoints**: 2
+- **Working**: 2 (100%)
+- **Missing**: 0 (0%)
+
+| Endpoint | Status | Notes |
+|----------|--------|-------|
+| `GET /api/admin/dashboard` | ✅ EXISTS | Returns dashboard stats |
+| `GET /api/admin/dashboard/activity` | ✅ EXISTS | Returns activity feed |
+
+**📋 Recommendations:**
+- Session management endpoints are low priority since Firebase Auth handles sessions differently
+- Consider removing session UI from admin app or adding compatibility routes that return empty data
+
+---
+
+### Task: Audit Furniture Quotation API Connections (Task 3.3)
+
+**✏️ Modified:**
+- `docs/LANDING_APP_API_AUDIT.md` - Added Section 3: Furniture Quotation API Connections audit
+
+**📊 Audit Findings:**
+- **Total Endpoints**: 12
+- **Working**: 8 (67%)
+- **Path Mismatch**: 1 (8%) - `/products/grouped` vs `/products`
+- **Missing**: 3 (25%)
+
+**❌ Missing Routes:**
+- `GET /api/furniture/quotations/:id` - Public endpoint to get quotation by ID
+- `GET /api/furniture/quotations/:id/pdf` - PDF download endpoint
+- `POST /api/furniture/quotations/:id/send-email` - Email sending endpoint
+
+**⚠️ Path Mismatch:**
+- Frontend calls `/api/furniture/products/grouped` but backend has `/api/furniture/products`
+
+---
+
+### Task: Audit Marketplace API Connections (Task 3.4)
+
+**✏️ Modified:**
+- `docs/LANDING_APP_API_AUDIT.md` - Added Section 4: Marketplace API Connections audit
+
+**📊 Audit Findings:**
+- **Total Endpoints**: 3
+- **Working**: 3 (100%)
+- **Missing**: 0 (0%)
+
+**✅ All endpoints verified:**
+- `GET /api/projects` - Public project listings
+- `GET /api/regions` - Region filtering
+- `GET /service-categories` - Service category filtering
+
+---
+
+### Task: Audit Media & Reviews API Connections (Task 3.5)
+
+**✏️ Modified:**
+- `docs/LANDING_APP_API_AUDIT.md` - Added Section 5: Media & Reviews API Connections audit
+
+**📊 Audit Findings:**
+- **Total Endpoints**: 4
+- **Working**: 3 (75%)
+- **Missing**: 1 (25%)
+
+**❌ Missing Routes:**
+- `GET /media/gallery` - Paginated gallery endpoint (MediaGallery.tsx calls this but it doesn't exist)
+
+**✅ Working endpoints:**
+- `GET /media/featured` - Featured slideshow images
+- `POST /reviews/:id/report` - Report a review
+- `POST /reviews/:id/helpful` - Vote review as helpful
+
+---
+
+### Task: Audit Newsletter, Contact & Quote API Connections (Task 3.6)
+
+**✏️ Modified:**
+- `docs/LANDING_APP_API_AUDIT.md` - Added Section 6: Newsletter, Contact & Quote API Connections audit + Summary
+
+**📊 Audit Findings:**
+- **Total Endpoints**: 6
+- **Working**: 6 (100%)
+- **Missing**: 0 (0%)
+
+**✅ All endpoints verified:**
+- `POST /leads` - Accepts all sources (NEWSLETTER, QUOTE_FORM, FURNITURE_QUOTE, QUOTE_CALCULATOR)
+- `GET /unit-prices` - Unit prices for quote calculator
+- `GET /materials` - Materials for quote calculator
+
+**📋 Landing App Overall Summary:**
+- **Total Endpoints**: 31
+- **Working**: 26 (84%)
+- **Path Mismatch**: 1 (3%)
+- **Missing**: 4 (13%)
+
+---
+
+### Task: Implement Comparison and Reporting for API Audit
+
+**✏️ Modified:**
+- `scripts/audit-api-connections.ts` - Enhanced comparison logic and report generation with fix recommendations
+
+**🔧 Improvements:**
+- Added `getFixRecommendation()` function to generate specific fix recommendations for missing routes
+- Added `getOrphanRecommendation()` function to provide better recommendations for orphan routes
+- Updated `missingRoutes` type to include `fixRecommendation` field
+- Enhanced markdown report to show fix recommendations instead of just "Called From"
+- Enhanced console output to show fix recommendations for critical issues
+- Removed unused `fileName` variable
+
+**📊 Report Features:**
+- JSON report (`docs/API_AUDIT_REPORT.json`) with all findings including fix recommendations
+- Markdown report (`docs/API_AUDIT_REPORT.md`) with severity levels and fix recommendations
+- Severity levels: critical, high, medium, low
+- Fix recommendations specify exact file paths and middleware requirements
+
+---
+
+### Task: Revise Frontend API Connection Audit Spec
+
+**✏️ Modified:**
+- `.kiro/specs/frontend-api-connection-audit/requirements.md` - Reduced to 29 requirements, fixed endpoint paths, removed unimplemented features
+- `.kiro/specs/frontend-api-connection-audit/design.md` - Updated endpoint inventory with correct backend paths
+- `.kiro/specs/frontend-api-connection-audit/tasks.md` - Reorganized 15 task groups with accurate requirements references
+
+**🔧 Fixes:**
+- Fixed IP Blocking endpoints: `POST /block`, `POST /unblock` instead of `DELETE /:ip`
+- Fixed Rate Limit endpoints: `/stats` instead of `/metrics`, `/dashboard`
+- Removed API Keys requirement (frontend exists but backend not implemented)
+- Removed Unsubscribe requirement (schema exists but routes not implemented)
+- Added missing Furniture endpoints: `/api/furniture/fees`, `/api/furniture/quotations/:id`
+- Updated Escrow requirements to include partial/refund/dispute actions
+
+**📋 Spec Coverage:**
+- Landing App: Blog, Pages, Settings, Furniture Quotation, Marketplace, Media, Reviews, Newsletter, Contact, Quote Calculator APIs
+- Admin App: Auth, Dashboard, Users, Contractors, Projects, Bids, Matches, Escrows, Fees, Disputes, Blog, Leads, Media, Pages, Regions, Pricing, Settings, Furniture, Chat, Notifications, Rate Limit, IP Blocking, Google Sheets, Health Check APIs
+- Cross-App: Endpoint consistency audit, component-level verification
+- Property Tests: 6 correctness properties defined
+
+---
+
+### Task: Create Frontend API Connection Audit Spec (Initial)
+
+**🆕 Created:**
+- `.kiro/specs/frontend-api-connection-audit/requirements.md` - Initial 40 requirements
+- `.kiro/specs/frontend-api-connection-audit/design.md` - Architecture, endpoint inventory
+- `.kiro/specs/frontend-api-connection-audit/tasks.md` - 15 task groups
+
+---
+
+### Task: Fix Production API URL - Frontend calling localhost
+
+**✏️ Modified:**
+- `landing/vite.config.ts` - Hardcode production API URL for reliable builds
+- `admin/vite.config.ts` - Hardcode production API URL for reliable builds
+- `cloudbuild.yaml` - Added custom domains to CORS_ORIGINS
+
+**🔧 Fixes:**
+- Frontend was calling `localhost:4202` instead of Cloud Run API
+- Added `PRODUCTION_API_URL` constant to ensure production builds always use correct API
+- Added custom domains (noithatnhanh.vn, admin.noithatnhanh.vn) to CORS allowed origins
+- Rebuilt and redeployed both landing and admin apps
+- Updated Cloud Run env vars with correct CORS_ORIGINS
+
+**🚀 Redeployed:**
+- ✅ Landing app → https://noithatnhanh-landing.web.app
+- ✅ Admin app → https://noithatnhanh-admin.web.app
+- ✅ API (Cloud Run) → CORS updated for custom domains
+
+---
+
+### Task: Add Missing API Routes (Dashboard, Media Featured)
+
+**🆕 Created:**
+- `api/src/routes/firestore/dashboard.firestore.routes.ts` - Dashboard stats & activity feed endpoints
+
+**✏️ Modified:**
+- `api/src/routes/firestore/index.ts` - Export dashboard routes
+- `api/src/routes/firestore/media.firestore.routes.ts` - Added `/media/featured` endpoint
+- `api/src/main.ts` - Mount dashboard routes at `/api/admin/dashboard`
+- `packages/shared/src/config.ts` - Fixed import.meta.env for Node.js compatibility
+
+**🔧 Fixes:**
+- Added `/api/admin/dashboard` endpoint for admin dashboard stats
+- Added `/api/admin/dashboard/activity` endpoint for activity feed
+- Added `/media/featured` endpoint for slideshow images
+- Fixed TypeScript errors with process.env bracket notation
+
+**🚀 Redeployed:**
+- ✅ API (Cloud Run) → New routes deployed
+
+---
+
 ## 2026-01-16
 
 ### Task: Fix Cloud Run Deployment - Container Startup Issue
@@ -25,9 +333,13 @@
 - ✅ Storage rules deployed
 - ✅ Landing app → https://noithatnhanh-landing.web.app
 - ✅ Admin app → https://noithatnhanh-admin.web.app
-- ✅ API (Cloud Run) → https://ntn-api-970920393092.asia-southeast1.run.app
+- ✅ API (Cloud Run) → https://ntn-api-gsfn3zbloa-as.a.run.app
+
+**🆕 Created:**
+- `.env.production` - Production environment variables for frontend builds
 
 **✏️ Modified:**
+- `cloudbuild.yaml` - Fixed CORS_ORIGINS comma escaping with `^@^` syntax
 - `cloudbuild.yaml` - Updated env vars (CORS_ORIGINS, FIREBASE_STORAGE_BUCKET, timeout)
 - `firestore.rules` - Copied to root for deployment
 - `firestore.indexes.json` - Copied to root for deployment

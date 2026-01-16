@@ -67,21 +67,39 @@ function getEnvVar(viteKey: string, nodeKey: string, defaultValue: string): stri
  * API URL - works in both Vite and Node.js
  * Falls back to localhost for development
  */
-export const API_URL: string = getEnvVar(
-  'VITE_API_URL',
-  'API_URL',
-  'http://localhost:4202'
-);
+export const API_URL: string = (() => {
+  // Check for Vite build-time replacement first
+  if (isBrowser()) {
+    const viteEnv = getViteEnv();
+    if (viteEnv && viteEnv['VITE_API_URL']) {
+      return viteEnv['VITE_API_URL'];
+    }
+  }
+  // Node.js environment
+  if (typeof process !== 'undefined' && process.env?.['API_URL']) {
+    return process.env['API_URL'];
+  }
+  return 'http://localhost:4202';
+})();
 
 /**
  * Portal URL - works in both Vite and Node.js
  * Falls back to localhost for development
  */
-export const PORTAL_URL: string = getEnvVar(
-  'VITE_PORTAL_URL',
-  'PORTAL_URL',
-  'http://localhost:4203'
-);
+export const PORTAL_URL: string = (() => {
+  // Check for Vite build-time replacement first
+  if (isBrowser()) {
+    const viteEnv = getViteEnv();
+    if (viteEnv && viteEnv['VITE_PORTAL_URL']) {
+      return viteEnv['VITE_PORTAL_URL'];
+    }
+  }
+  // Node.js environment
+  if (typeof process !== 'undefined' && process.env?.['PORTAL_URL']) {
+    return process.env['PORTAL_URL'];
+  }
+  return 'http://localhost:4203';
+})();
 
 /**
  * Get API URL (function form for compatibility)

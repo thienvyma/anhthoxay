@@ -1,11 +1,9 @@
 // Users APIs - NỘI THẤT NHANH Admin Dashboard
-// Users, Contractors, Regions
+// Users, Regions
 import { apiFetch } from './client';
 import type {
   UserAccount,
   UserSession,
-  Contractor,
-  ContractorProfile,
 } from '../types';
 
 // ========== USER MANAGEMENT (ADMIN ONLY) ==========
@@ -75,47 +73,6 @@ export const usersApi = {
   // Revoke user session
   revokeSession: (userId: string, sessionId: string) =>
     apiFetch<{ ok: boolean }>(`/api/users/${userId}/sessions/${sessionId}`, { method: 'DELETE' }),
-};
-
-// ========== CONTRACTOR MANAGEMENT (ADMIN ONLY) ==========
-interface ContractorsListParams {
-  status?: 'PENDING' | 'VERIFIED' | 'REJECTED';
-  search?: string;
-  page?: number;
-  limit?: number;
-}
-
-interface PaginatedContractorsResponse {
-  data: Contractor[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-interface VerifyContractorInput {
-  status: 'VERIFIED' | 'REJECTED';
-  note?: string;
-}
-
-export const contractorsApi = {
-  // List contractors with pagination and filtering
-  list: (params?: ContractorsListParams) => {
-    const query = params ? new URLSearchParams(
-      Object.entries(params)
-        .filter(([, v]) => v !== undefined && v !== '')
-        .map(([k, v]) => [k, String(v)])
-    ).toString() : '';
-    return apiFetch<PaginatedContractorsResponse>(`/api/admin/contractors${query ? '?' + query : ''}`);
-  },
-
-  // Get contractor detail by ID
-  get: (id: string) =>
-    apiFetch<ContractorProfile>(`/api/admin/contractors/${id}`),
-
-  // Verify or reject contractor
-  verify: (id: string, data: VerifyContractorInput) =>
-    apiFetch<{ success: boolean; message: string }>(`/api/admin/contractors/${id}/verify`, { method: 'PUT', body: data }),
 };
 
 // ========== REGION MANAGEMENT (ADMIN) ==========

@@ -154,3 +154,20 @@ export {
   cdnFirestoreRoutes,
   ipBlockingFirestoreRoutes,
 } from './admin-utils.firestore.routes';
+
+// Dashboard routes
+export {
+  createDashboardFirestoreRoutes,
+  dashboardFirestoreRoutes,
+} from './dashboard.firestore.routes';
+
+// Bidding Settings routes
+export {
+  createBiddingSettingsFirestoreRoutes,
+  createAdminBiddingSettingsFirestoreRoutes,
+} from './bidding-settings.firestore.routes';
+
+// Disputes routes
+export {
+  createAdminDisputesFirestoreRoutes,
+} from './disputes.firestore.routes';

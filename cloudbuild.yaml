@@ -35,6 +35,9 @@ steps:
       - 'gcr.io/$PROJECT_ID/ntn-api:latest'
 
   # Deploy to Cloud Run
+  # NOTE: Region should match Firestore location for best latency
+  # Firestore default location is nam5 (us-central) if not specified during creation
+  # Check Firestore location in Firebase Console > Firestore > Settings
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -65,7 +68,7 @@ steps:
       - '--set-env-vars'
       - 'FIREBASE_STORAGE_BUCKET=$PROJECT_ID.firebasestorage.app'
       - '--set-env-vars'
-      - '^@^CORS_ORIGINS=https://noithatnhanh-landing.web.app,https://noithatnhanh-admin.web.app'
+      - '^@^CORS_ORIGINS=https://noithatnhanh-landing.web.app,https://noithatnhanh-admin.web.app,https://noithatnhanh.vn,https://admin.noithatnhanh.vn,https://www.noithatnhanh.vn'
 
 images:
   - 'gcr.io/$PROJECT_ID/ntn-api:$BUILD_ID'

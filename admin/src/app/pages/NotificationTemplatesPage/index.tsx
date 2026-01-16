@@ -53,7 +53,7 @@ interface NotificationTemplatesPageProps {
 export function NotificationTemplatesPage({ embedded = false }: NotificationTemplatesPageProps) {
   const toast = useToast();
   const [templates, setTemplates] = useState<NotificationTemplate[]>([]);
-  const [availableTypes, setAvailableTypes] = useState<string[]>([]);
+  const [availableTypes, setAvailableTypes] = useState<Array<{ type: string; label: string; description: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState<NotificationTemplate | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -86,7 +86,7 @@ export function NotificationTemplatesPage({ embedded = false }: NotificationTemp
     try {
       setSeeding(true);
       const result = await notificationTemplatesApi.seed();
-      toast.success(`Đã tạo ${result.created} mẫu thông báo mặc định`);
+      toast.success(`Đã tạo ${result.count} mẫu thông báo mặc định`);
       fetchTemplates();
     } catch (error) {
       console.error('Failed to seed templates:', error);
@@ -204,13 +204,13 @@ export function NotificationTemplatesPage({ embedded = false }: NotificationTemp
           gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
           gap: 16,
         }}>
-          {availableTypes.map((type) => {
-            const template = getTemplateByType(type);
+          {availableTypes.map((typeInfo) => {
+            const template = getTemplateByType(typeInfo.type);
             const hasTemplate = !!template;
 
             return (
               <motion.div
-                key={type}
+                key={typeInfo.type}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 style={{
@@ -220,15 +220,15 @@ export function NotificationTemplatesPage({ embedded = false }: NotificationTemp
                   cursor: 'pointer',
                 }}
                 whileHover={{ scale: 1.01 }}
-                onClick={() => handleEditTemplate(type)}
+                onClick={() => handleEditTemplate(typeInfo.type)}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
                   <div>
                     <h3 style={{ fontSize: 16, fontWeight: 600, color: tokens.color.text, margin: 0 }}>
-                      {TEMPLATE_TYPE_LABELS[type] || type}
+                      {typeInfo.label || TEMPLATE_TYPE_LABELS[typeInfo.type] || typeInfo.type}
                     </h3>
                     <p style={{ fontSize: 12, color: tokens.color.muted, margin: '4px 0 0' }}>
-                      {type}
+                      {typeInfo.type}
                     </p>
                   </div>
                   <span style={{

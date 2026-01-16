@@ -9,16 +9,6 @@ export type { FetchOptions } from './client';
 export { authApi, accountApi } from './auth';
 export type { SessionInfo } from './auth';
 
-// Bidding APIs
-export {
-  projectsApi,
-  bidsApi,
-  escrowsApi,
-  feesApi,
-  matchesApi,
-  disputesApi,
-} from './bidding';
-
 // Content APIs
 export {
   pagesApi,
@@ -28,19 +18,19 @@ export {
   blogPostsApi,
   blogCommentsApi,
   leadsApi,
+  notificationTemplatesApi,
 } from './content';
+export type { NotificationTemplate, RenderedTemplate } from './content';
 
 // Users APIs
 export {
   usersApi,
-  contractorsApi,
   regionsApi,
 } from './users';
 
 // Settings APIs
 export {
   settingsApi,
-  biddingSettingsApi,
   serviceFeesApi,
   serviceCategoriesApi,
   unitPricesApi,
@@ -51,27 +41,13 @@ export {
 } from './settings';
 export type { ServiceFee, GoogleSheetsStatus } from './settings';
 
-// Communication APIs
-export {
-  notificationTemplatesApi,
-  chatApi,
-} from './communication';
-export type { NotificationTemplate, RenderedTemplate } from './communication';
-
 // Dashboard APIs
 export { dashboardApi } from './dashboard';
 export type {
   LeadsStats,
-  ProjectsStats,
-  BidsStats,
-  ContractorsStats,
   BlogPostsStats,
   UsersStats,
   MediaStats,
-  PendingProject,
-  PendingBid,
-  PendingContractor,
-  PendingItems,
   DashboardStats,
   ActivityType,
   ActivityItem,

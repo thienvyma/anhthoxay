@@ -1,4 +1,4 @@
-// Settings-related type definitions (Settings, BiddingSettings, ServiceFee)
+// Settings-related type definitions (Settings, ServiceFee)
 
 // ========== COMPANY SETTINGS ==========
 
@@ -35,29 +35,6 @@ export interface SocialSettings {
   twitter?: string;
   tiktok?: string;
   linkedin?: string;
-}
-
-// ========== BIDDING SETTINGS ==========
-
-/**
- * Bidding settings (singleton)
- * Controls bidding system configuration
- */
-export interface BiddingSettings {
-  id: string;
-  maxBidsPerProject: number;
-  defaultBidDuration: number;
-  minBidDuration: number;
-  maxBidDuration: number;
-  escrowPercentage: number;
-  escrowMinAmount: number;
-  escrowMaxAmount: number | null;
-  verificationFee: number;
-  winFeePercentage: number;
-  autoApproveHomeowner: boolean;
-  autoApproveProject: boolean;
-  createdAt: string;
-  updatedAt: string;
 }
 
 // ========== SERVICE FEE TYPES ==========
@@ -99,18 +76,7 @@ export type RouteType =
   | 'pricing-config'
   | 'furniture'
   | 'users'
-  | 'contractors'
   | 'regions'
-  | 'projects'
-  | 'bids'
-  | 'matches'
-  | 'escrows'
-  | 'fees'
-  | 'disputes'
   | 'notification-templates'
-  | 'chat'
-  | 'bidding'
-  | 'bidding-settings'
   | 'api-keys'
-  | 'guide'
   | 'rate-limits';

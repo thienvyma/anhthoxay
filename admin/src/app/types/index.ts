@@ -4,11 +4,8 @@
 // User-related types
 export * from './user';
 
-// Bidding-related types (Project, Bid, Match, Escrow, Fee, Dispute, Chat)
-export * from './bidding';
-
 // Content-related types (Page, Section, BlogPost, Media, Pricing)
 export * from './content';
 
-// Settings-related types (Settings, BiddingSettings, ServiceFee)
+// Settings-related types (Settings, ServiceFee)
 export * from './settings';

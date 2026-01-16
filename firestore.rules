@@ -1,0 +1,313 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'ADMIN';
+    }
+    
+    function isManager() {
+      return isAuthenticated() && request.auth.token.role in ['ADMIN', 'MANAGER'];
+    }
+    
+    function isContractor() {
+      return isAuthenticated() && request.auth.token.role == 'CONTRACTOR';
+    }
+    
+    function isHomeowner() {
+      return isAuthenticated() && request.auth.token.role == 'HOMEOWNER';
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ==================== USERS ====================
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAdmin();
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+      
+      // User's notifications subcollection
+      match /notifications/{notificationId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // User's preferences
+      match /preferences/{doc} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Contractor badges
+      match /badges/{badgeId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+      
+      // Saved projects (for contractors)
+      match /savedProjects/{projectId} {
+        allow read, write: if isOwner(userId) && isContractor();
+      }
+    }
+
+    // ==================== CONTENT (PUBLIC READ) ====================
+    match /pages/{pageId} {
+      allow read: if true;
+      allow write: if isManager();
+      
+      match /sections/{sectionId} {
+        allow read: if true;
+        allow write: if isManager();
+      }
+    }
+    
+    match /blogCategories/{categoryId} {
+      allow read: if true;
+      allow write: if isManager();
+    }
+    
+    match /blogPosts/{postId} {
+      allow read: if resource.data.status == 'PUBLISHED' || isManager();
+      allow write: if isManager();
+      
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if true; // Public can comment
+        allow update, delete: if isManager();
+      }
+    }
+    
+    match /mediaAssets/{assetId} {
+      allow read: if true;
+      allow write: if isManager();
+    }
+
+    // ==================== PRICING (PUBLIC READ) ====================
+    match /serviceCategories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /unitPrices/{priceId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /materialCategories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /materials/{materialId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /formulas/{formulaId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ==================== LEADS ====================
+    match /leads/{leadId} {
+      allow read: if isManager();
+      allow create: if true; // Public can submit leads
+      allow update, delete: if isManager();
+    }
+
+    // ==================== SETTINGS ====================
+    match /settings/{key} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /serviceFees/{feeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /regions/{regionId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ==================== PROJECTS & BIDDING ====================
+    match /projects/{projectId} {
+      // Public can see OPEN projects (limited fields)
+      allow read: if resource.data.status == 'OPEN' 
+                  || isOwner(resource.data.ownerId) 
+                  || isContractor()
+                  || isAdmin();
+      allow create: if isHomeowner();
+      allow update: if isOwner(resource.data.ownerId) || isAdmin();
+      allow delete: if isAdmin();
+      
+      match /bids/{bidId} {
+        allow read: if isOwner(resource.data.contractorId) 
+                    || isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId)
+                    || isAdmin();
+        allow create: if isContractor();
+        allow update: if isOwner(resource.data.contractorId) || isAdmin();
+        allow delete: if isAdmin();
+      }
+    }
+
+    // ==================== ESCROW & FEES ====================
+    match /escrows/{escrowId} {
+      allow read: if isOwner(resource.data.homeownerId) 
+                  || isOwner(resource.data.contractorId)
+                  || isAdmin();
+      allow write: if isAdmin();
+      
+      match /milestones/{milestoneId} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+      }
+    }
+    
+    match /feeTransactions/{transactionId} {
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ==================== CHAT ====================
+    match /conversations/{conversationId} {
+      allow read: if isAuthenticated() && 
+                  request.auth.uid in resource.data.participantIds;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+                    request.auth.uid in resource.data.participantIds;
+      allow delete: if isAdmin();
+      
+      match /messages/{messageId} {
+        allow read: if isAuthenticated() && 
+                    request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+        allow create: if isAuthenticated() && 
+                      request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+        allow update: if isOwner(resource.data.senderId);
+        allow delete: if isOwner(resource.data.senderId) || isAdmin();
+      }
+    }
+
+    // ==================== REVIEWS & RANKINGS ====================
+    match /reviews/{reviewId} {
+      allow read: if resource.data.isPublic == true || isAdmin();
+      allow create: if isHomeowner();
+      allow update: if isOwner(resource.data.reviewerId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    match /reviewReports/{reportId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+    
+    match /rankings/{contractorId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ==================== FURNITURE SYSTEM ====================
+    match /furnitureDevelopers/{developerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /furnitureProjects/{projectId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /furnitureBuildings/{buildingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /furnitureLayouts/{layoutId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /furnitureCategories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /furnitureProducts/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /furnitureProductBases/{baseId} {
+      allow read: if true;
+      allow write: if isAdmin();
+      
+      match /variants/{variantId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+    }
+    
+    match /furnitureMaterials/{materialId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /furnitureFees/{feeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /furnitureQuotations/{quotationId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // ==================== NOTIFICATION TEMPLATES ====================
+    match /notificationTemplates/{type} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+    
+    match /scheduledNotifications/{notificationId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ==================== AUDIT LOGS ====================
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
+    // ==================== API KEYS ====================
+    match /apiKeys/{keyId} {
+      allow read, write: if isAdmin();
+      
+      match /usageLogs/{logId} {
+        allow read: if isAdmin();
+        allow create: if true; // Functions can write
+        allow update, delete: if false;
+      }
+    }
+
+    // ==================== PENDING CHANGES ====================
+    match /pendingChanges/{changeId} {
+      allow read: if isManager();
+      allow create: if isManager();
+      allow update, delete: if isAdmin();
+    }
+
+    // ==================== INTEGRATIONS ====================
+    match /integrations/{type} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

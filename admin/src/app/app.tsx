@@ -6,27 +6,16 @@ import { LoginPage } from './components/LoginPage';
 import { Layout } from './components/Layout';
 import { ToastProvider } from './components/Toast';
 import { DashboardPage } from './pages/DashboardPage';
-import { ContractorsPage } from './pages/ContractorsPage';
 import { RegionsPage } from './pages/RegionsPage';
 import { SectionsPage } from './pages/SectionsPage';
 import { MediaPage } from './pages/MediaPage';
-
 import { BlogManagerPage } from './pages/BlogManagerPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { LeadsPage } from './pages/LeadsPage';
 import { PricingConfigPage } from './pages/PricingConfigPage';
 import { UsersPage } from './pages/UsersPage';
-import { ProjectsPage } from './pages/ProjectsPage';
-import { BidsPage } from './pages/BidsPage';
-import { MatchesPage } from './pages/MatchesPage';
-import { FeesPage } from './pages/FeesPage';
-import { DisputesPage } from './pages/DisputesPage';
 import { NotificationTemplatesPage } from './pages/NotificationTemplatesPage';
-import { ChatPage } from './pages/ChatPage';
-import { BiddingManagementPage } from './pages/BiddingManagementPage';
-import { BiddingSettingsPage } from './pages/BiddingSettingsPage';
 import { FurniturePage } from './pages/FurniturePage';
-import { GuidePage } from './pages/GuidePage';
 import { RateLimitPage } from './pages/RateLimitPage';
 import { useUser, store, tokenStorage } from './store';
 import { authApi } from './api';
@@ -155,21 +144,11 @@ function AppContent() {
           <Route path="/sections/:slug" element={<SectionsPageWrapper />} />
           <Route path="/sections" element={<Navigate to="/pages/home" replace />} />
           <Route path="/leads" element={<LeadsPage />} />
-          <Route path="/contractors" element={<ContractorsPage />} />
           <Route path="/regions" element={<RegionsPage />} />
-          <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/bids" element={<BidsPage />} />
-          <Route path="/matches" element={<MatchesPage />} />
-          <Route path="/fees" element={<FeesPage />} />
-          <Route path="/disputes" element={<DisputesPage />} />
           <Route path="/notification-templates" element={<NotificationTemplatesPage />} />
-          <Route path="/chat" element={<ChatPage />} />
-          <Route path="/bidding" element={<BiddingManagementPage />} />
-          <Route path="/bidding-settings" element={<BiddingSettingsPage />} />
           <Route path="/furniture" element={<FurniturePage />} />
           <Route path="/api-keys" element={<Navigate to="/settings?tab=api-keys" replace />} />
           <Route path="/settings/api-keys" element={<Navigate to="/settings?tab=api-keys" replace />} />
-          <Route path="/guide" element={<GuidePage />} />
           <Route path="/rate-limits" element={<RateLimitPage />} />
           <Route path="/pricing-config" element={<PricingConfigPage />} />
           <Route path="/media" element={<MediaPage />} />

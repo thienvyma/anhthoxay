@@ -5,16 +5,23 @@ import react from '@vitejs/plugin-react';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 
+// Production API URL - hardcoded for reliable builds
+const PRODUCTION_API_URL = 'https://ntn-api-gsfn3zbloa-as.a.run.app';
+
 export default defineConfig(({ mode }) => {
   // Load env from workspace root
   const env = loadEnv(mode, path.resolve(__dirname, '..'), '');
   
-  // Get API URL from env or process.env (for Docker build)
-  const apiUrl = process.env.VITE_API_URL || env.VITE_API_URL || 'http://localhost:4202';
+  // In production mode, always use production API URL
+  // In development, use env var or fallback to localhost
+  const isProduction = mode === 'production';
+  const apiUrl = isProduction 
+    ? PRODUCTION_API_URL 
+    : (process.env.VITE_API_URL || env.VITE_API_URL || 'http://localhost:4202');
   const portalUrl = process.env.VITE_PORTAL_URL || env.VITE_PORTAL_URL || 'http://localhost:4203';
   
   // eslint-disable-next-line no-console
-  console.log(`[Vite] Building with VITE_API_URL=${apiUrl}`);
+  console.log(`[Vite] Building ${mode} with VITE_API_URL=${apiUrl}`);
   
   return {
     root: __dirname,
