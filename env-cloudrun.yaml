@@ -2,4 +2,4 @@ NODE_ENV: production
 FIREBASE_PROJECT_ID: noithatnhanh-f8f72
 FIREBASE_STORAGE_BUCKET: noithatnhanh-f8f72.firebasestorage.app
 JWT_SECRET: prod-jwt-secret-32-chars-minimum-for-signing
-CORS_ORIGINS: "https://noithatnhanh-landing.web.app,https://noithatnhanh-admin.web.app"
+CORS_ORIGINS: "https://noithatnhanh-landing.web.app,https://noithatnhanh-admin.web.app,https://noithatnhanh-f8f72.web.app,https://noithatnhanh-f8f72.firebaseapp.com"

@@ -68,7 +68,7 @@ steps:
       - '--set-env-vars'
       - 'FIREBASE_STORAGE_BUCKET=$PROJECT_ID.firebasestorage.app'
       - '--set-env-vars'
-      - '^@^CORS_ORIGINS=https://noithatnhanh-landing.web.app,https://noithatnhanh-admin.web.app,https://noithatnhanh.vn,https://admin.noithatnhanh.vn,https://www.noithatnhanh.vn'
+      - '^@^CORS_ORIGINS=https://noithatnhanh-landing.web.app,https://noithatnhanh-admin.web.app,https://noithatnhanh.vn,https://admin.noithatnhanh.vn,https://www.noithatnhanh.vn,https://noithatnhanh-f8f72.web.app,https://noithatnhanh-f8f72.firebaseapp.com'
 
 images:
   - 'gcr.io/$PROJECT_ID/ntn-api:$BUILD_ID'

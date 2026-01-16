@@ -143,6 +143,14 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> 
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Request failed' }));
+    
+    // Debug logging
+    console.error(`[API Error] ${options?.method || 'GET'} ${url}`, {
+      status: response.status,
+      statusText: response.statusText,
+      error
+    });
+
     const errorMessage = error.error?.message || error.error || `API Error: ${response.status} ${response.statusText}`;
     throw new Error(errorMessage);
   }
