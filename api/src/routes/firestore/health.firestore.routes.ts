@@ -17,8 +17,17 @@ import { getFirestore } from '../../services/firebase-admin.service';
 // Track shutdown state
 let isShuttingDown = false;
 
+// Firebase ready state (set from main.ts)
+let firebaseReadyFn: (() => boolean) | null = null;
+let firebaseErrorFn: (() => Error | null) | null = null;
+
 export function setShutdownState(state: boolean): void {
   isShuttingDown = state;
+}
+
+export function setFirebaseReadyCheck(readyFn: () => boolean, errorFn: () => Error | null): void {
+  firebaseReadyFn = readyFn;
+  firebaseErrorFn = errorFn;
 }
 
 /**
@@ -134,7 +143,16 @@ async function getHealthStatus(): Promise<{
 /**
  * Check Firestore connectivity
  */
-async function checkFirestore(): Promise<{ status: string; latencyMs?: number }> {
+async function checkFirestore(): Promise<{ status: string; latencyMs?: number; error?: string }> {
+  // First check if Firebase is initialized
+  if (firebaseReadyFn && !firebaseReadyFn()) {
+    const error = firebaseErrorFn?.();
+    return {
+      status: 'initializing',
+      error: error?.message || 'Firebase is still initializing',
+    };
+  }
+  
   const start = Date.now();
   
   try {
@@ -146,10 +164,11 @@ async function checkFirestore(): Promise<{ status: string; latencyMs?: number }>
       status: 'healthy',
       latencyMs: Date.now() - start,
     };
-  } catch {
+  } catch (err) {
     return {
       status: 'unhealthy',
       latencyMs: Date.now() - start,
+      error: err instanceof Error ? err.message : 'Unknown error',
     };
   }
 }
@@ -164,6 +183,22 @@ async function getReadinessStatus(): Promise<{
   if (isShuttingDown) {
     return {
       status: { ready: false, reason: 'Shutdown in progress' },
+      httpStatus: 503,
+    };
+  }
+  
+  // Check if Firebase is still initializing
+  if (firebaseReadyFn && !firebaseReadyFn()) {
+    const error = firebaseErrorFn?.();
+    if (error) {
+      return {
+        status: { ready: false, reason: `Firebase init failed: ${error.message}` },
+        httpStatus: 503,
+      };
+    }
+    // Still initializing - return 503 but with different reason
+    return {
+      status: { ready: false, reason: 'Firebase is still initializing' },
       httpStatus: 503,
     };
   }

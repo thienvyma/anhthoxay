@@ -2,12 +2,58 @@
 
 ## 2026-01-16
 
-### Task: Fix API Docker Build & Deploy Configuration
+### Task: Fix Cloud Run Deployment - Container Startup Issue
+
+**✏️ Modified:**
+- `api/src/config/env-validation.ts` - Removed JWT_SECRET requirement (using Firebase Auth), added FIREBASE_PROJECT_ID requirement
+- `api/src/main.ts` - Made Firebase init non-blocking, added Firebase ready state tracking
+- `api/src/routes/firestore/health.firestore.routes.ts` - Added Firebase ready check for health endpoints
+- `api/src/routes/firestore/index.ts` - Exported `setFirebaseReadyCheck`
+
+**🔧 Fixes:**
+- Container no longer exits when JWT_SECRET is missing (not needed with Firebase Auth)
+- Server starts listening immediately, Firebase initializes in background
+- Health check reports Firebase initialization status
+- `/health/ready` returns 503 while Firebase is initializing
+
+---
+
+### Task: Full Production Deployment (Firebase Phase 3 Complete)
+
+**🚀 Deployed:**
+- ✅ Firestore rules & indexes deployed
+- ✅ Storage rules deployed
+- ✅ Landing app → https://noithatnhanh-landing.web.app
+- ✅ Admin app → https://noithatnhanh-admin.web.app
+- ✅ API (Cloud Run) → https://ntn-api-970920393092.asia-southeast1.run.app
+
+**✏️ Modified:**
+- `cloudbuild.yaml` - Updated env vars (CORS_ORIGINS, FIREBASE_STORAGE_BUCKET, timeout)
+- `firestore.rules` - Copied to root for deployment
+- `firestore.indexes.json` - Copied to root for deployment
+- `storage.rules` - Copied to root for deployment
+
+**🆕 Created:**
+- `env-cloudrun.yaml` - Cloud Run environment variables config
+
+**📋 Verification:**
+- API health check: ✅ healthy
+- Frontend builds with production API URL
+- All Firebase services connected
+
+---
+
+### Task: Deploy API to Cloud Run
 
 **✏️ Modified:**
 - `api/Dockerfile` - Simplified to use pre-built artifacts from `dist/api/`
-- `cloudbuild.yaml` - Added build step before Docker build
+- `cloudbuild.yaml` - Added build step, use `$BUILD_ID` for image tagging
 - `api/src/config/env-validation.ts` - Made `DATABASE_URL` optional (using Firestore instead)
+
+**🚀 Deployed:**
+- API deployed to Cloud Run: https://ntn-api-970920393092.asia-southeast1.run.app
+- Health check: ✅ healthy (Firestore connected)
+- Environment variables configured: `NODE_ENV`, `FIREBASE_PROJECT_ID`, `JWT_SECRET`
 
 **📋 Changes:**
 - Docker build now works correctly with pnpm workspace

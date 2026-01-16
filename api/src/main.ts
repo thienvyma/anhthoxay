@@ -84,6 +84,7 @@ import {
   createFurnitureFirestoreAdminRoutes,
   createHealthFirestoreRoutes,
   setShutdownState,
+  setFirebaseReadyCheck,
   createMediaFirestoreRoutes,
   createRateLimitFirestoreRoutes,
   createQueueHealthFirestoreRoutes,
@@ -169,12 +170,35 @@ validateEnvironment();
 // Initialize Sentry error tracking (optional - requires SENTRY_DSN)
 initSentry();
 
-// Initialize Firebase Admin SDK
-initializeFirebaseAdmin().then(() => {
-  console.info('✅ Firebase Admin SDK initialized');
-}).catch((err) => {
-  console.error('❌ Failed to initialize Firebase Admin SDK:', err);
-});
+// Firebase initialization state
+let firebaseInitialized = false;
+let firebaseInitError: Error | null = null;
+
+// Initialize Firebase Admin SDK (non-blocking for faster startup)
+// Health check will report ready status based on this
+initializeFirebaseAdmin()
+  .then(() => {
+    firebaseInitialized = true;
+    // eslint-disable-next-line no-console -- Startup logging is necessary
+    console.info('✅ Firebase Admin SDK initialized');
+  })
+  .catch((err) => {
+    firebaseInitError = err;
+    console.error('❌ Failed to initialize Firebase Admin SDK:', err);
+    // Don't exit - let health check report unhealthy status
+  });
+
+// Export for health check
+export function isFirebaseReady(): boolean {
+  return firebaseInitialized;
+}
+
+export function getFirebaseInitError(): Error | null {
+  return firebaseInitError;
+}
+
+// Register Firebase ready check with health routes
+setFirebaseReadyCheck(isFirebaseReady, getFirebaseInitError);
 
 // Initialize Emergency Mode Service
 const emergencyModeService = getEmergencyModeService();

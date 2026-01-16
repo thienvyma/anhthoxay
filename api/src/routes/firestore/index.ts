@@ -135,6 +135,7 @@ export {
   createHealthFirestoreRoutes, 
   healthFirestoreRoutes,
   setShutdownState,
+  setFirebaseReadyCheck,
 } from './health.firestore.routes';
 
 

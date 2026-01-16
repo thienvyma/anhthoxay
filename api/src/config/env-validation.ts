@@ -95,13 +95,16 @@ export function validateEnvironment(): EnvConfig {
   
   // Additional production-specific validations
   if (isProduction) {
-    if (!process.env.JWT_SECRET) {
-      console.error('❌ FATAL: JWT_SECRET is required in production mode');
+    // JWT_SECRET is optional when using Firebase Auth
+    // Only required if using custom JWT authentication
+    if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
+      console.error('❌ FATAL: JWT_SECRET must be at least 32 characters in production mode');
       process.exit(1);
     }
     
-    if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
-      console.error('❌ FATAL: JWT_SECRET must be at least 32 characters in production mode');
+    // Firebase Project ID is required in production
+    if (!process.env.FIREBASE_PROJECT_ID) {
+      console.error('❌ FATAL: FIREBASE_PROJECT_ID is required in production mode');
       process.exit(1);
     }
   }
