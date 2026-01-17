@@ -347,8 +347,8 @@ app.route('/api/admin/chat', adminChatFirestoreRoutes);
 // Notification routes (Firestore)
 app.route('/api/notifications', notificationFirestoreRoutes);
 
-// Notification Template routes (Firestore)
-app.route('/api/admin/notification-templates', notificationTemplateFirestoreRoutes);
+  // Notification Template routes (Firestore)
+  app.route('/api/admin/notification-templates', notificationTemplatesFirestoreRoutes);
 
 // Scheduled Notification routes (Firestore)
 app.route('/api/admin/scheduled-notifications', scheduledNotificationFirestoreRoutes);

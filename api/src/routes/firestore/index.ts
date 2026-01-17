@@ -97,7 +97,7 @@ export {
 export { notificationFirestoreRoutes } from './notification.firestore.routes';
 
 // Notification Template routes
-export { notificationTemplateFirestoreRoutes } from './notification-template.firestore.routes';
+export { notificationTemplatesFirestoreRoutes } from './notification-templates.firestore.routes';
 
 // Scheduled Notification routes
 export { scheduledNotificationFirestoreRoutes } from './scheduled-notification.firestore.routes';
@@ -165,3 +165,9 @@ export {
 export {
   createApiKeysFirestoreRoutes,
 } from './api-keys.firestore.routes';
+
+// Dashboard routes
+export {
+  createDashboardFirestoreRoutes,
+  dashboardFirestoreRoutes,
+} from './dashboard.firestore.routes';
