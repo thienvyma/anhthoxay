@@ -6,7 +6,7 @@ import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 
 // Production API URL - hardcoded for reliable builds
-const PRODUCTION_API_URL = 'https://ntn-api-gsfn3zbloa-as.a.run.app';
+const PRODUCTION_API_URL = 'https://ntn-api-qzy5vvmc6q-as.a.run.app';
 
 export default defineConfig(({ mode }) => {
   // Load env from workspace root
