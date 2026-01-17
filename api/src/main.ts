@@ -91,6 +91,7 @@ import {
   createCDNFirestoreRoutes,
   createIPBlockingFirestoreRoutes,
   createDashboardFirestoreRoutes,
+  createApiKeysFirestoreRoutes,
 } from './routes/firestore';
 
 // Metrics routes (no Prisma dependency)
@@ -301,6 +302,9 @@ app.route('/api/admin/blog', createAdminBlogFirestoreRoutes());
 
 // Settings routes (Firestore)
 app.route('/settings', createSettingsFirestoreRoutes());
+
+// API Keys routes (Firestore)
+app.route('/api/admin/api-keys', createApiKeysFirestoreRoutes());
 
 // Users management routes (Firestore)
 app.route('/api/users', usersFirestoreRoutes);

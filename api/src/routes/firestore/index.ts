@@ -160,3 +160,8 @@ export {
   createDashboardFirestoreRoutes,
   dashboardFirestoreRoutes,
 } from './dashboard.firestore.routes';
+
+// API Keys routes
+export {
+  createApiKeysFirestoreRoutes,
+} from './api-keys.firestore.routes';
