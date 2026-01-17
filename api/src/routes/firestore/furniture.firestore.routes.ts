@@ -1357,6 +1357,103 @@ export function createFurnitureFirestoreAdminRoutes() {
     }
   });
 
+  // ============================================
+  // IMPORT/EXPORT/SYNC ROUTES (Admin only)
+  // ============================================
+
+  /**
+   * @route POST /import
+   * @description Import furniture data from CSV
+   * @access Admin only
+   */
+  app.post('/import', firebaseAuth(), requireRole('ADMIN'), async (c) => {
+    try {
+      const formData = await c.req.formData();
+      const file = formData.get('file') as File;
+
+      if (!file) {
+        return errorResponse(c, 'VALIDATION_ERROR', 'No file provided', 400);
+      }
+
+      // TODO: Implement CSV parsing and bulk import
+      // For now, return placeholder response
+      return successResponse(c, {
+        message: 'Import functionality not yet implemented',
+        filename: file.name,
+        size: file.size
+      });
+    } catch (error) {
+      logger.error('Import failed', { error });
+      return errorResponse(c, 'INTERNAL_ERROR', 'Failed to import data', 500);
+    }
+  });
+
+  /**
+   * @route GET /export
+   * @description Export furniture data as CSV
+   * @access Admin only
+   */
+  app.get('/export', firebaseAuth(), requireRole('ADMIN'), async (c) => {
+    try {
+      const type = c.req.query('type') || 'all';
+
+      // TODO: Implement CSV export
+      // For now, return placeholder response
+      return successResponse(c, {
+        message: 'Export functionality not yet implemented',
+        type,
+        url: null
+      });
+    } catch (error) {
+      logger.error('Export failed', { error });
+      return errorResponse(c, 'INTERNAL_ERROR', 'Failed to export data', 500);
+    }
+  });
+
+  /**
+   * @route POST /sync/pull
+   * @description Pull/sync data from external source (Google Sheets, etc.)
+   * @access Admin only
+   */
+  app.post('/sync/pull', firebaseAuth(), requireRole('ADMIN'), async (c) => {
+    try {
+      const source = c.req.query('source') || 'sheets';
+
+      // TODO: Implement sync pull functionality
+      // For now, return placeholder response
+      return successResponse(c, {
+        message: 'Sync pull functionality not yet implemented',
+        source,
+        status: 'pending'
+      });
+    } catch (error) {
+      logger.error('Sync pull failed', { error });
+      return errorResponse(c, 'INTERNAL_ERROR', 'Failed to sync data', 500);
+    }
+  });
+
+  /**
+   * @route POST /sync/push
+   * @description Push/sync data to external source
+   * @access Admin only
+   */
+  app.post('/sync/push', firebaseAuth(), requireRole('ADMIN'), async (c) => {
+    try {
+      const source = c.req.query('source') || 'sheets';
+
+      // TODO: Implement sync push functionality
+      // For now, return placeholder response
+      return successResponse(c, {
+        message: 'Sync push functionality not yet implemented',
+        source,
+        status: 'pending'
+      });
+    } catch (error) {
+      logger.error('Sync push failed', { error });
+      return errorResponse(c, 'INTERNAL_ERROR', 'Failed to sync data', 500);
+    }
+  });
+
   return app;
 }
 
