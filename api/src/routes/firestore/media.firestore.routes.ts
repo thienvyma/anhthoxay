@@ -290,6 +290,83 @@ export function createMediaFirestoreRoutes() {
   });
 
   // ============================================
+  // POST /media/upload-file - Upload raw file without creating MediaAsset record
+  // (handle frontend calls to /media/upload-file)
+  // ============================================
+  app.post('/upload-file', firebaseAuth(), async (c) => {
+    try {
+      const formData = await c.req.formData();
+      const file = formData.get('file') as UploadedFile | null;
+      const folder = (formData.get('folder') as MediaFolder) || 'gallery';
+
+      if (!file) {
+        return errorResponse(c, 'VALIDATION_ERROR', 'No file provided', 400);
+      }
+
+      if (!VALID_FOLDERS.includes(folder)) {
+        return errorResponse(c, 'VALIDATION_ERROR', `Invalid folder. Must be one of: ${VALID_FOLDERS.join(', ')}`, 400);
+      }
+
+      // Get file buffer
+      let buffer: Buffer;
+      if (file.arrayBuffer) {
+        buffer = Buffer.from(await file.arrayBuffer());
+      } else if (file.buffer) {
+        buffer = Buffer.from(file.buffer);
+      } else {
+        return errorResponse(c, 'VALIDATION_ERROR', 'Invalid file format', 400);
+      }
+
+      const contentType = file.type || 'application/octet-stream';
+      const originalName = file.name || 'file';
+
+      // Generate content-hash filename
+      const filename = generateContentHashFilename(buffer, { originalFilename: originalName });
+      const path = `${folder}/${filename}`;
+
+      // Optimize images (same logic as upload)
+      let finalBuffer = buffer;
+      let finalContentType = contentType;
+
+      if (contentType.startsWith('image/') && !contentType.includes('svg')) {
+        try {
+          const image = sharp(buffer);
+          const metadata = await image.metadata();
+          if (metadata.width && metadata.width > 2000) {
+            finalBuffer = await image.resize(2000, undefined, { withoutEnlargement: true }).webp({ quality: 85 }).toBuffer();
+            finalContentType = 'image/webp';
+          } else {
+            finalBuffer = await image.webp({ quality: 85 }).toBuffer();
+            finalContentType = 'image/webp';
+          }
+        } catch (err) {
+          logger.warn('Image optimization failed for upload-file, using original', { error: err });
+        }
+      }
+
+      // Upload to Firebase Storage
+      const result = await storage.upload(path, finalBuffer, {
+        contentType: finalContentType,
+        metadata: {
+          originalName,
+          folder,
+          uploadedBy: getCurrentUid(c),
+        },
+      });
+
+      return successResponse(c, {
+        url: result.url,
+        mimeType: finalContentType,
+        width: undefined,
+        height: undefined,
+        size: finalBuffer.length,
+      }, 201);
+    } catch (error) {
+      logger.error('Upload-file failed', { error });
+      return errorResponse(c, 'UPLOAD_ERROR', 'Failed to upload file', 500);
+    }
+  });
+  // ============================================
   // PUT /media/:param - Update media (method mismatch fix - frontend uses PUT for delete)
   // ============================================
   app.put('/:param', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), async (c) => {
