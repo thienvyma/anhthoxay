@@ -344,6 +344,23 @@ export function createAdminPricingFirestoreRoutes() {
   });
 
   /**
+   * @route POST /service-categories/:id
+   * @description Update a service category (method mismatch fix - frontend uses POST)
+   * @access Admin only
+   */
+  app.post('/service-categories/:id', validate(updateServiceCategorySchema), async (c) => {
+    try {
+      const id = c.req.param('id');
+      const input = getValidatedBody<z.infer<typeof updateServiceCategorySchema>>(c);
+      const service = getServiceCategoryFirestoreService();
+      const category = await service.updateCategory(id, input);
+      return successResponse(c, category);
+    } catch (error) {
+      return handlePricingError(c, error);
+    }
+  });
+
+  /**
    * @route DELETE /service-categories/:id
    * @description Delete a service category
    * @access Admin only

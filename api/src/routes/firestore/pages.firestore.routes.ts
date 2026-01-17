@@ -67,6 +67,26 @@ export function createPagesFirestoreRoutes() {
   });
 
   /**
+   * @route POST /pages/:slug
+   * @description Update a page by slug (method mismatch fix - frontend uses POST)
+   * @access Admin, Manager
+   */
+  app.post('/:slug', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const slug = c.req.param('slug');
+      const body = await c.req.json<UpdatePageInput>();
+      const page = await pageService.updatePage(slug, body);
+      return successResponse(c, page);
+    } catch (error) {
+      if (error instanceof PagesFirestoreError) {
+        return errorResponse(c, error.code, error.message, error.statusCode);
+      }
+      console.error('Update page (POST) error:', error);
+      return errorResponse(c, 'INTERNAL_ERROR', 'Failed to update page', 500);
+    }
+  });
+
+  /**
    * @route POST /pages
    * @description Create a new page
    * @access Admin, Manager
@@ -199,6 +219,26 @@ export function createSectionsFirestoreRoutes() {
         return errorResponse(c, error.code, error.message, error.statusCode);
       }
       console.error('Update section error:', error);
+      return errorResponse(c, 'INTERNAL_ERROR', 'Failed to update section', 500);
+    }
+  });
+
+  /**
+   * @route POST /sections/:id
+   * @description Update a section by ID (method mismatch fix - frontend uses POST)
+   * @access Admin, Manager
+   */
+  app.post('/:id', firebaseAuth(), requireRole('ADMIN', 'MANAGER'), async (c) => {
+    try {
+      const id = c.req.param('id');
+      const body = await c.req.json<UpdateSectionInput>();
+      const section = await pageService.updateSection(id, body);
+      return successResponse(c, section);
+    } catch (error) {
+      if (error instanceof PagesFirestoreError) {
+        return errorResponse(c, error.code, error.message, error.statusCode);
+      }
+      console.error('Update section (POST) error:', error);
       return errorResponse(c, 'INTERNAL_ERROR', 'Failed to update section', 500);
     }
   });

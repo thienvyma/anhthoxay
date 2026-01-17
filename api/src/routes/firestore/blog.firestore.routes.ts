@@ -374,6 +374,27 @@ export function createAdminBlogFirestoreRoutes() {
   });
 
   /**
+   * @route POST /admin/blog/categories/:id
+   * @description Update a blog category (method mismatch fix - frontend uses POST)
+   * @access Admin, Manager
+   */
+  app.post('/categories/:id', validate(UpdateBlogCategorySchema), async (c) => {
+    try {
+      const id = c.req.param('id');
+      const body = getValidatedBody<UpdateBlogCategoryInput>(c);
+      const category = await categoryService.updateCategory(id, body);
+
+      logger.info('Blog category updated (POST)', { id });
+      return successResponse(c, category);
+    } catch (error) {
+      if (error instanceof BlogFirestoreError) {
+        return errorResponse(c, error.code, error.message, error.statusCode);
+      }
+      throw error;
+    }
+  });
+
+  /**
    * @route DELETE /admin/blog/categories/:id
    * @description Delete a blog category
    * @access Admin, Manager
@@ -548,6 +569,29 @@ export function createAdminBlogFirestoreRoutes() {
         page: filter.page || 1,
         limit: filter.limit || 20,
       });
+    } catch (error) {
+      if (error instanceof BlogFirestoreError) {
+        return errorResponse(c, error.code, error.message, error.statusCode);
+      }
+      throw error;
+    }
+  });
+
+  /**
+   * @route GET /admin/blog/comments/:id
+   * @description Get a single comment by ID (method mismatch fix - frontend uses GET)
+   * @access Admin, Manager
+   */
+  app.get('/comments/:id', async (c) => {
+    try {
+      const id = c.req.param('id');
+      const comment = await commentService.getCommentById(id);
+
+      if (!comment) {
+        return errorResponse(c, 'NOT_FOUND', 'Comment not found', 404);
+      }
+
+      return successResponse(c, comment);
     } catch (error) {
       if (error instanceof BlogFirestoreError) {
         return errorResponse(c, error.code, error.message, error.statusCode);
