@@ -8,7 +8,7 @@ steps:
       - '-c'
       - |
         npm install -g pnpm@10
-        pnpm install
+        pnpm install --no-frozen-lockfile
         pnpm nx run api:build:production
 
   # Build the Docker image (uses pre-built dist/api)
