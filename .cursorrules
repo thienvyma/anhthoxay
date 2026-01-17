@@ -147,5 +147,26 @@ Purpose:
 ---------------------------------------------------------------------
 End of additional rules
 ---------------------------------------------------------------------
+ 
+13) Agent permissions (explicit user approval)
+- Purpose: Allow a named agent (CI/assistant) to perform routine operational tasks on behalf of a repository owner to reduce friction for trusted maintainers.
+- Scope: Only applies when the repository owner explicitly authorizes the agent for a specific session or task. It does NOT grant blanket access to secrets or service-account JSON files unless explicitly provided.
+- Allowed actions when authorized by the owner:
+  - Create branches, commit code changes, and push to remote branches.
+  - Create pull requests and merge PRs when owner explicitly approves "merge permission".
+  - Build and deploy frontend apps to Firebase Hosting when the owner has confirmed CLI access (firebase login) or provided a CI token/service-account for the build environment.
+  - Run project-local scripts (build, test, lint) and edit non-sensitive config files (e.g., `vite.config.ts`, `cloudbuild.yaml`) to fix build/deploy issues.
+  - Run database-safe admin tasks that do not modify production data unless owner explicitly requests those changes.
+- Forbidden actions even when authorized:
+  - Commit or persist secrets (API keys, service account JSON) into the repository.
+  - Create or publish new top-level config files without opening an issue/PR and receiving maintainer approval.
+  - Make destructive production data migrations or irreversible changes without an explicit, signed approval.
+- Authorization model:
+  - The owner must explicitly state the authorization scope and duration (e.g., "deploy now", "fix X and deploy", "audit only") in the conversation before the agent acts.
+  - The agent must log all actions taken (branch, commits, commands run) and present them to the owner after completion.
+  - For long-running or repeated operations, the owner should configure CI secrets (preferred) or provide ephemeral tokens; the agent must not store secrets in the repo.
+- Revocation:
+  - The owner can revoke authorization at any time by instructing the agent to stop; ongoing processes should be gracefully cancelled where possible.
+
 
 
