@@ -1,0 +1,151 @@
+Project: Anh Thợ Xây — Cursor Rules and Project Guidelines
+
+Purpose:
+- Provide concise, high-signal guidance for contributors to understand architecture, environment configuration, coding conventions, Firebase integration, and deployment steps. This file should be read before making changes that touch environment, build, auth, or deployment.
+
+1) High-level Architecture
+- Monorepo managed with Nx containing multiple apps and packages:
+  - apps: `admin`, `landing`, `api`
+  - packages: `shared` (re-exports config, types, firebase client helper functions), other shared libs
+- Frontend: React 19 + TypeScript + Vite (each app has its own `vite.config.ts`)
+- Backend: Node + Hono framework; Firebase Admin SDK for server-side Auth/Firestore access
+- Database: Firestore (document model) and Firebase Storage for media
+- CI/CD: Cloud Build → Cloud Run (api) and Firebase Hosting (frontends)
+
+2) Environment and Config Rules
+- Frontend build-time variables are Vite `import.meta.env` prefixed with `VITE_`.
+  - Always define `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`, and `VITE_API_URL` before production builds.
+  - Use `define` in `vite.config.ts` to ensure replacement for `import.meta.env.*` used inside packages.
+- Backend uses `process.env`. Ensure Cloud Build/Cloud Run environment variables are set (e.g., `FIREBASE_PROJECT_ID`, `GOOGLE_APPLICATION_CREDENTIALS`, `CORS_ORIGINS`).
+- Never hardcode API keys in source files. For local testing, use `.env` files and the appropriate Nx/Vite env loading. CI may override envs.
+
+3) Firebase: Client vs Admin
+- Client SDK:
+  - The firebase client config used by admin/landing must come from `packages/shared/src/config.ts` which reads `import.meta.env.VITE_FIREBASE_*` (build-time).
+  - Ensure Authorized domains are configured in Firebase Console for every hosting domain (e.g., `admin.noithatnhanh.vn`).
+  - For OAuth popup/redirect flows, add custom domains to Firebase Auth authorized domains.
+- Admin (server) SDK:
+  - Uses Application Default Credentials in production (Cloud Run). Local dev can use `GOOGLE_APPLICATION_CREDENTIALS` pointed to a service account JSON.
+  - Server code should initialize admin once (singleton). See `api/src/services/firebase-admin.service.ts`.
+  - Use admin SDK for setting custom claims and server-only tasks.
+
+4) Auth and Session Persistence (Frontend)
+- Initialize Firebase app once per page load (`initializeApp` + `getAuth`).
+- Explicitly set auth persistence to `browserLocalPersistence` in admin app so reloads retain the session:
+  - Call `setPersistence(getAuth(app), browserLocalPersistence)` during client init.
+- Always use `onAuthStateChanged` to reactively set app state and fetch custom claims only when user present.
+- After sign-in, always call `getIdTokenResult()` to read custom claims and verify allowed roles (ADMIN/MANAGER).
+
+5) API Contract & Data Normalization
+- Backend routes must match frontend expectations. When the backend currently returns wrapped objects (e.g., `{ stats, totalBlogPosts }`) the frontend client must normalize data before passing to components.
+- Prefer server-side aggregation (Firestore queries) for dashboard stats instead of client-side heuristics.
+- Use Zod schemas for request validation (existing pattern): validate request body/query params and return standardized `successResponse` / `errorResponse`.
+
+6) Firestore Usage & Best Practices
+- Avoid unbounded collection scans in production for counts; prefer aggregations or maintain counters where required.
+- Always handle multiple timestamp formats from Firestore documents (Timestamp, ISO string, unix seconds).
+- Use indexes for queries with orderBy + where; update `firestore.indexes.json` if necessary and deploy via `firebase deploy --only firestore:indexes`.
+
+7) Build & Deployment
+- Frontend:
+  - Rebuild when envs change. `pnpm nx run admin:build:production` then `firebase deploy --only hosting:admin --project <PROJECT>` (CI runs similar).
+  - Ensure `vite.config.ts` `define` contains all `import.meta.env.VITE_FIREBASE_*` keys so built assets contain correct values.
+- Backend:
+  - Cloud Build uses `cloudbuild.yaml`. Use `--no-frozen-lockfile` for pnpm in CI if lockfile mismatches.
+  - Ensure Docker build context includes `dist/api` when copying package.json into the container. `dir` option in cloudbuild for per-service build is acceptable.
+
+8) Debugging Checklist (when auth or dashboard fails)
+- If login fails with "api-key-not-valid": Confirm `VITE_FIREBASE_API_KEY` exists in the built bundle:
+  - Inspect `dist/admin/assets/*.js` for `apiKey` or run `grep`.
+  - Confirm Firebase web config values at build-time.
+- If OAuth popup/redirect errors: verify `Authorized domains` in Firebase Console includes the domain shown in the browser.
+- If session lost on reload: confirm `setPersistence(..., browserLocalPersistence)` is set and not overridden; check cookies/localStorage restrictions (3rd-party cookies, SameSite, cross-origin).
+- If `e.map is not a function`: fetch the raw API response from Network tab and verify the shape; add defensive normalization in frontend API layer (`admin/src/app/api/*`).
+
+9) Code Style & Contributions
+- Follow TypeScript strictness. Export explicit types from `packages/shared`.
+- Naming: functions should be verbs (e.g., `getRecentActivity`), variables descriptive (e.g., `numActiveUsers`), avoid 1-2 char names.
+- Avoid try/catch without meaningful handling. Rethrow or return standardized error responses.
+- Unit tests: use existing jest/vitest configs. Add tests for new aggregation functions and critical normalization logic.
+
+10) PR & Review
+- Create smaller focused PRs; include:
+  - What changed and why
+  - How to test locally (commands + envs)
+  - Any needed Firebase Console changes (authorized domains, indexes, service account)
+- Tag backend/frontend owners for changes affecting contracts.
+
+11) Security Notes
+- Do not commit service account JSON to the repo.
+- Use minimum required service-account roles for Cloud Run accesses.
+- Sanitize any template/rendered HTML returned to clients.
+
+12) Operations & Rollback
+- For risky changes, deploy feature flags and staged rollout.
+- Keep Cloud Run revisions and Firebase hosting versions to rollback quickly.
+
+Contact
+- If uncertain about intent of a file or change, stop and ask. Always prefer to read surrounding modules in `packages/shared` and the `api` routes before changing logic that affects data contracts.
+
+End of .cursorrules
+
+---------------------------------------------------------------------
+ADDITIONAL RULES: Format, Patterns, File Creation and Enforcement
+---------------------------------------------------------------------
+Purpose:
+- Prevent fixes made by assumption or "quán tính" that add files, rename patterns, or change formats without following repository conventions or team review.
+
+1) File format and encoding
+- Always use UTF-8 without BOM. Line endings must be LF.
+- Files that are part of tooling/config (like `.cursorrules`, `cloudbuild.yaml`, `vite.config.ts`) must preserve existing formatting and indentation characters (tabs vs spaces) — do not change indentation style when editing.
+
+2) File creation and reuse policy
+- Do NOT create new top-level config or rule files with overlapping responsibilities (e.g., do not add `.cursorrules.local` or duplicate config files). If existing file is missing content, update the existing file instead of creating a new one.
+- If you think a new file is required, open an issue/PR first describing:
+  - Why existing files cannot be extended
+  - Exact filename, format, and where it will live
+  - Tests / CI changes required
+  - Approval from a repo maintainer is required before merging
+
+3) Naming & pattern rules
+- Follow existing naming conventions: kebab-case for filenames, PascalCase for React components, camelCase for variables, verb-prefixed functions.
+- When adding route files or API handlers, match existing directory patterns and export names (`createXxxRoutes`, `xxxFirestoreRoutes`) to avoid duplicate identifier collisions.
+
+4) Minimal, reversible edits
+- Prefer minimal edits that are easy to review and revert. Large sweeping changes must be split into smaller PRs.
+- Avoid changing build/deploy pipeline files (e.g., `cloudbuild.yaml`, Dockerfiles) without testing locally and documenting rollback instructions in the PR.
+
+5) Pre-commit / CI enforcement (recommended, required for maintainers)
+- Add or update CI checks to validate `.cursorrules` format and presence:
+  - A lightweight Node script `scripts/validate-cursorrules.js` should confirm the file exists and basic keys/patterns are present.
+  - Add a lint job in CI that runs the validation script; PRs failing this check must be fixed prior to merge.
+- Use pre-commit hooks (husky, lint-staged) to prevent accidental large diffs to config files; include format checks for `.cursorrules`.
+
+6) PR requirements for config/rules changes
+- Any PR that modifies `.cursorrules`, build config (`vite.config.ts`, `cloudbuild.yaml`), or shared config (`packages/shared/src/config.ts`) must:
+  - Include a short testing checklist
+  - Include the reason for the change and rollback steps
+  - Be approved by at least one backend and one frontend maintainer
+
+7) Code reviewers' checklist (for maintainers)
+- Confirm the change does not:
+  - Introduce duplicate config files
+  - Change formatting style across the repo
+  - Remove or rename existing env keys without a migration plan
+  - Add hardcoded secrets/API keys
+- Ensure changes to `vite.config.ts` include `define` replacements for import.meta.env keys used by packages
+
+8) Emergency rollback
+- If a breaking change is merged that impacts builds or auth (e.g., missing Firebase API key), follow this rollback flow:
+  1. Revert the PR and open a hotfix PR with minimal changes.
+  2. Run CI and redeploy the previous stable hosting/Cloud Run revision.
+  3. Notify stakeholders and document root cause in the reverted PR.
+
+9) Communication
+- If you are uncertain about the intent of a file or a potential wide-impact edit, stop and ask. Open a short issue with the proposed change and mention maintainers.
+
+---------------------------------------------------------------------
+End of additional rules
+---------------------------------------------------------------------
+
+
