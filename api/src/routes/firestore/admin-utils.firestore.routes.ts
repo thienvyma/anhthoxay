@@ -50,6 +50,59 @@ export function createRateLimitFirestoreRoutes() {
     }
   });
 
+  // GET /rate-limits/metrics - Get detailed rate limit metrics
+  app.get('/metrics', async (c) => {
+    try {
+      // Return detailed metrics
+      return successResponse(c, {
+        totalRequests: 0,
+        blockedRequests: 0,
+        activeLimits: 0,
+        timeWindow: '60 seconds',
+        message: 'Rate limit metrics (placeholder - implement actual metrics)'
+      });
+    } catch (error) {
+      logger.error('Failed to get rate limit metrics', { error });
+      return errorResponse(c, 'INTERNAL_ERROR', 'Failed to get rate limit metrics', 500);
+    }
+  });
+
+  // GET /rate-limits/dashboard - Get dashboard-friendly rate limit data
+  app.get('/dashboard', async (c) => {
+    try {
+      return successResponse(c, {
+        summary: {
+          totalRequests: 0,
+          blockedRequests: 0,
+          activeLimits: 0
+        },
+        chartData: [],
+        recentBlocks: [],
+        message: 'Rate limit dashboard data (placeholder)'
+      });
+    } catch (error) {
+      logger.error('Failed to get rate limit dashboard', { error });
+      return errorResponse(c, 'INTERNAL_ERROR', 'Failed to get rate limit dashboard', 500);
+    }
+  });
+
+  // GET /rate-limits/violations/:ip - Get violations for specific IP
+  app.get('/violations/:ip', async (c) => {
+    try {
+      const ip = c.req.param('ip');
+      return successResponse(c, {
+        ip,
+        violations: [],
+        blocked: false,
+        lastViolation: null,
+        message: 'Rate limit violations for IP (placeholder)'
+      });
+    } catch (error) {
+      logger.error('Failed to get rate limit violations', { error });
+      return errorResponse(c, 'INTERNAL_ERROR', 'Failed to get rate limit violations', 500);
+    }
+  });
+
   return app;
 }
 
