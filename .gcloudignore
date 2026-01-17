@@ -1,0 +1,35 @@
+# Include dist folder for Cloud Build
+!dist/
+
+# Exclude node_modules everywhere
+node_modules/
+
+# Exclude development files
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+.vscode/
+.idea/
+*.tmp
+
+# Exclude coverage and test artifacts
+coverage/
+.nyc_output/
+*.lcov
+
+# Exclude IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Exclude OS files
+.DS_Store
+Thumbs.db
+
+# Exclude temp files
+tmp/
+*.tmp
+*.temp
