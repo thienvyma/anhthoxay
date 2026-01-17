@@ -12,6 +12,13 @@ steps:
         npx nx run api:build:production
     dir: 'api'
 
+  # Copy built files to api directory for Docker build
+  - name: 'alpine'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - 'cp dist/api/* api/'
+
   # Build the Docker image (uses pre-built dist/api)
   - name: 'gcr.io/cloud-builders/docker'
     args:
