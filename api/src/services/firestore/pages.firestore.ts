@@ -97,6 +97,20 @@ export interface UpdateSectionInput {
   syncAll?: boolean;
 }
 
+/**
+ * Ensure the provided section data is JSON-serializable.
+ * This prevents Firestore writes failing when client accidentally sends
+ * functions, DOM nodes, or other non-serializable values.
+ */
+function assertSerializable(obj: unknown, path = ''): void {
+  try {
+    JSON.stringify(obj);
+  } catch (err) {
+    logger.warn('Section data is not serializable', { path, error: err });
+    throw new PagesFirestoreError('VALIDATION_ERROR', 'Section data contains non-serializable values', 400);
+  }
+}
+
 // ============================================
 // HELPER FUNCTION
 // ============================================
@@ -391,6 +405,8 @@ export class PageFirestoreService extends BaseFirestoreService<PageDoc> {
       // Update the section
       const updateData: Partial<SectionDoc> = {};
       if (input.data !== undefined) {
+        // Validate serializability to avoid Firestore write errors from client-sent functions/DOM nodes
+        assertSerializable(input.data);
         updateData.data = input.data;
       }
       if (input.order !== undefined) {
