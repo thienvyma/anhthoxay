@@ -9,7 +9,7 @@ steps:
       - |
         npm install -g pnpm@10
         pnpm install --no-frozen-lockfile
-        pnpm nx run api:build:production
+        npx nx run api:build:production
 
   # Build the Docker image (uses pre-built dist/api)
   - name: 'gcr.io/cloud-builders/docker'
