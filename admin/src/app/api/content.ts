@@ -69,7 +69,25 @@ interface UploadFileResponse {
 export type MediaFolder = 'blog' | 'portfolio' | 'projects' | 'documents' | 'avatars' | 'products' | 'gallery' | 'temp';
 
 export const mediaApi = {
-  list: () => apiFetch<MediaAsset[]>('/media'),
+  list: async (): Promise<MediaAsset[]> => {
+    const result = await apiFetch<any>('/media');
+    // Support multiple response shapes:
+    // - array of media assets
+    // - { files: MediaAsset[] }
+    // - { data: MediaAsset[] } (fallback)
+    if (Array.isArray(result)) {
+      return result as MediaAsset[];
+    }
+    if (result && typeof result === 'object') {
+      if (Array.isArray(result.files)) {
+        return result.files as MediaAsset[];
+      }
+      if (Array.isArray(result.data)) {
+        return result.data as MediaAsset[];
+      }
+    }
+    return [];
+  },
 
   /**
    * Upload a file to gallery (creates MediaAsset record)
