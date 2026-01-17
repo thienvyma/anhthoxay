@@ -3,17 +3,16 @@
  * Shared across all apps (landing, admin, portal)
  */
 
-export const firebaseConfig = {
-  apiKey: 'AIzaSyDZVPWgbjtO02GrswwqbdpOCVPe4C5JCr8',
-  authDomain: 'noithatnhanh-f8f72.firebaseapp.com',
-  projectId: 'noithatnhanh-f8f72',
-  storageBucket: 'noithatnhanh-f8f72.firebasestorage.app',
-  messagingSenderId: '970920393092',
-  appId: '1:970920393092:web:7ec6fb61fa43fdbc3445d1',
-  measurementId: 'G-FJHKQNBRZX',
-} as const;
-
-export type FirebaseConfig = typeof firebaseConfig;
+// This file now only contains types. Runtime firebase config must come from `packages/shared/src/config.ts`
+export type FirebaseConfig = {
+  apiKey: string;
+  authDomain?: string;
+  projectId?: string;
+  storageBucket?: string;
+  messagingSenderId?: string;
+  appId?: string;
+  measurementId?: string;
+};
 
 /**
  * User roles in the system
